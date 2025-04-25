@@ -1,7 +1,6 @@
 import 'helvar_device.dart';
 
 class HelvarDriverOutputDevice extends HelvarDevice {
-  // Output device specific properties
   String missing;
   String faulty;
   int level;
@@ -36,8 +35,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
       if (sceneParams.isNotEmpty) {
         List<String> temp = sceneParams.split(',');
 
-        // In real implementation, this would communicate with the Helvar router
-
         String timestamp = DateTime.now().toString();
         String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
         print(s);
@@ -56,15 +53,10 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     try {
       List<String> temp = levelParams.split(',');
 
-      // In real implementation, this would communicate with the Helvar router
-      // to set a direct level for a device
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Level Device: ${temp[0]}";
       print(s);
       out = s;
-
-      // In real implementation, might trigger a refresh
     } catch (e) {
       print(e);
       out = e.toString();
@@ -74,8 +66,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   void directProportion(String proportionParams) {
     try {
       List<String> temp = proportionParams.split(',');
-
-      // In real implementation, this would communicate with the Helvar router
 
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
@@ -91,8 +81,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     try {
       List<String> temp = proportionParams.split(',');
 
-      // In real implementation, this would communicate with the Helvar router
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
       print(s);
@@ -104,10 +92,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   }
 
   @override
-  void updatePoints() {
-    // In real implementation, this would poll all points
-    // and schedule periodic updates
-  }
+  void updatePoints() {}
 
   @override
   void started() {
@@ -115,27 +100,16 @@ class HelvarDriverOutputDevice extends HelvarDevice {
       createOutputPoints(address, getName());
       pointsCreated = true;
     }
-
-    // Schedule updates in real implementation
   }
 
   String getName() {
-    // This would typically return the device name from the system
-    // For now, we'll just return a placeholder
     return "Device_${deviceId}";
   }
 
   @override
-  void stopped() {
-    // Cancel scheduled tasks in real implementation
-  }
+  void stopped() {}
 
-  void createOutputPoints(String deviceAddress, String name) {
-    // In real implementation, this would create various control points:
-    // DeviceState, LampFailure, Missing, Faulty, OutputLevel, PowerConsumption
-  }
+  void createOutputPoints(String deviceAddress, String name) {}
 
-  void queryLoadLevel() {
-    // In real implementation, this would query the current load level from the device
-  }
+  void queryLoadLevel() {}
 }

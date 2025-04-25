@@ -1,5 +1,4 @@
 abstract class HelvarDevice {
-  // Common properties
   int deviceId;
   String address;
   String state;
@@ -15,8 +14,6 @@ abstract class HelvarDevice {
   String out;
   String helvarType;
   bool pointsCreated;
-
-  // Constructor
   HelvarDevice({
     this.deviceId = 1,
     this.address = "@",
@@ -34,19 +31,14 @@ abstract class HelvarDevice {
     this.helvarType = "output",
     this.pointsCreated = false,
   });
-
-  // Common methods
   void updatePoints();
   void started();
   void stopped();
-
-  // Methods for different types of testing
   void recallScene(String sceneParams);
   void clearResult() {
     out = "";
   }
 
-  // Icon management
   String getIconPath() => iconPath;
   void setIconPath(String path) {
     iconPath = path;

@@ -1,25 +1,7 @@
-// protocol/configuration_commands.dart
-//
-// A collection of configuration commands for the Helvar protocol
-// These commands store scenes, manage device settings, and other configuration operations
+import 'protocol_constants.dart';
 
-import 'helvar_protocol.dart';
-
-/// ConfigurationCommands provides a high-level interface for all configuration operations
-/// available in the Helvar protocol.
 class ConfigurationCommands {
-  final HelvarProtocol _protocol;
-
-  ConfigurationCommands(this._protocol);
-
-  /// Store scene levels for a group
-  ///
-  /// [group] - The group number (1-16383)
-  /// [block] - The scene block (1-8)
-  /// [scene] - The scene number (1-16)
-  /// [level] - The level percentage (0-100)
-  /// [forceStore] - If true, overwrites 'ignore' values in the scene table
-  void storeSceneGroup(int group, int block, int scene, int level,
+  static String storeSceneGroup(int group, int block, int scene, int level,
       {bool forceStore = true}) {
     if (group < 1 || group > 16383) {
       throw ArgumentError('Group must be between 1 and 16383');
@@ -35,58 +17,45 @@ class ConfigurationCommands {
     }
 
     final force = forceStore ? 1 : 0;
-    final message = '>V:1,C:201,G:$group,O:$force,B:$block,S:$scene,L:$level#';
-    _protocol.sendMessageWithAck(message);
+    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
+        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.storeSceneGroup}'
+        '${MessageType.delimiter}${ParameterId.group}${MessageType.paramDelimiter}$group'
+        '${MessageType.delimiter}${ParameterId.forceStore}${MessageType.paramDelimiter}$force'
+        '${MessageType.delimiter}${ParameterId.block}${MessageType.paramDelimiter}$block'
+        '${MessageType.delimiter}${ParameterId.scene}${MessageType.paramDelimiter}$scene'
+        '${MessageType.delimiter}${ParameterId.level}${MessageType.paramDelimiter}$level'
+        '${MessageType.terminator}';
   }
 
-  /// Store scene levels for a device
-  ///
-  /// [cluster] - The cluster number (1-253)
-  /// [router] - The router number (1-254)
-  /// [subnet] - The subnet number (1-4)
-  /// [device] - The device number (1-255)
-  /// [block] - The scene block (1-8)
-  /// [scene] - The scene number (1-16)
-  /// [level] - The level percentage (0-100)
-  /// [forceStore] - If true, overwrites 'ignore' values in the scene table
-  void storeSceneDevice(int cluster, int router, int subnet, int device,
-      int block, int scene, int level,
+  static String storeSceneDevice(int cluster, int router, int subnet,
+      int device, int block, int scene, int level,
       {bool forceStore = true}) {
-    if (cluster < 1 || cluster > 253) {
-      throw ArgumentError('Cluster must be between 1 and 253');
-    }
-    if (router < 1 || router > 254) {
-      throw ArgumentError('Router must be between 1 and 254');
-    }
-    if (subnet < 1 || subnet > 4) {
-      throw ArgumentError('Subnet must be between 1 and 4');
-    }
-    if (device < 1 || device > 255) {
-      throw ArgumentError('Device must be between 1 and 255');
-    }
+    _validateAddress(cluster, router, subnet, device);
+
     if (block < 1 || block > 8) {
       throw ArgumentError('Block must be between 1 and 8');
     }
     if (scene < 1 || scene > 16) {
       throw ArgumentError('Scene must be between 1 and 16');
     }
-    if (level < 0 || level > 100) {
-      throw ArgumentError('Level must be between 0 and 100');
+    if ((level < 0 || level > 100) && level != 253 && level != 254) {
+      throw ArgumentError(
+          'Level must be between 0 and 100, or special values 253 (Last Level) or 254 (Ignore)');
     }
 
     final force = forceStore ? 1 : 0;
-    final message =
-        '>V:1,C:202,@$cluster.$router.$subnet.$device,O:$force,B:$block,S:$scene,L:$level#';
-    _protocol.sendMessageWithAck(message);
+    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
+        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.storeSceneChannel}'
+        '${MessageType.delimiter}${ParameterId.address}$cluster${MessageType.addressDelimiter}$router'
+        '${MessageType.addressDelimiter}$subnet${MessageType.addressDelimiter}$device'
+        '${MessageType.delimiter}${ParameterId.forceStore}${MessageType.paramDelimiter}$force'
+        '${MessageType.delimiter}${ParameterId.block}${MessageType.paramDelimiter}$block'
+        '${MessageType.delimiter}${ParameterId.scene}${MessageType.paramDelimiter}$scene'
+        '${MessageType.delimiter}${ParameterId.level}${MessageType.paramDelimiter}$level'
+        '${MessageType.terminator}';
   }
 
-  /// Store current levels of devices in a group as a scene
-  ///
-  /// [group] - The group number (1-16383)
-  /// [block] - The scene block (1-8)
-  /// [scene] - The scene number (1-16)
-  /// [forceStore] - If true, overwrites 'ignore' values in the scene table
-  void storeAsSceneGroup(int group, int block, int scene,
+  static String storeAsSceneGroup(int group, int block, int scene,
       {bool forceStore = true}) {
     if (group < 1 || group > 16383) {
       throw ArgumentError('Group must be between 1 and 16383');
@@ -99,22 +68,66 @@ class ConfigurationCommands {
     }
 
     final force = forceStore ? 1 : 0;
-    final message = '>V:1,C:203,G:$group,O:$force,B:$block,S:$scene#';
-    _protocol.sendMessageWithAck(message);
+    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
+        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.storeAsSceneGroup}'
+        '${MessageType.delimiter}${ParameterId.group}${MessageType.paramDelimiter}$group'
+        '${MessageType.delimiter}${ParameterId.forceStore}${MessageType.paramDelimiter}$force'
+        '${MessageType.delimiter}${ParameterId.block}${MessageType.paramDelimiter}$block'
+        '${MessageType.delimiter}${ParameterId.scene}${MessageType.paramDelimiter}$scene'
+        '${MessageType.terminator}';
   }
 
-  /// Store current level of a device as a scene
-  ///
-  /// [cluster] - The cluster number (1-253)
-  /// [router] - The router number (1-254)
-  /// [subnet] - The subnet number (1-4)
-  /// [device] - The device number (1-255)
-  /// [block] - The scene block (1-8)
-  /// [scene] - The scene number (1-16)
-  /// [forceStore] - If true, overwrites 'ignore' values in the scene table
-  void storeAsSceneDevice(
+  static String storeAsSceneDevice(
       int cluster, int router, int subnet, int device, int block, int scene,
       {bool forceStore = true}) {
+    _validateAddress(cluster, router, subnet, device);
+
+    if (block < 1 || block > 8) {
+      throw ArgumentError('Block must be between 1 and 8');
+    }
+    if (scene < 1 || scene > 16) {
+      throw ArgumentError('Scene must be between 1 and 16');
+    }
+
+    final force = forceStore ? 1 : 0;
+    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
+        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.storeAsSceneChannel}'
+        '${MessageType.delimiter}${ParameterId.address}$cluster${MessageType.addressDelimiter}$router'
+        '${MessageType.addressDelimiter}$subnet${MessageType.addressDelimiter}$device'
+        '${MessageType.delimiter}${ParameterId.forceStore}${MessageType.paramDelimiter}$force'
+        '${MessageType.delimiter}${ParameterId.block}${MessageType.paramDelimiter}$block'
+        '${MessageType.delimiter}${ParameterId.scene}${MessageType.paramDelimiter}$scene'
+        '${MessageType.terminator}';
+  }
+
+  static String resetEmergencyBatteryGroup(int group) {
+    if (group < 1 || group > 16383) {
+      throw ArgumentError('Group must be between 1 and 16383');
+    }
+
+    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
+        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.resetEmergencyBatteryGroup}'
+        '${MessageType.delimiter}${ParameterId.group}${MessageType.paramDelimiter}$group'
+        '${MessageType.terminator}';
+  }
+
+  static String resetEmergencyBatteryDevice(
+    int cluster,
+    int router,
+    int subnet,
+    int device,
+  ) {
+    _validateAddress(cluster, router, subnet, device);
+
+    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
+        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.resetEmergencyBatteryDevice}'
+        '${MessageType.delimiter}${ParameterId.address}$cluster${MessageType.addressDelimiter}$router'
+        '${MessageType.addressDelimiter}$subnet${MessageType.addressDelimiter}$device'
+        '${MessageType.terminator}';
+  }
+
+  static void _validateAddress(
+      int cluster, int router, int subnet, int device) {
     if (cluster < 1 || cluster > 253) {
       throw ArgumentError('Cluster must be between 1 and 253');
     }
@@ -127,24 +140,5 @@ class ConfigurationCommands {
     if (device < 1 || device > 255) {
       throw ArgumentError('Device must be between 1 and 255');
     }
-    if (block < 1 || block > 8) {
-      throw ArgumentError('Block must be between 1 and 8');
-    }
-    if (scene < 1 || scene > 16) {
-      throw ArgumentError('Scene must be between 1 and 16');
-    }
-
-    final force = forceStore ? 1 : 0;
-    final message =
-        '>V:1,C:204,@$cluster.$router.$subnet.$device,O:$force,B:$block,S:$scene#';
-    _protocol.sendMessageWithAck(message);
-  }
-
-  /// Discovers Helvar routers on the network
-  ///
-  /// This sends a broadcast message to find all routers and their workgroups
-  /// Returns via the protocol's message response handler
-  void discoverRouters() {
-    _protocol.discoverRouters();
   }
 }

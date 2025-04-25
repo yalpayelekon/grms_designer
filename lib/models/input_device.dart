@@ -25,9 +25,6 @@ class HelvarDriverInputDevice extends HelvarDevice {
       if (sceneParams.isNotEmpty) {
         List<String> temp = sceneParams.split(',');
 
-        // In real implementation, this would communicate with the Helvar router
-        // and send message to recall a scene
-
         String timestamp = DateTime.now().toString();
         String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
         out = s;
@@ -42,10 +39,7 @@ class HelvarDriverInputDevice extends HelvarDevice {
   }
 
   @override
-  void updatePoints() {
-    // In real implementation, this would poll all points
-    // and possibly schedule periodic updates
-  }
+  void updatePoints() {}
 
   @override
   void started() {
@@ -53,18 +47,11 @@ class HelvarDriverInputDevice extends HelvarDevice {
       createInputPoints(address, props, addressingScheme);
       pointsCreated = true;
     }
-
-    // Schedule updates in real implementation
   }
 
   @override
-  void stopped() {
-    // Cancel scheduled tasks in real implementation
-  }
+  void stopped() {}
 
   void createInputPoints(
-      String deviceAddress, String pointProps, String subAddress) {
-    // In real implementation, this would create various control points
-    // based on the properties specified
-  }
+      String deviceAddress, String pointProps, String subAddress) {}
 }

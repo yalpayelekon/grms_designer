@@ -1,8 +1,6 @@
-// Emergency Device implementation for Helvar system
 import 'helvar_device.dart';
 
 class HelvarDriverEmergencyDevice extends HelvarDevice {
-  // Emergency device specific properties
   String missing;
   String faulty;
 
@@ -28,14 +26,11 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
 
   @override
   void recallScene(String sceneParams) {
-    // Emergency devices typically don't implement recall scene
     throw UnimplementedError("Emergency devices do not support scene recall");
   }
 
   void emergencyFunctionTest() {
     try {
-      // In real implementation, this would communicate with the Helvar router
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Emergency Test for device $address";
       out = s;
@@ -47,8 +42,6 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
 
   void emergencyDurationTest() {
     try {
-      // In real implementation, this would communicate with the Helvar router
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Emergency Test for device $address";
       out = s;
@@ -60,8 +53,6 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
 
   void stopEmergencyTest() {
     try {
-      // In real implementation, this would communicate with the Helvar router
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Emergency Test for device $address";
       out = s;
@@ -71,83 +62,64 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
     }
   }
 
-  // Query methods for emergency status
   void queryEmergencyFunctionTestTime() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmergencyFunctionTestState() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmergencyDurationTestTime() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmergencyDurationTestState() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmergencyBatteryCharge() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmergencyBatteryTime() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmergencyTotalLampTime() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmergencyBatteryEndurance() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
   }
 
   void queryEmdtActualTestDuration() {
-    try {
-      // In real implementation, this would communicate with the Helvar router
-    } catch (e) {
+    try {} catch (e) {
       print(e);
       out = e.toString();
     }
@@ -155,8 +127,6 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
 
   void resetEmergencyBatteryTotalLampTime() {
     try {
-      // In real implementation, this would communicate with the Helvar router
-
       String timestamp = DateTime.now().toString();
       String s =
           "Success ($timestamp) Reset Emergency Battery and Total Lamp Time for device $address";
@@ -168,10 +138,7 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
   }
 
   @override
-  void updatePoints() {
-    // In real implementation, this would poll all points
-    // and schedule periodic updates
-  }
+  void updatePoints() {}
 
   @override
   void started() {
@@ -179,17 +146,10 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
       createOutputEmergencyPoints(address, "name");
       pointsCreated = true;
     }
-
-    // Schedule updates in real implementation
   }
 
   @override
-  void stopped() {
-    // Cancel scheduled tasks in real implementation
-  }
+  void stopped() {}
 
-  void createOutputEmergencyPoints(String deviceAddress, String name) {
-    // In real implementation, this would create various control points for emergency status:
-    // EmergencyFunctionTestTime, EmergencyFunctionTestState, etc.
-  }
+  void createOutputEmergencyPoints(String deviceAddress, String name) {}
 }
