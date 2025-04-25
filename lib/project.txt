@@ -1,0 +1,780 @@
+.
+├── comm
+│   └── discovery_manager.dart
+├── main.dart
+├── models
+│   ├── emergency_device.dart
+│   ├── helvar_device.dart
+│   ├── helvar_router.dart
+│   ├── input_device.dart
+│   ├── output_device.dart
+│   └── workgroup.dart
+├── project.txt
+├── protocol
+│   ├── commands
+│   │   ├── configuration_commands.dart
+│   │   ├── control_commands.dart
+│   │   ├── discovery_commands.dart
+│   │   ├── emergency_commands.dart
+│   │   └── query_commands.dart
+│   ├── device_types.dart
+│   ├── message_parser.dart
+│   ├── protocol_constants.dart
+│   └── protocol_utils.dart
+├── screens
+├── utils
+└── widgets
+
+7 directories, 18 files
+import 'helvar_device.dart';
+
+class HelvarDriverEmergencyDevice extends HelvarDevice {
+  String missing;
+  String faulty;
+
+  HelvarDriverEmergencyDevice({
+    super.deviceId,
+    super.address,
+    super.state,
+    super.description,
+    super.props,
+    super.iconPath,
+    super.hexId,
+    super.addressingScheme,
+    super.emergency = true,
+    super.blockId,
+    super.sceneId,
+    super.fadeTime,
+    super.out,
+    super.helvarType = "emergency",
+    super.pointsCreated,
+    this.missing = "",
+    this.faulty = "",
+  });
+
+  @override
+  void recallScene(String sceneParams) {
+    throw UnimplementedError("Emergency devices do not support scene recall");
+  }
+
+  void emergencyFunctionTest() {
+    try {
+      String timestamp = DateTime.now().toString();
+      String s = "Success ($timestamp) Emergency Test for device $address";
+      out = s;
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void emergencyDurationTest() {
+    try {
+      String timestamp = DateTime.now().toString();
+      String s = "Success ($timestamp) Emergency Test for device $address";
+      out = s;
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void stopEmergencyTest() {
+    try {
+      String timestamp = DateTime.now().toString();
+      String s = "Success ($timestamp) Emergency Test for device $address";
+      out = s;
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyFunctionTestTime() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyFunctionTestState() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyDurationTestTime() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyDurationTestState() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyBatteryCharge() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyBatteryTime() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyTotalLampTime() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmergencyBatteryEndurance() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void queryEmdtActualTestDuration() {
+    try {} catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void resetEmergencyBatteryTotalLampTime() {
+    try {
+      String timestamp = DateTime.now().toString();
+      String s =
+          "Success ($timestamp) Reset Emergency Battery and Total Lamp Time for device $address";
+      out = s;
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  @override
+  void updatePoints() {}
+
+  @override
+  void started() {
+    if (!pointsCreated) {
+      createOutputEmergencyPoints(address, "name");
+      pointsCreated = true;
+    }
+  }
+
+  @override
+  void stopped() {}
+
+  void createOutputEmergencyPoints(String deviceAddress, String name) {}
+}
+abstract class HelvarDevice {
+  int deviceId;
+  String address;
+  String state;
+  String description;
+  String props;
+  String iconPath;
+  String hexId;
+  String addressingScheme;
+  bool emergency;
+  String blockId;
+  String sceneId;
+  int fadeTime;
+  String out;
+  String helvarType;
+  bool pointsCreated;
+  HelvarDevice({
+    this.deviceId = 1,
+    this.address = "@",
+    this.state = "",
+    this.description = "",
+    this.props = "",
+    this.iconPath = "",
+    this.hexId = "",
+    this.addressingScheme = "",
+    this.emergency = false,
+    this.blockId = "1",
+    this.sceneId = "",
+    this.fadeTime = 700,
+    this.out = "",
+    this.helvarType = "output",
+    this.pointsCreated = false,
+  });
+  void updatePoints();
+  void started();
+  void stopped();
+  void recallScene(String sceneParams);
+  void clearResult() {
+    out = "";
+  }
+
+  String getIconPath() => iconPath;
+  void setIconPath(String path) {
+    iconPath = path;
+  }
+}
+
+import 'helvar_device.dart';
+
+class HelvarDriverInputDevice extends HelvarDevice {
+  HelvarDriverInputDevice({
+    super.deviceId,
+    super.address,
+    super.state,
+    super.description,
+    super.props,
+    super.iconPath,
+    super.hexId,
+    super.addressingScheme,
+    super.emergency,
+    super.blockId,
+    super.sceneId,
+    super.fadeTime,
+    super.out,
+    super.helvarType = "input",
+    super.pointsCreated,
+  });
+
+  @override
+  void recallScene(String sceneParams) {
+    try {
+      if (sceneParams.isNotEmpty) {
+        List<String> temp = sceneParams.split(',');
+
+        String timestamp = DateTime.now().toString();
+        String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
+        out = s;
+      } else {
+        print("Please pass a valid scene number!");
+        out = "Please pass a valid scene number!";
+      }
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  @override
+  void updatePoints() {}
+
+  @override
+  void started() {
+    if (!pointsCreated) {
+      createInputPoints(address, props, addressingScheme);
+      pointsCreated = true;
+    }
+  }
+
+  @override
+  void stopped() {}
+
+  void createInputPoints(
+      String deviceAddress, String pointProps, String subAddress) {}
+}
+import 'helvar_device.dart';
+
+class HelvarDriverOutputDevice extends HelvarDevice {
+  String missing;
+  String faulty;
+  int level;
+  int proportion;
+
+  HelvarDriverOutputDevice({
+    super.deviceId,
+    super.address,
+    super.state,
+    super.description,
+    super.props,
+    super.iconPath,
+    super.hexId,
+    super.addressingScheme,
+    super.emergency,
+    super.blockId,
+    super.sceneId,
+    super.fadeTime,
+    super.out,
+    super.helvarType = "output",
+    super.pointsCreated,
+    this.missing = "",
+    this.faulty = "",
+    this.level = 100,
+    this.proportion = 0,
+  });
+
+  @override
+  void recallScene(String sceneParams) {
+    print("doRecallScene()");
+    try {
+      if (sceneParams.isNotEmpty) {
+        List<String> temp = sceneParams.split(',');
+
+        String timestamp = DateTime.now().toString();
+        String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
+        print(s);
+        out = s;
+      } else {
+        print("Please pass a valid scene number!");
+        out = "Please pass a valid scene number!";
+      }
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void directLevel(String levelParams) {
+    try {
+      List<String> temp = levelParams.split(',');
+
+      String timestamp = DateTime.now().toString();
+      String s = "Success ($timestamp) Direct Level Device: ${temp[0]}";
+      print(s);
+      out = s;
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void directProportion(String proportionParams) {
+    try {
+      List<String> temp = proportionParams.split(',');
+
+      String timestamp = DateTime.now().toString();
+      String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
+      out = s;
+      print(s);
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  void modifyProportion(String proportionParams) {
+    try {
+      List<String> temp = proportionParams.split(',');
+
+      String timestamp = DateTime.now().toString();
+      String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
+      print(s);
+      out = s;
+    } catch (e) {
+      print(e);
+      out = e.toString();
+    }
+  }
+
+  @override
+  void updatePoints() {}
+
+  @override
+  void started() {
+    if (!pointsCreated) {
+      createOutputPoints(address, getName());
+      pointsCreated = true;
+    }
+  }
+
+  String getName() {
+    return "Device_${deviceId}";
+  }
+
+  @override
+  void stopped() {}
+
+  void createOutputPoints(String deviceAddress, String name) {}
+
+  void queryLoadLevel() {}
+}
+class DaliDeviceType {
+  static const Map<int, String> types = {
+    0x00: 'Fluorescent Lamps',
+    0x01: 'Self-contained emergency lighting',
+    0x02: 'Discharge lamps (excluding fluorescent lamps)',
+    // Add all other DALI device types from the table
+  };
+}
+
+class DigidimDeviceType {
+  static const Map<int, String> types = {
+    0x00100802: '100 – Rotary',
+    0x00110702: '110 – Single Sider',
+    // Add all other Digidim device types from the table
+  };
+}
+
+class ImagineDeviceType {
+  static const Map<int, String> types = {
+    0x000000F1: '474 – 4 Channel Ballast Controller - Relay Unit',
+    0x000000F2: '474 – 4 Channel Ballast Controller - Output Unit',
+    // Add all other Imagine device types from the table
+  };
+}
+
+class DmxDeviceType {
+  static const Map<int, String> types = {
+    0x00000001: 'DMX Channel In',
+    0x00000002: 'DMX Channel Out',
+    // Add all other DMX device types from the table
+  };
+}
+import 'protocol_constants.dart';
+
+Map<String, dynamic> parseResponse(String response) {
+  final result = <String, dynamic>{};
+  if (!response.startsWith(MessageType.reply) &&
+      !response.startsWith(MessageType.error)) {
+    throw FormatException('Invalid response format: $response');
+  }
+  final parts = response.split(MessageType.answer);
+  if (parts.length != 2) {
+    throw FormatException('Invalid response format: $response');
+  }
+  final commandPart = parts[0].substring(1); // Remove the '?' or '!' prefix
+  final commandParams = commandPart.split(MessageType.delimiter);
+  var dataPart = parts[1];
+  if (dataPart.endsWith(MessageType.terminator)) {
+    dataPart = dataPart.substring(0, dataPart.length - 1);
+  } else if (dataPart.endsWith(MessageType.partialTerminator)) {
+    dataPart = dataPart.substring(0, dataPart.length - 1);
+    result['partial'] = true;
+  }
+  for (final param in commandParams) {
+    if (param.contains(MessageType.paramDelimiter)) {
+      final keyValue = param.split(MessageType.paramDelimiter);
+      if (keyValue.length == 2) {
+        result[keyValue[0]] = keyValue[1];
+      }
+    } else if (param.startsWith(ParameterId.address)) {
+      result[ParameterId.address] = param.substring(1);
+    }
+  }
+  if (response.startsWith(MessageType.error)) {
+    final errorCode = int.tryParse(dataPart);
+    result['error'] = errorCode;
+    result['errorMessage'] = ErrorCode.getMessage(errorCode ?? -1);
+  } else {
+    if (dataPart.contains(MessageType.delimiter)) {
+      final values = dataPart.split(MessageType.delimiter);
+      result['data'] = values;
+    } else {
+      result['data'] = dataPart;
+    }
+  }
+
+  return result;
+}
+
+Map<String, int> parseDeviceAddress(String address) {
+  final parts = address.split(MessageType.addressDelimiter);
+
+  if (parts.length != 4) {
+    throw FormatException('Invalid device address format: $address');
+  }
+
+  return {
+    'cluster': int.parse(parts[0]),
+    'router': int.parse(parts[1]),
+    'subnet': int.parse(parts[2]),
+    'device': int.parse(parts[3]),
+  };
+}
+
+Map<String, bool> decodeDeviceState(int stateValue) {
+  return {
+    'disabled': (stateValue & DeviceStateFlag.disabled) != 0,
+    'lampFailure': (stateValue & DeviceStateFlag.lampFailure) != 0,
+    'missing': (stateValue & DeviceStateFlag.missing) != 0,
+    'faulty': (stateValue & DeviceStateFlag.faulty) != 0,
+    'refreshing': (stateValue & DeviceStateFlag.refreshing) != 0,
+    'emergencyResting': (stateValue & DeviceStateFlag.emergencyResting) != 0,
+    'emergencyMode': (stateValue & DeviceStateFlag.emergencyMode) != 0,
+    'emergencyProlong': (stateValue & DeviceStateFlag.emergencyProlong) != 0,
+    'functionalTestInProgress':
+        (stateValue & DeviceStateFlag.functionalTestInProgress) != 0,
+    'durationTestInProgress':
+        (stateValue & DeviceStateFlag.durationTestInProgress) != 0,
+    'durationTestPending':
+        (stateValue & DeviceStateFlag.durationTestPending) != 0,
+    'functionalTestPending':
+        (stateValue & DeviceStateFlag.functionalTestPending) != 0,
+    'batteryFail': (stateValue & DeviceStateFlag.batteryFail) != 0,
+    'emergencyInhibit': (stateValue & DeviceStateFlag.emergencyInhibit) != 0,
+    'functionalTestRequested':
+        (stateValue & DeviceStateFlag.functionalTestRequested) != 0,
+    'durationTestRequested':
+        (stateValue & DeviceStateFlag.durationTestRequested) != 0,
+    'unknown': (stateValue & DeviceStateFlag.unknown) != 0,
+    'overTemperature': (stateValue & DeviceStateFlag.overTemperature) != 0,
+    'overCurrent': (stateValue & DeviceStateFlag.overCurrent) != 0,
+    'commsError': (stateValue & DeviceStateFlag.commsError) != 0,
+    'severeError': (stateValue & DeviceStateFlag.severeError) != 0,
+    'badReply': (stateValue & DeviceStateFlag.badReply) != 0,
+    'deviceMismatch': (stateValue & DeviceStateFlag.deviceMismatch) != 0,
+  };
+}
+
+Map<String, bool> decodeEmergencyTestState(int stateValue) {
+  return {
+    'pass': (stateValue & EmergencyTestState.pass) == EmergencyTestState.pass,
+    'lampFailure': (stateValue & EmergencyTestState.lampFailure) != 0,
+    'batteryFailure': (stateValue & EmergencyTestState.batteryFailure) != 0,
+    'faulty': (stateValue & EmergencyTestState.faulty) != 0,
+    'failure': (stateValue & EmergencyTestState.failure) != 0,
+    'testPending': (stateValue & EmergencyTestState.testPending) != 0,
+    'unknown': (stateValue & EmergencyTestState.unknown) != 0,
+  };
+}
+const int maxMessageLength = 1500;
+
+class MessageType {
+  static const String command = '>'; // Command message
+  static const String internalCommand = '<'; // Internal command
+  static const String reply = '?'; // Reply message
+  static const String error = '!'; // Error or diagnostic message
+  static const String terminator = '#'; // End of message
+  static const String partialTerminator = '\$'; // End of partial message
+  static const String answer = '='; // Separates query from response
+  static const String delimiter = ','; // Separates parameters
+  static const String paramDelimiter = ':'; // Separates parameter ID from value
+  static const String addressDelimiter = '.'; // Separates address components
+}
+
+class ParameterId {
+  static const String sequenceNumber = 'Q'; // For internal commands only
+  static const String version = 'V'; // HelvarNet version
+  static const String command = 'C'; // Command number
+  static const String acknowledgment = 'A'; // Request for acknowledgment
+  static const String address = '@'; // Device address
+  static const String group = 'G'; // Group ID
+  static const String scene = 'S'; // Scene number
+  static const String block = 'B'; // Block number
+  static const String fadeTime = 'F'; // Fade time in 0.1 seconds
+  static const String level = 'L'; // Light level (0-100%)
+  static const String proportion = 'P'; // Proportion value
+  static const String constantLight = 'K'; // Constant light flag
+  static const String forceStore = 'O'; // Force store flag
+}
+
+class ProtocolType {
+  static const int dali = 0x01;
+  static const int digidim = 0x02;
+  static const int imagine = 0x04;
+  static const int dmx = 0x08;
+}
+
+class SceneStatus {
+  static const Map<int, String> descriptions = {
+    128: 'Off',
+    129: 'Min level',
+    130: 'Max level',
+    137: 'Last Scene Percentage (0%)',
+    // Add all other scene statuses from the table
+  };
+}
+
+class ErrorCode {
+  static const int success = 0;
+  static const int invalidGroupIndex = 1;
+  static const int invalidCluster = 2;
+  static const int invalidRouter = 3;
+  static const int invalidSubnet = 4;
+  static const int invalidDevice = 5;
+  static const int invalidSubDevice = 6;
+  static const int invalidBlock = 7;
+  static const int invalidScene = 8;
+  static const int clusterNotExist = 9;
+  static const int routerNotExist = 10;
+  static const int deviceNotExist = 11;
+  static const int propertyNotExist = 12;
+  static const int invalidRawMessageSize = 13;
+  static const int invalidMessageType = 14;
+  static const int invalidMessageCommand = 15;
+  static const int missingAsciiTerminator = 16;
+  static const int missingAsciiParameter = 17;
+  static const int incompatibleVersion = 18;
+  static String getMessage(int code) {
+    switch (code) {
+      case success:
+        return 'Success';
+      case invalidGroupIndex:
+        return 'Error - Invalid group index parameter';
+      case invalidCluster:
+        return 'Error - Invalid cluster parameter';
+      case invalidRouter:
+        return 'Error - Invalid router parameter';
+      case invalidSubnet:
+        return 'Error - Invalid subnet parameter';
+      case invalidDevice:
+        return 'Error - Invalid device parameter';
+      case invalidSubDevice:
+        return 'Error - Invalid sub device parameter';
+      case invalidBlock:
+        return 'Error - Invalid block parameter';
+      case invalidScene:
+        return 'Error - Invalid scene parameter';
+      case clusterNotExist:
+        return 'Error - Cluster does not exist';
+      case routerNotExist:
+        return 'Error - Router does not exist';
+      case deviceNotExist:
+        return 'Error - Device does not exist';
+      case propertyNotExist:
+        return 'Error - Property does not exist';
+      case invalidRawMessageSize:
+        return 'Error - Invalid RAW message size';
+      case invalidMessageType:
+        return 'Error - Invalid messages type';
+      case invalidMessageCommand:
+        return 'Error - Invalid message command';
+      case missingAsciiTerminator:
+        return 'Error - Missing ASCII terminator';
+      case missingAsciiParameter:
+        return 'Error - Missing ASCII parameter';
+      case incompatibleVersion:
+        return 'Error - Incompatible version';
+      default:
+        return 'Unknown error: $code';
+    }
+  }
+}
+
+class DeviceStateFlag {
+  static const int disabled = 0x00000001;
+  static const int lampFailure = 0x00000002;
+  static const int missing = 0x00000004;
+  static const int faulty = 0x00000008;
+  static const int refreshing = 0x00000010;
+  static const int emergencyResting = 0x00000100;
+  static const int emergencyMode = 0x00000400;
+  static const int emergencyProlong = 0x00000800;
+  static const int functionalTestInProgress = 0x00001000;
+  static const int durationTestInProgress = 0x00002000;
+  static const int durationTestPending = 0x00010000;
+  static const int functionalTestPending = 0x00020000;
+  static const int batteryFail = 0x00040000;
+  static const int emergencyInhibit = 0x00200000;
+  static const int functionalTestRequested = 0x00400000;
+  static const int durationTestRequested = 0x00800000;
+  static const int unknown = 0x01000000;
+  static const int overTemperature = 0x02000000;
+  static const int overCurrent = 0x04000000;
+  static const int commsError = 0x08000000;
+  static const int severeError = 0x10000000;
+  static const int badReply = 0x20000000;
+  static const int deviceMismatch = 0x80000000;
+}
+
+class EmergencyTestState {
+  static const int pass = 0;
+  static const int lampFailure = 1;
+  static const int batteryFailure = 2;
+  static const int faulty = 4;
+  static const int failure = 8;
+  static const int testPending = 16;
+  static const int unknown = 32;
+}
+
+class CommandNumber {
+  static const int recallSceneGroup = 11;
+  static const int recallSceneDevice = 12;
+  static const int directLevelGroup = 13;
+  static const int directLevelDevice = 14;
+  static const int directProportionGroup = 15;
+  static const int directProportionDevice = 16;
+  static const int modifyProportionGroup = 17;
+  static const int modifyProportionDevice = 18;
+  static const int emergencyFunctionTestGroup = 19;
+  static const int emergencyFunctionTestDevice = 20;
+  static const int emergencyDurationTestGroup = 21;
+  static const int emergencyDurationTestDevice = 22;
+  static const int stopEmergencyTestsGroup = 23;
+  static const int stopEmergencyTestsDevice = 24;
+  static const int storeSceneGroup = 201;
+  static const int storeSceneChannel = 202;
+  static const int storeAsSceneGroup = 203;
+  static const int storeAsSceneChannel = 204;
+  static const int resetEmergencyBatteryGroup = 205;
+  static const int resetEmergencyBatteryDevice = 206;
+  static const int queryClusters = 101;
+  static const int queryRouters = 102;
+  static const int queryLastSceneInBlock = 103;
+  static const int queryDeviceType = 104;
+  static const int queryDescriptionGroup = 105;
+  static const int queryDescriptionDevice = 106;
+  static const int queryDeviceState = 110;
+  static const int queryDeviceDisabled = 111;
+  static const int queryLampFailure = 112;
+  static const int queryDeviceMissing = 113;
+  static const int queryDeviceFaulty = 114;
+  static const int queryMeasurement = 150;
+  static const int queryInputs = 151;
+  static const int queryLoadLevel = 152;
+  static const int queryPowerConsumption = 160;
+  static const int queryGroupPowerConsumption = 161;
+  static const int queryEmergencyFunctionTestTime = 170;
+  static const int queryEmergencyFunctionTestState = 171;
+  static const int queryEmergencyDurationTestTime = 172;
+  static const int queryEmergencyDurationTestState = 173;
+  static const int queryEmergencyBatteryCharge = 174;
+  static const int queryEmergencyBatteryTime = 175;
+  static const int queryEmergencyTotalLampTime = 176;
+  static const int queryTime = 185;
+  static const int queryTimeZone = 188;
+  static const int queryDaylightSavingTime = 189;
+  static const int querySoftwareVersion = 190;
+  static const int queryHelvarNetVersion = 191;
+}
+
+class DigidimKeyType {
+  static const Map<int, String> types = {
+    0x01: 'SinglePress',
+    0x02: 'TimedPress',
+    0x03: 'ToggleSolo',
+    // Add all other key types from the table
+  };
+}
+import 'protocol_constants.dart';
+
+class ProtocolUtils {
+  static bool isErrorResponse(String response) {
+    return response.startsWith(MessageType.error);
+  }
+
+  static int? getErrorCode(String errorResponse) {
+    if (!isErrorResponse(errorResponse)) {
+      return null;
+    }
+
+    final parts = errorResponse.split(MessageType.answer);
+    if (parts.length != 2) {
+      return null;
+    }
+
+    var errorCodeStr = parts[1];
+    if (errorCodeStr.endsWith(MessageType.terminator)) {
+      errorCodeStr = errorCodeStr.substring(0, errorCodeStr.length - 1);
+    }
+
+    return int.tryParse(errorCodeStr);
+  }
+
+  static String formatDeviceAddress(
+      int cluster, int router, int subnet, int device) {
+    return '$cluster${MessageType.addressDelimiter}$router${MessageType.addressDelimiter}$subnet${MessageType.addressDelimiter}$device';
+  }
+}

@@ -79,32 +79,6 @@ class EmergencyCommands {
         '${MessageType.terminator}';
   }
 
-  static String resetEmergencyBatteryGroup(int group) {
-    if (group < 1 || group > 16383) {
-      throw ArgumentError('Group must be between 1 and 16383');
-    }
-
-    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
-        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.resetEmergencyBatteryGroup}'
-        '${MessageType.delimiter}${ParameterId.group}${MessageType.paramDelimiter}$group'
-        '${MessageType.terminator}';
-  }
-
-  static String resetEmergencyBatteryDevice(
-    int cluster,
-    int router,
-    int subnet,
-    int device,
-  ) {
-    _validateAddress(cluster, router, subnet, device);
-
-    return '${MessageType.command}${ParameterId.version}${MessageType.paramDelimiter}1'
-        '${MessageType.delimiter}${ParameterId.command}${MessageType.paramDelimiter}${CommandNumber.resetEmergencyBatteryDevice}'
-        '${MessageType.delimiter}${ParameterId.address}$cluster${MessageType.addressDelimiter}$router'
-        '${MessageType.addressDelimiter}$subnet${MessageType.addressDelimiter}$device'
-        '${MessageType.terminator}';
-  }
-
   static void _validateAddress(
       int cluster, int router, int subnet, int device) {
     if (cluster < 1 || cluster > 253) {
