@@ -1,4 +1,4 @@
-import 'protocol_constants.dart';
+import '../protocol_constants.dart';
 
 class ControlCommands {
   static String recallSceneGroup(int group, int block, int scene, int fadeTime,

@@ -1,4 +1,4 @@
-import 'protocol_constants.dart';
+import '../protocol_constants.dart';
 
 class EmergencyCommands {
   static String emergencyFunctionTestGroup(int group) {

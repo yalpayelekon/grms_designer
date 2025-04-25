@@ -1,4 +1,4 @@
-import 'protocol_constants.dart';
+import '../protocol_constants.dart';
 
 class ConfigurationCommands {
   static String storeSceneGroup(int group, int block, int scene, int level,
