@@ -1,3 +1,5 @@
+const int maxMessageLength = 1500;
+
 class MessageType {
   static const String command = '>'; // Command message
   static const String internalCommand = '<'; // Internal command
@@ -32,6 +34,16 @@ class ProtocolType {
   static const int digidim = 0x02;
   static const int imagine = 0x04;
   static const int dmx = 0x08;
+}
+
+class SceneStatus {
+  static const Map<int, String> descriptions = {
+    128: 'Off',
+    129: 'Min level',
+    130: 'Max level',
+    137: 'Last Scene Percentage (0%)',
+    // Add all other scene statuses from the table
+  };
 }
 
 class ErrorCode {
@@ -185,4 +197,13 @@ class CommandNumber {
   static const int queryDaylightSavingTime = 189;
   static const int querySoftwareVersion = 190;
   static const int queryHelvarNetVersion = 191;
+}
+
+class DigidimKeyType {
+  static const Map<int, String> types = {
+    0x01: 'SinglePress',
+    0x02: 'TimedPress',
+    0x03: 'ToggleSolo',
+    // Add all other key types from the table
+  };
 }
