@@ -5,6 +5,7 @@ import '../models/helvar_router.dart';
 import '../comm/discovery_manager.dart';
 import 'network_interface_dialog.dart';
 import 'workgroup_selection_dialog.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -117,11 +118,10 @@ class HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      List<String> workgroupNames =
-          discoveredRouters
-              .map((router) => router['workgroup'] ?? 'Unknown')
-              .toSet()
-              .toList();
+      List<String> workgroupNames = discoveredRouters
+          .map((router) => router['workgroup'] ?? 'Unknown')
+          .toSet()
+          .toList();
 
       final selectedWorkgroup = await showDialog<String>(
         context: context,
@@ -191,87 +191,101 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('HelvarNet Manager'), centerTitle: true),
-      body:
-          isDiscovering
-              ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Discovering Helvar routers...'),
-                  ],
+      appBar: AppBar(
+        title: const Text('HelvarNet Manager'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
                 ),
-              )
-              : ListView.builder(
-                itemCount: workgroups.length,
-                itemBuilder: (context, index) {
-                  final workgroup = workgroups[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        workgroup.description,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        'Network: ${workgroup.networkInterface}\n'
-                        'Routers: ${workgroup.routers.length}',
-                      ),
-                      isThreeLine: true,
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'edit':
-                              _editWorkgroup(workgroup);
-                              break;
-                            case 'delete':
-                              _deleteWorkgroup(workgroup);
-                              break;
-                          }
-                        },
-                        itemBuilder:
-                            (BuildContext context) => <PopupMenuEntry<String>>[
-                              const PopupMenuItem<String>(
-                                value: 'edit',
-                                child: ListTile(
-                                  leading: Icon(Icons.edit),
-                                  title: Text('Edit'),
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: 'delete',
-                                child: ListTile(
-                                  leading: Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                  title: Text(
-                                    'Delete',
-                                    style: TextStyle(color: Colors.red),
-                                  ),
-                                ),
-                              ),
-                            ],
-                      ),
-                      onTap: () => _navigateToWorkgroupDetail(workgroup),
-                    ),
-                  );
-                },
+              );
+            },
+          ),
+        ],
+      ),
+      body: isDiscovering
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Discovering Helvar routers...'),
+                ],
               ),
+            )
+          : ListView.builder(
+              itemCount: workgroups.length,
+              itemBuilder: (context, index) {
+                final workgroup = workgroups[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: ListTile(
+                    title: Text(
+                      workgroup.description,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      'Network: ${workgroup.networkInterface}\n'
+                      'Routers: ${workgroup.routers.length}',
+                    ),
+                    isThreeLine: true,
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            _editWorkgroup(workgroup);
+                            break;
+                          case 'delete':
+                            _deleteWorkgroup(workgroup);
+                            break;
+                        }
+                      },
+                      itemBuilder: (BuildContext context) =>
+                          <PopupMenuEntry<String>>[
+                        const PopupMenuItem<String>(
+                          value: 'edit',
+                          child: ListTile(
+                            leading: Icon(Icons.edit),
+                            title: Text('Edit'),
+                          ),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            title: Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    onTap: () => _navigateToWorkgroupDetail(workgroup),
+                  ),
+                );
+              },
+            ),
       // Changed floating action button to perform discovery instead of add workgroup
       floatingActionButton: FloatingActionButton(
         onPressed: isDiscovering ? null : _discoverWorkgroups,
         tooltip: 'Discover Workgroup',
         backgroundColor: isDiscovering ? Colors.grey : null,
-        child:
-            isDiscovering
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Icon(Icons.search),
+        child: isDiscovering
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Icon(Icons.search),
       ),
     );
   }
