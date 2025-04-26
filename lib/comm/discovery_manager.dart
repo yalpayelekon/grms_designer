@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import '../protocol/commands/discovery_commands.dart';
 
 class DiscoveryManager {
-  late RawDatagramSocket socket;
+  RawDatagramSocket? _socket;
   String targetNetwork;
   final List<String> workgroupList = [];
   final List<String> ipList = [];
@@ -13,16 +13,15 @@ class DiscoveryManager {
 
   Future<void> start() async {
     try {
-      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 50001);
+      _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 50001);
       isRunning = true;
 
-      socket.listen((RawSocketEvent event) {
+      _socket!.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read && isRunning) {
-          Datagram? datagram = socket.receive();
+          Datagram? datagram = _socket!.receive();
           if (datagram != null) {
             String response = String.fromCharCodes(datagram.data).trim();
 
-            // Check for Helvar protocol marker (63 = '?')
             for (int i = 0; i < datagram.data.length; i++) {
               if (datagram.data[i] == 63) {
                 String ip = datagram.address.address;
@@ -41,15 +40,18 @@ class DiscoveryManager {
   }
 
   Future<void> sendDiscoveryRequest(int timeout) async {
+    if (_socket == null) {
+      throw StateError('Socket not initialized. Call start() first.');
+    }
+
     try {
       String command = DiscoveryCommands.queryWorkgroupName();
-
-      List<int> commandBytes = command.codeUnits;
+      List<int> commandBytes = List<int>.from(command.codeUnits);
       commandBytes.addAll([0, 0, 0, 0]);
 
       Uint8List data = Uint8List.fromList(commandBytes);
 
-      socket.send(data, InternetAddress(targetNetwork), 50001);
+      _socket!.send(data, InternetAddress(targetNetwork), 50001);
 
       await Future.delayed(Duration(milliseconds: timeout));
     } catch (e) {
@@ -64,6 +66,7 @@ class DiscoveryManager {
     for (int i = 0; i < ipList.length; i++) {
       String workgroupName = "Unknown";
       if (i < workgroupList.length) {
+        // Parse the workgroup name from the response
         String response = workgroupList[i];
         if (response.contains('=')) {
           workgroupName = response.split('=')[1].replaceAll('#', '');
@@ -77,7 +80,10 @@ class DiscoveryManager {
 
   void stop() {
     isRunning = false;
-    socket.close();
+    if (_socket != null) {
+      _socket!.close();
+      _socket = null;
+    }
   }
 
   static Future<List<NetworkInterface>> getNetworkInterfaces() async {

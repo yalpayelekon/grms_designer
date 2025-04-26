@@ -103,7 +103,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   }
 
   String getName() {
-    return "Device_${deviceId}";
+    return "Device_$deviceId";
   }
 
   @override

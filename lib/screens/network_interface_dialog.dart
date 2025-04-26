@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 
 class NetworkInterfaceDialog extends StatefulWidget {
-  const NetworkInterfaceDialog({Key? key, required this.interfaces})
-      : super(key: key);
+  const NetworkInterfaceDialog({super.key, required this.interfaces});
 
   final List<NetworkInterface> interfaces;
 
   @override
-  _NetworkInterfaceDialogState createState() => _NetworkInterfaceDialogState();
+  NetworkInterfaceDialogState createState() => NetworkInterfaceDialogState();
 }
 
-class _NetworkInterfaceDialogState extends State<NetworkInterfaceDialog> {
+class NetworkInterfaceDialogState extends State<NetworkInterfaceDialog> {
   NetworkInterface? selectedInterface;
   String? selectedAddress;
 
@@ -52,13 +51,15 @@ class _NetworkInterfaceDialogState extends State<NetworkInterfaceDialog> {
             });
           }
         },
-        items: widget.interfaces.map<DropdownMenuItem<NetworkInterface>>(
-            (NetworkInterface interface) {
-          return DropdownMenuItem<NetworkInterface>(
-            value: interface,
-            child: Text(getDisplayName(interface)),
-          );
-        }).toList(),
+        items:
+            widget.interfaces.map<DropdownMenuItem<NetworkInterface>>((
+              NetworkInterface interface,
+            ) {
+              return DropdownMenuItem<NetworkInterface>(
+                value: interface,
+                child: Text(getDisplayName(interface)),
+              );
+            }).toList(),
       ),
       actions: <Widget>[
         TextButton(
@@ -70,10 +71,9 @@ class _NetworkInterfaceDialogState extends State<NetworkInterfaceDialog> {
         TextButton(
           child: const Text('OK'),
           onPressed: () {
-            Navigator.of(context).pop({
-              'interface': selectedInterface,
-              'address': selectedAddress,
-            });
+            Navigator.of(
+              context,
+            ).pop({'interface': selectedInterface, 'address': selectedAddress});
           },
         ),
       ],

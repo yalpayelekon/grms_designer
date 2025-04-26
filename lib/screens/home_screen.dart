@@ -7,13 +7,13 @@ import 'network_interface_dialog.dart';
 import 'workgroup_selection_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   List<Workgroup> workgroups = [
     Workgroup(
       id: '1',
@@ -29,11 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool isDiscovering = false;
   DiscoveryManager? discoveryManager;
-
-  void _addWorkgroup() {
-    // TODO: Implement workgroup addition logic
-    print('Add Workgroup clicked');
-  }
 
   void _editWorkgroup(Workgroup workgroup) {
     // TODO: Implement workgroup editing logic
@@ -53,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _discoverWorkgroups() async {
     try {
-      // Step 1: Get available network interfaces
       List<NetworkInterface> interfaces =
           await DiscoveryManager.getNetworkInterfaces();
 
@@ -64,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      // Step 2: Show interface selection dialog
       final result = await showDialog<Map<String, dynamic>>(
         context: context,
         builder: (BuildContext context) {
@@ -76,28 +69,24 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      // Step 3: Calculate broadcast address for the selected interface
       NetworkInterface selectedInterface = result['interface'];
       String selectedAddress = result['address'];
 
-      // Calculate broadcast address for the selected interface's subnet
-      // For simplicity, using /24 subnet mask (255.255.255.0)
       String subnetMask = "255.255.255.0";
-      String broadcastAddress =
-          DiscoveryManager.getBroadcastAddress(selectedAddress, subnetMask);
+      String broadcastAddress = DiscoveryManager.getBroadcastAddress(
+        selectedAddress,
+        subnetMask,
+      );
 
       setState(() {
         isDiscovering = true;
       });
 
-      // Step 4: Create discovery manager
       discoveryManager = DiscoveryManager(broadcastAddress);
       await discoveryManager!.start();
 
-      // Step 5: Send discovery request
       await discoveryManager!.sendDiscoveryRequest(5000); // 5 second timeout
 
-      // Step 6: Process discovery results
       List<Map<String, String>> discoveredRouters =
           discoveryManager!.getDiscoveredRouters();
 
@@ -106,19 +95,34 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       if (discoveredRouters.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No Helvar routers discovered')),
+        await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Discovery Result'),
+              content: const Text(
+                'No Helvar routers were discovered on the network.',
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
         return;
       }
 
-      // Step 7: Extract workgroup names
-      List<String> workgroupNames = discoveredRouters
-          .map((router) => router['workgroup'] ?? 'Unknown')
-          .toSet()
-          .toList();
+      List<String> workgroupNames =
+          discoveredRouters
+              .map((router) => router['workgroup'] ?? 'Unknown')
+              .toSet()
+              .toList();
 
-      // Step 8: Show workgroup selection dialog
       final selectedWorkgroup = await showDialog<String>(
         context: context,
         builder: (BuildContext context) {
@@ -130,33 +134,40 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      // Step 9: Create workgroup with discovered routers
       List<HelvarRouter> helvarRouters = [];
 
-      for (var routerInfo in discoveredRouters
-          .where((router) => router['workgroup'] == selectedWorkgroup)) {
-        helvarRouters.add(HelvarRouter(
-          name: 'Router_${helvarRouters.length + 1}',
-          address: '1.${helvarRouters.length + 1}',
-          ipAddress: routerInfo['ip'] ?? '',
-          description: '${routerInfo['workgroup']} Router',
-        ));
+      for (var routerInfo in discoveredRouters.where(
+        (router) => router['workgroup'] == selectedWorkgroup,
+      )) {
+        helvarRouters.add(
+          HelvarRouter(
+            name: 'Router_${helvarRouters.length + 1}',
+            address: '1.${helvarRouters.length + 1}',
+            ipAddress: routerInfo['ip'] ?? '',
+            description: '${routerInfo['workgroup']} Router',
+          ),
+        );
       }
 
       if (helvarRouters.isNotEmpty) {
         setState(() {
-          workgroups.add(Workgroup(
-            id: (workgroups.length + 1).toString(),
-            description: selectedWorkgroup,
-            networkInterface: selectedInterface.name,
-            routers: helvarRouters,
-          ));
+          workgroups.add(
+            Workgroup(
+              id: (workgroups.length + 1).toString(),
+              description: selectedWorkgroup,
+              networkInterface: selectedInterface.name,
+              routers: helvarRouters,
+            ),
+          );
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Added workgroup: $selectedWorkgroup with '
-                  '${helvarRouters.length} routers')),
+            content: Text(
+              'Added workgroup: $selectedWorkgroup with '
+              '${helvarRouters.length} routers',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -180,86 +191,87 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('HelvarNet Manager'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Discover Workgroups',
-            onPressed: isDiscovering ? null : _discoverWorkgroups,
-          ),
-        ],
-      ),
-      body: isDiscovering
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Discovering Helvar routers...'),
-                ],
+      appBar: AppBar(title: const Text('HelvarNet Manager'), centerTitle: true),
+      body:
+          isDiscovering
+              ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Discovering Helvar routers...'),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                itemCount: workgroups.length,
+                itemBuilder: (context, index) {
+                  final workgroup = workgroups[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: ListTile(
+                      title: Text(
+                        workgroup.description,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        'Network: ${workgroup.networkInterface}\n'
+                        'Routers: ${workgroup.routers.length}',
+                      ),
+                      isThreeLine: true,
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'edit':
+                              _editWorkgroup(workgroup);
+                              break;
+                            case 'delete':
+                              _deleteWorkgroup(workgroup);
+                              break;
+                          }
+                        },
+                        itemBuilder:
+                            (BuildContext context) => <PopupMenuEntry<String>>[
+                              const PopupMenuItem<String>(
+                                value: 'edit',
+                                child: ListTile(
+                                  leading: Icon(Icons.edit),
+                                  title: Text('Edit'),
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'delete',
+                                child: ListTile(
+                                  leading: Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  title: Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ),
+                            ],
+                      ),
+                      onTap: () => _navigateToWorkgroupDetail(workgroup),
+                    ),
+                  );
+                },
               ),
-            )
-          : ListView.builder(
-              itemCount: workgroups.length,
-              itemBuilder: (context, index) {
-                final workgroup = workgroups[index];
-                return Card(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ListTile(
-                    title: Text(
-                      workgroup.description,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      'Network: ${workgroup.networkInterface}\n'
-                      'Routers: ${workgroup.routers.length}',
-                    ),
-                    isThreeLine: true,
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            _editWorkgroup(workgroup);
-                            break;
-                          case 'delete':
-                            _deleteWorkgroup(workgroup);
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) =>
-                          <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: 'edit',
-                          child: ListTile(
-                            leading: Icon(Icons.edit),
-                            title: Text('Edit'),
-                          ),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: 'delete',
-                          child: ListTile(
-                            leading: Icon(Icons.delete, color: Colors.red),
-                            title: Text(
-                              'Delete',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    onTap: () => _navigateToWorkgroupDetail(workgroup),
-                  ),
-                );
-              },
-            ),
+      // Changed floating action button to perform discovery instead of add workgroup
       floatingActionButton: FloatingActionButton(
-        onPressed: _addWorkgroup,
-        tooltip: 'Add Workgroup',
-        child: const Icon(Icons.add),
+        onPressed: isDiscovering ? null : _discoverWorkgroups,
+        tooltip: 'Discover Workgroup',
+        backgroundColor: isDiscovering ? Colors.grey : null,
+        child:
+            isDiscovering
+                ? const CircularProgressIndicator(color: Colors.white)
+                : const Icon(Icons.search),
       ),
     );
   }

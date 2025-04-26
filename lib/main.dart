@@ -6,7 +6,7 @@ void main() {
 }
 
 class HelvarNetApp extends StatelessWidget {
-  const HelvarNetApp({Key? key}) : super(key: key);
+  const HelvarNetApp({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
 class WorkgroupSelectionDialog extends StatefulWidget {
-  const WorkgroupSelectionDialog({Key? key, required this.workgroups})
-      : super(key: key);
+  const WorkgroupSelectionDialog({super.key, required this.workgroups});
 
   final List<String> workgroups;
 
   @override
-  _WorkgroupSelectionDialogState createState() =>
-      _WorkgroupSelectionDialogState();
+  WorkgroupSelectionDialogState createState() =>
+      WorkgroupSelectionDialogState();
 }
 
-class _WorkgroupSelectionDialogState extends State<WorkgroupSelectionDialog> {
+class WorkgroupSelectionDialogState extends State<WorkgroupSelectionDialog> {
   String? selectedWorkgroup;
 
   @override
@@ -38,11 +37,11 @@ class _WorkgroupSelectionDialogState extends State<WorkgroupSelectionDialog> {
         },
         items:
             widget.workgroups.map<DropdownMenuItem<String>>((String workgroup) {
-          return DropdownMenuItem<String>(
-            value: workgroup,
-            child: Text(workgroup),
-          );
-        }).toList(),
+              return DropdownMenuItem<String>(
+                value: workgroup,
+                child: Text(workgroup),
+              );
+            }).toList(),
       ),
       actions: <Widget>[
         TextButton(
