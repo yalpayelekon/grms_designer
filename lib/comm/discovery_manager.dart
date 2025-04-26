@@ -42,12 +42,9 @@ class DiscoveryManager {
 
   Future<void> sendDiscoveryRequest(int timeout) async {
     try {
-      // Use discovery commands to format request
       String command = DiscoveryCommands.queryWorkgroupName();
 
-      // Convert string to bytes
       List<int> commandBytes = command.codeUnits;
-      // Add trailing zeros to match Helvar driver format
       commandBytes.addAll([0, 0, 0, 0]);
 
       Uint8List data = Uint8List.fromList(commandBytes);
@@ -67,7 +64,6 @@ class DiscoveryManager {
     for (int i = 0; i < ipList.length; i++) {
       String workgroupName = "Unknown";
       if (i < workgroupList.length) {
-        // Parse the workgroup name from the response
         String response = workgroupList[i];
         if (response.contains('=')) {
           workgroupName = response.split('=')[1].replaceAll('#', '');
@@ -110,7 +106,6 @@ class DiscoveryManager {
 
       return broadcastParts.join('.');
     } catch (e) {
-      // Default to general broadcast if calculation fails
       return '255.255.255.255';
     }
   }

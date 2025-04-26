@@ -197,6 +197,12 @@ class CommandNumber {
   static const int queryDaylightSavingTime = 189;
   static const int querySoftwareVersion = 190;
   static const int queryHelvarNetVersion = 191;
+  static const int queryWorkgroupName = 107;
+  static const int queryWorkgroupMembership = 108;
+  static const int queryGroups = 165;
+  static const int queryGroup = 164;
+  static const int querySceneNames = 166;
+  static const int querySceneInfo = 167;
 }
 
 class DigidimKeyType {
