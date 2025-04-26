@@ -54,7 +54,6 @@ class HelvarRouter {
   @override
   int get hashCode => name.hashCode ^ address.hashCode;
 
-  // Conversion from JSON
   factory HelvarRouter.fromJson(Map<String, dynamic> json) {
     return HelvarRouter(
       name: json['name'] as String,
@@ -65,13 +64,15 @@ class HelvarRouter {
       isNormal: json['isNormal'] as bool? ?? true,
       isMissing: json['isMissing'] as bool? ?? false,
       isFaulty: json['isFaulty'] as bool? ?? false,
-      devices: (json['devices'] as List?)
-          ?.map((deviceJson) => HelvarDevice.fromJson(deviceJson))
-          .toList(),
+      devices:
+          (json['devices'] as List?)
+              ?.map((deviceJson) => HelvarDevice.fromJson(deviceJson))
+              .whereType<HelvarDevice>()
+              .toList() ??
+          [],
     );
   }
 
-  // Conversion to JSON
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -86,12 +87,7 @@ class HelvarRouter {
     };
   }
 
-  // Update router state based on discovery results
-  void updateState({
-    bool? isNormal,
-    bool? isMissing,
-    bool? isFaulty,
-  }) {
+  void updateState({bool? isNormal, bool? isMissing, bool? isFaulty}) {
     if (isNormal != null) this.isNormal = isNormal;
     if (isMissing != null) this.isMissing = isMissing;
     if (isFaulty != null) this.isFaulty = isFaulty;
