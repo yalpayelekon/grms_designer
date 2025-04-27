@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/workgroup.dart';
 import '../models/helvar_router.dart';
 import '../comm/discovery_manager.dart';
 import 'network_interface_dialog.dart';
 import 'workgroup_selection_dialog.dart';
 import 'settings_screen.dart';
+import '../providers/settings_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
   HomeScreenState createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends ConsumerState<HomeScreen> {
   List<Workgroup> workgroups = [
     Workgroup(
       id: '1',
@@ -47,7 +50,7 @@ class HomeScreenState extends State<HomeScreen> {
     print('Navigate to Workgroup: ${workgroup.description}');
   }
 
-  Future<void> _discoverWorkgroups() async {
+  Future<Map<String, dynamic>?> _selectNetworkInterface() async {
     try {
       List<NetworkInterface> interfaces =
           await DiscoveryManager.getNetworkInterfaces();
@@ -56,7 +59,7 @@ class HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No network interfaces found')),
         );
-        return;
+        return null;
       }
 
       final result = await showDialog<Map<String, dynamic>>(
@@ -67,116 +70,32 @@ class HomeScreenState extends State<HomeScreen> {
       );
 
       if (result == null || result['address'] == null) {
-        return;
+        return null;
       }
 
-      NetworkInterface selectedInterface = result['interface'];
-      String selectedAddress = result['address'];
+      return result;
+    } catch (e) {
+      _showErrorMessage('Error finding network interfaces: ${e.toString()}');
+      return null;
+    }
+  }
 
-      String subnetMask = "255.255.255.0";
-      String broadcastAddress = DiscoveryManager.getBroadcastAddress(
-        selectedAddress,
-        subnetMask,
-      );
+  Future<List<Map<String, String>>> _performRouterDiscovery(
+      String broadcastAddress) async {
+    setState(() {
+      isDiscovering = true;
+    });
 
-      setState(() {
-        isDiscovering = true;
-      });
-
+    try {
       discoveryManager = DiscoveryManager(broadcastAddress);
       await discoveryManager!.start();
-
-      await discoveryManager!.sendDiscoveryRequest(5000); // 5 second timeout
-
-      List<Map<String, String>> discoveredRouters =
-          discoveryManager!.getDiscoveredRouters();
-
-      setState(() {
-        isDiscovering = false;
-      });
-
-      if (discoveredRouters.isEmpty) {
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Discovery Result'),
-              content: const Text(
-                'No Helvar routers were discovered on the network.',
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-        return;
-      }
-
-      List<String> workgroupNames = discoveredRouters
-          .map((router) => router['workgroup'] ?? 'Unknown')
-          .toSet()
-          .toList();
-
-      final selectedWorkgroup = await showDialog<String>(
-        context: context,
-        builder: (BuildContext context) {
-          return WorkgroupSelectionDialog(workgroups: workgroupNames);
-        },
-      );
-
-      if (selectedWorkgroup == null) {
-        return;
-      }
-
-      List<HelvarRouter> helvarRouters = [];
-
-      for (var routerInfo in discoveredRouters.where(
-        (router) => router['workgroup'] == selectedWorkgroup,
-      )) {
-        helvarRouters.add(
-          HelvarRouter(
-            name: 'Router_${helvarRouters.length + 1}',
-            address: '1.${helvarRouters.length + 1}',
-            ipAddress: routerInfo['ip'] ?? '',
-            description: '${routerInfo['workgroup']} Router',
-          ),
-        );
-      }
-
-      if (helvarRouters.isNotEmpty) {
-        setState(() {
-          workgroups.add(
-            Workgroup(
-              id: (workgroups.length + 1).toString(),
-              description: selectedWorkgroup,
-              networkInterface: selectedInterface.name,
-              routers: helvarRouters,
-            ),
-          );
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Added workgroup: $selectedWorkgroup with '
-              '${helvarRouters.length} routers',
-            ),
-          ),
-        );
-      }
+      final discoveryTimeout = ref.read(discoveryTimeoutProvider);
+      await discoveryManager!.sendDiscoveryRequest(discoveryTimeout);
+      return discoveryManager!.getDiscoveredRouters();
     } catch (e) {
-      print('Error during discovery: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Discovery error: ${e.toString()}')),
-      );
+      _showErrorMessage('Discovery error: ${e.toString()}');
+      return [];
     } finally {
-      // Cleanup
       if (discoveryManager != null) {
         discoveryManager!.stop();
         discoveryManager = null;
@@ -186,6 +105,110 @@ class HomeScreenState extends State<HomeScreen> {
         isDiscovering = false;
       });
     }
+  }
+
+  Future<String?> _selectWorkgroup(List<String> workgroupNames) async {
+    if (workgroupNames.isEmpty) {
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Discovery Result'),
+            content:
+                const Text('No Helvar routers were discovered on the network.'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+      return null;
+    }
+
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return WorkgroupSelectionDialog(workgroups: workgroupNames);
+      },
+    );
+  }
+
+  void _createWorkgroup(String workgroupName, String networkInterfaceName,
+      List<Map<String, String>> discoveredRouters) {
+    List<HelvarRouter> helvarRouters = [];
+
+    for (var routerInfo in discoveredRouters.where(
+      (router) => router['workgroup'] == workgroupName,
+    )) {
+      helvarRouters.add(
+        HelvarRouter(
+          name: 'Router_${helvarRouters.length + 1}',
+          address: '1.${helvarRouters.length + 1}',
+          ipAddress: routerInfo['ip'] ?? '',
+          description: '${routerInfo['workgroup']} Router',
+        ),
+      );
+    }
+
+    if (helvarRouters.isNotEmpty) {
+      setState(() {
+        workgroups.add(
+          Workgroup(
+            id: (workgroups.length + 1).toString(),
+            description: workgroupName,
+            networkInterface: networkInterfaceName,
+            routers: helvarRouters,
+          ),
+        );
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Added workgroup: $workgroupName with ${helvarRouters.length} routers',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _showErrorMessage(String message) {
+    print('Error: $message');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _discoverWorkgroups() async {
+    final interfaceResult = await _selectNetworkInterface();
+    if (interfaceResult == null) return;
+
+    NetworkInterface selectedInterface = interfaceResult['interface'];
+    String selectedAddress = interfaceResult['address'];
+    String subnetMask = "255.255.255.0";
+    String broadcastAddress = DiscoveryManager.getBroadcastAddress(
+      selectedAddress,
+      subnetMask,
+    );
+
+    List<Map<String, String>> discoveredRouters =
+        await _performRouterDiscovery(broadcastAddress);
+
+    List<String> workgroupNames = discoveredRouters
+        .map((router) => router['workgroup'] ?? 'Unknown')
+        .toSet()
+        .toList();
+
+    final selectedWorkgroup = await _selectWorkgroup(workgroupNames);
+    if (selectedWorkgroup == null) return;
+
+    _createWorkgroup(
+        selectedWorkgroup, selectedInterface.name, discoveredRouters);
   }
 
   @override
@@ -278,7 +301,6 @@ class HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-      // Changed floating action button to perform discovery instead of add workgroup
       floatingActionButton: FloatingActionButton(
         onPressed: isDiscovering ? null : _discoverWorkgroups,
         tooltip: 'Discover Workgroup',
