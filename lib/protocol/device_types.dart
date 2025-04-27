@@ -1,16 +1,17 @@
 class DaliDeviceType {
   static const Map<int, String> types = {
-    0x00: 'Fluorescent Lamps',
-    0x01: 'Self-contained emergency lighting',
-    0x02: 'Discharge lamps (excluding fluorescent lamps)',
-    0x03: 'Low voltage halogen lamps',
-    0x04: 'Incandescent lamps',
-    0x05: 'Conversion into D.C. voltage (IEC 60929)',
-    0x06: 'LED modules',
-    0x07: 'Switching function (i.e., Relay)',
-    0x08: 'Colour control',
-    0x09: 'Sequencer',
-    // Values 0x0A and 0x0B-0xFE are undefined as per documentation
+    0x0001: 'Fluorescent Lamps',
+    0x0101: 'Self-contained emergency lighting',
+    0x0201: 'Discharge lamps (excluding fluorescent lamps)',
+    0x0301: 'Low voltage halogen lamps',
+    0x0401: 'Incandescent lamps',
+    0x0501: 'Conversion into D.C. voltage (IEC 60929)',
+    0x0601: 'LED modules',
+    0x0701: 'Switching function (i.e., Relay)',
+    0x0801: 'Colour control',
+    0x0901: 'Sequencer',
+    // 0x0A01 undefined
+    // 0x0B01 - 0xFE01 undefined
   };
 }
 
@@ -55,20 +56,20 @@ class DigidimDeviceType {
 class ImagineDeviceType {
   static const Map<int, String> types = {
     0x00000004: 'No device present',
-    0x000000F1: '474 – 4 Channel Ballast Controller - Relay Unit',
-    0x000000F2: '474 – 4 Channel Ballast Controller - Output Unit',
-    0x000000F3: '458/SW8 – 8-Channel Relay Module',
-    0x000000F4: '458/CTR8 – 8-Channel Ballast Controller',
-    0x000000F5: '458/OPT4 – Options Module',
-    0x000000F6: '498 – 8-Channel Relay Unit',
-    0x000000F7: '458/DIM8 – 8-Channel Dimmer',
-    0x000000F8: 'HES92060 – Sine Wave Dimmer',
-    0x000000F9: 'Ambience4 Dimmer',
-    0x000000FA: 'HES92020 – SCR Dimmer',
-    0x000000FB: 'HES98020 – Output Unit',
-    0x000000FC: 'HES92220 – Transistor Dimmer',
-    0x000000FE: 'HES98180-98291 – Relay Unit',
-    0x000000FF: 'Dimmer (old style, type undefined)',
+    0x0000F104: '474 – 4 Channel Ballast Controller - Relay Unit',
+    0x0000F204: '474 – 4 Channel Ballast Controller - Output Unit',
+    0x0000F304: '458/SW8 – 8-Channel Relay Module',
+    0x0000F404: '458/CTR8 – 8-Channel Ballast Controller',
+    0x0000F504: '458/OPT4 – Options Module',
+    0x0000F604: '498 – 8-Channel Relay Unit',
+    0x0000F704: '458/DIM8 – 8-Channel Dimmer',
+    0x0000F804: 'HES92060 – Sine Wave Dimmer',
+    0x0000F904: 'Ambience4 Dimmer',
+    0x0000FA04: 'HES92020 – SCR Dimmer',
+    0x0000FB04: 'HES98020 – Output Unit',
+    0x0000FC04: 'HES92220 – Transistor Dimmer',
+    0x0000FE04: 'HES98180-98291 – Relay Unit',
+    0x0000FF04: 'Dimmer (old style, type undefined)',
   };
 }
 
