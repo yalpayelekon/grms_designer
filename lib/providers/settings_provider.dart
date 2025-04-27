@@ -31,7 +31,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final themeModeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
-    final discoveryTimeout = prefs.getInt('discoveryTimeout') ?? 5000;
+    final discoveryTimeout = prefs.getInt('discoveryTimeout') ?? 15000;
 
     state = state.copyWith(
       themeMode: ThemeMode.values[themeModeIndex],
