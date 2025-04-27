@@ -38,11 +38,12 @@ class ProtocolType {
 
 class SceneStatus {
   static const Map<int, String> descriptions = {
-    128: 'Off',
-    129: 'Min level',
-    130: 'Max level',
-    137: 'Last Scene Percentage (0%)',
-    // Add all other scene statuses from the table
+    128: 'Off', // 0x0080
+    129: 'Min level', // 0x0081
+    130: 'Max level', // 0x0082
+    137: 'Last Scene Percentage (0%)', // 0x0089
+    138: 'Last Scene Percentage (1%)', // 0x008A
+    237: 'Last Scene Percentage (100%)' // 0x00ED
   };
 }
 

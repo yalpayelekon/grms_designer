@@ -66,7 +66,6 @@ class DiscoveryManager {
     for (int i = 0; i < ipList.length; i++) {
       String workgroupName = "Unknown";
       if (i < workgroupList.length) {
-        // Parse the workgroup name from the response
         String response = workgroupList[i];
         if (response.contains('=')) {
           workgroupName = response.split('=')[1].replaceAll('#', '');

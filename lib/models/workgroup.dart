@@ -20,17 +20,14 @@ class Workgroup {
     List<HelvarRouter>? routers,
   }) : routers = routers ?? [];
 
-  // Add a method to add a router
   void addRouter(HelvarRouter router) {
     routers.add(router);
   }
 
-  // Add a method to remove a router
   void removeRouter(HelvarRouter router) {
     routers.remove(router);
   }
 
-  // Equality comparison
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -39,7 +36,6 @@ class Workgroup {
   @override
   int get hashCode => id.hashCode;
 
-  // Optional: Conversion to and from JSON for persistence
   factory Workgroup.fromJson(Map<String, dynamic> json) {
     return Workgroup(
       id: json['id'] as String,
