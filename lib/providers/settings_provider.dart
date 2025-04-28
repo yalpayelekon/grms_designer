@@ -9,7 +9,7 @@ class AppSettings {
 
   const AppSettings({
     this.themeMode = ThemeMode.system,
-    this.discoveryTimeoutMs = 15000,
+    this.discoveryTimeoutMs = 10000,
   });
 
   AppSettings copyWith({
@@ -31,7 +31,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final themeModeIndex = prefs.getInt('themeMode') ?? ThemeMode.system.index;
-    final discoveryTimeout = prefs.getInt('discoveryTimeout') ?? 15000;
+    final discoveryTimeout = prefs.getInt('discoveryTimeout') ?? 10000;
 
     state = state.copyWith(
       themeMode: ThemeMode.values[themeModeIndex],

@@ -23,12 +23,8 @@ class WorkgroupDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Workgroup Info Section
             _buildInfoCard(context),
-
             const SizedBox(height: 24),
-
-            // Routers Section
             const Text(
               'Routers',
               style: TextStyle(
