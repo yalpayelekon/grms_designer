@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/screens/workgroup_detail_screen.dart';
 
 import '../models/workgroup.dart';
 import '../models/helvar_router.dart';
@@ -17,18 +18,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
-  List<Workgroup> workgroups = [
-    Workgroup(
-      id: '1',
-      description: 'Main Office Network',
-      networkInterface: 'eth0',
-    ),
-    Workgroup(
-      id: '2',
-      description: 'Warehouse Lighting',
-      networkInterface: 'eth1',
-    ),
-  ];
+  List<Workgroup> workgroups = [];
 
   bool isDiscovering = false;
   DiscoveryManager? discoveryManager;
@@ -45,8 +35,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _navigateToWorkgroupDetail(Workgroup workgroup) {
-    // TODO: Implement navigation to workgroup detail page
-    print('Navigate to Workgroup: ${workgroup.description}');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => WorkgroupDetailScreen(workgroup: workgroup),
+      ),
+    );
   }
 
   Future<NetworkInterfaceDetails?> _selectNetworkInterface() async {
