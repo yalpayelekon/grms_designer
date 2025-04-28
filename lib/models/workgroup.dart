@@ -1,6 +1,8 @@
+import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+
 import 'helvar_router.dart';
 
-class Workgroup {
+class Workgroup extends TreeNode {
   final String id;
   final String description;
   final String networkInterface;

@@ -5,6 +5,9 @@ import 'settings_screen.dart';
 import 'canvas_item.dart';
 import 'widget_type.dart';
 import 'grid_painter.dart';
+import 'workgroup_detail_screen.dart';
+import 'workgroup_list_screen.dart';
+import '../providers/workgroups_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +22,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool isPanelExpanded = false;
   Size canvasSize = const Size(2000, 2000); // Initial canvas size
   Offset canvasOffset = const Offset(0, 0); // Canvas position within the view
-
+  bool openWorkGroup = false;
   double scale = 1.0;
   Offset viewportOffset = const Offset(0, 0);
 
@@ -62,149 +65,164 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ],
               ),
+              // Add the workgroups tree node
               TreeNode(
-                content: const Text("Workgroups"),
-                children: [
-                  TreeNode(content: const Text("Groups")),
-                  TreeNode(content: const Text("Routers")),
-                  TreeNode(
-                    content: ElevatedButton.icon(
-                      label: const Text('Dynamic canvas'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const Text("Workgroups will be added")),
-                        );
-                      },
-                    ),
-                    children: [
-                      TreeNode(
-                        content: _buildDraggable(
-                            'Text', Icons.text_fields, WidgetType.text),
+                content: ElevatedButton.icon(
+                  icon: const Icon(Icons.group_work),
+                  label: const Text('Workgroups'),
+                  onPressed: () {
+                    setState(() {
+                      openWorkGroup = true;
+                    });
+                  },
+                ),
+                children: ref
+                    .watch(workgroupsProvider)
+                    .map(
+                      (workgroup) => TreeNode(
+                        content: ElevatedButton.icon(
+                          icon: const Icon(Icons.lan),
+                          label: Text(workgroup.description),
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    WorkgroupDetailScreen(workgroup: workgroup),
+                              ),
+                            );
+                          },
+                        ),
+                        children: [
+                          ...workgroup.routers.map(
+                            (router) => TreeNode(
+                                content: _buildDraggable(router.name,
+                                    Icons.text_fields, WidgetType.text)),
+                          )
+                        ],
                       ),
-                    ],
-                  ),
-                ],
+                    )
+                    .toList(),
               ),
             ]),
           ),
           Expanded(
-            child: InteractiveViewer(
-              constrained: false,
-              boundaryMargin: const EdgeInsets.all(double.infinity),
-              minScale: 0.5,
-              maxScale: 2.0,
-              scaleEnabled: true,
-              onInteractionEnd: (ScaleEndDetails details) {
-                setState(() {});
-              },
-              child: Stack(
-                children: [
-                  DragTarget<WidgetData>(
-                    onAcceptWithDetails: (details) {
-                      final widgetData = details.data;
-                      final globalPosition = details.offset;
-                      final RenderBox box =
-                          context.findRenderObject() as RenderBox;
-                      final localPosition = box.globalToLocal(globalPosition);
-
-                      setState(() {
-                        canvasItems.add(
-                          CanvasItem(
-                            type: widgetData.type, // Use data from details
-                            position:
-                                localPosition, // Use calculated local position
-                            size: const Size(150, 100), // Default size
-                          ),
-                        );
-                        selectedItemIndex = canvasItems.length - 1;
-                        isPanelExpanded = true; // Show properties panel
-                        _updateCanvasSize();
-                      });
+            child: openWorkGroup
+                ? const WorkgroupListScreen() // Show the WorkgroupListScreen when openWorkGroup is true
+                : InteractiveViewer(
+                    constrained: false,
+                    boundaryMargin: const EdgeInsets.all(double.infinity),
+                    minScale: 0.5,
+                    maxScale: 2.0,
+                    scaleEnabled: true,
+                    onInteractionEnd: (ScaleEndDetails details) {
+                      setState(() {});
                     },
-                    builder: (context, candidateData, rejectedData) {
-                      return Stack(
-                        children: [
-                          // Background
-                          Container(
-                            width: canvasSize.width,
-                            height: canvasSize.height,
-                            color: Colors.grey[50],
-                            child: Center(
-                              child: Text(
-                                canvasItems.isEmpty
-                                    ? 'Drag and drop items here'
-                                    : '',
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 18,
+                    child: Stack(
+                      children: [
+                        DragTarget<WidgetData>(
+                          onAcceptWithDetails: (details) {
+                            final widgetData = details.data;
+                            final globalPosition = details.offset;
+                            final RenderBox box =
+                                context.findRenderObject() as RenderBox;
+                            final localPosition =
+                                box.globalToLocal(globalPosition);
+
+                            setState(() {
+                              canvasItems.add(
+                                CanvasItem(
+                                  type:
+                                      widgetData.type, // Use data from details
+                                  position:
+                                      localPosition, // Use calculated local position
+                                  size: const Size(150, 100), // Default size
+                                ),
+                              );
+                              selectedItemIndex = canvasItems.length - 1;
+                              isPanelExpanded = true; // Show properties panel
+                              _updateCanvasSize();
+                            });
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            return Stack(
+                              children: [
+                                // Background
+                                Container(
+                                  width: canvasSize.width,
+                                  height: canvasSize.height,
+                                  color: Colors.grey[50],
+                                  child: Center(
+                                    child: Text(
+                                      canvasItems.isEmpty
+                                          ? 'Drag and drop items here'
+                                          : '',
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: canvasSize.width,
+                                  height: canvasSize.height,
+                                  child: CustomPaint(
+                                    painter: GridPainter(),
+                                    child: Container(),
+                                  ),
+                                ),
+                                ...canvasItems.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final item = entry.value;
+                                  return Positioned(
+                                    left: item.position.dx,
+                                    top: item.position.dy,
+                                    child: Text("selected widget:$index"),
+                                  );
+                                }),
+                              ],
+                            );
+                          },
+                        ),
+                        if (selectedItemIndex != null && isPanelExpanded)
+                          const Positioned(
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: 250,
+                            child: Text("selected widget details"),
+                          ),
+                        if (selectedItemIndex != null)
+                          Positioned(
+                            right: isPanelExpanded ? 250 : 0,
+                            top: 10,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  isPanelExpanded = !isPanelExpanded;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: const BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(8.0),
+                                    bottomLeft: Radius.circular(8.0),
+                                  ),
+                                ),
+                                child: Icon(
+                                  isPanelExpanded
+                                      ? Icons.arrow_forward
+                                      : Icons.arrow_back,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
                           ),
-                          SizedBox(
-                            width: canvasSize.width,
-                            height: canvasSize.height,
-                            child: CustomPaint(
-                              painter: GridPainter(),
-                              child: Container(),
-                            ),
-                          ),
-                          ...canvasItems.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final item = entry.value;
-                            return Positioned(
-                              left: item.position.dx,
-                              top: item.position.dy,
-                              child: Text("selected widget:$index"),
-                            );
-                          }),
-                        ],
-                      );
-                    },
+                      ],
+                    ),
                   ),
-                  if (selectedItemIndex != null && isPanelExpanded)
-                    const Positioned(
-                      right: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 250,
-                      child: Text("selected widget details"),
-                    ),
-                  if (selectedItemIndex != null)
-                    Positioned(
-                      right: isPanelExpanded ? 250 : 0,
-                      top: 10,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            isPanelExpanded = !isPanelExpanded;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: const BoxDecoration(
-                            color: Colors.blue,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(8.0),
-                              bottomLeft: Radius.circular(8.0),
-                            ),
-                          ),
-                          child: Icon(
-                            isPanelExpanded
-                                ? Icons.arrow_forward
-                                : Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
           ),
         ],
       ),

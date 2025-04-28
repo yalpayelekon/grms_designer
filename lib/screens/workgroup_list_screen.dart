@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/screens/workgroup_detail_screen.dart';
 
 import '../models/workgroup.dart';
@@ -9,33 +8,13 @@ import '../comm/discovery_manager.dart';
 import 'network_interface_dialog.dart';
 import 'workgroup_selection_dialog.dart';
 import '../providers/settings_provider.dart';
+import '../providers/workgroups_provider.dart';
 
-final workgroupsProvider =
-    StateNotifierProvider<WorkgroupsNotifier, List<Workgroup>>((ref) {
-  return WorkgroupsNotifier();
-});
-
-class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
-  WorkgroupsNotifier() : super([]);
-
-  void addWorkgroup(Workgroup workgroup) {
-    state = [...state, workgroup];
-  }
-
-  // Add other methods as needed (delete, update, etc.)
-}
-
-class WorkgroupListScreen extends ConsumerStatefulWidget implements TreeNode {
+class WorkgroupListScreen extends ConsumerStatefulWidget {
   const WorkgroupListScreen({super.key});
 
   @override
   WorkgroupListScreenState createState() => WorkgroupListScreenState();
-
-  @override
-  List<TreeNode>? get children => null; // Will be handled by the state class
-
-  @override
-  Widget get content => const Text('Workgroups');
 }
 
 class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
@@ -227,15 +206,15 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             itemCount: workgroups.length + 1,
             itemBuilder: (context, index) {
               if (index == workgroups.length) {
-                return Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: FloatingActionButton(
+                return ElevatedButton(
                     onPressed: isDiscovering ? null : _discoverWorkgroups,
-                    tooltip: 'Discover Workgroup',
-                    backgroundColor: isDiscovering ? Colors.grey : null,
-                    child: const Icon(Icons.search),
-                  ),
-                );
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search),
+                        Text('Discover Workgroup')
+                      ],
+                    ));
               }
               final workgroup = workgroups[index];
               return Card(
