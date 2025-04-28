@@ -1,8 +1,10 @@
+import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+
 import 'emergency_device.dart';
 import 'input_device.dart';
 import 'output_device.dart';
 
-abstract class HelvarDevice {
+abstract class HelvarDevice extends TreeNode {
   int deviceId;
   String address;
   String state;

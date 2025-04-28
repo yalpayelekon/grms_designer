@@ -23,12 +23,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
   bool isDiscovering = false;
   DiscoveryManager? discoveryManager;
 
-  void _deleteWorkgroup(Workgroup workgroup) {
-    setState(() {
-      workgroups.remove(workgroup);
-    });
-  }
-
   void _navigateToWorkgroupDetail(Workgroup workgroup) {
     Navigator.of(context).push(
       MaterialPageRoute(
