@@ -51,59 +51,106 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           Container(
             width: 300,
             color: Colors.grey[300],
-            child: TreeView(nodes: [
-              TreeNode(
-                content: const Text("Project"),
-                children: [
-                  TreeNode(content: const Text("Settings")),
-                  TreeNode(
-                    content: const Text("Files"),
-                    children: [
-                      TreeNode(content: const Text("Images")),
-                      TreeNode(content: const Text("Icons")),
-                    ],
-                  ),
-                ],
-              ),
-              // Add the workgroups tree node
-              TreeNode(
-                content: ElevatedButton.icon(
-                  icon: const Icon(Icons.group_work),
-                  label: const Text('Workgroups'),
-                  onPressed: () {
-                    setState(() {
-                      openWorkGroup = true;
-                    });
-                  },
-                ),
-                children: ref
-                    .watch(workgroupsProvider)
-                    .map(
-                      (workgroup) => TreeNode(
-                        content: ElevatedButton.icon(
-                          icon: const Icon(Icons.lan),
-                          label: Text(workgroup.description),
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    WorkgroupDetailScreen(workgroup: workgroup),
-                              ),
-                            );
-                          },
-                        ),
-                        children: [
-                          ...workgroup.routers.map(
-                            (router) => TreeNode(
-                                content: _buildDraggable(router.name,
-                                    Icons.text_fields, WidgetType.text)),
-                          )
-                        ],
+            child: Column(
+              children: [
+                Expanded(
+                  child: TreeView(nodes: [
+                    TreeNode(
+                      content: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            openWorkGroup = false;
+                          });
+                        },
+                        child: const Text("Project"),
                       ),
-                    )
-                    .toList(),
-              ),
-            ]),
+                      children: [
+                        TreeNode(
+                          content: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                openWorkGroup = false;
+                              });
+                            },
+                            child: const Text("Settings"),
+                          ),
+                        ),
+                        TreeNode(
+                          content: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                openWorkGroup = false;
+                              });
+                            },
+                            child: const Text("Files"),
+                          ),
+                          children: [
+                            TreeNode(
+                              content: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    openWorkGroup = false;
+                                  });
+                                },
+                                child: const Text("Images"),
+                              ),
+                            ),
+                            TreeNode(
+                              content: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    openWorkGroup = false;
+                                  });
+                                },
+                                child: const Text("Icons"),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    TreeNode(
+                      content: ElevatedButton.icon(
+                        icon: const Icon(Icons.group_work),
+                        label: const Text('Workgroups'),
+                        onPressed: () {
+                          setState(() {
+                            openWorkGroup = true;
+                          });
+                        },
+                      ),
+                      children: ref
+                          .watch(workgroupsProvider)
+                          .map(
+                            (workgroup) => TreeNode(
+                              content: ElevatedButton.icon(
+                                icon: const Icon(Icons.lan),
+                                label: Text(workgroup.description),
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          WorkgroupDetailScreen(
+                                              workgroup: workgroup),
+                                    ),
+                                  );
+                                },
+                              ),
+                              children: [
+                                ...workgroup.routers.map(
+                                  (router) => TreeNode(
+                                      content: _buildDraggable(router.name,
+                                          Icons.text_fields, WidgetType.text)),
+                                )
+                              ],
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ]),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: openWorkGroup
@@ -146,7 +193,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                           builder: (context, candidateData, rejectedData) {
                             return Stack(
                               children: [
-                                // Background
                                 Container(
                                   width: canvasSize.width,
                                   height: canvasSize.height,
