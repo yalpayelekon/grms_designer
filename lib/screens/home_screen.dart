@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/workgroup.dart';
@@ -50,10 +49,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     print('Navigate to Workgroup: ${workgroup.description}');
   }
 
-  Future<Map<String, dynamic>?> _selectNetworkInterface() async {
+  Future<NetworkInterfaceDetails?> _selectNetworkInterface() async {
     try {
-      List<NetworkInterface> interfaces =
-          await DiscoveryManager.getNetworkInterfaces();
+      List<NetworkInterfaceDetails> interfaces =
+          await discoveryManager!.getNetworkInterfaces();
 
       if (interfaces.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,14 +61,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         return null;
       }
 
-      final result = await showDialog<Map<String, dynamic>>(
+      final result = await showDialog<NetworkInterfaceDetails>(
         context: context,
         builder: (BuildContext context) {
           return NetworkInterfaceDialog(interfaces: interfaces);
         },
       );
 
-      if (result == null || result['address'] == null) {
+      if (result == null) {
         return null;
       }
 
@@ -81,16 +80,20 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<List<Map<String, String>>> _performRouterDiscovery(
-      String broadcastAddress) async {
+      NetworkInterfaceDetails interfaceResult) async {
     setState(() {
       isDiscovering = true;
     });
 
     try {
-      discoveryManager = DiscoveryManager(broadcastAddress);
-      await discoveryManager!.start();
+      await discoveryManager!.start(interfaceResult.ipv4!);
       final discoveryTimeout = ref.read(discoveryTimeoutProvider);
-      await discoveryManager!.sendDiscoveryRequest(discoveryTimeout);
+      final broadcastAddress = discoveryManager!.calculateBroadcastAddress(
+        interfaceResult.ipv4!,
+        interfaceResult.subnetMask!,
+      );
+      await discoveryManager!
+          .sendDiscoveryRequest(discoveryTimeout, broadcastAddress);
       return discoveryManager!.getDiscoveredRouters();
     } catch (e) {
       _showErrorMessage('Discovery error: ${e.toString()}');
@@ -185,19 +188,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _discoverWorkgroups() async {
+    discoveryManager = DiscoveryManager();
     final interfaceResult = await _selectNetworkInterface();
     if (interfaceResult == null) return;
 
-    NetworkInterface selectedInterface = interfaceResult['interface'];
-    String selectedAddress = interfaceResult['address'];
-    String subnetMask = "255.255.255.0";
-    String broadcastAddress = DiscoveryManager.getBroadcastAddress(
-      selectedAddress,
-      subnetMask,
-    );
-
     List<Map<String, String>> discoveredRouters =
-        await _performRouterDiscovery(broadcastAddress);
+        await _performRouterDiscovery(interfaceResult);
 
     List<String> workgroupNames = discoveredRouters
         .map((router) => router['workgroup'] ?? 'Unknown')
@@ -208,7 +204,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     if (selectedWorkgroup == null) return;
 
     _createWorkgroup(
-        selectedWorkgroup, selectedInterface.name, discoveredRouters);
+        selectedWorkgroup, interfaceResult.name, discoveredRouters);
   }
 
   @override

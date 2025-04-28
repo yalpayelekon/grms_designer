@@ -1,65 +1,48 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 
 class NetworkInterfaceDialog extends StatefulWidget {
   const NetworkInterfaceDialog({super.key, required this.interfaces});
 
-  final List<NetworkInterface> interfaces;
+  final List<NetworkInterfaceDetails> interfaces;
 
   @override
   NetworkInterfaceDialogState createState() => NetworkInterfaceDialogState();
 }
 
 class NetworkInterfaceDialogState extends State<NetworkInterfaceDialog> {
-  NetworkInterface? selectedInterface;
-  String? selectedAddress;
+  NetworkInterfaceDetails? selectedInterface;
 
   @override
   void initState() {
     super.initState();
     if (widget.interfaces.isNotEmpty) {
       selectedInterface = widget.interfaces.first;
-      if (selectedInterface!.addresses.isNotEmpty) {
-        selectedAddress = selectedInterface!.addresses.first.address;
-      }
     }
-  }
-
-  String getDisplayName(NetworkInterface interface) {
-    if (interface.addresses.isEmpty) {
-      return '${interface.name} (No address)';
-    }
-    return '${interface.name} - ${interface.addresses.first.address}';
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Select Interface / Address'),
-      content: DropdownButton<NetworkInterface>(
+      content: DropdownButton<NetworkInterfaceDetails>(
         isExpanded: true,
         value: selectedInterface,
-        onChanged: (NetworkInterface? newValue) {
+        onChanged: (NetworkInterfaceDetails? newValue) {
           if (newValue != null) {
             setState(() {
               selectedInterface = newValue;
-              if (selectedInterface!.addresses.isNotEmpty) {
-                selectedAddress = selectedInterface!.addresses.first.address;
-              } else {
-                selectedAddress = null;
-              }
             });
           }
         },
         items:
-            widget.interfaces.map<DropdownMenuItem<NetworkInterface>>((
-              NetworkInterface interface,
-            ) {
-              return DropdownMenuItem<NetworkInterface>(
-                value: interface,
-                child: Text(getDisplayName(interface)),
-              );
-            }).toList(),
+            widget.interfaces.map<DropdownMenuItem<NetworkInterfaceDetails>>((
+          NetworkInterfaceDetails interface,
+        ) {
+          return DropdownMenuItem<NetworkInterfaceDetails>(
+            value: interface,
+            child: Text('${interface.name} - ${interface.ipv4 ?? "No IP"}'),
+          );
+        }).toList(),
       ),
       actions: <Widget>[
         TextButton(
@@ -73,10 +56,27 @@ class NetworkInterfaceDialogState extends State<NetworkInterfaceDialog> {
           onPressed: () {
             Navigator.of(
               context,
-            ).pop({'interface': selectedInterface, 'address': selectedAddress});
+            ).pop(selectedInterface);
           },
         ),
       ],
     );
+  }
+}
+
+class NetworkInterfaceDetails {
+  final String name;
+  String? ipv4;
+  String? subnetMask;
+  String? gateway;
+
+  NetworkInterfaceDetails({required this.name});
+
+  @override
+  String toString() {
+    return '''
+Interface: $name
+  IPv4: ${ipv4 ?? 'N/A'} Subnet Mask: ${subnetMask ?? 'N/A'}
+''';
   }
 }
