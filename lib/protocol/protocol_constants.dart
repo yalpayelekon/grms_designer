@@ -1,4 +1,6 @@
 const int maxMessageLength = 1500;
+const int defaultTcpPort = 50000;
+const int defaultUdpPort = 50001;
 
 class MessageType {
   static const String command = '>'; // Command message

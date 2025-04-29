@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import '../protocol/commands/discovery_commands.dart';
+import '../protocol/protocol_constants.dart';
 import '../screens/network_interface_dialog.dart';
 
 class DiscoveryManager {
@@ -11,8 +12,8 @@ class DiscoveryManager {
 
   Future<void> start(String interfaceIp) async {
     try {
-      _socket =
-          await RawDatagramSocket.bind(InternetAddress(interfaceIp), 50001);
+      _socket = await RawDatagramSocket.bind(
+          InternetAddress(interfaceIp), defaultUdpPort);
       isRunning = true;
 
       _socket!.listen((RawSocketEvent event) {

@@ -6,15 +6,13 @@ import '../protocol/commands/query_commands.dart';
 import '../protocol/message_parser.dart';
 
 class HelvarDeviceDiscoveryService {
-  static const int defaultPort = 50000;
-
   Future<List<Map<String, dynamic>>> discoverDevices(
       String routerIpAddress) async {
     Socket? socket;
     List<Map<String, dynamic>> discoveredDevices = [];
 
     try {
-      socket = await Socket.connect(routerIpAddress, defaultPort);
+      socket = await Socket.connect(routerIpAddress, defaultTcpPort);
       final clusters = await _discoverClusters(socket);
       if (clusters.isEmpty) {
         debugPrint('No clusters found');
@@ -92,6 +90,7 @@ class HelvarDeviceDiscoveryService {
       },
     );
     final queryCommand = QueryCommands.queryClusters();
+
     socket.write(queryCommand);
     final result = await completer.future.timeout(
       const Duration(seconds: 5),
