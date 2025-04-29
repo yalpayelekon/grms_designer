@@ -636,8 +636,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
         newDevices.add(device);
       }
-
-      // Add devices to the router
       for (final device in newDevices) {
         await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
               widget.workgroup.id,

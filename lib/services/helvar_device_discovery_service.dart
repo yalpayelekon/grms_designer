@@ -1,12 +1,8 @@
-// lib/services/helvar_device_discovery_service.dart
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import '../models/helvar_device.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/commands/query_commands.dart';
-import '../protocol/commands/discovery_commands.dart';
 import '../protocol/message_parser.dart';
 
 class HelvarDeviceDiscoveryService {
@@ -18,23 +14,15 @@ class HelvarDeviceDiscoveryService {
     List<Map<String, dynamic>> discoveredDevices = [];
 
     try {
-      // Connect to the router using TCP
       socket = await Socket.connect(routerIpAddress, defaultPort);
-
-      // Step 1: Discover clusters
       final clusters = await _discoverClusters(socket);
       if (clusters.isEmpty) {
         debugPrint('No clusters found');
         return [];
       }
-
-      // Step 2: For each cluster, query routers
       for (final cluster in clusters) {
         final routers = await _queryRoutersInCluster(socket, cluster);
-
-        // Step 3: For each router and subnet, query devices
         for (final router in routers) {
-          // HelvarNet protocol supports subnets 1-4
           for (int subnet = 1; subnet <= 4; subnet++) {
             final devices =
                 await _queryDevicesInSubnet(socket, cluster, router, subnet);
@@ -55,14 +43,11 @@ class HelvarDeviceDiscoveryService {
   Future<List<int>> _discoverClusters(Socket socket) async {
     final completer = Completer<List<int>>();
     final List<int> clusters = [];
-
-    // Set up a subscription to listen for responses
     final subscription = socket.asBroadcastStream().listen(
       (List<int> data) {
         final response = String.fromCharCodes(data).trim();
 
         try {
-          // Parse the response to get clusters
           final parsedResponse = parseResponse(response);
           if (parsedResponse.containsKey('error')) {
             debugPrint(
@@ -80,7 +65,6 @@ class HelvarDeviceDiscoveryService {
                 }
               }
             } else if (responseData is String) {
-              // Handle case where response data is a comma-separated string
               final clusterStrings = responseData.split(',');
               for (final clusterStr in clusterStrings) {
                 final clusterNum = int.tryParse(clusterStr.trim());
@@ -107,12 +91,8 @@ class HelvarDeviceDiscoveryService {
         }
       },
     );
-
-    // Send command to query clusters
     final queryCommand = QueryCommands.queryClusters();
     socket.write(queryCommand);
-
-    // Wait for response with timeout
     final result = await completer.future.timeout(
       const Duration(seconds: 5),
       onTimeout: () {
@@ -128,8 +108,6 @@ class HelvarDeviceDiscoveryService {
   Future<List<int>> _queryRoutersInCluster(Socket socket, int cluster) async {
     final completer = Completer<List<int>>();
     final List<int> routers = [];
-
-    // Set up a subscription to listen for responses
     final subscription = socket.asBroadcastStream().listen(
       (List<int> data) {
         final response = String.fromCharCodes(data).trim();
@@ -152,7 +130,6 @@ class HelvarDeviceDiscoveryService {
                 }
               }
             } else if (responseData is String) {
-              // Handle case where response data is a comma-separated string
               final routerStrings = responseData.split(',');
               for (final routerStr in routerStrings) {
                 final routerNum = int.tryParse(routerStr.trim());
@@ -179,12 +156,8 @@ class HelvarDeviceDiscoveryService {
         }
       },
     );
-
-    // Send command to query routers in the cluster
     final queryCommand = QueryCommands.queryRouters(cluster);
     socket.write(queryCommand);
-
-    // Wait for response with timeout
     final result = await completer.future.timeout(
       const Duration(seconds: 5),
       onTimeout: () {
@@ -201,8 +174,6 @@ class HelvarDeviceDiscoveryService {
       Socket socket, int cluster, int router, int subnet) async {
     final completer = Completer<List<Map<String, dynamic>>>();
     final List<Map<String, dynamic>> devices = [];
-
-    // Set up a subscription to listen for responses
     final subscription = socket.asBroadcastStream().listen(
       (List<int> data) {
         final response = String.fromCharCodes(data).trim();
@@ -210,10 +181,7 @@ class HelvarDeviceDiscoveryService {
         try {
           final parsedResponse = parseResponse(response);
           if (parsedResponse.containsKey('error')) {
-            // If the subnet doesn't exist, just complete with empty list
-            if (parsedResponse['error'] == ErrorCode.deviceNotExist
-                // || parsedResponse['error'] == ErrorCode.subnetNotExist
-                ) {
+            if (parsedResponse['error'] == ErrorCode.deviceNotExist) {
               completer.complete([]);
               return;
             }
@@ -225,7 +193,6 @@ class HelvarDeviceDiscoveryService {
           if (parsedResponse.containsKey('data')) {
             final responseData = parsedResponse['data'];
             if (responseData is String) {
-              // Parse the response which may contain device types and addresses
               // Format: "deviceType1@address1,deviceType2@address2,..."
               final entries = responseData.split(',');
 
@@ -235,8 +202,6 @@ class HelvarDeviceDiscoveryService {
                   if (parts.length == 2) {
                     final deviceType = parts[0].trim();
                     final address = parts[1].trim();
-
-                    // Only add valid addresses with 4 parts (cluster.router.subnet.device)
                     if (_isValidAddress(address)) {
                       devices.add({
                         'cluster': cluster,
@@ -269,13 +234,8 @@ class HelvarDeviceDiscoveryService {
         }
       },
     );
-
-    // Using command 100 - Query Device Types and Addresses
-    // This is the equivalent to the queryDeviceTypes method that was missing
     final command = '>V:1,C:100,@$cluster.$router.$subnet#';
     socket.write(command);
-
-    // Wait for response with timeout
     final result = await completer.future.timeout(
       const Duration(seconds: 5),
       onTimeout: () {
@@ -286,8 +246,6 @@ class HelvarDeviceDiscoveryService {
     );
 
     await subscription.cancel();
-
-    // Enrich device information by querying more details for each device
     final enrichedDevices = <Map<String, dynamic>>[];
     for (final device in result) {
       try {
@@ -316,22 +274,15 @@ class HelvarDeviceDiscoveryService {
     final Map<String, dynamic> deviceInfo = {};
 
     try {
-      // Query device description
       final description = await _queryDeviceDescription(
           socket, cluster, router, subnet, device);
       deviceInfo['description'] =
           description.isNotEmpty ? description : 'Device $device';
-
-      // Query device state
       final deviceState =
           await _queryDeviceState(socket, cluster, router, subnet, device);
       deviceInfo['state'] = deviceState;
-
-      // Determine device type based on hex ID
       final helvarType = _determineDeviceCategory(deviceInfo['hexId'] ?? '');
       deviceInfo['helvarType'] = helvarType;
-
-      // If it's an output device, also query load level
       if (helvarType == 'output') {
         final level =
             await _queryLoadLevel(socket, cluster, router, subnet, device);
@@ -403,7 +354,6 @@ class HelvarDeviceDiscoveryService {
             if (stateValue is String) {
               final stateInt = int.tryParse(stateValue);
               if (stateInt != null) {
-                // Convert state int value to readable format
                 final stateMap = decodeDeviceState(stateInt);
                 state = stateMap.entries
                     .where((entry) => entry.value)
@@ -504,7 +454,7 @@ class HelvarDeviceDiscoveryService {
   }
 
   String _getDeviceTypeFromHexId(String hexId) {
-    // This would use your device_types.dart mapping
+    // This would use device_types.dart mapping
     // For example, checking against DaliDeviceType, DigidimDeviceType, etc.
     // For now, return a placeholder based on hex pattern
 
@@ -537,7 +487,6 @@ class HelvarDeviceDiscoveryService {
     } else if (hexId.contains('emergency') || hexId.contains('Emergency')) {
       return 'emergency';
     } else {
-      // Default to output for unknown devices
       return 'output';
     }
   }
