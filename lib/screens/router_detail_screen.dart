@@ -104,7 +104,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   }
 
   Widget _buildDeviceCard(HelvarDevice device) {
-    // Determine icon based on device type
     IconData deviceIcon;
     switch (device.helvarType) {
       case 'input':
@@ -192,8 +191,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
       final routerStorageService = ref.read(routerStorageServiceProvider);
       final devices = await routerStorageService.importRouterDevices(filePath);
-
-      // Show confirmation dialog
       if (!mounted) return;
       final merge = await showDialog<bool>(
         context: context,
@@ -220,10 +217,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         });
         return;
       }
-
-      // Update the router with imported devices
       if (merge) {
-        // Merge: Add new devices while keeping existing ones
         final existingAddresses =
             widget.router.devices.map((d) => d.address).toSet();
         final newDevices = devices
@@ -242,7 +236,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           SnackBar(content: Text('Added ${newDevices.length} new devices')),
         );
       } else {
-        // Replace: Clear existing devices and add imported ones
         widget.router.devices.clear();
 
         for (final device in devices) {
@@ -259,8 +252,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                   Text('Replaced with ${devices.length} imported devices')),
         );
       }
-
-      // Refresh the screen
       setState(() {
         _devices = widget.router.devices;
         _isLoading = false;
@@ -317,28 +308,24 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   }
 
   void _addOutputDevice() {
-    // We'll implement this in a future PR with proper device creation dialog
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Add Output Device feature coming soon')),
     );
   }
 
   void _addInputDevice() {
-    // We'll implement this in a future PR with proper device creation dialog
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Add Input Device feature coming soon')),
     );
   }
 
   void _addEmergencyDevice() {
-    // We'll implement this in a future PR with proper device creation dialog
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Add Emergency Device feature coming soon')),
     );
   }
 
   void _editDevice(HelvarDevice device) {
-    // We'll implement this in a future PR with proper device editing dialog
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Edit Device feature coming soon')),
     );
@@ -382,8 +369,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           content: Text('Device deleted'),
         ),
       );
-
-      // Refresh the devices list
       setState(() {
         _devices = widget.router.devices;
       });
@@ -411,7 +396,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
               _buildDetailRow('Block ID', device.blockId),
               _buildDetailRow('Scene ID', device.sceneId),
               _buildDetailRow('Fade Time', '${device.fadeTime}ms'),
-              // Add more device properties as needed
             ],
           ),
         ),

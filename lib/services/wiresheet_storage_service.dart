@@ -7,19 +7,14 @@ import '../models/wiresheet.dart';
 
 class WiresheetStorageService {
   static const String _wiresheetsDirectory = 'wiresheets';
-
-  /// Get the application documents directory path
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
     return directory.path;
   }
 
-  /// Get the full path to the wiresheets directory
   Future<String> get _wiresheetsPath async {
     final path = await _localPath;
     final dir = Directory('$path/$_wiresheetsDirectory');
-
-    // Create directory if it doesn't exist
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
@@ -27,13 +22,11 @@ class WiresheetStorageService {
     return dir.path;
   }
 
-  /// Get the full path to a specific wiresheet file
   Future<String> _getWiresheetFilePath(String id) async {
     final dirPath = await _wiresheetsPath;
     return '$dirPath/wiresheet_$id.json';
   }
 
-  /// Save a wiresheet to a file
   Future<void> saveWiresheet(Wiresheet wiresheet) async {
     try {
       final filePath = await _getWiresheetFilePath(wiresheet.id);
@@ -49,7 +42,6 @@ class WiresheetStorageService {
     }
   }
 
-  /// Load a wiresheet from a file
   Future<Wiresheet?> loadWiresheet(String id) async {
     try {
       final filePath = await _getWiresheetFilePath(id);
@@ -70,7 +62,6 @@ class WiresheetStorageService {
     }
   }
 
-  /// Delete a wiresheet file
   Future<bool> deleteWiresheet(String id) async {
     try {
       final filePath = await _getWiresheetFilePath(id);
@@ -90,7 +81,6 @@ class WiresheetStorageService {
     }
   }
 
-  /// List all wiresheets
   Future<List<Wiresheet>> listWiresheets() async {
     try {
       final dirPath = await _wiresheetsPath;
@@ -114,8 +104,6 @@ class WiresheetStorageService {
           }
         }
       }
-
-      // Sort by modified date (newest first)
       wiresheets.sort((a, b) => b.modifiedAt.compareTo(a.modifiedAt));
 
       return wiresheets;
@@ -125,7 +113,6 @@ class WiresheetStorageService {
     }
   }
 
-  /// Create a new wiresheet
   Future<Wiresheet> createWiresheet(String name) async {
     final id = const Uuid().v4();
     final wiresheet = Wiresheet(
@@ -137,20 +124,16 @@ class WiresheetStorageService {
     return wiresheet;
   }
 
-  /// Check if default wiresheet exists, create if not
   Future<Wiresheet> ensureDefaultWiresheet() async {
     final wiresheets = await listWiresheets();
 
     if (wiresheets.isEmpty) {
-      // Create default wiresheet
       return createWiresheet('Default Wiresheet');
     } else {
-      // Return the first wiresheet
       return wiresheets.first;
     }
   }
 
-  /// Rename a wiresheet
   Future<Wiresheet?> renameWiresheet(String id, String newName) async {
     final wiresheet = await loadWiresheet(id);
 
@@ -164,7 +147,6 @@ class WiresheetStorageService {
     return null;
   }
 
-  /// Duplicate a wiresheet
   Future<Wiresheet?> duplicateWiresheet(String id, String newName) async {
     final original = await loadWiresheet(id);
 

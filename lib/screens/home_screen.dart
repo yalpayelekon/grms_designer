@@ -33,13 +33,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         title: const Text('HelvarNet Manager'),
         centerTitle: true,
         actions: [
-          // Export button
           IconButton(
             icon: const Icon(Icons.upload_file),
             tooltip: 'Export Workgroups',
             onPressed: () => _exportWorkgroups(context),
           ),
-          // Import button
           IconButton(
             icon: const Icon(Icons.download_rounded),
             tooltip: 'Import Workgroups',
@@ -145,7 +143,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ),
                             ),
-                            // Wiresheets folder node
                             TreeNode(
                               content: Row(
                                 mainAxisAlignment:
@@ -355,14 +352,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
     } else {
-      // Fallback to welcome screen
       return const Center(
         child: Text('Please select an option from the sidebar'),
       );
     }
   }
 
-  // New method to handle workgroups export
   Future<void> _exportWorkgroups(BuildContext context) async {
     try {
       final filePath = await FileDialogHelper.pickJsonFileToSave();
@@ -384,12 +379,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  // New method to handle workgroups import
   Future<void> _importWorkgroups(BuildContext context) async {
     try {
       final filePath = await FileDialogHelper.pickJsonFileToOpen();
       if (filePath != null) {
-        // Show dialog to confirm merge or replace
         if (mounted) {
           final result = await showDialog<bool>(
             context: context,
@@ -409,8 +402,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           );
-
-          // Import with merge flag based on dialog result
           if (result != null) {
             await ref.read(workgroupsProvider.notifier).importWorkgroups(
                   filePath,
@@ -504,8 +495,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (result == true) {
       await ref.read(wiresheetsProvider.notifier).deleteWiresheet(wiresheetId);
-
-      // If the active wiresheet was deleted, reset the selection
       if (selectedWiresheetId == wiresheetId) {
         setState(() {
           selectedWiresheetId = null;

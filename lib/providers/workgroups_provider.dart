@@ -18,15 +18,11 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         super([]) {
     _initializeData();
   }
-
-  /// Initialize data from storage
   Future<void> _initializeData() async {
     if (_initialized) return;
 
     try {
       final workgroups = await _fileStorageService.loadWorkgroups();
-
-      // Load devices for each router
       for (var workgroup in workgroups) {
         for (var router in workgroup.routers) {
           try {
@@ -34,8 +30,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
               workgroup.id,
               router.address,
             );
-
-            // Update router with loaded devices
             router.devices.clear();
             router.devices.addAll(devices);
           } catch (e) {
@@ -51,12 +45,9 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
-  /// Save current state to storage
   Future<void> _saveToStorage() async {
     try {
       await _fileStorageService.saveWorkgroups(state);
-
-      // Save devices for each router
       for (var workgroup in state) {
         for (var router in workgroup.routers) {
           try {
@@ -75,19 +66,16 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
-  /// Add a new workgroup
   void addWorkgroup(Workgroup workgroup) {
     state = [...state, workgroup];
     _saveToStorage();
   }
 
-  /// Remove a workgroup by ID
   void removeWorkgroup(String id) {
     state = state.where((wg) => wg.id != id).toList();
     _saveToStorage();
   }
 
-  /// Update an existing workgroup
   void updateWorkgroup(Workgroup updatedWorkgroup) {
     state = state
         .map((wg) => wg.id == updatedWorkgroup.id ? updatedWorkgroup : wg)
@@ -95,13 +83,11 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     _saveToStorage();
   }
 
-  /// Clear all workgroups
   void clearWorkgroups() {
     state = [];
     _saveToStorage();
   }
 
-  /// Add a device to a router
   Future<void> addDeviceToRouter(
       String workgroupId, String routerAddress, HelvarDevice device) async {
     final newState = [...state];
@@ -117,8 +103,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         router.addDevice(device);
 
         state = newState;
-
-        // Save only the updated router's devices
         try {
           await _routerStorageService.saveRouterDevices(
             workgroupId,
@@ -128,8 +112,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         } catch (e) {
           debugPrint('Error saving devices for router ${router.name}: $e');
         }
-
-        // Also save the overall workgroups state
         try {
           await _fileStorageService.saveWorkgroups(state);
         } catch (e) {
@@ -139,7 +121,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
-  /// Remove a device from a router
   Future<void> removeDeviceFromRouter(
       String workgroupId, String routerAddress, HelvarDevice device) async {
     final newState = [...state];
@@ -155,8 +136,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         router.removeDevice(device);
 
         state = newState;
-
-        // Save only the updated router's devices
         try {
           await _routerStorageService.saveRouterDevices(
             workgroupId,
@@ -166,8 +145,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         } catch (e) {
           debugPrint('Error saving devices for router ${router.name}: $e');
         }
-
-        // Also save the overall workgroups state
         try {
           await _fileStorageService.saveWorkgroups(state);
         } catch (e) {
@@ -177,7 +154,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
-  /// Update a device in a router
   Future<void> updateDeviceInRouter(String workgroupId, String routerAddress,
       HelvarDevice oldDevice, HelvarDevice updatedDevice) async {
     final newState = [...state];
@@ -196,8 +172,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
           router.devices[deviceIndex] = updatedDevice;
 
           state = newState;
-
-          // Save only the updated router's devices
           try {
             await _routerStorageService.saveRouterDevices(
               workgroupId,
@@ -207,8 +181,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
           } catch (e) {
             debugPrint('Error saving devices for router ${router.name}: $e');
           }
-
-          // Also save the overall workgroups state
           try {
             await _fileStorageService.saveWorkgroups(state);
           } catch (e) {
@@ -219,41 +191,31 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
-  /// Export workgroups to a specific file
   Future<void> exportWorkgroups(String filePath) async {
     await _fileStorageService.exportWorkgroups(state, filePath);
   }
 
-  /// Import workgroups from a specific file and merge with current
   Future<void> importWorkgroups(String filePath, {bool merge = false}) async {
     final importedWorkgroups =
         await _fileStorageService.importWorkgroups(filePath);
 
     if (merge) {
-      // Create a new list with all existing workgroups
       final List<Workgroup> newState = [...state];
-
-      // Add or update imported workgroups
       for (final importedWg in importedWorkgroups) {
         final existingIndex =
             newState.indexWhere((wg) => wg.id == importedWg.id);
 
         if (existingIndex >= 0) {
-          // Update existing
           newState[existingIndex] = importedWg;
         } else {
-          // Add new
           newState.add(importedWg);
         }
       }
 
       state = newState;
     } else {
-      // Replace all
       state = importedWorkgroups;
     }
-
-    // Now we need to save the devices for each router
     for (var workgroup in state) {
       for (var router in workgroup.routers) {
         try {
@@ -267,8 +229,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         }
       }
     }
-
-    // Save the workgroups state
     try {
       await _fileStorageService.saveWorkgroups(state);
     } catch (e) {
@@ -277,7 +237,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 }
 
-/// Provider for the singleton storage services
 final fileStorageServiceProvider = Provider<FileStorageService>((ref) {
   return FileStorageService();
 });
@@ -285,8 +244,6 @@ final fileStorageServiceProvider = Provider<FileStorageService>((ref) {
 final routerStorageServiceProvider = Provider<RouterStorageService>((ref) {
   return RouterStorageService();
 });
-
-/// Provider for workgroups state
 final workgroupsProvider =
     StateNotifierProvider<WorkgroupsNotifier, List<Workgroup>>((ref) {
   return WorkgroupsNotifier(

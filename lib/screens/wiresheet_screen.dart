@@ -15,14 +15,10 @@ class WiresheetScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wiresheets = ref.watch(wiresheetsProvider);
-
-    // Find the wiresheet with the given ID
     final wiresheet = wiresheets.firstWhere(
       (sheet) => sheet.id == wiresheetId,
       orElse: () => null as Wiresheet, // This will throw if not found
     );
-
-    // Set the active wiresheet
     ref.read(wiresheetsProvider.notifier).setActiveWiresheet(wiresheetId);
 
     return Scaffold(

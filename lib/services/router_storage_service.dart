@@ -55,7 +55,6 @@ class RouterStorageService {
     }
   }
 
-  /// Export router devices to a specific file path
   Future<void> exportRouterDevices(
       List<HelvarDevice> devices, String filePath) async {
     try {
@@ -90,7 +89,6 @@ class RouterStorageService {
     }
   }
 
-  /// Update devices for a router within a workgroup
   Future<void> updateRouterDevices(
       String workgroupId, HelvarRouter router) async {
     try {

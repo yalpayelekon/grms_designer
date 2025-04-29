@@ -200,8 +200,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             ),
             const Divider(),
             const SizedBox(height: 16),
-
-            // Label
             TextField(
               decoration: const InputDecoration(
                 labelText: 'Label',
@@ -218,8 +216,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
               },
             ),
             const SizedBox(height: 16),
-
-            // Type
             DropdownButtonFormField<WidgetType>(
               decoration: const InputDecoration(
                 labelText: 'Type',
@@ -245,8 +241,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
               }).toList(),
             ),
             const SizedBox(height: 16),
-
-            // Position
             Row(
               children: [
                 Expanded(
@@ -299,8 +293,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
               ],
             ),
             const SizedBox(height: 16),
-
-            // Size
             Row(
               children: [
                 Expanded(
@@ -353,8 +345,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
               ],
             ),
             const SizedBox(height: 24),
-
-            // Delete button
             ElevatedButton.icon(
               icon: const Icon(Icons.delete),
               label: const Text('Delete Item'),
@@ -374,11 +364,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                 });
               },
             ),
-
-            // Spacer to push content to the top
             const Spacer(),
-
-            // Close panel button
             TextButton.icon(
               icon: const Icon(Icons.close),
               label: const Text('Close Panel'),
@@ -426,8 +412,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         widget.wiresheet.canvasOffset.dx - extraWidth,
         newCanvasOffset.dy,
       );
-
-      // Update all items' positions
       final updatedItems = List<CanvasItem>.from(widget.wiresheet.canvasItems);
       for (int i = 0; i < updatedItems.length; i++) {
         final item = updatedItems[i];
@@ -454,8 +438,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         newCanvasOffset.dx,
         widget.wiresheet.canvasOffset.dy - extraHeight,
       );
-
-      // Update all items' positions
       final updatedItems = List<CanvasItem>.from(widget.wiresheet.canvasItems);
       for (int i = 0; i < updatedItems.length; i++) {
         final item = updatedItems[i];
