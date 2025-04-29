@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/emergency_device.dart';
 import '../models/helvar_router.dart';
 import '../models/helvar_device.dart';
+import '../models/input_device.dart';
+import '../models/output_device.dart';
 import '../models/workgroup.dart';
 import '../providers/workgroups_provider.dart';
 import '../utils/file_dialog_helper.dart';
+import '../services/helvar_device_discovery_service.dart';
+import 'add_device_dialog.dart';
 
 class RouterDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -23,11 +28,72 @@ class RouterDetailScreen extends ConsumerStatefulWidget {
 class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   late List<HelvarDevice> _devices;
   bool _isLoading = false;
+  final HelvarDeviceDiscoveryService _discoveryService =
+      HelvarDeviceDiscoveryService();
+
+  final Map<String, List<HelvarDevice>> _devicesBySubnet = {};
 
   @override
   void initState() {
     super.initState();
     _devices = widget.router.devices;
+    _organizeDevicesBySubnet();
+  }
+
+  void _organizeDevicesBySubnet() {
+    _devicesBySubnet.clear();
+
+    for (final device in _devices) {
+      final addressParts = device.address.split('.');
+      if (addressParts.length >= 3) {
+        final subnetId = addressParts.sublist(0, 3).join('.');
+
+        if (!_devicesBySubnet.containsKey(subnetId)) {
+          _devicesBySubnet[subnetId] = [];
+        }
+
+        _devicesBySubnet[subnetId]!.add(device);
+      }
+    }
+  }
+
+  void _addOutputDevice() {
+    _showAddDeviceDialog(DeviceType.output);
+  }
+
+  void _addInputDevice() {
+    _showAddDeviceDialog(DeviceType.input);
+  }
+
+  void _addEmergencyDevice() {
+    _showAddDeviceDialog(DeviceType.emergency);
+  }
+
+  Future<void> _showAddDeviceDialog(DeviceType initialType) async {
+    final device = await showDialog<HelvarDevice>(
+      context: context,
+      builder: (context) => AddDeviceDialog(
+        nextDeviceId: _devices.length + 1,
+      ),
+    );
+
+    if (device != null) {
+      await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
+            widget.workgroup.id,
+            widget.router.address,
+            device,
+          );
+
+      setState(() {
+        _devices = widget.router.devices;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Device added successfully')),
+        );
+      }
+    }
   }
 
   @override
@@ -39,6 +105,10 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'discover',
+                child: Text('Discover Devices'),
+              ),
               const PopupMenuItem(
                 value: 'import',
                 child: Text('Import Devices from File'),
@@ -86,19 +156,39 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                   style: TextStyle(fontSize: 18),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add a Device'),
-                  onPressed: () => _handleMenuAction('add_output'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.search),
+                      label: const Text('Discover Devices'),
+                      onPressed: _discoverDevices,
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Manually'),
+                      onPressed: () => _handleMenuAction('add_output'),
+                    ),
+                  ],
                 ),
               ],
             ),
           )
         : ListView.builder(
-            itemCount: _devices.length,
+            itemCount: _devicesBySubnet.length,
             itemBuilder: (context, index) {
-              final device = _devices[index];
-              return _buildDeviceCard(device);
+              final subnetId = _devicesBySubnet.keys.elementAt(index);
+              final subnetDevices = _devicesBySubnet[subnetId] ?? [];
+
+              return ExpansionTile(
+                title:
+                    Text('Subnet $subnetId (${subnetDevices.length} devices)'),
+                initiallyExpanded: index == 0, // Expand first subnet by default
+                children: subnetDevices
+                    .map((device) => _buildDeviceCard(device))
+                    .toList(),
+              );
             },
           );
   }
@@ -162,6 +252,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
   void _handleMenuAction(String action) async {
     switch (action) {
+      case 'discover':
+        await _discoverDevices();
+        break;
       case 'import':
         await _importDevices();
         break;
@@ -307,24 +400,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     }
   }
 
-  void _addOutputDevice() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add Output Device feature coming soon')),
-    );
-  }
-
-  void _addInputDevice() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add Input Device feature coming soon')),
-    );
-  }
-
-  void _addEmergencyDevice() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add Emergency Device feature coming soon')),
-    );
-  }
-
   void _editDevice(HelvarDevice device) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Edit Device feature coming soon')),
@@ -428,5 +503,132 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _discoverDevices() async {
+    if (widget.router.ipAddress.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Router IP address is not set')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final discoveredDevices =
+          await _discoveryService.discoverDevices(widget.router.ipAddress);
+
+      if (discoveredDevices.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No devices discovered')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      if (!mounted) return;
+      final shouldAdd = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Devices Discovered'),
+              content: Text(
+                  'Found ${discoveredDevices.length} devices. Do you want to add them?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Add Devices'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+
+      if (!shouldAdd || !mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final existingAddresses = _devices.map((d) => d.address).toSet();
+      final newDeviceInfos = discoveredDevices
+          .where((d) => !existingAddresses.contains(d['address']))
+          .toList();
+
+      final newDevices = <HelvarDevice>[];
+      for (final deviceInfo in newDeviceInfos) {
+        final HelvarDevice device;
+        final nextId = _devices.length + newDevices.length + 1;
+
+        if (deviceInfo['helvarType'] == 'input') {
+          device = HelvarDriverInputDevice(
+            deviceId: nextId,
+            address: deviceInfo['address'] ?? '',
+            description: deviceInfo['description'] ?? 'Input Device',
+            hexId: deviceInfo['hexId'] ?? '',
+            props: deviceInfo['type'] ?? 'Unknown',
+            state: deviceInfo['state'] ?? '',
+          );
+        } else if (deviceInfo['helvarType'] == 'emergency') {
+          device = HelvarDriverEmergencyDevice(
+            deviceId: nextId,
+            address: deviceInfo['address'] ?? '',
+            description: deviceInfo['description'] ?? 'Emergency Device',
+            hexId: deviceInfo['hexId'] ?? '',
+            props: deviceInfo['type'] ?? 'Unknown',
+            state: deviceInfo['state'] ?? '',
+            emergency: true,
+          );
+        } else {
+          device = HelvarDriverOutputDevice(
+            deviceId: nextId,
+            address: deviceInfo['address'] ?? '',
+            description: deviceInfo['description'] ?? 'Output Device',
+            hexId: deviceInfo['hexId'] ?? '',
+            props: deviceInfo['type'] ?? 'Unknown',
+            state: deviceInfo['state'] ?? '',
+            level: deviceInfo['level'] ?? 100,
+          );
+        }
+
+        newDevices.add(device);
+      }
+
+      // Add devices to the router
+      for (final device in newDevices) {
+        await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
+              widget.workgroup.id,
+              widget.router.address,
+              device,
+            );
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Added ${newDevices.length} devices')),
+      );
+
+      setState(() {
+        _devices = widget.router.devices;
+        _organizeDevicesBySubnet();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error discovering devices: $e')),
+      );
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 }
