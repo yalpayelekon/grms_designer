@@ -47,8 +47,6 @@ class DiscoveryManager {
     try {
       String command = DiscoveryCommands.queryWorkgroupName();
       List<int> commandBytes = List<int>.from(command.codeUnits);
-      commandBytes.addAll([0, 0, 0, 0]);
-
       Uint8List data = Uint8List.fromList(commandBytes);
 
       _socket!.send(data, InternetAddress(targetNetwork), 50001);
