@@ -292,7 +292,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     if (openWorkGroup) {
       return const WorkgroupListScreen();
     } else if (openWiresheet && selectedWiresheetId != null) {
-      return WiresheetScreen(wiresheetId: selectedWiresheetId!);
+      return WiresheetScreen(
+        wiresheetId: selectedWiresheetId!,
+        showBackButton: false,
+      );
     } else if (showingProject) {
       return Center(
         child: Column(

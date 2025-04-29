@@ -365,7 +365,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Device deleted'),
         ),
       );

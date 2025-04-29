@@ -6,10 +6,12 @@ import '../widgets/wiresheet_editor.dart';
 
 class WiresheetScreen extends ConsumerWidget {
   final String wiresheetId;
+  final bool showBackButton;
 
   const WiresheetScreen({
     super.key,
     required this.wiresheetId,
+    this.showBackButton = true,
   });
 
   @override
@@ -24,6 +26,12 @@ class WiresheetScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(wiresheet.name),
+        leading: showBackButton
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -116,10 +124,12 @@ class WiresheetScreen extends ConsumerWidget {
 
                 if (duplicate != null && context.mounted) {
                   Navigator.of(context).pop();
-                  Navigator.of(context).pushReplacement(
+                  Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) =>
-                          WiresheetScreen(wiresheetId: duplicate.id),
+                      builder: (context) => WiresheetScreen(
+                        wiresheetId: duplicate.id,
+                        showBackButton: true,
+                      ),
                     ),
                   );
                 }
