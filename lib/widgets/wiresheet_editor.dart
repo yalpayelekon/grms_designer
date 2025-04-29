@@ -39,32 +39,35 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           },
           child: Stack(
             children: [
-              DragTarget<WidgetData>(
+              DragTarget<Object>(
                 onAcceptWithDetails: (details) {
-                  final widgetData = details.data;
+                  final data = details.data;
                   final globalPosition = details.offset;
                   final RenderBox box = context.findRenderObject() as RenderBox;
                   final localPosition = box.globalToLocal(globalPosition);
 
-                  final newItem = CanvasItem(
-                    type: widgetData.type,
-                    position: localPosition,
-                    size: const Size(150, 100),
-                    label:
-                        'New Item ${widget.wiresheet.canvasItems.length + 1}',
-                  );
+                  if (data is WidgetData) {
+                    final newItem = CanvasItem(
+                      type: data.type,
+                      position: localPosition,
+                      size: const Size(150, 100),
+                      label:
+                          'New Item ${widget.wiresheet.canvasItems.length + 1}',
+                    );
 
-                  ref.read(wiresheetsProvider.notifier).addWiresheetItem(
-                        widget.wiresheet.id,
-                        newItem,
-                      );
+                    ref.read(wiresheetsProvider.notifier).addWiresheetItem(
+                          widget.wiresheet.id,
+                          newItem,
+                        );
 
-                  setState(() {
-                    selectedItemIndex = widget.wiresheet.canvasItems.length - 1;
-                    isPanelExpanded = true;
-                  });
+                    setState(() {
+                      selectedItemIndex =
+                          widget.wiresheet.canvasItems.length - 1;
+                      isPanelExpanded = true;
+                    });
 
-                  _updateCanvasSize();
+                    _updateCanvasSize();
+                  }
                 },
                 builder: (context, candidateData, rejectedData) {
                   return Stack(
@@ -102,38 +105,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                         return Positioned(
                           left: item.position.dx,
                           top: item.position.dy,
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedItemIndex = index;
-                                isPanelExpanded = true;
-                              });
-                            },
-                            child: Container(
-                              width: item.size.width,
-                              height: item.size.height,
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.2),
-                                border: Border.all(
-                                  color: selectedItemIndex == index
-                                      ? Colors.blue
-                                      : Colors.grey,
-                                  width: selectedItemIndex == index ? 2.0 : 1.0,
-                                ),
-                                borderRadius: BorderRadius.circular(4.0),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  item.label ?? "Item $index",
-                                  style: TextStyle(
-                                    fontWeight: selectedItemIndex == index
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          child: _buildDraggableCanvasItem(item, index),
                         );
                       }),
                     ],
@@ -172,6 +144,115 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
+    return Draggable<int>(
+      data: index, // Pass the index of the item for identification
+      feedback: Material(
+        elevation: 4,
+        color: Colors.transparent,
+        child: Container(
+          width: item.size.width,
+          height: item.size.height,
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.4),
+            border: Border.all(
+              color: Colors.blue,
+              width: 2.0,
+            ),
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: Center(
+            child: Text(
+              item.label ?? "Item $index",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: Container(
+          width: item.size.width,
+          height: item.size.height,
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.2),
+            border: Border.all(
+              color: Colors.grey,
+              width: 1.0,
+            ),
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+        ),
+      ),
+      onDragEnd: (details) {
+        if (details.wasAccepted) {
+          final RenderBox box = context.findRenderObject() as RenderBox;
+          final localOffset = box.globalToLocal(details.offset);
+          final updatedItem = item.copyWith(
+            position: localOffset,
+          );
+
+          ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
+                widget.wiresheet.id,
+                index,
+                updatedItem,
+              );
+        }
+      },
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            selectedItemIndex = index;
+            isPanelExpanded = true;
+          });
+        },
+        child: Container(
+          width: item.size.width,
+          height: item.size.height,
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.2),
+            border: Border.all(
+              color: selectedItemIndex == index ? Colors.blue : Colors.grey,
+              width: selectedItemIndex == index ? 2.0 : 1.0,
+            ),
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: Text(
+                  item.label ?? "Item $index",
+                  style: TextStyle(
+                    fontWeight: selectedItemIndex == index
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color:
+                        selectedItemIndex == index ? Colors.blue : Colors.grey,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(4.0),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
