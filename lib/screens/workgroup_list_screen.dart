@@ -35,11 +35,15 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
           await discoveryManager!.getNetworkInterfaces();
 
       if (interfaces.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No network interfaces found')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No network interfaces found')),
+          );
+        }
         return null;
       }
+
+      if (!mounted) return null;
 
       final result = await showDialog<NetworkInterfaceDetails>(
         context: context,
@@ -92,6 +96,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   Future<String?> _selectWorkgroup(List<String> workgroupNames) async {
     if (workgroupNames.isEmpty) {
+      if (!mounted) return null;
+
       await showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -113,6 +119,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
       return null;
     }
 
+    if (!mounted) return null;
+
     return showDialog<String>(
       context: context,
       builder: (BuildContext context) {
@@ -123,6 +131,66 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   void _createWorkgroup(String workgroupName, String networkInterfaceName,
       List<Map<String, String>> discoveredRouters) {
+    final existingWorkgroups = ref.read(workgroupsProvider);
+    final existingWorkgroup = existingWorkgroups
+        .where((wg) => wg.description == workgroupName)
+        .toList();
+
+    if (existingWorkgroup.isNotEmpty) {
+      final workgroup = existingWorkgroup.first;
+      final existingRouterIps =
+          workgroup.routers.map((r) => r.ipAddress).toSet();
+
+      List<HelvarRouter> newRouters = [];
+      for (var routerInfo in discoveredRouters.where(
+        (router) =>
+            router['workgroup'] == workgroupName &&
+            !existingRouterIps.contains(router['ip']),
+      )) {
+        newRouters.add(
+          HelvarRouter(
+            name: 'Router_${workgroup.routers.length + newRouters.length + 1}',
+            address: '1.${workgroup.routers.length + newRouters.length + 1}',
+            ipAddress: routerInfo['ip'] ?? '',
+            description: '${routerInfo['workgroup']} Router',
+          ),
+        );
+      }
+
+      if (newRouters.isNotEmpty) {
+        final updatedWorkgroup = Workgroup(
+          id: workgroup.id,
+          description: workgroup.description,
+          networkInterface: workgroup.networkInterface,
+          routers: [...workgroup.routers, ...newRouters],
+        );
+
+        ref.read(workgroupsProvider.notifier).updateWorkgroup(updatedWorkgroup);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Updated workgroup: $workgroupName with ${newRouters.length} new routers',
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'No new routers found for existing workgroup: $workgroupName',
+              ),
+            ),
+          );
+        }
+      }
+
+      return;
+    }
+
     List<HelvarRouter> helvarRouters = [];
 
     for (var routerInfo in discoveredRouters.where(
@@ -140,30 +208,33 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
     if (helvarRouters.isNotEmpty) {
       final workgroup = Workgroup(
-        id: (ref.read(workgroupsProvider).length + 1).toString(),
+        id: (existingWorkgroups.length + 1).toString(),
         description: workgroupName,
         networkInterface: networkInterfaceName,
         routers: helvarRouters,
       );
 
-      // Add workgroup to the provider instead of local state
       ref.read(workgroupsProvider.notifier).addWorkgroup(workgroup);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Added workgroup: $workgroupName with ${helvarRouters.length} routers',
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Added workgroup: $workgroupName with ${helvarRouters.length} routers',
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
   void _showErrorMessage(String message) {
     print('Error: $message');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
   }
 
   Future<void> _discoverWorkgroups() async {
@@ -188,7 +259,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Access workgroups from the provider
     final workgroups = ref.watch(workgroupsProvider);
 
     return isDiscovering
@@ -202,47 +272,151 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
               ],
             ),
           )
-        : ListView.builder(
-            itemCount: workgroups.length + 1,
-            itemBuilder: (context, index) {
-              if (index == workgroups.length) {
-                return ElevatedButton(
-                    onPressed: isDiscovering ? null : _discoverWorkgroups,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search),
-                        Text('Discover Workgroup')
-                      ],
-                    ));
-              }
-              final workgroup = workgroups[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+        : Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: workgroups.length,
+                  itemBuilder: (context, index) {
+                    final workgroup = workgroups[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            title: Text(
+                              workgroup.description,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              'Network: ${workgroup.networkInterface}\n'
+                              'Routers: ${workgroup.routers.length}',
+                            ),
+                            isThreeLine: true,
+                            onTap: () => _navigateToWorkgroupDetail(workgroup),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () =>
+                                  _confirmDeleteWorkgroup(workgroup),
+                              tooltip: 'Remove workgroup',
+                            ),
+                          ),
+                          const Divider(),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton.icon(
+                                  icon: const Icon(Icons.search),
+                                  label: const Text('Discover More Routers'),
+                                  onPressed: () =>
+                                      _discoverMoreRouters(workgroup),
+                                ),
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  icon: const Icon(Icons.edit),
+                                  label: const Text('Edit'),
+                                  onPressed: () =>
+                                      _navigateToWorkgroupDetail(workgroup),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                child: ListTile(
-                  title: Text(
-                    workgroup.description,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.search),
+                  label: const Text('Discover New Workgroup'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
                   ),
-                  subtitle: Text(
-                    'Network: ${workgroup.networkInterface}\n'
-                    'Routers: ${workgroup.routers.length}',
-                  ),
-                  isThreeLine: true,
-                  onTap: () => _navigateToWorkgroupDetail(workgroup),
+                  onPressed: isDiscovering ? null : _discoverWorkgroups,
                 ),
-              );
-            },
+              ),
+            ],
           );
+  }
+
+  Future<void> _confirmDeleteWorkgroup(Workgroup workgroup) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Workgroup'),
+        content: Text(
+            'Are you sure you want to delete the workgroup "${workgroup.description}"?'
+            '\n\nThis will remove ${workgroup.routers.length} router(s) from the list.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      ref.read(workgroupsProvider.notifier).removeWorkgroup(workgroup.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Workgroup "${workgroup.description}" deleted'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _discoverMoreRouters(Workgroup workgroup) async {
+    discoveryManager = DiscoveryManager();
+    final interfaceResult = await _selectNetworkInterface();
+    if (interfaceResult == null) return;
+
+    List<Map<String, String>> discoveredRouters =
+        await _performRouterDiscovery(interfaceResult);
+
+    final matchingRouters = discoveredRouters
+        .where((router) => router['workgroup'] == workgroup.description)
+        .toList();
+
+    if (matchingRouters.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No matching routers found for this workgroup'),
+          ),
+        );
+      }
+      return;
+    }
+
+    _createWorkgroup(
+        workgroup.description, workgroup.networkInterface, matchingRouters);
   }
 
   @override
   void dispose() {
     if (discoveryManager != null) {
       discoveryManager!.stop();
+      discoveryManager = null;
     }
     super.dispose();
   }

@@ -8,6 +8,7 @@ import 'grid_painter.dart';
 import 'workgroup_detail_screen.dart';
 import 'workgroup_list_screen.dart';
 import '../providers/workgroups_provider.dart';
+import '../utils/file_dialog_helper.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +34,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         title: const Text('HelvarNet Manager'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file),
+            tooltip: 'Export Workgroups',
+            onPressed: () => _exportWorkgroups(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.download_rounded),
+            tooltip: 'Import Workgroups',
+            onPressed: () => _importWorkgroups(context),
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
@@ -139,8 +150,21 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               children: [
                                 ...workgroup.routers.map(
                                   (router) => TreeNode(
-                                      content: _buildDraggable(router.name,
-                                          Icons.text_fields, WidgetType.text)),
+                                    content: _buildDraggable(router.name,
+                                        Icons.router, WidgetType.text),
+                                    children: router.devices
+                                        .map(
+                                          (device) => TreeNode(
+                                            content: _buildDraggable(
+                                                device.description.isEmpty
+                                                    ? "Device_${device.deviceId}"
+                                                    : device.description,
+                                                Icons.device_unknown,
+                                                WidgetType.text),
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
                                 )
                               ],
                             ),
@@ -273,6 +297,77 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _exportWorkgroups(BuildContext context) async {
+    try {
+      final filePath = await FileDialogHelper.pickJsonFileToSave();
+      if (filePath != null) {
+        await ref.read(workgroupsProvider.notifier).exportWorkgroups(filePath);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Workgroups exported to $filePath')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error exporting workgroups: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importWorkgroups(BuildContext context) async {
+    try {
+      final filePath = await FileDialogHelper.pickJsonFileToOpen();
+      if (filePath != null) {
+        if (mounted) {
+          final result = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Import Workgroups'),
+              content: const Text(
+                  'Do you want to merge with existing workgroups or replace them?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Replace'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Merge'),
+                ),
+              ],
+            ),
+          );
+
+          if (result != null) {
+            await ref.read(workgroupsProvider.notifier).importWorkgroups(
+                  filePath,
+                  merge: result,
+                );
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      'Workgroups ${result ? 'merged' : 'imported'} from $filePath'),
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error importing workgroups: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildDraggable(String label, IconData icon, WidgetType type) {
