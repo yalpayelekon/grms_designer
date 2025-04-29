@@ -6,113 +6,70 @@ void main() async {
   final routerIP = '10.11.1.85'; // Your router's IP
   final tcpPort = 50000;
 
-  print('HelvarNet Complete Discovery Test');
-  print('===============================');
+  print('HelvarNet Final Discovery Test');
+  print('============================');
 
   try {
-    // Step 1: Get subnet list
-    print('\nStep 1: Get Subnet List');
-    final subnets = await discoverSubnets(routerIP, tcpPort);
+    // Step 1: Query fundamental information to understand the structure
+    print('\nStep 1: Basic System Information');
 
-    if (subnets.isEmpty) {
-      print('No subnets found');
-      return;
+    // Query software version
+    await sendCommand(
+        routerIP, tcpPort, '>V:1,C:190#', 'Query Software Version');
+
+    // Query protocol version
+    await sendCommand(
+        routerIP, tcpPort, '>V:1,C:191#', 'Query HelvarNet Version');
+
+    // Step 2: Try to discover subnets
+    print('\nStep 2: Subnet Discovery Methods');
+
+    // Standard subnet query that works
+    await sendCommand(routerIP, tcpPort, '>V:2,C:100,@#', 'Query All Subnets');
+
+    // Try with different cluster values (0-3) since we keep getting "cluster doesn't exist"
+    for (int cluster = 0; cluster <= 3; cluster++) {
+      await sendCommand(routerIP, tcpPort, '>V:2,C:100,@$cluster#',
+          'Query Subnets in Cluster $cluster');
     }
 
-    print('Found ${subnets.length} subnets: $subnets');
+    // Step 3: Group discovery works, let's explore that
+    print('\nStep 3: Group Discovery');
 
-    // Step 2: Discover devices on each subnet
-    print('\nStep 2: Discover Devices');
-    for (final subnet in subnets) {
-      print('\nScanning subnet: $subnet');
-      final devices = await discoverDevicesOnSubnet(routerIP, tcpPort, subnet);
-
-      if (devices.isEmpty) {
-        print('No devices found on subnet $subnet');
-        continue;
-      }
-
-      print('Found ${devices.length} devices on subnet $subnet: $devices');
-
-      // Step 3: Get device details
-      print('\nStep 3: Get Device Details');
-      for (final device in devices) {
-        print('\nQuering device: $device');
-        await getDeviceDetails(routerIP, tcpPort, device);
-      }
+    // Query multiple groups
+    for (int group = 201; group <= 211; group++) {
+      await sendCommand(routerIP, tcpPort, '>V:1,C:105,G:$group#',
+          'Query Group $group Description');
     }
+
+    // Step 4: Try device discovery through groups
+    print('\nStep 4: Device Discovery Through Groups');
+
+    // For each group, query the last scene
+    for (int group = 201; group <= 211; group++) {
+      // Query last scene in block for this group
+      await sendCommand(routerIP, tcpPort, '>V:1,C:103,G:$group,B:1#',
+          'Query Last Scene in Block 1 for Group $group');
+
+      // Try to query group load level
+      await sendCommand(routerIP, tcpPort, '>V:1,C:161,G:$group#',
+          'Query Group $group Power Consumption');
+    }
+
+    // Step 5: Try different addressing formats for subnets
+    print('\nStep 5: Alternative Subnet Addressing');
+
+    // Try subnet 1 with different syntax (based on cluster ID from Designer: 10.11.1.0)
+    final clusterValue = "10.11.1.0";
+    await sendCommand(routerIP, tcpPort, '>V:2,C:100,@$clusterValue.1#',
+        'Query Devices in Subnet 1 (with Cluster)');
+
+    // Try using router ID value from the Designer image (202596)
+    await sendCommand(routerIP, tcpPort, '>V:2,C:100,@202596.1#',
+        'Query Devices in Subnet 1 (with Router ID)');
   } catch (e) {
     print('Error: $e');
   }
-}
-
-Future<List<String>> discoverSubnets(String routerIP, int port) async {
-  final subnets = <String>[];
-
-  final response =
-      await sendCommand(routerIP, port, '>V:2,C:100,@#', 'Query Subnets');
-
-  if (response.startsWith('?') && response.contains('=')) {
-    final data = response.split('=')[1].replaceAll('#', '');
-    final subnetList = data.split(',');
-
-    for (final subnet in subnetList) {
-      if (subnet.contains('@')) {
-        final parts = subnet.split('@');
-        if (parts.length >= 2) {
-          // Check if this is a real subnet (not the 65xxx reserved values)
-          final index = int.tryParse(parts[1]);
-          if (index != null && index < 65000) {
-            subnets.add(parts[1]);
-          }
-        }
-      }
-    }
-  }
-
-  return subnets;
-}
-
-Future<List<String>> discoverDevicesOnSubnet(
-    String routerIP, int port, String subnet) async {
-  final devices = <String>[];
-
-  final response = await sendCommand(routerIP, port, '>V:2,C:100,@1.$subnet#',
-      'Query Devices on Subnet $subnet');
-
-  if (response.startsWith('?') && response.contains('=')) {
-    final data = response.split('=')[1].replaceAll('#', '');
-    final deviceList = data.split(',');
-
-    for (final device in deviceList) {
-      if (device.contains('@')) {
-        final parts = device.split('@');
-        if (parts.length >= 2) {
-          devices.add('1.$subnet.${parts[1]}');
-        }
-      }
-    }
-  }
-
-  return devices;
-}
-
-Future<void> getDeviceDetails(
-    String routerIP, int port, String deviceAddress) async {
-  // Get device type
-  final typeResponse = await sendCommand(
-      routerIP, port, '>V:1,C:104,@$deviceAddress#', 'Query Device Type');
-  print('Type response: $typeResponse');
-
-  // Get device description
-  final descResponse = await sendCommand(routerIP, port,
-      '>V:1,C:106,@$deviceAddress#', 'Query Device Description');
-  print('Description response: $descResponse');
-
-  // If it's a load, query load level
-  final levelResponse = await sendCommand(
-      routerIP, port, '>V:1,C:152,@$deviceAddress#', 'Query Load Level');
-  print('Level response: $levelResponse');
 }
 
 Future<String> sendCommand(
@@ -177,7 +134,8 @@ String getErrorMessage(int code) {
     15: 'Invalid message command',
     16: 'Missing ASCII terminator',
     17: 'Missing ASCII parameter',
-    18: 'Incompatible version'
+    18: 'Incompatible version',
+    27: 'Invalid colour parameter'
   };
 
   return errorMessages[code] ?? 'Unknown error';
