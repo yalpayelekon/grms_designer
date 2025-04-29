@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+// ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as path;
 
 class AppDirectoryService {

@@ -1,4 +1,3 @@
-// Create a new file: lib/screens/add_device_dialog.dart
 import 'package:flutter/material.dart';
 import '../models/emergency_device.dart';
 import '../models/helvar_device.dart';
@@ -9,11 +8,13 @@ enum DeviceType { output, input, emergency }
 
 class AddDeviceDialog extends StatefulWidget {
   final int nextDeviceId;
+  final List<String> existingSubnets;
 
   const AddDeviceDialog({
-    Key? key,
+    super.key,
     required this.nextDeviceId,
-  }) : super(key: key);
+    required this.existingSubnets,
+  });
 
   @override
   AddDeviceDialogState createState() => AddDeviceDialogState();
@@ -24,6 +25,16 @@ class AddDeviceDialogState extends State<AddDeviceDialog> {
   DeviceType _deviceType = DeviceType.output;
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
+  String? _selectedSubnet;
+  final _deviceIndexController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingSubnets.isNotEmpty) {
+      _selectedSubnet = widget.existingSubnets.first;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,22 +67,73 @@ class AddDeviceDialogState extends State<AddDeviceDialog> {
                 }).toList(),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(
-                  labelText: 'Device Address (e.g., 1.1.1.1)',
-                  border: OutlineInputBorder(),
+              if (widget.existingSubnets.isNotEmpty) ...[
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(
+                    labelText: 'Subnet',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _selectedSubnet,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedSubnet = value;
+                      });
+                    }
+                  },
+                  items: [
+                    ...widget.existingSubnets.map((subnet) {
+                      return DropdownMenuItem<String>(
+                        value: subnet,
+                        child: Text('Subnet $subnet'),
+                      );
+                    }),
+                    const DropdownMenuItem<String>(
+                      value: 'custom',
+                      child: Text('Custom Subnet...'),
+                    ),
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a device address';
-                  }
-                  if (!RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(value)) {
-                    return 'Please enter a valid address (e.g., 1.1.1.1)';
-                  }
-                  return null;
-                },
-              ),
+                const SizedBox(height: 16),
+              ],
+              if (_selectedSubnet == 'custom' || widget.existingSubnets.isEmpty)
+                TextFormField(
+                  controller: _addressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Device Address (e.g., 1.1.1.1)',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a device address';
+                    }
+                    if (!RegExp(r'^\d+\.\d+\.\d+\.\d+$').hasMatch(value)) {
+                      return 'Please enter a valid address (e.g., 1.1.1.1)';
+                    }
+                    return null;
+                  },
+                )
+              else ...[
+                TextFormField(
+                  controller: _deviceIndexController,
+                  decoration: const InputDecoration(
+                    labelText: 'Device Index',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a device index';
+                    }
+                    if (int.tryParse(value) == null ||
+                        int.parse(value) < 1 ||
+                        int.parse(value) > 255) {
+                      return 'Please enter a valid device index (1-255)';
+                    }
+                    return null;
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
@@ -92,22 +154,37 @@ class AddDeviceDialogState extends State<AddDeviceDialog> {
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
+              final String deviceAddress;
+
+              if (_selectedSubnet != 'custom' &&
+                  _selectedSubnet != null &&
+                  widget.existingSubnets.isNotEmpty) {
+                deviceAddress =
+                    '$_selectedSubnet.${_deviceIndexController.text}';
+              } else {
+                deviceAddress = _addressController.text;
+              }
+
               final HelvarDevice device;
 
               switch (_deviceType) {
                 case DeviceType.input:
                   device = HelvarDriverInputDevice(
                     deviceId: widget.nextDeviceId,
-                    address: _addressController.text,
-                    description: _descriptionController.text,
+                    address: deviceAddress,
+                    description: _descriptionController.text.isEmpty
+                        ? 'Input Device ${widget.nextDeviceId}'
+                        : _descriptionController.text,
                     props: '',
                   );
                   break;
                 case DeviceType.emergency:
                   device = HelvarDriverEmergencyDevice(
                     deviceId: widget.nextDeviceId,
-                    address: _addressController.text,
-                    description: _descriptionController.text,
+                    address: deviceAddress,
+                    description: _descriptionController.text.isEmpty
+                        ? 'Emergency Device ${widget.nextDeviceId}'
+                        : _descriptionController.text,
                     emergency: true,
                   );
                   break;
@@ -115,8 +192,10 @@ class AddDeviceDialogState extends State<AddDeviceDialog> {
                 default:
                   device = HelvarDriverOutputDevice(
                     deviceId: widget.nextDeviceId,
-                    address: _addressController.text,
-                    description: _descriptionController.text,
+                    address: deviceAddress,
+                    description: _descriptionController.text.isEmpty
+                        ? 'Output Device ${widget.nextDeviceId}'
+                        : _descriptionController.text,
                   );
                   break;
               }
@@ -128,5 +207,13 @@ class AddDeviceDialogState extends State<AddDeviceDialog> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    _descriptionController.dispose();
+    _deviceIndexController.dispose();
+    super.dispose();
   }
 }

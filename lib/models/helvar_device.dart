@@ -5,6 +5,10 @@ import 'input_device.dart';
 import 'output_device.dart';
 
 abstract class HelvarDevice extends TreeNode {
+  int cluster;
+  int routerId;
+  int subnet;
+  int deviceIndex;
   int deviceId;
   String address;
   String state;
@@ -21,6 +25,10 @@ abstract class HelvarDevice extends TreeNode {
   String helvarType;
   bool pointsCreated;
   HelvarDevice({
+    this.cluster = 1,
+    this.routerId = 1,
+    this.subnet = 1,
+    this.deviceIndex = 1,
     this.deviceId = 1,
     this.address = "@",
     this.state = "",
@@ -36,7 +44,23 @@ abstract class HelvarDevice extends TreeNode {
     this.out = "",
     this.helvarType = "output",
     this.pointsCreated = false,
-  });
+  }) {
+    if (address.startsWith('@')) {
+      address = address.substring(1);
+    }
+
+    final parts = address.split('.');
+    if (parts.length == 4) {
+      try {
+        cluster = int.parse(parts[0]);
+        routerId = int.parse(parts[1]);
+        subnet = int.parse(parts[2]);
+        deviceIndex = int.parse(parts[3]);
+      } catch (e) {
+        print("Error in HelvarDevice creation:$e");
+      }
+    }
+  }
 
   factory HelvarDevice.fromJson(Map<String, dynamic> json) {
     if (json['helvarType'] == "input") {

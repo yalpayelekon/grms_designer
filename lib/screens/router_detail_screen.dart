@@ -70,10 +70,13 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   }
 
   Future<void> _showAddDeviceDialog(DeviceType initialType) async {
+    final existingSubnets = _devicesBySubnet.keys.toList();
+
     final device = await showDialog<HelvarDevice>(
       context: context,
       builder: (context) => AddDeviceDialog(
         nextDeviceId: _devices.length + 1,
+        existingSubnets: existingSubnets,
       ),
     );
 
@@ -86,6 +89,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
       setState(() {
         _devices = widget.router.devices;
+        _organizeDevicesBySubnet();
       });
 
       if (mounted) {
@@ -446,6 +450,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       );
       setState(() {
         _devices = widget.router.devices;
+        _organizeDevicesBySubnet();
       });
     }
   }
@@ -471,6 +476,12 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
               _buildDetailRow('Block ID', device.blockId),
               _buildDetailRow('Scene ID', device.sceneId),
               _buildDetailRow('Fade Time', '${device.fadeTime}ms'),
+              if (device.state.isNotEmpty)
+                _buildDetailRow('State', device.state),
+              if (device.hexId.isNotEmpty)
+                _buildDetailRow('Hex ID', device.hexId),
+              if (device.helvarType == 'output')
+                _buildDetailRow('Level', '${(device as dynamic).level}%'),
             ],
           ),
         ),
@@ -479,8 +490,31 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Close'),
           ),
+          if (device.helvarType == 'output')
+            ElevatedButton(
+              onPressed: () => _controlOutputDevice(device),
+              child: const Text('Control'),
+            )
+          else if (device.helvarType == 'emergency')
+            ElevatedButton(
+              onPressed: () => _testEmergencyDevice(device),
+              child: const Text('Test'),
+            ),
         ],
       ),
+    );
+  }
+
+  void _controlOutputDevice(HelvarDevice device) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Device control feature coming soon')),
+    );
+  }
+
+  void _testEmergencyDevice(HelvarDevice device) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+          content: Text('Emergency device test feature coming soon')),
     );
   }
 
