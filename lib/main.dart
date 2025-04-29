@@ -2,13 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/home_screen.dart';
 import 'providers/settings_provider.dart';
+import 'services/app_initialization.dart';
 
-void main() {
-  runApp(
-    const ProviderScope(
-      child: HelvarNetApp(),
-    ),
-  );
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await AppInitializationService.initialize();
+    runApp(
+      const ProviderScope(
+        child: HelvarNetApp(),
+      ),
+    );
+  } catch (e) {
+    await AppInitializationService.handleInitializationFailure(e);
+    runApp(
+      const ProviderScope(
+        child: HelvarNetApp(),
+      ),
+    );
+  }
 }
 
 class HelvarNetApp extends ConsumerWidget {

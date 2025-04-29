@@ -1,30 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import '../models/wiresheet.dart';
+import 'app_directory_service.dart';
 
 class WiresheetStorageService {
-  static const String _wiresheetsDirectory = 'wiresheets';
-  Future<String> get _localPath async {
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
-  }
-
-  Future<String> get _wiresheetsPath async {
-    final path = await _localPath;
-    final dir = Directory('$path/$_wiresheetsDirectory');
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-
-    return dir.path;
-  }
-
+  final AppDirectoryService _directoryService = AppDirectoryService();
   Future<String> _getWiresheetFilePath(String id) async {
-    final dirPath = await _wiresheetsPath;
-    return '$dirPath/wiresheet_$id.json';
+    return _directoryService.getWiresheetFilePath('wiresheet_$id.json');
   }
 
   Future<void> saveWiresheet(Wiresheet wiresheet) async {
@@ -68,6 +52,9 @@ class WiresheetStorageService {
       final file = File(filePath);
 
       if (await file.exists()) {
+        await _directoryService.createBackup(
+            AppDirectoryService.wiresheetsDir, 'wiresheet_$id.json');
+
         await file.delete();
         debugPrint('Wiresheet deleted: $filePath');
         return true;
@@ -83,16 +70,10 @@ class WiresheetStorageService {
 
   Future<List<Wiresheet>> listWiresheets() async {
     try {
-      final dirPath = await _wiresheetsPath;
-      final dir = Directory(dirPath);
-
-      if (!await dir.exists()) {
-        return [];
-      }
-
+      final entities =
+          await _directoryService.listFiles(AppDirectoryService.wiresheetsDir);
       final List<Wiresheet> wiresheets = [];
 
-      final List<FileSystemEntity> entities = await dir.list().toList();
       for (var entity in entities) {
         if (entity is File && entity.path.endsWith('.json')) {
           try {
@@ -165,5 +146,60 @@ class WiresheetStorageService {
     }
 
     return null;
+  }
+
+  Future<bool> exportWiresheet(String id, String filePath) async {
+    try {
+      final wiresheet = await loadWiresheet(id);
+      if (wiresheet == null) return false;
+
+      final file = File(filePath);
+      final jsonString = jsonEncode(wiresheet.toJson());
+      await file.writeAsString(jsonString);
+      final fileName = filePath.split(Platform.pathSeparator).last;
+      await file.copy(await _directoryService.getExportFilePath(fileName));
+
+      return true;
+    } catch (e) {
+      debugPrint('Error exporting wiresheet: $e');
+      return false;
+    }
+  }
+
+  Future<Wiresheet?> importWiresheet(String filePath, {String? newName}) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) return null;
+
+      final jsonString = await file.readAsString();
+      final json = jsonDecode(jsonString);
+      final newId = const Uuid().v4();
+      final wiresheet = Wiresheet.fromJson(json);
+      final importedWiresheet = Wiresheet(
+        id: newId,
+        name: newName ?? '${wiresheet.name} (Imported)',
+        createdAt: DateTime.now(),
+        modifiedAt: DateTime.now(),
+        canvasItems: wiresheet.canvasItems,
+        canvasSize: wiresheet.canvasSize,
+        canvasOffset: wiresheet.canvasOffset,
+      );
+
+      await saveWiresheet(importedWiresheet);
+      return importedWiresheet;
+    } catch (e) {
+      debugPrint('Error importing wiresheet: $e');
+      return null;
+    }
+  }
+
+  Future<String?> createWiresheetBackup(String id) async {
+    try {
+      return _directoryService.createBackup(
+          AppDirectoryService.wiresheetsDir, 'wiresheet_$id.json');
+    } catch (e) {
+      debugPrint('Error creating wiresheet backup: $e');
+      return null;
+    }
   }
 }

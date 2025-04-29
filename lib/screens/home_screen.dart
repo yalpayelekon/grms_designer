@@ -59,8 +59,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       body: Row(
         children: [
           Container(
-            width: 300,
-            color: Colors.grey[300],
+            width: 400,
+            color: Colors.grey[400],
             child: Column(
               children: [
                 Expanded(
