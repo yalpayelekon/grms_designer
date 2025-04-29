@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'settings_screen.dart';
-import 'canvas_item.dart';
-import 'widget_type.dart';
-import 'grid_painter.dart';
 import 'workgroup_detail_screen.dart';
 import 'workgroup_list_screen.dart';
+import 'wiresheet_screen.dart';
+import '../models/widget_type.dart';
 import '../providers/workgroups_provider.dart';
+import '../providers/wiresheets_provider.dart';
 import '../utils/file_dialog_helper.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -18,27 +18,28 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
-  List<CanvasItem> canvasItems = [];
-  int? selectedItemIndex;
-  bool isPanelExpanded = false;
-  Size canvasSize = const Size(2000, 2000); // Initial canvas size
-  Offset canvasOffset = const Offset(0, 0); // Canvas position within the view
   bool openWorkGroup = false;
-  double scale = 1.0;
-  Offset viewportOffset = const Offset(0, 0);
+  bool openWiresheet = false;
+  String? selectedWiresheetId;
+  bool showingProject = true;
 
   @override
   Widget build(BuildContext context) {
+    final workgroups = ref.watch(workgroupsProvider);
+    final wiresheets = ref.watch(wiresheetsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('HelvarNet Manager'),
         centerTitle: true,
         actions: [
+          // Export button
           IconButton(
             icon: const Icon(Icons.upload_file),
             tooltip: 'Export Workgroups',
             onPressed: () => _exportWorkgroups(context),
           ),
+          // Import button
           IconButton(
             icon: const Icon(Icons.download_rounded),
             tooltip: 'Import Workgroups',
@@ -70,51 +71,156 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       content: GestureDetector(
                         onTap: () {
                           setState(() {
+                            showingProject = true;
                             openWorkGroup = false;
+                            openWiresheet = false;
                           });
                         },
-                        child: const Text("Project"),
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "Project",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
                       children: [
                         TreeNode(
                           content: GestureDetector(
                             onTap: () {
                               setState(() {
+                                showingProject = true;
                                 openWorkGroup = false;
+                                openWiresheet = false;
                               });
                             },
-                            child: const Text("Settings"),
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text("Settings"),
+                            ),
                           ),
                         ),
                         TreeNode(
                           content: GestureDetector(
                             onTap: () {
                               setState(() {
+                                showingProject = true;
                                 openWorkGroup = false;
+                                openWiresheet = false;
                               });
                             },
-                            child: const Text("Files"),
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text("Files"),
+                            ),
                           ),
                           children: [
                             TreeNode(
                               content: GestureDetector(
                                 onTap: () {
                                   setState(() {
+                                    showingProject = true;
                                     openWorkGroup = false;
+                                    openWiresheet = false;
                                   });
                                 },
-                                child: const Text("Images"),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text("Images"),
+                                ),
                               ),
                             ),
                             TreeNode(
                               content: GestureDetector(
                                 onTap: () {
                                   setState(() {
+                                    showingProject = true;
                                     openWorkGroup = false;
+                                    openWiresheet = false;
                                   });
                                 },
-                                child: const Text("Icons"),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text("Icons"),
+                                ),
                               ),
+                            ),
+                            // Wiresheets folder node
+                            TreeNode(
+                              content: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        showingProject = true;
+                                        openWorkGroup = false;
+                                        openWiresheet = false;
+                                      });
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: Text("Wiresheets"),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add, size: 18),
+                                    tooltip: 'Create New Wiresheet',
+                                    onPressed: () =>
+                                        _createNewWiresheet(context),
+                                  ),
+                                ],
+                              ),
+                              children: [
+                                ...wiresheets.map((wiresheet) => TreeNode(
+                                      content: GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            showingProject = false;
+                                            openWorkGroup = false;
+                                            openWiresheet = true;
+                                            selectedWiresheetId = wiresheet.id;
+                                          });
+                                        },
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                wiresheet.name,
+                                                style: TextStyle(
+                                                  fontWeight:
+                                                      selectedWiresheetId ==
+                                                              wiresheet.id
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                  color: selectedWiresheetId ==
+                                                          wiresheet.id
+                                                      ? Colors.blue
+                                                      : null,
+                                                ),
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete,
+                                                  size: 18),
+                                              tooltip: 'Delete Wiresheet',
+                                              onPressed: () =>
+                                                  _confirmDeleteWiresheet(
+                                                context,
+                                                wiresheet.id,
+                                                wiresheet.name,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )),
+                              ],
                             ),
                           ],
                         ),
@@ -126,12 +232,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                         label: const Text('Workgroups'),
                         onPressed: () {
                           setState(() {
+                            showingProject = false;
                             openWorkGroup = true;
+                            openWiresheet = false;
                           });
                         },
                       ),
-                      children: ref
-                          .watch(workgroupsProvider)
+                      children: workgroups
                           .map(
                             (workgroup) => TreeNode(
                               content: ElevatedButton.icon(
@@ -177,128 +284,85 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           Expanded(
-            child: openWorkGroup
-                ? const WorkgroupListScreen() // Show the WorkgroupListScreen when openWorkGroup is true
-                : InteractiveViewer(
-                    constrained: false,
-                    boundaryMargin: const EdgeInsets.all(double.infinity),
-                    minScale: 0.5,
-                    maxScale: 2.0,
-                    scaleEnabled: true,
-                    onInteractionEnd: (ScaleEndDetails details) {
-                      setState(() {});
-                    },
-                    child: Stack(
-                      children: [
-                        DragTarget<WidgetData>(
-                          onAcceptWithDetails: (details) {
-                            final widgetData = details.data;
-                            final globalPosition = details.offset;
-                            final RenderBox box =
-                                context.findRenderObject() as RenderBox;
-                            final localPosition =
-                                box.globalToLocal(globalPosition);
-
-                            setState(() {
-                              canvasItems.add(
-                                CanvasItem(
-                                  type:
-                                      widgetData.type, // Use data from details
-                                  position:
-                                      localPosition, // Use calculated local position
-                                  size: const Size(150, 100), // Default size
-                                ),
-                              );
-                              selectedItemIndex = canvasItems.length - 1;
-                              isPanelExpanded = true; // Show properties panel
-                              _updateCanvasSize();
-                            });
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            return Stack(
-                              children: [
-                                Container(
-                                  width: canvasSize.width,
-                                  height: canvasSize.height,
-                                  color: Colors.grey[50],
-                                  child: Center(
-                                    child: Text(
-                                      canvasItems.isEmpty
-                                          ? 'Drag and drop items here'
-                                          : '',
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: canvasSize.width,
-                                  height: canvasSize.height,
-                                  child: CustomPaint(
-                                    painter: GridPainter(),
-                                    child: Container(),
-                                  ),
-                                ),
-                                ...canvasItems.asMap().entries.map((entry) {
-                                  final index = entry.key;
-                                  final item = entry.value;
-                                  return Positioned(
-                                    left: item.position.dx,
-                                    top: item.position.dy,
-                                    child: Text("selected widget:$index"),
-                                  );
-                                }),
-                              ],
-                            );
-                          },
-                        ),
-                        if (selectedItemIndex != null && isPanelExpanded)
-                          const Positioned(
-                            right: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: 250,
-                            child: Text("selected widget details"),
-                          ),
-                        if (selectedItemIndex != null)
-                          Positioned(
-                            right: isPanelExpanded ? 250 : 0,
-                            top: 10,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  isPanelExpanded = !isPanelExpanded;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: const BoxDecoration(
-                                  color: Colors.blue,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(8.0),
-                                    bottomLeft: Radius.circular(8.0),
-                                  ),
-                                ),
-                                child: Icon(
-                                  isPanelExpanded
-                                      ? Icons.arrow_forward
-                                      : Icons.arrow_back,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+            child: _buildMainContent(),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildMainContent() {
+    if (openWorkGroup) {
+      return const WorkgroupListScreen();
+    } else if (openWiresheet && selectedWiresheetId != null) {
+      return WiresheetScreen(wiresheetId: selectedWiresheetId!);
+    } else if (showingProject) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.lightbulb_outline,
+              size: 80,
+              color: Colors.amber,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Welcome to HelvarNet Manager',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Select a Wiresheet to edit or discover Workgroups',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Create New Wiresheet'),
+                  onPressed: () => _createNewWiresheet(context),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.search),
+                  label: const Text('Discover Workgroups'),
+                  onPressed: () {
+                    setState(() {
+                      showingProject = false;
+                      openWorkGroup = true;
+                      openWiresheet = false;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Fallback to welcome screen
+      return const Center(
+        child: Text('Please select an option from the sidebar'),
+      );
+    }
+  }
+
+  // New method to handle workgroups export
   Future<void> _exportWorkgroups(BuildContext context) async {
     try {
       final filePath = await FileDialogHelper.pickJsonFileToSave();
@@ -320,10 +384,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  // New method to handle workgroups import
   Future<void> _importWorkgroups(BuildContext context) async {
     try {
       final filePath = await FileDialogHelper.pickJsonFileToOpen();
       if (filePath != null) {
+        // Show dialog to confirm merge or replace
         if (mounted) {
           final result = await showDialog<bool>(
             context: context,
@@ -344,6 +410,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
 
+          // Import with merge flag based on dialog result
           if (result != null) {
             await ref.read(workgroupsProvider.notifier).importWorkgroups(
                   filePath,
@@ -365,6 +432,91 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error importing workgroups: $e')),
+        );
+      }
+    }
+  }
+
+  void _createNewWiresheet(BuildContext context) {
+    final nameController = TextEditingController(text: 'New Wiresheet');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create New Wiresheet'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Wiresheet Name',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              if (name.isNotEmpty) {
+                final wiresheet = await ref
+                    .read(wiresheetsProvider.notifier)
+                    .createWiresheet(name);
+                Navigator.of(context).pop();
+
+                setState(() {
+                  showingProject = false;
+                  openWorkGroup = false;
+                  openWiresheet = true;
+                  selectedWiresheetId = wiresheet.id;
+                });
+              }
+            },
+            child: const Text('Create'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteWiresheet(
+      BuildContext context, String wiresheetId, String name) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Wiresheet'),
+        content: Text('Are you sure you want to delete "$name"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      await ref.read(wiresheetsProvider.notifier).deleteWiresheet(wiresheetId);
+
+      // If the active wiresheet was deleted, reset the selection
+      if (selectedWiresheetId == wiresheetId) {
+        setState(() {
+          selectedWiresheetId = null;
+          openWiresheet = false;
+          showingProject = true;
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wiresheet deleted')),
         );
       }
     }
@@ -398,88 +550,5 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
       ),
     );
-  }
-
-  void _updateCanvasSize() {
-    if (canvasItems.isEmpty) return;
-
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = 0;
-    double maxY = 0;
-
-    for (var item in canvasItems) {
-      final rightEdge = item.position.dx + item.size.width;
-      final bottomEdge = item.position.dy + item.size.height;
-
-      minX = minX > item.position.dx ? item.position.dx : minX;
-      minY = minY > item.position.dy ? item.position.dy : minY;
-      maxX = maxX < rightEdge ? rightEdge : maxX;
-      maxY = maxY < bottomEdge ? bottomEdge : maxY;
-    }
-
-    const padding = 100.0;
-
-    bool needsUpdate = false;
-    Size newCanvasSize = canvasSize;
-    Offset newCanvasOffset = canvasOffset;
-
-    if (minX < padding) {
-      double extraWidth = padding - minX;
-      newCanvasSize = Size(canvasSize.width + extraWidth, newCanvasSize.height);
-      newCanvasOffset = Offset(
-        canvasOffset.dx - extraWidth,
-        newCanvasOffset.dy,
-      );
-
-      for (var item in canvasItems) {
-        item.position = Offset(item.position.dx + extraWidth, item.position.dy);
-      }
-
-      needsUpdate = true;
-    }
-
-    if (minY < padding) {
-      double extraHeight = padding - minY;
-      newCanvasSize = Size(
-        newCanvasSize.width,
-        canvasSize.height + extraHeight,
-      );
-      newCanvasOffset = Offset(
-        newCanvasOffset.dx,
-        canvasOffset.dy - extraHeight,
-      );
-
-      for (var item in canvasItems) {
-        item.position = Offset(
-          item.position.dx,
-          item.position.dy + extraHeight,
-        );
-      }
-
-      needsUpdate = true;
-    }
-
-    if (maxX > canvasSize.width - padding) {
-      double extraWidth = maxX - (canvasSize.width - padding);
-      newCanvasSize = Size(canvasSize.width + extraWidth, newCanvasSize.height);
-      needsUpdate = true;
-    }
-
-    if (maxY > canvasSize.height - padding) {
-      double extraHeight = maxY - (canvasSize.height - padding);
-      newCanvasSize = Size(
-        newCanvasSize.width,
-        canvasSize.height + extraHeight,
-      );
-      needsUpdate = true;
-    }
-
-    if (needsUpdate) {
-      setState(() {
-        canvasSize = newCanvasSize;
-        canvasOffset = newCanvasOffset;
-      });
-    }
   }
 }

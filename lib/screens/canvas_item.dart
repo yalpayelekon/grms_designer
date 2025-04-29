@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
-import 'widget_type.dart';
+import '../models/widget_type.dart';
 
 class CanvasItem extends TreeNode {
   final WidgetType type;
