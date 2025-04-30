@@ -1,92 +1,233 @@
+import 'dart:convert';
 import 'dart:io';
-import 'helvarnet_client.dart';
+
+class HelvarRouter {
+  final String ipAddress;
+  final int clusterId;
+  final int clusterMemberId;
+  final String routerAddress;
+  String? description;
+  String? deviceType;
+  final Map<int, List<HelvarDevice>> devicesBySubnet = {};
+
+  HelvarRouter({
+    required this.ipAddress,
+    required this.clusterId,
+    required this.clusterMemberId,
+  }) : routerAddress = '$clusterId.$clusterMemberId';
+
+  Map<String, dynamic> toJson() {
+    final devicesJson = <String, List<Map<String, dynamic>>>{};
+    devicesBySubnet.forEach((subnet, devices) {
+      devicesJson['subnet$subnet'] = devices.map((d) => d.toJson()).toList();
+    });
+
+    return {
+      'ipAddress': ipAddress,
+      'clusterId': clusterId,
+      'clusterMemberId': clusterMemberId,
+      'routerAddress': routerAddress,
+      'description': description,
+      'deviceType': deviceType,
+      'devices': devicesJson,
+    };
+  }
+}
+
+class HelvarDevice {
+  final String address; // Full address @clusterId.memberId.subnet.device
+  final int subnet;
+  final int deviceId;
+  String? description;
+  String? deviceType;
+
+  HelvarDevice({
+    required this.address,
+    required this.subnet,
+    required this.deviceId,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'address': address,
+      'subnet': subnet,
+      'deviceId': deviceId,
+      'description': description,
+      'deviceType': deviceType,
+    };
+  }
+}
+
+class HelvarNetClient {
+  final String routerIP;
+  final int tcpPort = 50000;
+
+  HelvarNetClient(this.routerIP);
+
+  /// Send a TCP command and get the response
+  Future<String> sendTcpCommand(String command) async {
+    try {
+      final socket = await Socket.connect(routerIP, tcpPort);
+      socket.write(command);
+
+      final responseData =
+          await socket.first.timeout(const Duration(seconds: 3), onTimeout: () {
+        socket.destroy();
+        return utf8.encode('TIMEOUT');
+      });
+
+      final response = String.fromCharCodes(responseData);
+      socket.destroy();
+      return response;
+    } catch (e) {
+      return 'ERROR: $e';
+    }
+  }
+
+  /// Query device type
+  Future<String> queryDeviceType(String address) async {
+    final command = '>V:2,C:104,@$address#';
+    return sendTcpCommand(command);
+  }
+
+  /// Query device description
+  Future<String> queryDeviceDescription(String address) async {
+    final command = '>V:2,C:106,@$address#';
+    return sendTcpCommand(command);
+  }
+
+  /// Discover router information
+  Future<HelvarRouter?> discoverRouterInfo() async {
+    // Parse router address from IP
+    final ipParts = routerIP.split('.');
+    if (ipParts.length != 4) return null;
+
+    // Extract cluster ID and member ID from the IP address
+    final clusterId = int.parse(ipParts[2]);
+    final clusterMemberId = int.parse(ipParts[3]);
+    final routerAddress = '$clusterId.$clusterMemberId';
+
+    final router = HelvarRouter(
+      ipAddress: routerIP,
+      clusterId: clusterId,
+      clusterMemberId: clusterMemberId,
+    );
+
+    // Query router type and description
+    final typeResponse = await queryDeviceType(routerAddress);
+    if (typeResponse.startsWith('?')) {
+      router.deviceType = typeResponse.split('=')[1].replaceAll('#', '');
+
+      final descResponse = await queryDeviceDescription(routerAddress);
+      if (descResponse.startsWith('?')) {
+        router.description = descResponse.split('=')[1].replaceAll('#', '');
+      }
+
+      return router;
+    }
+
+    return null;
+  }
+
+  /// Discover devices on a subnet
+  Future<List<HelvarDevice>> discoverDevices(HelvarRouter router, int subnet,
+      {int maxDevices = 20}) async {
+    final devices = <HelvarDevice>[];
+
+    for (int deviceId = 1; deviceId <= maxDevices; deviceId++) {
+      final deviceAddress = '${router.routerAddress}.$subnet.$deviceId';
+      final typeResponse = await queryDeviceType(deviceAddress);
+
+      if (typeResponse.startsWith('?')) {
+        final device = HelvarDevice(
+          address: deviceAddress,
+          subnet: subnet,
+          deviceId: deviceId,
+        );
+
+        device.deviceType = typeResponse.split('=')[1].replaceAll('#', '');
+
+        // Get device description
+        final descResponse = await queryDeviceDescription(deviceAddress);
+        if (descResponse.startsWith('?')) {
+          device.description = descResponse.split('=')[1].replaceAll('#', '');
+        }
+
+        devices.add(device);
+      }
+    }
+
+    return devices;
+  }
+
+  /// Discover all devices on all possible subnets (1-4)
+  Future<void> discoverAllDevices(HelvarRouter router,
+      {int maxDevices = 20}) async {
+    // According to documentation, subnets range from 1 to 4
+    for (int subnet = 1; subnet <= 4; subnet++) {
+      print('\nScanning subnet $subnet...');
+      final devices =
+          await discoverDevices(router, subnet, maxDevices: maxDevices);
+
+      if (devices.isNotEmpty) {
+        router.devicesBySubnet[subnet] = devices;
+        print('Found ${devices.length} devices on subnet $subnet');
+      } else {
+        print('No devices found on subnet $subnet');
+      }
+    }
+  }
+}
 
 void main() async {
-  // Replace with your router's IP
+  // Connect to the router
   final routerIP = '10.11.10.150';
   final client = HelvarNetClient(routerIP);
 
-  print('HelvarNet Client Test');
-  print('====================');
+  print('HelvarNet Device Query Test');
+  print('==========================');
+  print('Router IP: $routerIP\n');
 
   try {
-    // Step 1: Discover workgroups
-    print('\nStep 1: Discovering Workgroups...');
-    final workgroups = await client.discoverWorkgroups();
-    print('Found ${workgroups.length} workgroups: $workgroups');
+    // Discover router information
+    print('Discovering router information...');
+    final router = await client.discoverRouterInfo();
 
-    // Step 2: Discover subnets
-    print('\nStep 2: Discovering Subnets...');
-    final subnets = await client.discoverSubnets();
-    print('Found ${subnets.length} subnets: $subnets');
+    if (router != null) {
+      print('Router found:');
+      print('- Address: @${router.routerAddress}');
+      print('- Cluster ID: ${router.clusterId}');
+      print('- Cluster Member ID: ${router.clusterMemberId}');
+      print('- Type: ${router.deviceType}');
+      print('- Description: ${router.description}');
 
-    // Step 3: Discover groups (limited range for testing)
-    print('\nStep 3: Discovering Groups (201-220)...');
-    final groups = <int>[];
-    // Use a smaller range for quicker testing
-    for (int i = 1; i <= 65535; i++) {
-      final response = await client.sendTcpCommand('>V:1,C:105,G:$i#');
-      if (response.startsWith('?')) {
-        groups.add(i);
-        print('Found group: $i');
-      }
-    }
-    print('Found ${groups.length} groups: $groups');
+      // Discover devices on all subnets (1-4)
+      print('\nDiscovering devices on all subnets...');
+      await client.discoverAllDevices(router);
 
-    // Step 4: Get info for each group
-    print('\nStep 4: Getting Group Info...');
-    for (final groupId in groups) {
-      final groupInfo = await client.getGroupInfo(groupId);
-      print('Group $groupId: $groupInfo');
-    }
+      // Print summary of found devices
+      int totalDevices = 0;
+      router.devicesBySubnet.forEach((subnet, devices) {
+        totalDevices += devices.length;
+      });
 
-    // Step 5: Try controlling a group (if you want to test this)
-    if (groups.isNotEmpty &&
-        await shouldContinue(
-            'Would you like to test controlling a group? (y/n)')) {
-      final groupId = groups.first;
-      print('\nStep 5: Controlling Group $groupId...');
+      print(
+          '\nSummary: Found $totalDevices devices across ${router.devicesBySubnet.length} subnets');
 
-      // Get current scene
-      final currentInfo = await client.getGroupInfo(groupId);
-      final currentScene = currentInfo['lastScene'] ?? 1;
-      print('Current scene: $currentScene');
-
-      // Try to set to a different scene
-      final newScene = currentScene == 1 ? 2 : 1;
-      print('Setting to scene $newScene...');
-      final success =
-          await client.recallGroupScene(groupId, 1, newScene, fadeTime: 500);
-      print('Scene recall ${success ? 'succeeded' : 'failed'}');
-
-      // Verify the change
-      await Future.delayed(Duration(milliseconds: 700)); // Wait for fade
-      final newInfo = await client.getGroupInfo(groupId);
-      print('New scene: ${newInfo['lastScene']}');
-
-      // Try setting a level directly
-      if (await shouldContinue(
-          'Would you like to test setting a direct level? (y/n)')) {
-        print('Setting to 50% level...');
-        final levelSuccess =
-            await client.setGroupLevel(groupId, 50, fadeTime: 500);
-        print('Level set ${levelSuccess ? 'succeeded' : 'failed'}');
-
-        await Future.delayed(Duration(milliseconds: 700)); // Wait for fade
-        print('Getting updated power consumption...');
-        final finalInfo = await client.getGroupInfo(groupId);
-        print('Updated info: $finalInfo');
-      }
+      // Print device details for each subnet
+      router.devicesBySubnet.forEach((subnet, devices) {
+        print('\nSubnet $subnet (${devices.length} devices):');
+        for (final device in devices) {
+          print(
+              '  @${device.address}: ${device.description} (${device.deviceType})');
+        }
+      });
+    } else {
+      print('Router not found or not responding');
     }
   } catch (e) {
     print('Error: $e');
   }
 
   print('\nTest completed.');
-}
-
-Future<bool> shouldContinue(String question) async {
-  stdout.write('$question ');
-  final response = stdin.readLineSync()?.toLowerCase() ?? '';
-  return response == 'y' || response == 'yes';
 }
