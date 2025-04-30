@@ -22,6 +22,13 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     super.out,
     super.helvarType = "output",
     super.pointsCreated,
+    super.deviceTypeCode,
+    super.deviceStateCode,
+    super.isButtonDevice,
+    super.isMultisensor,
+    super.buttonPoints,
+    super.sensorInfo,
+    super.additionalInfo,
     this.missing = "",
     this.faulty = "",
     this.level = 100,
@@ -103,7 +110,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   }
 
   String getName() {
-    return "Device_$deviceId";
+    return description.isNotEmpty ? description : "Device_$deviceId";
   }
 
   @override
@@ -112,4 +119,14 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   void createOutputPoints(String deviceAddress, String name) {}
 
   void queryLoadLevel() {}
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+    json['missing'] = missing;
+    json['faulty'] = faulty;
+    json['level'] = level;
+    json['proportion'] = proportion;
+    return json;
+  }
 }

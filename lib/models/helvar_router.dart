@@ -5,11 +5,18 @@ class HelvarRouter {
   final String type;
   final String address;
   final String ipAddress;
-  final String description;
+  String description;
 
   bool isNormal;
   bool isMissing;
   bool isFaulty;
+
+  int clusterId;
+  int clusterMemberId;
+  int? deviceTypeCode;
+  String? deviceState;
+  int? deviceStateCode;
+  Map<int, List<HelvarDevice>> devicesBySubnet = {};
 
   List<HelvarDevice> devices;
 
@@ -22,19 +29,69 @@ class HelvarRouter {
     this.isNormal = true,
     this.isMissing = false,
     this.isFaulty = false,
+    this.clusterId = 1,
+    this.clusterMemberId = 1,
+    this.deviceTypeCode,
+    this.deviceState,
+    this.deviceStateCode,
     List<HelvarDevice>? devices,
-  }) : devices = devices ?? [];
+  }) : devices = devices ?? [] {
+    if (address.contains('.')) {
+      final ipParts = address.split('.');
+      if (ipParts.length == 4) {
+        try {
+          clusterId = int.parse(ipParts[2]);
+          clusterMemberId = int.parse(ipParts[3]);
+        } catch (e) {
+          print(e);
+        }
+      }
+    }
+
+    if (devices != null && devices.isNotEmpty) {
+      organizeDevicesBySubnet();
+    }
+  }
+
+  void organizeDevicesBySubnet() {
+    devicesBySubnet.clear();
+    for (final device in devices) {
+      final subnet = device.subnet;
+      if (!devicesBySubnet.containsKey(subnet)) {
+        devicesBySubnet[subnet] = [];
+      }
+      devicesBySubnet[subnet]!.add(device);
+    }
+  }
 
   void addDevice(HelvarDevice device) {
     devices.add(device);
+
+    final subnet = device.subnet;
+    if (!devicesBySubnet.containsKey(subnet)) {
+      devicesBySubnet[subnet] = [];
+    }
+    devicesBySubnet[subnet]!.add(device);
   }
 
   void removeDevice(HelvarDevice device) {
     devices.remove(device);
+
+    final subnet = device.subnet;
+    if (devicesBySubnet.containsKey(subnet)) {
+      devicesBySubnet[subnet]!.remove(device);
+      if (devicesBySubnet[subnet]!.isEmpty) {
+        devicesBySubnet.remove(subnet);
+      }
+    }
   }
 
   List<HelvarDevice> getDevicesByType(String deviceType) {
     return devices.where((device) => device.helvarType == deviceType).toList();
+  }
+
+  List<HelvarDevice> getDevicesBySubnet(int subnet) {
+    return devicesBySubnet[subnet] ?? [];
   }
 
   @override
@@ -58,6 +115,11 @@ class HelvarRouter {
       isNormal: json['isNormal'] as bool? ?? true,
       isMissing: json['isMissing'] as bool? ?? false,
       isFaulty: json['isFaulty'] as bool? ?? false,
+      clusterId: json['clusterId'] as int? ?? 1,
+      clusterMemberId: json['clusterMemberId'] as int? ?? 1,
+      deviceTypeCode: json['deviceTypeCode'] as int?,
+      deviceState: json['deviceState'] as String?,
+      deviceStateCode: json['deviceStateCode'] as int?,
       devices: (json['devices'] as List?)
               ?.map((deviceJson) => HelvarDevice.fromJson(deviceJson))
               .whereType<HelvarDevice>()
@@ -67,6 +129,12 @@ class HelvarRouter {
   }
 
   Map<String, dynamic> toJson() {
+    final subnetsJson = <String, List<Map<String, dynamic>>>{};
+    devicesBySubnet.forEach((subnet, subnetDevices) {
+      subnetsJson['subnet$subnet'] =
+          subnetDevices.map((device) => device.toJson()).toList();
+    });
+
     return {
       'name': name,
       'type': type,
@@ -76,6 +144,12 @@ class HelvarRouter {
       'isNormal': isNormal,
       'isMissing': isMissing,
       'isFaulty': isFaulty,
+      'clusterId': clusterId,
+      'clusterMemberId': clusterMemberId,
+      'deviceTypeCode': deviceTypeCode,
+      'deviceState': deviceState,
+      'deviceStateCode': deviceStateCode,
+      'devicesBySubnet': subnetsJson,
       'devices': devices.map((device) => device.toJson()).toList(),
     };
   }

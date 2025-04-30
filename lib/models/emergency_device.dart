@@ -20,6 +20,13 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
     super.out,
     super.helvarType = "emergency",
     super.pointsCreated,
+    super.deviceTypeCode,
+    super.deviceStateCode,
+    super.isButtonDevice,
+    super.isMultisensor,
+    super.buttonPoints,
+    super.sensorInfo,
+    super.additionalInfo,
     this.missing = "",
     this.faulty = "",
   });
@@ -152,4 +159,12 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
   void stopped() {}
 
   void createOutputEmergencyPoints(String deviceAddress, String name) {}
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+    json['missing'] = missing;
+    json['faulty'] = faulty;
+    return json;
+  }
 }

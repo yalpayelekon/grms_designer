@@ -224,24 +224,29 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       ],
                     ),
                     TreeNode(
-                      content: ElevatedButton.icon(
-                        icon: const Icon(Icons.group_work),
-                        label: const Text('Workgroups'),
-                        onPressed: () {
+                      content: GestureDetector(
+                        onTap: () {
                           setState(() {
                             showingProject = false;
                             openWorkGroup = true;
                             openWiresheet = false;
                           });
                         },
+                        child: const Row(
+                          children: [
+                            Icon(Icons.group_work),
+                            Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text('Workgroups'),
+                            ),
+                          ],
+                        ),
                       ),
                       children: workgroups
                           .map(
                             (workgroup) => TreeNode(
-                              content: ElevatedButton.icon(
-                                icon: const Icon(Icons.lan),
-                                label: Text(workgroup.description),
-                                onPressed: () {
+                              content: GestureDetector(
+                                onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (context) =>
@@ -250,6 +255,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                     ),
                                   );
                                 },
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.lan),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(workgroup.description),
+                                    ),
+                                  ],
+                                ),
                               ),
                               children: [
                                 ...workgroup.routers.map(
