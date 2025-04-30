@@ -2,6 +2,38 @@ const int maxMessageLength = 1500;
 const int defaultTcpPort = 50000;
 const int defaultUdpPort = 50001;
 
+String getStateFlagsDescription(int flags) {
+  final descriptions = <String>[];
+
+  if (flags == 0) return 'Normal';
+
+  if ((flags & 0x00000001) != 0) descriptions.add('Disabled');
+  if ((flags & 0x00000002) != 0) descriptions.add('Lamp Failure');
+  if ((flags & 0x00000004) != 0) descriptions.add('Missing');
+  if ((flags & 0x00000008) != 0) descriptions.add('Faulty');
+  if ((flags & 0x00000010) != 0) descriptions.add('Refreshing');
+  if ((flags & 0x00000100) != 0) descriptions.add('Emergency Resting');
+  if ((flags & 0x00000400) != 0) descriptions.add('In Emergency');
+  if ((flags & 0x00000800) != 0) descriptions.add('In Prolong');
+  if ((flags & 0x00001000) != 0) descriptions.add('Function Test In Progress');
+  if ((flags & 0x00002000) != 0) descriptions.add('Duration Test In Progress');
+  if ((flags & 0x00010000) != 0) descriptions.add('Duration Test Pending');
+  if ((flags & 0x00020000) != 0) descriptions.add('Function Test Pending');
+  if ((flags & 0x00040000) != 0) descriptions.add('Battery Failure');
+  if ((flags & 0x00200000) != 0) descriptions.add('Emergency Inhibit');
+  if ((flags & 0x00400000) != 0) descriptions.add('Function Test Requested');
+  if ((flags & 0x00800000) != 0) descriptions.add('Duration Test Requested');
+  if ((flags & 0x01000000) != 0) descriptions.add('Unknown State');
+  if ((flags & 0x02000000) != 0) descriptions.add('Over Temperature');
+  if ((flags & 0x04000000) != 0) descriptions.add('Over Current');
+  if ((flags & 0x08000000) != 0) descriptions.add('Communications Error');
+  if ((flags & 0x10000000) != 0) descriptions.add('Severe Error');
+  if ((flags & 0x20000000) != 0) descriptions.add('Bad Reply');
+  if ((flags & 0x80000000) != 0) descriptions.add('Device Mismatch');
+
+  return descriptions.join(', ');
+}
+
 class MessageType {
   static const String command = '>'; // Command message
   static const String internalCommand = '<'; // Internal command

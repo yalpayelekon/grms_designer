@@ -1,3 +1,71 @@
+bool isButtonDevice(int typeCode) {
+  return typeCode == 1265666 || // Button 135
+      typeCode == 1271554 || // Button 136
+      typeCode == 1274882 || // Button 137
+      typeCode == 1200386 || // Button 125
+      typeCode == 1206274 || // Button 126
+      typeCode == 1184514 || // Button 121
+      typeCode == 1262338 || // Button 134
+      typeCode == 1442306 || // Button 160
+      (typeCode & 0xFF) == 0x02 &&
+          (((typeCode >> 8) & 0xFF) == 0x12 || // 12x series button panels
+              ((typeCode >> 8) & 0xFF) == 0x93 || // 93x series scene commanders
+              ((typeCode >> 8) & 0xFF) == 0x82 // 82x series touchpanels
+          );
+}
+
+bool isDeviceMultisensor(int typeCode) {
+  return typeCode == 3217410 || // 312 Multisensor
+      typeCode == 3220738 || // 312 Multisensor variant
+      typeCode == 3282690 || // 321 Multisensor
+      ((typeCode & 0xFF) == 0x02 &&
+          ((typeCode >> 8) & 0xFF) == 0x31); // Generic multisensor pattern
+}
+
+String getDeviceTypeDescription(int typeCode) {
+  // Try to identify by protocol (last byte)
+  final protocol = typeCode & 0xFF;
+
+  if (protocol == 0x01) {
+    // DALI device types
+    return DaliDeviceType.types[typeCode] ??
+        'DALI Device (0x${typeCode.toRadixString(16)})';
+  } else if (protocol == 0x02) {
+    // Digidim device types
+    return DigidimDeviceType.types[typeCode] ??
+        'Digidim Device (0x${typeCode.toRadixString(16)})';
+  } else if (protocol == 0x04) {
+    // Imagine/SDIM device types
+    return ImagineDeviceType.types[typeCode] ??
+        'Imagine Device (0x${typeCode.toRadixString(16)})';
+  } else if (protocol == 0x08) {
+    // DMX device types
+    return DmxDeviceType.types[typeCode] ??
+        'DMX Device (0x${typeCode.toRadixString(16)})';
+  }
+
+  // Special handling for common detected types
+  else if (typeCode == 4818434) {
+    return '498 – Relay Unit (8 channel relay) DALI';
+  } else if (typeCode == 3217410 ||
+      typeCode == 3220738 ||
+      typeCode == 3282690) {
+    return 'Multisensor';
+  } else if (typeCode == 1537) {
+    return 'LED Unit';
+  } else if (typeCode == 1265666) {
+    return 'Button 135';
+  } else if (typeCode == 1) {
+    return 'Fluorescent Lamps';
+  } else if (typeCode == 1793) {
+    return 'Switching function (Relay)';
+  } else if (typeCode == 1226903554) {
+    return 'DDP Device';
+  }
+
+  return 'Unknown Device (0x${typeCode.toRadixString(16)})';
+}
+
 class DaliDeviceType {
   static const Map<int, String> types = {
     0x0001: 'Fluorescent Lamps',
