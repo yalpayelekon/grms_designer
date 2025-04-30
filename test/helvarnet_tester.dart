@@ -40,20 +40,26 @@ class DeviceStateFlags {
     if ((flags & emergencyResting) != 0) descriptions.add('Emergency Resting');
     if ((flags & inEmergency) != 0) descriptions.add('In Emergency');
     if ((flags & inProlong) != 0) descriptions.add('In Prolong');
-    if ((flags & funcTestInProgress) != 0)
+    if ((flags & funcTestInProgress) != 0) {
       descriptions.add('Function Test In Progress');
-    if ((flags & durationTestInProgress) != 0)
+    }
+    if ((flags & durationTestInProgress) != 0) {
       descriptions.add('Duration Test In Progress');
-    if ((flags & durationTestPending) != 0)
+    }
+    if ((flags & durationTestPending) != 0) {
       descriptions.add('Duration Test Pending');
-    if ((flags & funcTestPending) != 0)
+    }
+    if ((flags & funcTestPending) != 0) {
       descriptions.add('Function Test Pending');
+    }
     if ((flags & batteryFailure) != 0) descriptions.add('Battery Failure');
     if ((flags & emergencyInhibit) != 0) descriptions.add('Emergency Inhibit');
-    if ((flags & funcTestRequested) != 0)
+    if ((flags & funcTestRequested) != 0) {
       descriptions.add('Function Test Requested');
-    if ((flags & durationTestRequested) != 0)
+    }
+    if ((flags & durationTestRequested) != 0) {
       descriptions.add('Duration Test Requested');
+    }
     if ((flags & unknown) != 0) descriptions.add('Unknown State');
     if ((flags & overTemperature) != 0) descriptions.add('Over Temperature');
     if ((flags & overCurrent) != 0) descriptions.add('Over Current');

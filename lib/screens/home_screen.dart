@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import '../models/workgroup.dart';
 import 'settings_screen.dart';
 import 'workgroup_detail_screen.dart';
 import 'workgroup_list_screen.dart';
@@ -21,6 +22,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool openWorkGroup = false;
   bool openWiresheet = false;
   String? selectedWiresheetId;
+  Workgroup? selectedWorkgroup;
   bool showingProject = true;
 
   @override
@@ -230,6 +232,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                             showingProject = false;
                             openWorkGroup = true;
                             openWiresheet = false;
+                            selectedWorkgroup = null;
                           });
                         },
                         child: const Row(
@@ -247,20 +250,30 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                             (workgroup) => TreeNode(
                               content: GestureDetector(
                                 onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          WorkgroupDetailScreen(
-                                              workgroup: workgroup),
-                                    ),
-                                  );
+                                  setState(() {
+                                    showingProject = false;
+                                    openWorkGroup = true;
+                                    openWiresheet = false;
+                                    selectedWorkgroup = workgroup;
+                                  });
                                 },
                                 child: Row(
                                   children: [
                                     const Icon(Icons.lan),
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
-                                      child: Text(workgroup.description),
+                                      child: Text(
+                                        workgroup.description,
+                                        style: TextStyle(
+                                          fontWeight:
+                                              selectedWorkgroup == workgroup
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                          color: selectedWorkgroup == workgroup
+                                              ? Colors.blue
+                                              : null,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -303,13 +316,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMainContent() {
-    if (openWorkGroup) {
+    if (openWorkGroup && selectedWorkgroup == null) {
       return const WorkgroupListScreen();
     } else if (openWiresheet && selectedWiresheetId != null) {
       return WiresheetScreen(
         wiresheetId: selectedWiresheetId!,
         showBackButton: false,
       );
+    } else if (openWorkGroup && selectedWorkgroup != null) {
+      return WorkgroupDetailScreen(workgroup: selectedWorkgroup!);
     } else if (showingProject) {
       return Center(
         child: Column(
