@@ -321,7 +321,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     } else if (openWiresheet && selectedWiresheetId != null) {
       return WiresheetScreen(
         wiresheetId: selectedWiresheetId!,
-        showBackButton: false,
       );
     } else if (openWorkGroup && selectedWorkgroup != null) {
       return WorkgroupDetailScreen(workgroup: selectedWorkgroup!);
