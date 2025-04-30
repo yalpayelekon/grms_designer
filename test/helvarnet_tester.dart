@@ -1,273 +1,92 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+import 'helvarnet_client.dart';
 
 void main() async {
-  // Router configuration
-  final routerIP = '10.11.1.85'; // Replace with your router's IP
-  final tcpPort = 50000;
-  final udpPort = 50001;
+  // Replace with your router's IP
+  final routerIP = '10.11.10.150';
+  final client = HelvarNetClient(routerIP);
 
-  print('HelvarNet Discovery Protocol Tester');
-  print('==================================');
+  print('HelvarNet Client Test');
+  print('====================');
 
   try {
-    // Test direct TCP commands for discovery
-    print('\n[1] Testing TCP Discovery Commands:');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:2,C:107#', 'Query Workgroup Name');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:2,C:108#', 'Query Workgroup Membership');
-    await testTcpCommand(routerIP, tcpPort, '>V:2,C:165#', 'Query Groups');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:2,C:164,G:1#', 'Query Group 1 Members');
-    await testTcpCommand(routerIP, tcpPort, '>V:2,C:166#', 'Query Scene Names');
+    // Step 1: Discover workgroups
+    print('\nStep 1: Discovering Workgroups...');
+    final workgroups = await client.discoverWorkgroups();
+    print('Found ${workgroups.length} workgroups: $workgroups');
 
-    // Test TCP discovery path - version query → clusters → routers → devices
-    print('\n[2] Testing Basic Configuration Commands:');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:1,C:190#', 'Query Software Version');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:1,C:191#', 'Query HelvarNet Version');
-    await testTcpCommand(routerIP, tcpPort, '>V:1,C:185#', 'Query Time');
+    // Step 2: Discover subnets
+    print('\nStep 2: Discovering Subnets...');
+    final subnets = await client.discoverSubnets();
+    print('Found ${subnets.length} subnets: $subnets');
 
-    // Test subnet and device specific commands
-    print(
-        '\n[3] Testing Device Queries (change subnet/device values as needed):');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:1,C:104,@1.1.1.1#', 'Query Device Type');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:1,C:106,@1.1.1.1#', 'Query Device Description');
-    await testTcpCommand(
-        routerIP, tcpPort, '>V:1,C:152,@1.1.1.1#', 'Query Load Level');
+    // Step 3: Discover groups (limited range for testing)
+    print('\nStep 3: Discovering Groups (201-220)...');
+    final groups = <int>[];
+    // Use a smaller range for quicker testing
+    for (int i = 1; i <= 65535; i++) {
+      final response = await client.sendTcpCommand('>V:1,C:105,G:$i#');
+      if (response.startsWith('?')) {
+        groups.add(i);
+        print('Found group: $i');
+      }
+    }
+    print('Found ${groups.length} groups: $groups');
 
-    // Test UDP broadcast discovery (modify for direct communications)
-    print('\n[4] Testing UDP Discovery Commands:');
-    await testUdpCommand(routerIP, udpPort, '>V:2,C:107#',
-        'Query Workgroup Name', 500); // Short timeout
-    await testUdpCommand(routerIP, udpPort, '>V:2,C:107#',
-        'Query Workgroup Name (without null bytes)', 500, false);
+    // Step 4: Get info for each group
+    print('\nStep 4: Getting Group Info...');
+    for (final groupId in groups) {
+      final groupInfo = await client.getGroupInfo(groupId);
+      print('Group $groupId: $groupInfo');
+    }
 
-    print('\n[5] Testing UDP Broadcast Discovery:');
-    final broadcastResult = await testUdpBroadcast(
-        udpPort, '>V:2,C:107#', 'Query Workgroup Name Broadcast');
-    if (broadcastResult.isEmpty) {
-      print('No responses received from broadcast');
+    // Step 5: Try controlling a group (if you want to test this)
+    if (groups.isNotEmpty &&
+        await shouldContinue(
+            'Would you like to test controlling a group? (y/n)')) {
+      final groupId = groups.first;
+      print('\nStep 5: Controlling Group $groupId...');
+
+      // Get current scene
+      final currentInfo = await client.getGroupInfo(groupId);
+      final currentScene = currentInfo['lastScene'] ?? 1;
+      print('Current scene: $currentScene');
+
+      // Try to set to a different scene
+      final newScene = currentScene == 1 ? 2 : 1;
+      print('Setting to scene $newScene...');
+      final success =
+          await client.recallGroupScene(groupId, 1, newScene, fadeTime: 500);
+      print('Scene recall ${success ? 'succeeded' : 'failed'}');
+
+      // Verify the change
+      await Future.delayed(Duration(milliseconds: 700)); // Wait for fade
+      final newInfo = await client.getGroupInfo(groupId);
+      print('New scene: ${newInfo['lastScene']}');
+
+      // Try setting a level directly
+      if (await shouldContinue(
+          'Would you like to test setting a direct level? (y/n)')) {
+        print('Setting to 50% level...');
+        final levelSuccess =
+            await client.setGroupLevel(groupId, 50, fadeTime: 500);
+        print('Level set ${levelSuccess ? 'succeeded' : 'failed'}');
+
+        await Future.delayed(Duration(milliseconds: 700)); // Wait for fade
+        print('Getting updated power consumption...');
+        final finalInfo = await client.getGroupInfo(groupId);
+        print('Updated info: $finalInfo');
+      }
     }
   } catch (e) {
     print('Error: $e');
   }
+
+  print('\nTest completed.');
 }
 
-Future<void> testTcpCommand(
-    String ip, int port, String command, String description) async {
-  print('\nTesting: $description');
-  print('Command: $command');
-
-  try {
-    final socket = await Socket.connect(ip, port);
-
-    // Set a timeout for receiving response
-    socket.timeout(const Duration(seconds: 5));
-
-    // Send command
-    socket.write(command);
-    print('Command sent, waiting for response...');
-
-    // Wait for response
-    final response =
-        await socket.first.timeout(const Duration(seconds: 5), onTimeout: () {
-      socket.destroy();
-      return utf8.encode('TIMEOUT');
-    });
-
-    final responseStr = utf8.decode(response);
-    print('Response: $responseStr');
-    print(
-        'Response bytes: ${response.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
-
-    // Parse the response if it's an error
-    if (responseStr.startsWith('!')) {
-      final errorCode = responseStr.split('=')[1].replaceAll('#', '');
-      final errorMessage = getErrorMessage(int.parse(errorCode));
-      print('Error Code: $errorCode - $errorMessage');
-    }
-
-    socket.destroy();
-  } catch (e) {
-    print('Communication error: $e');
-  }
-}
-
-Future<void> testUdpCommand(
-    String ip, int port, String command, String description,
-    [int timeoutMs = 5000, bool addNullBytes = true]) async {
-  print('\nTesting: $description');
-  print('Command: $command');
-
-  try {
-    final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-
-    // Set socket to listen for responses
-    final responses = <String>[];
-
-    socket.listen((RawSocketEvent event) {
-      if (event == RawSocketEvent.read) {
-        final datagram = socket.receive();
-        if (datagram != null) {
-          final response = utf8.decode(datagram.data);
-          responses.add('From ${datagram.address.address}: $response');
-          print(
-              'Received response from ${datagram.address.address}: $response');
-          print(
-              'Response bytes: ${datagram.data.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
-        }
-      }
-    });
-
-    // Send command
-    List<int> data;
-    if (addNullBytes) {
-      // Add null bytes as your original implementation did
-      List<int> commandBytes = List<int>.from(command.codeUnits);
-      commandBytes.addAll([0, 0, 0, 0]);
-      data = Uint8List.fromList(commandBytes);
-    } else {
-      data = utf8.encode(command);
-    }
-
-    print('Sending UDP packet to $ip:$port...');
-    print(
-        'Packet bytes: ${data.map((b) => '0x${b.toRadixString(16).padLeft(2, '0')}').join(' ')}');
-    socket.send(data, InternetAddress(ip), port);
-
-    // Wait for response with timeout
-    await Future.delayed(Duration(milliseconds: timeoutMs));
-
-    if (responses.isEmpty) {
-      print('No response received within timeout period');
-    } else {
-      for (var response in responses) {
-        print('Response: $response');
-      }
-    }
-
-    socket.close();
-  } catch (e) {
-    print('Communication error: $e');
-  }
-}
-
-Future<List<String>> testUdpBroadcast(
-    int port, String command, String description) async {
-  print('\nTesting: $description');
-  print('Command: $command');
-
-  final responses = <String>[];
-
-  try {
-    // Find all network interfaces
-    final interfaces = await NetworkInterface.list(
-      includeLoopback: false,
-      includeLinkLocal: false,
-      type: InternetAddressType.IPv4,
-    );
-
-    print('Found ${interfaces.length} network interfaces');
-
-    for (var interface in interfaces) {
-      print('Interface: ${interface.name}');
-
-      for (var addr in interface.addresses) {
-        // Calculate broadcast address (for simplicity using 255.255.255.255)
-        final broadcastAddress = InternetAddress('255.255.255.255');
-
-        print(
-            'Sending broadcast from ${addr.address} to ${broadcastAddress.address}:$port');
-
-        // Create a socket with broadcast permission
-        final socket = await RawDatagramSocket.bind(addr, 0);
-        socket.broadcastEnabled = true;
-
-        socket.listen((RawSocketEvent event) {
-          if (event == RawSocketEvent.read) {
-            final datagram = socket.receive();
-            if (datagram != null) {
-              final response = utf8.decode(datagram.data);
-              final entry = 'From ${datagram.address.address}: $response';
-              if (!responses.contains(entry)) {
-                responses.add(entry);
-                print('Received response: $entry');
-              }
-            }
-          }
-        });
-
-        // Send command
-        List<int> commandBytes = List<int>.from(command.codeUnits);
-        Uint8List data = Uint8List.fromList(commandBytes);
-        socket.send(data, broadcastAddress, port);
-
-        // Wait some time for responses
-        await Future.delayed(Duration(milliseconds: 1000));
-      }
-    }
-
-    // Additional wait for any late responses
-    await Future.delayed(Duration(milliseconds: 500));
-
-    if (responses.isEmpty) {
-      print('No responses received from broadcast');
-    }
-
-    return responses;
-  } catch (e) {
-    print('Broadcast error: $e');
-    return [];
-  }
-}
-
-String getErrorMessage(int code) {
-  switch (code) {
-    case 0:
-      return 'Success';
-    case 1:
-      return 'Invalid group index parameter';
-    case 2:
-      return 'Invalid cluster parameter';
-    case 3:
-      return 'Invalid router parameter';
-    case 4:
-      return 'Invalid subnet parameter';
-    case 5:
-      return 'Invalid device parameter';
-    case 6:
-      return 'Invalid sub device parameter';
-    case 7:
-      return 'Invalid block parameter';
-    case 8:
-      return 'Invalid scene parameter';
-    case 9:
-      return 'Cluster does not exist';
-    case 10:
-      return 'Router does not exist';
-    case 11:
-      return 'Device does not exist';
-    case 12:
-      return 'Property does not exist';
-    case 13:
-      return 'Invalid RAW message size';
-    case 14:
-      return 'Invalid messages type';
-    case 15:
-      return 'Invalid message command';
-    case 16:
-      return 'Missing ASCII terminator';
-    case 17:
-      return 'Missing ASCII parameter';
-    case 18:
-      return 'Incompatible version';
-    default:
-      return 'Unknown error';
-  }
+Future<bool> shouldContinue(String question) async {
+  stdout.write('$question ');
+  final response = stdin.readLineSync()?.toLowerCase() ?? '';
+  return response == 'y' || response == 'yes';
 }
