@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/emergency_device.dart';
 import '../models/helvar_router.dart';
 import '../models/helvar_device.dart';
-import '../models/input_device.dart';
 import '../models/output_device.dart';
 import '../models/workgroup.dart';
 import '../providers/workgroups_provider.dart';
 import '../utils/file_dialog_helper.dart';
-import '../services/helvar_device_discovery_service.dart';
+import '../services/discovery_service.dart';
 import 'add_device_dialog.dart';
 
 class RouterDetailScreen extends ConsumerStatefulWidget {
@@ -28,9 +26,8 @@ class RouterDetailScreen extends ConsumerStatefulWidget {
 class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   late List<HelvarDevice> _devices;
   bool _isLoading = false;
-  final HelvarDeviceDiscoveryService _discoveryService =
-      HelvarDeviceDiscoveryService();
-
+  final DiscoveryService _discoveryService =
+      DiscoveryService(); // Updated service
   final Map<String, List<HelvarDevice>> _devicesBySubnet = {};
 
   @override
@@ -201,7 +198,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     IconData deviceIcon;
     switch (device.helvarType) {
       case 'input':
-        deviceIcon = Icons.input;
+        deviceIcon = device.isButtonDevice
+            ? Icons.touch_app
+            : (device.isMultisensor ? Icons.sensors : Icons.input);
         break;
       case 'emergency':
         deviceIcon = Icons.emergency;
@@ -228,9 +227,11 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Address: ${device.address}'),
-            Text('Type: ${device.helvarType}'),
-            if (device.helvarType == 'output')
-              Text('Level: ${(device as dynamic).level}%'),
+            Text('Type: ${device.props}'),
+            if (device.deviceStateCode != null) Text('State: ${device.state}'),
+            if (device.helvarType == 'output' &&
+                device is HelvarDriverOutputDevice)
+              Text('Level: ${device.level}%'),
           ],
         ),
         isThreeLine: true,
@@ -351,6 +352,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       }
       setState(() {
         _devices = widget.router.devices;
+        _organizeDevicesBySubnet();
         _isLoading = false;
       });
     } catch (e) {
@@ -470,8 +472,12 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildDetailRow('Address', device.address),
-              _buildDetailRow('Type', device.helvarType),
-              _buildDetailRow('Device ID', device.deviceId.toString()),
+              _buildDetailRow('Type', device.props),
+              _buildDetailRow('ID', device.deviceId.toString()),
+              if (device.deviceTypeCode != null)
+                _buildDetailRow('Type Code',
+                    '0x${device.deviceTypeCode!.toRadixString(16)}'),
+              _buildDetailRow('Device Type', device.helvarType),
               _buildDetailRow('Emergency', device.emergency.toString()),
               _buildDetailRow('Block ID', device.blockId),
               _buildDetailRow('Scene ID', device.sceneId),
@@ -480,8 +486,29 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                 _buildDetailRow('State', device.state),
               if (device.hexId.isNotEmpty)
                 _buildDetailRow('Hex ID', device.hexId),
-              if (device.helvarType == 'output')
-                _buildDetailRow('Level', '${(device as dynamic).level}%'),
+              if (device.helvarType == 'output' &&
+                  device is HelvarDriverOutputDevice)
+                _buildDetailRow('Level', '${device.level}%'),
+              if (device.isButtonDevice && device.buttonPoints.isNotEmpty) ...[
+                const Divider(),
+                const Text('Button Points:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...device.buttonPoints.map((point) => Padding(
+                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                      child: Text('${point.name} (${point.function})'),
+                    )),
+              ],
+              if (device.isMultisensor) ...[
+                const Divider(),
+                const Text('Sensor Capabilities:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...device.sensorInfo.entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                      child: Text('${entry.key}: ${entry.value}'),
+                    )),
+              ],
             ],
           ),
         ),
@@ -552,10 +579,10 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     });
 
     try {
-      final discoveredDevices =
-          await _discoveryService.discoverDevices(widget.router.ipAddress);
+      final discoveredRouter =
+          await _discoveryService.discoverRouter(widget.router.ipAddress);
 
-      if (discoveredDevices.isEmpty) {
+      if (discoveredRouter == null || discoveredRouter.devices.isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No devices discovered')),
@@ -565,6 +592,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         });
         return;
       }
+
+      final discoveredDevices = discoveredRouter.devices;
+
       if (!mounted) return;
       final shouldAdd = await showDialog<bool>(
             context: context,
@@ -594,48 +624,10 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       }
 
       final existingAddresses = _devices.map((d) => d.address).toSet();
-      final newDeviceInfos = discoveredDevices
-          .where((d) => !existingAddresses.contains(d['address']))
+      final newDevices = discoveredDevices
+          .where((d) => !existingAddresses.contains(d.address))
           .toList();
 
-      final newDevices = <HelvarDevice>[];
-      for (final deviceInfo in newDeviceInfos) {
-        final HelvarDevice device;
-        final nextId = _devices.length + newDevices.length + 1;
-
-        if (deviceInfo['helvarType'] == 'input') {
-          device = HelvarDriverInputDevice(
-            deviceId: nextId,
-            address: deviceInfo['address'] ?? '',
-            description: deviceInfo['description'] ?? 'Input Device',
-            hexId: deviceInfo['hexId'] ?? '',
-            props: deviceInfo['type'] ?? 'Unknown',
-            state: deviceInfo['state'] ?? '',
-          );
-        } else if (deviceInfo['helvarType'] == 'emergency') {
-          device = HelvarDriverEmergencyDevice(
-            deviceId: nextId,
-            address: deviceInfo['address'] ?? '',
-            description: deviceInfo['description'] ?? 'Emergency Device',
-            hexId: deviceInfo['hexId'] ?? '',
-            props: deviceInfo['type'] ?? 'Unknown',
-            state: deviceInfo['state'] ?? '',
-            emergency: true,
-          );
-        } else {
-          device = HelvarDriverOutputDevice(
-            deviceId: nextId,
-            address: deviceInfo['address'] ?? '',
-            description: deviceInfo['description'] ?? 'Output Device',
-            hexId: deviceInfo['hexId'] ?? '',
-            props: deviceInfo['type'] ?? 'Unknown',
-            state: deviceInfo['state'] ?? '',
-            level: deviceInfo['level'] ?? 100,
-          );
-        }
-
-        newDevices.add(device);
-      }
       for (final device in newDevices) {
         await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
               widget.workgroup.id,
@@ -643,6 +635,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
               device,
             );
       }
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Added ${newDevices.length} devices')),

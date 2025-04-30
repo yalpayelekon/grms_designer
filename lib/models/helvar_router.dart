@@ -6,18 +6,19 @@ class HelvarRouter {
   final String address;
   final String ipAddress;
   String description;
-
+  List<String>? deviceAddresses;
   bool isNormal;
   bool isMissing;
   bool isFaulty;
 
+  int version;
   int clusterId;
   int clusterMemberId;
   int? deviceTypeCode;
   String? deviceState;
   int? deviceStateCode;
   Map<int, List<HelvarDevice>> devicesBySubnet = {};
-
+  String? deviceType;
   List<HelvarDevice> devices;
 
   HelvarRouter({
@@ -25,6 +26,7 @@ class HelvarRouter {
     this.type = 'HelvarRouter',
     required this.address,
     this.ipAddress = '',
+    this.version = 2,
     this.description = '',
     this.isNormal = true,
     this.isMissing = false,
@@ -33,6 +35,7 @@ class HelvarRouter {
     this.clusterMemberId = 1,
     this.deviceTypeCode,
     this.deviceState,
+    this.deviceType,
     this.deviceStateCode,
     List<HelvarDevice>? devices,
   }) : devices = devices ?? [] {

@@ -76,6 +76,8 @@ class DiscoveryService {
 
     try {
       socket = await Socket.connect(routerIpAddress, defaultTcpPort);
+
+      // Parse IP address to determine router address
       final ipParts = routerIpAddress.split('.');
       if (ipParts.length != 4) {
         debugPrint('Invalid router IP address format: $routerIpAddress');
@@ -87,26 +89,83 @@ class DiscoveryService {
       final routerAddress = '$clusterId.$clusterMemberId';
 
       debugPrint('Router address derived as: $routerAddress');
+
+      // Create router object
       final router = HelvarRouter(
         name: 'Router_$clusterMemberId',
         address: routerAddress,
         ipAddress: routerIpAddress,
-        description: 'Router $clusterMemberId',
+        description: 'Router $clusterMemberId', // Default description
         clusterId: clusterId,
         clusterMemberId: clusterMemberId,
       );
+
+      // FOLLOW EXACT SEQUENCE FROM TEST FILE
+
+      // 1. Query router type and description
+      debugPrint('Querying router type...');
+      final typeResponse = await _sendCommand(
+          socket,
+          QueryCommands.queryDeviceType(
+              router.version, clusterId, clusterMemberId, 0, 0));
+      final typeValue = extractResponseValue(typeResponse);
+      if (typeValue != null) {
+        final typeCode = int.tryParse(typeValue) ?? 0;
+        router.deviceTypeCode = typeCode;
+        router.deviceType = getDeviceTypeDescription(typeCode);
+        debugPrint('Router type: $typeCode (${router.deviceType})');
+      } else {
+        debugPrint('Failed to get router type: $typeResponse');
+      }
+
+      // 2. Query router description
+      debugPrint('Querying router description...');
+      final descResponse = await _sendCommand(
+          socket,
+          QueryCommands.queryDescriptionDevice(
+              router.version, clusterId, clusterMemberId, 0, 0));
+      final descValue = extractResponseValue(descResponse);
+      if (descValue != null) {
+        router.description = descValue;
+        debugPrint('Router description: ${router.description}');
+      } else {
+        debugPrint('Failed to get router description: $descResponse');
+      }
+
+      // 3. Query router state
       debugPrint('Querying router state...');
-      final stateResponse = await _sendCommand(socket,
-          QueryCommands.queryDeviceState(clusterId, clusterMemberId, 0, 0));
+      final stateResponse = await _sendCommand(
+          socket,
+          QueryCommands.queryDeviceState(
+              router.version, clusterId, clusterMemberId, 0, 0));
       final stateValue = extractResponseValue(stateResponse);
       if (stateValue != null) {
         final stateCode = int.tryParse(stateValue) ?? 0;
         router.deviceStateCode = stateCode;
         router.deviceState = getStateFlagsDescription(stateCode);
         debugPrint('Router state: $stateCode (${router.deviceState})');
+      } else {
+        debugPrint('Failed to get router state: $stateResponse');
       }
+
+      // 4. Query device types and addresses
+      debugPrint('Querying router for device types and addresses...');
+      final typesAndAddressesResponse = await _sendCommand(
+          socket, '>V:1,C:100,@$clusterId.$clusterMemberId#');
+      final addressesValue = extractResponseValue(typesAndAddressesResponse);
+      if (addressesValue != null) {
+        debugPrint('Router device types and addresses: $addressesValue');
+        router.deviceAddresses = addressesValue.split(',');
+      } else {
+        debugPrint(
+            'Failed to get device types and addresses: $typesAndAddressesResponse');
+      }
+
+      // Now scan each subnet to discover devices (1-4)
       for (int subnet = 1; subnet <= 4; subnet++) {
-        debugPrint('Scanning subnet $subnet...');
+        debugPrint('\nScanning subnet $subnet...');
+
+        // Query for subnet information
         final devicesResponse = await _sendCommand(
             socket, '>V:1,C:100,@$clusterId.$clusterMemberId.$subnet#');
         final devicesValue = extractResponseValue(devicesResponse);
@@ -120,10 +179,15 @@ class DiscoveryService {
         final deviceAddressTypes = parseDeviceAddressesAndTypes(devicesValue);
         debugPrint(
             'Found ${deviceAddressTypes.length} devices in subnet $subnet');
+
         final subnetDevices = <HelvarDevice>[];
+
+        // Query each device in the subnet
         for (final entry in deviceAddressTypes.entries) {
           final deviceId = entry.key;
           final typeCode = entry.value;
+
+          // Skip special device IDs that might be reserved
           if (deviceId >= 65500) {
             debugPrint('Skipping high device ID: $deviceId');
             continue;
@@ -131,17 +195,21 @@ class DiscoveryService {
 
           final deviceAddress = '$clusterId.$clusterMemberId.$subnet.$deviceId';
           debugPrint('Querying device: $deviceAddress (TypeCode: $typeCode)');
+
+          // Query device description
           final descResponse = await _sendCommand(
               socket,
-              QueryCommands.queryDescriptionDevice(
-                  clusterId, clusterMemberId, subnet, deviceId));
+              QueryCommands.queryDescriptionDevice(router.version, clusterId,
+                  clusterMemberId, subnet, deviceId));
           final description =
               extractResponseValue(descResponse) ?? 'Device $deviceId';
           debugPrint('  Description: $description');
+
+          // Query device state
           final deviceStateResponse = await _sendCommand(
               socket,
-              QueryCommands.queryDeviceState(
-                  clusterId, clusterMemberId, subnet, deviceId));
+              QueryCommands.queryDeviceState(router.version, clusterId,
+                  clusterMemberId, subnet, deviceId));
           int? deviceStateCode;
           String deviceState = '';
 
@@ -151,13 +219,15 @@ class DiscoveryService {
             deviceState = getStateFlagsDescription(deviceStateCode);
             debugPrint('  State: $deviceStateCode ($deviceState)');
           }
+
+          // Get load level for output devices
           int? loadLevel;
           if (typeCode == 1 || typeCode == 1025 || typeCode == 1537) {
             try {
               final levelResponse = await _sendCommand(
                   socket,
-                  QueryCommands.queryLoadLevel(
-                      clusterId, clusterMemberId, subnet, deviceId));
+                  QueryCommands.queryLoadLevel(router.version, clusterId,
+                      clusterMemberId, subnet, deviceId));
               final levelValue = extractResponseValue(levelResponse);
               if (levelValue != null) {
                 loadLevel = int.tryParse(levelValue) ?? 0;
@@ -167,9 +237,13 @@ class DiscoveryService {
               debugPrint('Error getting load level: $e');
             }
           }
+
+          // Determine device type
           final bool isButton = isButtonDevice(typeCode);
           final bool isMultisensor = isDeviceMultisensor(typeCode);
           final String deviceTypeString = getDeviceTypeDescription(typeCode);
+
+          // Create the appropriate device object
           HelvarDevice device;
 
           if (isButton) {
@@ -236,8 +310,12 @@ class DiscoveryService {
               level: loadLevel ?? 100,
             );
           }
+
+          // Add to subnet devices list
           subnetDevices.add(device);
         }
+
+        // If we found devices, add them to the router
         if (subnetDevices.isNotEmpty) {
           router.devicesBySubnet[subnet] = subnetDevices;
           for (final device in subnetDevices) {
