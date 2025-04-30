@@ -88,19 +88,43 @@ class DeviceTypes {
     0x0901: 'Sequencer',
   };
 
-  // Digidim device types (partial list)
+  // Digidim device types (expanded list)
   static final Map<int, String> digidimTypes = {
     0x00100802: '100 – Rotary',
     0x00110702: '110 – Single Sider',
     0x00111402: '111 – Double Sider',
     0x00121302: '121 – 2 Button On/Off + IR',
+    0x00122002: '122 – 2 Button Modifier + IR',
     0x00124402: '124 – 5 Button + IR',
     0x00125102: '125 – 5 Button + Modifier + IR',
     0x00126802: '126 – 8 Button + IR',
     0x00170102: '170 – IR Receiver',
     0x00312502: '312 – Multisensor',
+    0x00410802: '410 – Ballast (1-10V Converter)',
+    0x00416002: '416S – 16A Dimmer',
+    0x00425202: '425S – 25A Dimmer',
+    0x00444302: '444 – Mini Input Unit',
+    0x00450402: '450 – 800W Dimmer',
+    0x00452802: '452 – 1000W Universal Dimmer',
+    0x00455902: '455 – 500W Thruster Dimmer',
+    0x00458002: '458/DIMB – 8-Channel Dimmer',
+    0x74458102: '459/CTRB – 8-Ch Ballast Controller',
+    0x04458302: '459/SWB – 8-Ch Relay Module',
+    0x00460302: '460 – DALI-to-SDIM Converter',
+    0x00472602: '472 – Din Rail 1-10V/DS/8 Converter',
+    0x00474002: '474 – 4-Ch Ballast (Output Unit)',
+    0x00474102: '474 – 4-Ch Ballast (Relay Unit)',
+    0x00490002: '490 – Blinds Unit',
     0x00494802: '494 – Relay Unit',
     0x00496602: '498 – Relay Unit',
+    0x00804502: '804 – Digidim 4',
+    0x00824002: '924 – LCD TouchPanel',
+    0x00935602: '935 – Scene Commander (6 Buttons)',
+    0x00939402: '939 – Scene Commander (10 Buttons)',
+    0x00942402: '942 – Analogue Input Unit',
+    0x00458602: '459/CPT4 – 4-Ch Options Module',
+    // Special case for our detected type
+    0x00135002: 'Button 135',
   };
 
   // Imagine (SDIM) device types (partial list)
@@ -124,7 +148,6 @@ class DeviceTypes {
   static String getTypeDescription(int typeCode) {
     // Try to identify by protocol first (last byte)
     final protocol = typeCode & 0xFF;
-    final deviceType = typeCode >> 8;
 
     if (protocol == dali) {
       return daliTypes[typeCode] ??
@@ -142,16 +165,53 @@ class DeviceTypes {
 
     // Special handling for common detected types
     if (typeCode == 4818434) {
-      return '498 – Relay Unit';
+      return '498 – Relay Unit (8 channel relay) DALI';
     } else if (typeCode == 3220738) {
-      return '312 – Multisensor';
+      return 'Multisensor 312';
     } else if (typeCode == 1537) {
       return 'LED Unit';
     } else if (typeCode == 1265666) {
-      return 'Button Panel';
+      return 'Button 135';
     }
 
     return 'Unknown Device (Type: 0x${typeCode.toRadixString(16)})';
+  }
+
+  // Check if a device is a button panel based on its type code
+  static bool isButtonDevice(int typeCode) {
+    return typeCode == 1265666 || // Button 135
+        (typeCode & 0xFF) == digidim &&
+            (((typeCode >> 8) & 0xFF) == 0x12 || // 12xx series button panels
+                ((typeCode >> 8) & 0xFF) ==
+                    0x93 || // 93x series scene commanders
+                ((typeCode >> 8) & 0xFF) == 0x82 // 82x series touchpanels
+            );
+  }
+
+  // Check if a device is a multisensor
+  static bool isMultisensor(int typeCode) {
+    return typeCode == 3220738 || // 312 Multisensor
+        (typeCode & 0xFF) == digidim && ((typeCode >> 8) & 0xFF) == 0x31;
+  }
+}
+
+class HelvarButtonPoint {
+  final String name;
+  final String function;
+  final int buttonId;
+
+  HelvarButtonPoint({
+    required this.name,
+    required this.function,
+    required this.buttonId,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'function': function,
+      'buttonId': buttonId,
+    };
   }
 }
 
@@ -162,6 +222,7 @@ class HelvarRouter {
   final String routerAddress;
   String? description;
   String? deviceType;
+  int? deviceTypeCode;
   int? deviceStateCode;
   String? deviceState;
   List<String>? deviceAddresses;
@@ -186,6 +247,7 @@ class HelvarRouter {
       'routerAddress': routerAddress,
       'description': description,
       'deviceType': deviceType,
+      'deviceTypeCode': deviceTypeCode,
       'deviceStateCode': deviceStateCode,
       'deviceState': deviceState,
       'deviceAddresses': deviceAddresses,
@@ -205,6 +267,14 @@ class HelvarDevice {
   String? deviceState;
   Map<String, dynamic> additionalInfo = {};
 
+  // For button devices
+  bool isButtonDevice = false;
+  List<HelvarButtonPoint> buttonPoints = [];
+
+  // For multisensors
+  bool isMultisensor = false;
+  Map<String, dynamic> sensorInfo = {};
+
   HelvarDevice({
     required this.address,
     required this.subnet,
@@ -221,6 +291,10 @@ class HelvarDevice {
       'deviceType': deviceType,
       'deviceStateCode': deviceStateCode,
       'deviceState': deviceState,
+      'isButtonDevice': isButtonDevice,
+      'buttonPoints': buttonPoints.map((p) => p.toJson()).toList(),
+      'isMultisensor': isMultisensor,
+      'sensorInfo': sensorInfo,
       'additionalInfo': additionalInfo,
     };
   }
@@ -276,6 +350,14 @@ class HelvarNetClient {
     return sendTcpCommand(command);
   }
 
+  /// Query subdevice information (for buttons)
+  Future<String> querySubdeviceInfo(String address) async {
+    // This is a placeholder - we need to determine the actual command
+    // to query subdevice information for button panels
+    final command = '>V:2,C:151,@$address#'; // Command 151 - Query Inputs
+    return sendTcpCommand(command);
+  }
+
   /// Parse device addresses from command 100 response
   Map<int, int> parseDeviceAddressesAndTypes(String response) {
     final deviceMap = <int, int>{};
@@ -309,6 +391,38 @@ class HelvarNetClient {
     return null;
   }
 
+  /// Generate button points for button devices
+  List<HelvarButtonPoint> generateButtonPoints(String deviceName) {
+    final points = <HelvarButtonPoint>[];
+
+    // Add standard button points based on what we see in Niagara
+    points.add(HelvarButtonPoint(
+      name: '${deviceName}_Missing',
+      function: 'Status',
+      buttonId: 0,
+    ));
+
+    // Add 7 standard buttons
+    for (int i = 1; i <= 7; i++) {
+      points.add(HelvarButtonPoint(
+        name: '${deviceName}_Button$i',
+        function: 'Button',
+        buttonId: i,
+      ));
+    }
+
+    // Add 7 IR receivers
+    for (int i = 1; i <= 7; i++) {
+      points.add(HelvarButtonPoint(
+        name: '${deviceName}_IR$i',
+        function: 'IR Receiver',
+        buttonId: i + 100, // Using offset for IR receivers
+      ));
+    }
+
+    return points;
+  }
+
   /// Discover router information
   Future<HelvarRouter?> discoverRouterInfo() async {
     final ipParts = routerIP.split('.');
@@ -326,49 +440,46 @@ class HelvarNetClient {
 
     // Query router type and description
     final typeResponse = await queryDeviceType(routerAddress);
-    if (typeResponse.startsWith('?')) {
-      final typeValue = extractResponseValue(typeResponse);
-      if (typeValue != null) {
-        router.deviceType = typeValue;
-      }
-
-      final descResponse = await queryDeviceDescription(routerAddress);
-      final descValue = extractResponseValue(descResponse);
-      if (descValue != null) {
-        router.description = descValue;
-      }
-
-      // Query device state (Command 110)
-      print('Querying router state...');
-      final stateResponse = await queryDeviceState(routerAddress);
-      final stateValue = extractResponseValue(stateResponse);
-      if (stateValue != null) {
-        final stateCode = int.tryParse(stateValue) ?? 0;
-        router.deviceStateCode = stateCode;
-        router.deviceState =
-            DeviceStateFlags.getStateFlagsDescription(stateCode);
-        print('Router state: $stateCode (${router.deviceState})');
-      } else {
-        print('Failed to get router state: $stateResponse');
-      }
-
-      // Query device types and addresses (Command 100)
-      print('Querying router for device types and addresses...');
-      final typesAndAddressesResponse =
-          await queryDeviceTypesAndAddresses(routerAddress);
-      final addressesValue = extractResponseValue(typesAndAddressesResponse);
-      if (addressesValue != null) {
-        print('Router device types and addresses: $addressesValue');
-        router.deviceAddresses = addressesValue.split(',');
-      } else {
-        print(
-            'Failed to get device types and addresses: $typesAndAddressesResponse');
-      }
-
-      return router;
+    final typeValue = extractResponseValue(typeResponse);
+    if (typeValue != null) {
+      final typeCode = int.tryParse(typeValue) ?? 0;
+      router.deviceTypeCode = typeCode;
+      router.deviceType = typeValue;
     }
 
-    return null;
+    final descResponse = await queryDeviceDescription(routerAddress);
+    final descValue = extractResponseValue(descResponse);
+    if (descValue != null) {
+      router.description = descValue;
+    }
+
+    // Query device state (Command 110)
+    print('Querying router state...');
+    final stateResponse = await queryDeviceState(routerAddress);
+    final stateValue = extractResponseValue(stateResponse);
+    if (stateValue != null) {
+      final stateCode = int.tryParse(stateValue) ?? 0;
+      router.deviceStateCode = stateCode;
+      router.deviceState = DeviceStateFlags.getStateFlagsDescription(stateCode);
+      print('Router state: $stateCode (${router.deviceState})');
+    } else {
+      print('Failed to get router state: $stateResponse');
+    }
+
+    // Query device types and addresses (Command 100)
+    print('Querying router for device types and addresses...');
+    final typesAndAddressesResponse =
+        await queryDeviceTypesAndAddresses(routerAddress);
+    final addressesValue = extractResponseValue(typesAndAddressesResponse);
+    if (addressesValue != null) {
+      print('Router device types and addresses: $addressesValue');
+      router.deviceAddresses = addressesValue.split(',');
+    } else {
+      print(
+          'Failed to get device types and addresses: $typesAndAddressesResponse');
+    }
+
+    return router;
   }
 
   /// Discover devices on a subnet
@@ -413,6 +524,10 @@ class HelvarNetClient {
         device.deviceTypeCode = typeCode;
         device.deviceType = DeviceTypes.getTypeDescription(typeCode);
 
+        // Identify special device types
+        device.isButtonDevice = DeviceTypes.isButtonDevice(typeCode);
+        device.isMultisensor = DeviceTypes.isMultisensor(typeCode);
+
         // Get device description
         final descResponse = await queryDeviceDescription(deviceAddress);
         final descValue = extractResponseValue(descResponse);
@@ -434,6 +549,24 @@ class HelvarNetClient {
           print('  State: $stateCode (${device.deviceState})');
         } else {
           print('  Failed to get state: $stateResponse');
+        }
+
+        // If it's a button device, generate button points
+        if (device.isButtonDevice) {
+          print(
+              '  Generating button points for button device: ${device.description}');
+          device.buttonPoints =
+              generateButtonPoints(device.description ?? 'Button_$deviceId');
+        }
+
+        // If it's a multisensor, add sensor info
+        if (device.isMultisensor) {
+          print('  Adding multisensor info');
+          device.sensorInfo = {
+            'hasPresence': true,
+            'hasLightLevel': true,
+            'hasTemperature': false, // May depend on model
+          };
         }
 
         devices.add(device);
@@ -462,9 +595,8 @@ class HelvarNetClient {
   }
 }
 
-void main() async {
-  // Connect to the router
-  final routerIP = '10.11.10.150';
+void main(List<String> args) async {
+  final routerIP = args.isNotEmpty ? args[0] : '10.11.10.150';
   final client = HelvarNetClient(routerIP);
 
   print('HelvarNet Device Query Test');
@@ -509,6 +641,22 @@ void main() async {
               '    Type: ${device.deviceType} [Code: ${device.deviceTypeCode}]');
           print(
               '    State: ${device.deviceState} [Code: ${device.deviceStateCode}]');
+
+          // Print button points for button devices
+          if (device.isButtonDevice && device.buttonPoints.isNotEmpty) {
+            print('    Button Points (${device.buttonPoints.length}):');
+            for (final point in device.buttonPoints) {
+              print('      - ${point.name} (${point.function})');
+            }
+          }
+
+          // Print sensor information for multisensors
+          if (device.isMultisensor) {
+            print('    Sensor Capabilities:');
+            device.sensorInfo.forEach((key, value) {
+              print('      - $key: $value');
+            });
+          }
         }
       });
     } else {
