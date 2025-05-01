@@ -336,7 +336,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               },
               child: Container(
                 width: 8,
-                color: _isDragging ? Colors.blue.withOpacity(0.5) : Colors.grey,
+                color: _isDragging ? Colors.blue : Colors.grey,
               ),
             ),
           ),

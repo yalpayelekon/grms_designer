@@ -189,7 +189,6 @@ class AddDeviceDialogState extends State<AddDeviceDialog> {
                   );
                   break;
                 case DeviceType.output:
-                default:
                   device = HelvarDriverOutputDevice(
                     deviceId: widget.nextDeviceId,
                     address: deviceAddress,

@@ -157,7 +157,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           width: item.size.width,
           height: item.size.height,
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.4),
+            color: Colors.blue,
             border: Border.all(
               color: Colors.blue,
               width: 2.0,
@@ -180,7 +180,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           width: item.size.width,
           height: item.size.height,
           decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey,
             border: Border.all(
               color: Colors.grey,
               width: 1.0,
@@ -215,7 +215,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           width: item.size.width,
           height: item.size.height,
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.2),
+            color: Colors.blue,
             border: Border.all(
               color: selectedItemIndex == index ? Colors.blue : Colors.grey,
               width: selectedItemIndex == index ? 2.0 : 1.0,

@@ -11,8 +11,6 @@ import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
 
 class DiscoveryService {
-  static const int defaultTimeout = 3000; // 3 seconds timeout
-
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
     final points = <ButtonPoint>[];
     points.add(ButtonPoint(
@@ -89,7 +87,6 @@ class DiscoveryService {
 
       debugPrint('Router address derived as: $routerAddress');
 
-      // Create router object
       final router = HelvarRouter(
         address: routerAddress,
         ipAddress: routerIpAddress,
@@ -98,9 +95,6 @@ class DiscoveryService {
         clusterMemberId: clusterMemberId,
       );
 
-      // FOLLOW EXACT SEQUENCE FROM TEST FILE
-
-      // 1. Query router type and description
       debugPrint('Querying router type...');
       final typeResponse = await _sendCommand(
           socket,
@@ -116,7 +110,6 @@ class DiscoveryService {
         debugPrint('Failed to get router type: $typeResponse');
       }
 
-      // 2. Query router description
       debugPrint('Querying router description...');
       final descResponse = await _sendCommand(
           socket,
@@ -130,7 +123,6 @@ class DiscoveryService {
         debugPrint('Failed to get router description: $descResponse');
       }
 
-      // 3. Query router state
       debugPrint('Querying router state...');
       final stateResponse = await _sendCommand(
           socket,
@@ -146,7 +138,6 @@ class DiscoveryService {
         debugPrint('Failed to get router state: $stateResponse');
       }
 
-      // 4. Query device types and addresses
       debugPrint('Querying router for device types and addresses...');
       final typesAndAddressesResponse = await _sendCommand(
           socket, '>V:1,C:100,@$clusterId.$clusterMemberId#');
@@ -159,11 +150,9 @@ class DiscoveryService {
             'Failed to get device types and addresses: $typesAndAddressesResponse');
       }
 
-      // Now scan each subnet to discover devices (1-4)
       for (int subnet = 1; subnet <= 4; subnet++) {
         debugPrint('\nScanning subnet $subnet...');
 
-        // Query for subnet information
         final devicesResponse = await _sendCommand(
             socket, '>V:1,C:100,@$clusterId.$clusterMemberId.$subnet#');
         final devicesValue = extractResponseValue(devicesResponse);
@@ -180,12 +169,10 @@ class DiscoveryService {
 
         final subnetDevices = <HelvarDevice>[];
 
-        // Query each device in the subnet
         for (final entry in deviceAddressTypes.entries) {
           final deviceId = entry.key;
           final typeCode = entry.value;
 
-          // Skip special device IDs that might be reserved
           if (deviceId >= 65500) {
             debugPrint('Skipping high device ID: $deviceId');
             continue;
@@ -194,7 +181,6 @@ class DiscoveryService {
           final deviceAddress = '$clusterId.$clusterMemberId.$subnet.$deviceId';
           debugPrint('Querying device: $deviceAddress (TypeCode: $typeCode)');
 
-          // Query device description
           final descResponse = await _sendCommand(
               socket,
               HelvarNetCommands.queryDescriptionDevice(router.version,
@@ -203,7 +189,6 @@ class DiscoveryService {
               extractResponseValue(descResponse) ?? 'Device $deviceId';
           debugPrint('  Description: $description');
 
-          // Query device state
           final deviceStateResponse = await _sendCommand(
               socket,
               HelvarNetCommands.queryDeviceState(router.version, clusterId,
@@ -218,7 +203,6 @@ class DiscoveryService {
             debugPrint('  State: $deviceStateCode ($deviceState)');
           }
 
-          // Get load level for output devices
           int? loadLevel;
           if (typeCode == 1 || typeCode == 1025 || typeCode == 1537) {
             try {
@@ -236,12 +220,10 @@ class DiscoveryService {
             }
           }
 
-          // Determine device type
           final bool isButton = isButtonDevice(typeCode);
           final bool isMultisensor = isDeviceMultisensor(typeCode);
           final String deviceTypeString = getDeviceTypeDescription(typeCode);
 
-          // Create the appropriate device object
           HelvarDevice device;
 
           if (isButton) {
@@ -309,11 +291,9 @@ class DiscoveryService {
             );
           }
 
-          // Add to subnet devices list
           subnetDevices.add(device);
         }
 
-        // If we found devices, add them to the router
         if (subnetDevices.isNotEmpty) {
           router.devicesBySubnet[subnet] = subnetDevices;
           for (final device in subnetDevices) {
