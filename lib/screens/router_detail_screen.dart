@@ -101,7 +101,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Router: ${widget.router.name}'),
+        title: Text('Router: ${widget.router.description}'),
         actions: [
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,

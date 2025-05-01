@@ -288,8 +288,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 children: [
                                   ...workgroup.routers.map(
                                     (router) => TreeNode(
-                                      content: _buildDraggable(router.name,
-                                          Icons.router, WidgetType.text),
+                                      content: _buildDraggable(
+                                          router.description,
+                                          Icons.router,
+                                          WidgetType.text),
                                       children: router.devices
                                           .map(
                                             (device) => TreeNode(

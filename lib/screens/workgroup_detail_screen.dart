@@ -111,7 +111,7 @@ class WorkgroupDetailScreen extends ConsumerWidget {
         children: [
           ListTile(
             title: Text(
-              router.name,
+              router.description,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Column(

@@ -1,7 +1,6 @@
 import 'helvar_device.dart';
 
 class HelvarRouter {
-  final String name;
   final String type;
   final String address;
   final String ipAddress;
@@ -22,7 +21,6 @@ class HelvarRouter {
   List<HelvarDevice> devices;
 
   HelvarRouter({
-    required this.name,
     this.type = 'HelvarRouter',
     required this.address,
     this.ipAddress = '',
@@ -102,15 +100,14 @@ class HelvarRouter {
       identical(this, other) ||
       other is HelvarRouter &&
           runtimeType == other.runtimeType &&
-          name == other.name &&
+          description == other.description &&
           address == other.address;
 
   @override
-  int get hashCode => name.hashCode ^ address.hashCode;
+  int get hashCode => description.hashCode ^ address.hashCode;
 
   factory HelvarRouter.fromJson(Map<String, dynamic> json) {
     return HelvarRouter(
-      name: json['name'] as String,
       type: json['type'] as String? ?? 'HelvarRouter',
       address: json['address'] as String,
       ipAddress: json['ipAddress'] as String? ?? '',
@@ -139,7 +136,6 @@ class HelvarRouter {
     });
 
     return {
-      'name': name,
       'type': type,
       'address': address,
       'ipAddress': ipAddress,

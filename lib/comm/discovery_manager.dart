@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
-import '../protocol/commands/discovery_commands.dart';
+import 'package:grms_designer/protocol/query_commands.dart';
+
 import '../protocol/protocol_constants.dart';
 import '../screens/network_interface_dialog.dart';
 
@@ -45,7 +46,7 @@ class DiscoveryManager {
     }
 
     try {
-      String command = DiscoveryCommands.queryWorkgroupName();
+      String command = HelvarNetCommands.queryWorkgroupName(2);
       List<int> commandBytes = List<int>.from(command.codeUnits);
       Uint8List data = Uint8List.fromList(commandBytes);
 

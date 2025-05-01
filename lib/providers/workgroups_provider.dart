@@ -33,7 +33,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices.clear();
             router.devices.addAll(devices);
           } catch (e) {
-            debugPrint('Error loading devices for router ${router.name}: $e');
+            debugPrint(
+                'Error loading devices for router ${router.description}: $e');
           }
         }
       }
@@ -57,7 +58,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
               router.devices,
             );
           } catch (e) {
-            debugPrint('Error saving devices for router ${router.name}: $e');
+            debugPrint(
+                'Error saving devices for router ${router.description}: $e');
           }
         }
       }
@@ -110,7 +112,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices,
           );
         } catch (e) {
-          debugPrint('Error saving devices for router ${router.name}: $e');
+          debugPrint(
+              'Error saving devices for router ${router.description}: $e');
         }
         try {
           await _fileStorageService.saveWorkgroups(state);
@@ -143,7 +146,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices,
           );
         } catch (e) {
-          debugPrint('Error saving devices for router ${router.name}: $e');
+          debugPrint(
+              'Error saving devices for router ${router.description}: $e');
         }
         try {
           await _fileStorageService.saveWorkgroups(state);
@@ -179,7 +183,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
               router.devices,
             );
           } catch (e) {
-            debugPrint('Error saving devices for router ${router.name}: $e');
+            debugPrint(
+                'Error saving devices for router ${router.description}: $e');
           }
           try {
             await _fileStorageService.saveWorkgroups(state);
@@ -225,7 +230,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices,
           );
         } catch (e) {
-          debugPrint('Error saving devices for router ${router.name}: $e');
+          debugPrint(
+              'Error saving devices for router ${router.description}: $e');
         }
       }
     }

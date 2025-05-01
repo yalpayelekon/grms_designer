@@ -149,7 +149,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
       )) {
         newRouters.add(
           HelvarRouter(
-            name: 'Router_${workgroup.routers.length + newRouters.length + 1}',
             address: '1.${workgroup.routers.length + newRouters.length + 1}',
             ipAddress: routerInfo['ip'] ?? '',
             description: '${routerInfo['workgroup']} Router',
@@ -198,7 +197,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     )) {
       helvarRouters.add(
         HelvarRouter(
-          name: 'Router_${helvarRouters.length + 1}',
           address: '1.${helvarRouters.length + 1}',
           ipAddress: routerInfo['ip'] ?? '',
           description: '${routerInfo['workgroup']} Router',
