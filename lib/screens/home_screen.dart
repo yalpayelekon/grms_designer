@@ -80,7 +80,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                     TreeView(nodes: [
                       TreeNode(
                         content: GestureDetector(
-                          onTap: () {
+                          onDoubleTap: () {
                             setState(() {
                               showingProject = true;
                               openWorkGroup = false;
@@ -100,7 +100,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           TreeNode(
                             content: GestureDetector(
-                              onTap: () {
+                              onDoubleTap: () {
                                 setState(() {
                                   showingProject = true;
                                   openWorkGroup = false;
@@ -117,7 +117,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           TreeNode(
                             content: GestureDetector(
-                              onTap: () {
+                              onDoubleTap: () {
                                 setState(() {
                                   showingProject = true;
                                   openWorkGroup = false;
@@ -134,7 +134,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                             children: [
                               TreeNode(
                                 content: GestureDetector(
-                                  onTap: () {
+                                  onDoubleTap: () {
                                     setState(() {
                                       showingProject = true;
                                       openWorkGroup = false;
@@ -151,7 +151,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               TreeNode(
                                 content: GestureDetector(
-                                  onTap: () {
+                                  onDoubleTap: () {
                                     setState(() {
                                       showingProject = true;
                                       openWorkGroup = false;
@@ -172,7 +172,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     GestureDetector(
-                                      onTap: () {
+                                      onDoubleTap: () {
                                         setState(() {
                                           showingProject = true;
                                           openWorkGroup = false;
@@ -197,7 +197,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 children: [
                                   ...wiresheets.map((wiresheet) => TreeNode(
                                         content: GestureDetector(
-                                          onTap: () {
+                                          onDoubleTap: () {
                                             setState(() {
                                               showingProject = false;
                                               openWorkGroup = false;
@@ -254,7 +254,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       TreeNode(
                         content: GestureDetector(
-                          onTap: () {
+                          onDoubleTap: () {
                             setState(() {
                               showingProject = false;
                               openWorkGroup = true;
@@ -278,7 +278,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                             .map(
                               (workgroup) => TreeNode(
                                 content: GestureDetector(
-                                  onTap: () {
+                                  onDoubleTap: () {
                                     setState(() {
                                       showingProject = false;
                                       openWorkGroup = true;
