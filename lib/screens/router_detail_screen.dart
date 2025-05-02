@@ -178,15 +178,15 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             ),
           )
         : ListView.builder(
-            itemCount: _devicesBySubnet.length,
+            itemCount: widget.router.devicesBySubnet.length,
             itemBuilder: (context, index) {
-              final subnetId = _devicesBySubnet.keys.elementAt(index);
-              final subnetDevices = _devicesBySubnet[subnetId] ?? [];
+              final subnet =
+                  widget.router.devicesBySubnet.keys.elementAt(index);
+              final subnetDevices = widget.router.devicesBySubnet[subnet] ?? [];
 
               return ExpansionTile(
-                title:
-                    Text('Subnet $subnetId (${subnetDevices.length} devices)'),
-                initiallyExpanded: index == 0, // Expand first subnet by default
+                title: Text('Subnet $subnet (${subnetDevices.length} devices)'),
+                initiallyExpanded: index == 0,
                 children: subnetDevices
                     .map((device) => _buildDeviceCard(device))
                     .toList(),
