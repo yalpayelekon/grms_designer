@@ -297,8 +297,6 @@ class DiscoveryService {
     }
   }
 
-  // Add to lib/services/discovery_service.dart
-
   Future<List<HelvarGroup>> discoverGroups(String routerIpAddress) async {
     Socket? socket;
     final groups = <HelvarGroup>[];

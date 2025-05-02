@@ -152,7 +152,6 @@ class HelvarNetCommands {
     return '>V:$version,C:167@$address#';
   }
 
-  // Control commands
   static String recallSceneGroup(int version, int group, int block, int scene,
       {bool constantLight = false, int fadeTime = 0}) {
     _validateGroup(group);
@@ -228,7 +227,6 @@ class HelvarNetCommands {
     return '>V:$version,C:18,P:$proportionChange,F:$fadeTime,@$address#';
   }
 
-  // Emergency test control commands
   static String emergencyFunctionTestGroup(int version, int group) {
     _validateGroup(group);
     return '>V:$version,C:19,G:$group#';
@@ -256,7 +254,6 @@ class HelvarNetCommands {
     return '>V:$version,C:24,@$address#';
   }
 
-  // Configuration commands
   static String storeSceneGroup(
       int version, int group, int block, int scene, int level,
       {bool forceStore = false}) {

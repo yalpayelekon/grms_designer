@@ -23,29 +23,21 @@ bool isDeviceMultisensor(int typeCode) {
 }
 
 String getDeviceTypeDescription(int typeCode) {
-  // Try to identify by protocol (last byte)
   final protocol = typeCode & 0xFF;
 
   if (protocol == 0x01) {
-    // DALI device types
     return DaliDeviceType.types[typeCode] ??
         'DALI Device (0x${typeCode.toRadixString(16)})';
   } else if (protocol == 0x02) {
-    // Digidim device types
     return DigidimDeviceType.types[typeCode] ??
         'Digidim Device (0x${typeCode.toRadixString(16)})';
   } else if (protocol == 0x04) {
-    // Imagine/SDIM device types
     return ImagineDeviceType.types[typeCode] ??
         'Imagine Device (0x${typeCode.toRadixString(16)})';
   } else if (protocol == 0x08) {
-    // DMX device types
     return DmxDeviceType.types[typeCode] ??
         'DMX Device (0x${typeCode.toRadixString(16)})';
-  }
-
-  // Special handling for common detected types
-  else if (typeCode == 4818434) {
+  } else if (typeCode == 4818434) {
     return '498 – Relay Unit (8 channel relay) DALI';
   } else if (typeCode == 3217410 ||
       typeCode == 3220738 ||

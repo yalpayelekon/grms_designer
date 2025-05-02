@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-/// Device State Flag mapping
 class DeviceStateFlags {
   static const int disabled = 0x00000001;
   static const int lampFailure = 0x00000002;
@@ -72,15 +71,12 @@ class DeviceStateFlags {
   }
 }
 
-/// Device Type mapping
 class DeviceTypes {
-  // Protocol constants
   static const int dali = 0x01;
   static const int digidim = 0x02;
   static const int imagine = 0x04;
   static const int dmx = 0x08;
 
-  // DALI device types
   static final Map<int, String> daliTypes = {
     0x0001: 'Fluorescent Lamps',
     0x0101: 'Self-contained emergency lighting',
@@ -94,7 +90,6 @@ class DeviceTypes {
     0x0901: 'Sequencer',
   };
 
-  // Digidim device types (expanded list)
   static final Map<int, String> digidimTypes = {
     0x00100802: '100 – Rotary',
     0x00110702: '110 – Single Sider',
@@ -133,7 +128,6 @@ class DeviceTypes {
     0x00135002: 'Button 135',
   };
 
-  // Imagine (SDIM) device types (partial list)
   static final Map<int, String> imagineTypes = {
     0x0000F104: '474 – 4 Channel Ballast Controller - Relay Unit',
     0x0000F204: '474 – 4 Channel Ballast Controller - Output Unit',
@@ -143,16 +137,13 @@ class DeviceTypes {
     0x0000F604: '498 – 8-Channel Relay Unit',
   };
 
-  // DMX device types
   static final Map<int, String> dmxTypes = {
     0x00000008: 'DMX No device present',
     0x00000108: 'DMX Channel In',
     0x00000208: 'DMX Channel Out',
   };
 
-  // Get formatted type description
   static String getTypeDescription(int typeCode) {
-    // Try to identify by protocol first (last byte)
     final protocol = typeCode & 0xFF;
 
     if (protocol == dali) {
@@ -169,7 +160,6 @@ class DeviceTypes {
           'DMX Device (Type: 0x${typeCode.toRadixString(16)})';
     }
 
-    // Special handling for common detected types
     if (typeCode == 4818434) {
       return '498 – Relay Unit (8 channel relay) DALI';
     } else if (typeCode == 3220738) {
@@ -183,7 +173,6 @@ class DeviceTypes {
     return 'Unknown Device (Type: 0x${typeCode.toRadixString(16)})';
   }
 
-  // Check if a device is a button panel based on its type code
   static bool isButtonDevice(int typeCode) {
     return typeCode == 1265666 || // Button 135
         (typeCode & 0xFF) == digidim &&
@@ -194,7 +183,6 @@ class DeviceTypes {
             );
   }
 
-  // Check if a device is a multisensor
   static bool isMultisensor(int typeCode) {
     return typeCode == 3220738 || // 312 Multisensor
         (typeCode & 0xFF) == digidim && ((typeCode >> 8) & 0xFF) == 0x31;
