@@ -26,7 +26,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     super.deviceStateCode,
     super.isButtonDevice,
     super.isMultisensor,
-    super.buttonPoints,
     super.sensorInfo,
     super.additionalInfo,
     this.missing = "",

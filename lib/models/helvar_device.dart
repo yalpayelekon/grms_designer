@@ -1,36 +1,9 @@
+// lib/models/helvar_device.dart
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 
 import 'emergency_device.dart';
 import 'input_device.dart';
 import 'output_device.dart';
-
-class ButtonPoint {
-  final String name;
-  final String function;
-  final int buttonId;
-
-  ButtonPoint({
-    required this.name,
-    required this.function,
-    required this.buttonId,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'function': function,
-      'buttonId': buttonId,
-    };
-  }
-
-  factory ButtonPoint.fromJson(Map<String, dynamic> json) {
-    return ButtonPoint(
-      name: json['name'] as String,
-      function: json['function'] as String,
-      buttonId: json['buttonId'] as int,
-    );
-  }
-}
 
 abstract class HelvarDevice extends TreeNode {
   int cluster;
@@ -58,8 +31,6 @@ abstract class HelvarDevice extends TreeNode {
 
   bool isButtonDevice;
   bool isMultisensor;
-
-  List<ButtonPoint> buttonPoints;
 
   Map<String, dynamic> sensorInfo;
 
@@ -89,11 +60,9 @@ abstract class HelvarDevice extends TreeNode {
     this.deviceStateCode,
     this.isButtonDevice = false,
     this.isMultisensor = false,
-    List<ButtonPoint>? buttonPoints,
     Map<String, dynamic>? sensorInfo,
     Map<String, dynamic>? additionalInfo,
-  })  : buttonPoints = buttonPoints ?? [],
-        sensorInfo = sensorInfo ?? {},
+  })  : sensorInfo = sensorInfo ?? {},
         additionalInfo = additionalInfo ?? {} {
     if (address.startsWith('@')) {
       address = address.substring(1);
@@ -173,7 +142,6 @@ abstract class HelvarDevice extends TreeNode {
         deviceStateCode: json['deviceStateCode'] as int?,
         isButtonDevice: json['isButtonDevice'] as bool? ?? false,
         isMultisensor: json['isMultisensor'] as bool? ?? false,
-        buttonPoints: buttonPoints,
         sensorInfo: json['sensorInfo'] as Map<String, dynamic>? ?? {},
         additionalInfo: json['additionalInfo'] as Map<String, dynamic>? ?? {},
       );
@@ -201,7 +169,6 @@ abstract class HelvarDevice extends TreeNode {
         deviceStateCode: json['deviceStateCode'] as int?,
         isButtonDevice: json['isButtonDevice'] as bool? ?? false,
         isMultisensor: json['isMultisensor'] as bool? ?? false,
-        buttonPoints: buttonPoints,
         sensorInfo: json['sensorInfo'] as Map<String, dynamic>? ?? {},
         additionalInfo: json['additionalInfo'] as Map<String, dynamic>? ?? {},
       );
@@ -214,38 +181,6 @@ abstract class HelvarDevice extends TreeNode {
   void recallScene(String sceneParams);
   void clearResult() {
     out = "";
-  }
-
-  void generateButtonPoints() {
-    if (!isButtonDevice) return;
-
-    buttonPoints.clear();
-
-    final deviceName = description.isEmpty ? "Device_$deviceId" : description;
-
-    buttonPoints.add(ButtonPoint(
-      name: '${deviceName}_Missing',
-      function: 'Status',
-      buttonId: 0,
-    ));
-
-    // Add buttons (typically 7 for Button 135)
-    for (int i = 1; i <= 7; i++) {
-      buttonPoints.add(ButtonPoint(
-        name: '${deviceName}_Button$i',
-        function: 'Button',
-        buttonId: i,
-      ));
-    }
-
-    // Add IR receivers
-    for (int i = 1; i <= 7; i++) {
-      buttonPoints.add(ButtonPoint(
-        name: '${deviceName}_IR$i',
-        function: 'IR Receiver',
-        buttonId: i + 100, // Using offset for IR receivers
-      ));
-    }
   }
 
   Map<String, dynamic> toJson() {
@@ -269,7 +204,6 @@ abstract class HelvarDevice extends TreeNode {
       'deviceStateCode': deviceStateCode,
       'isButtonDevice': isButtonDevice,
       'isMultisensor': isMultisensor,
-      'buttonPoints': buttonPoints.map((point) => point.toJson()).toList(),
       'sensorInfo': sensorInfo,
       'additionalInfo': additionalInfo,
     };

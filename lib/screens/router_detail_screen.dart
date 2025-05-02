@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/helvar_router.dart';
 import '../models/helvar_device.dart';
+import '../models/input_device.dart';
 import '../models/output_device.dart';
 import '../models/workgroup.dart';
 import '../providers/workgroups_provider.dart';
@@ -489,7 +490,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
               if (device.helvarType == 'output' &&
                   device is HelvarDriverOutputDevice)
                 _buildDetailRow('Level', '${device.level}%'),
-              if (device.isButtonDevice && device.buttonPoints.isNotEmpty) ...[
+              if (device is HelvarDriverInputDevice &&
+                  device.isButtonDevice &&
+                  device.buttonPoints.isNotEmpty) ...[
                 const Divider(),
                 const Text('Button Points:',
                     style: TextStyle(fontWeight: FontWeight.bold)),

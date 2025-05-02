@@ -329,12 +329,6 @@ class HelvarNetCommands {
     }
   }
 
-  static void _validateSubdevice(int subdevice) {
-    if (subdevice < 1 || subdevice > 16) {
-      throw ArgumentError('Subdevice must be between 1 and 16');
-    }
-  }
-
   static void _validateLevel(int level) {
     if (level < 0 || level > 100) {
       throw ArgumentError('Level must be between 0 and 100');
