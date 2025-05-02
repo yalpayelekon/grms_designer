@@ -389,7 +389,7 @@ class DiscoveryService {
     socket.write(command);
 
     final result = await completer.future.timeout(
-      const Duration(seconds: 3),
+      const Duration(seconds: 15),
       onTimeout: () {
         debugPrint('Command timed out: $command');
         return 'TIMEOUT';
