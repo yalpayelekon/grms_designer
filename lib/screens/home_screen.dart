@@ -27,7 +27,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool openWiresheet = false;
   String? selectedWiresheetId;
   Workgroup? selectedWorkgroup;
+  HelvarGroup? selectedGroup;
   bool showingProject = true;
+  bool showingGroups = false;
+  bool showingGroupDetail = false;
   double _leftPanelWidth = 400;
   bool _isDragging = false;
 
@@ -82,6 +85,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               showingProject = true;
                               openWorkGroup = false;
                               openWiresheet = false;
+                              showingGroups = false;
+                              showingGroupDetail = false;
                             });
                           },
                           child: const Padding(
@@ -100,6 +105,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   showingProject = true;
                                   openWorkGroup = false;
                                   openWiresheet = false;
+                                  showingGroups = false;
+                                  showingGroupDetail = false;
                                 });
                               },
                               child: const Padding(
@@ -115,6 +122,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   showingProject = true;
                                   openWorkGroup = false;
                                   openWiresheet = false;
+                                  showingGroups = false;
+                                  showingGroupDetail = false;
                                 });
                               },
                               child: const Padding(
@@ -130,6 +139,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                       showingProject = true;
                                       openWorkGroup = false;
                                       openWiresheet = false;
+                                      showingGroups = false;
+                                      showingGroupDetail = false;
                                     });
                                   },
                                   child: const Padding(
@@ -145,6 +156,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                       showingProject = true;
                                       openWorkGroup = false;
                                       openWiresheet = false;
+                                      showingGroups = false;
+                                      showingGroupDetail = false;
                                     });
                                   },
                                   child: const Padding(
@@ -164,6 +177,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                           showingProject = true;
                                           openWorkGroup = false;
                                           openWiresheet = false;
+                                          showingGroups = false;
+                                          showingGroupDetail = false;
                                         });
                                       },
                                       child: const Padding(
@@ -187,6 +202,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                               showingProject = false;
                                               openWorkGroup = false;
                                               openWiresheet = true;
+                                              showingGroups = false;
+                                              showingGroupDetail = false;
                                               selectedWiresheetId =
                                                   wiresheet.id;
                                             });
@@ -242,6 +259,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               showingProject = false;
                               openWorkGroup = true;
                               openWiresheet = false;
+                              showingGroups = false;
+                              showingGroupDetail = false;
                               selectedWorkgroup = null;
                             });
                           },
@@ -264,6 +283,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                       showingProject = false;
                                       openWorkGroup = true;
                                       openWiresheet = false;
+                                      showingGroups = false;
+                                      showingGroupDetail = false;
                                       selectedWorkgroup = workgroup;
                                     });
                                   },
@@ -292,16 +313,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 children: [
                                   TreeNode(
                                     content: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                GroupsListScreen(
-                                              workgroup: workgroup,
-                                            ),
-                                          ),
-                                        );
+                                      onDoubleTap: () {
+                                        setState(() {
+                                          showingProject = false;
+                                          openWorkGroup = false;
+                                          openWiresheet = false;
+                                          showingGroups = true;
+                                          showingGroupDetail = false;
+                                          selectedWorkgroup = workgroup;
+                                        });
                                       },
                                       child: const Row(
                                         children: [
@@ -319,16 +339,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                           (group) => TreeNode(
                                             content: GestureDetector(
                                               onDoubleTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        GroupDetailScreen(
-                                                      group: group,
-                                                      workgroup: workgroup,
-                                                    ),
-                                                  ),
-                                                );
+                                                setState(() {
+                                                  showingProject = false;
+                                                  openWorkGroup = false;
+                                                  openWiresheet = false;
+                                                  showingGroups = false;
+                                                  showingGroupDetail = true;
+                                                  selectedWorkgroup = workgroup;
+                                                  selectedGroup = group;
+                                                });
                                               },
                                               onSecondaryTap: () {
                                                 _showGroupContextMenu(
@@ -458,6 +477,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMainContent() {
+    if (showingGroups) {
+      return GroupsListScreen(
+        workgroup: selectedWorkgroup!,
+      );
+    }
+    if (showingGroupDetail) {
+      return GroupDetailScreen(
+        group: selectedGroup!,
+        workgroup: selectedWorkgroup!,
+      );
+    }
     if (openWorkGroup && selectedWorkgroup == null) {
       return const WorkgroupListScreen();
     } else if (openWiresheet && selectedWiresheetId != null) {
