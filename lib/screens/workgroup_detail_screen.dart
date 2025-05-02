@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/helvar_group.dart';
 import '../models/workgroup.dart';
 import '../models/helvar_router.dart';
-import '../providers/workgroups_provider.dart';
-import '../services/discovery_service.dart';
+import 'groups_list_screen.dart';
 import 'router_detail_screen.dart';
 
 class WorkgroupDetailScreen extends ConsumerStatefulWidget {
@@ -21,207 +19,11 @@ class WorkgroupDetailScreen extends ConsumerStatefulWidget {
 
 class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   bool _isLoading = false;
-  final DiscoveryService _discoveryService = DiscoveryService();
-  Map<String, bool> expandedGroups = {};
-  bool _showGroups = true;
 
   @override
   void initState() {
     super.initState();
     _isLoading = false;
-    for (var group in widget.workgroup.groups) {
-      expandedGroups[group.groupId] = false;
-    }
-  }
-
-  Widget _buildGroupsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Groups',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                      _showGroups ? Icons.visibility : Icons.visibility_off),
-                  tooltip: _showGroups ? 'Hide Groups' : 'Show Groups',
-                  onPressed: () {
-                    setState(() {
-                      _showGroups = !_showGroups;
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.unfold_less),
-                  tooltip: 'Collapse All',
-                  onPressed: () {
-                    setState(() {
-                      for (var group in widget.workgroup.groups) {
-                        expandedGroups[group.groupId] = false;
-                      }
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.unfold_more),
-                  tooltip: 'Expand All',
-                  onPressed: () {
-                    setState(() {
-                      for (var group in widget.workgroup.groups) {
-                        expandedGroups[group.groupId] = true;
-                      }
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.search),
-                  tooltip: 'Discover Groups',
-                  onPressed: () => _discoverGroups(context),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (_showGroups) _buildCollapsibleGroupsList(context),
-      ],
-    );
-  }
-
-  Widget _buildCollapsibleGroupsList(BuildContext context) {
-    return widget.workgroup.groups.isEmpty
-        ? Card(
-            margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.group_work,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No groups found for this workgroup',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.search),
-                    label: const Text('Discover Groups'),
-                    onPressed: () => _discoverGroups(context),
-                  ),
-                ],
-              ),
-            ),
-          )
-        : ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: widget.workgroup.groups.length,
-            itemBuilder: (context, index) {
-              final group = widget.workgroup.groups[index];
-              return _buildCollapsibleGroupItem(context, group);
-            },
-          );
-  }
-
-  Widget _buildCollapsibleGroupItem(BuildContext context, HelvarGroup group) {
-    final isExpanded = expandedGroups[group.groupId] ?? false;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      child: Column(
-        children: [
-          ListTile(
-            title: Text(
-              group.description.isEmpty
-                  ? "Group ${group.groupId}"
-                  : group.description,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text('Group ID: ${group.groupId}'),
-            leading: const CircleAvatar(
-              backgroundColor: Colors.green,
-              child: Icon(
-                Icons.layers,
-                color: Colors.white,
-              ),
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      expandedGroups[group.groupId] = !isExpanded;
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _editGroup(context, group),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _confirmDeleteGroup(context, group),
-                ),
-              ],
-            ),
-            onTap: () {
-              setState(() {
-                expandedGroups[group.groupId] = !isExpanded;
-              });
-            },
-          ),
-          if (isExpanded)
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildDetailRow('Type', group.type),
-                  if (group.lsig != null)
-                    _buildDetailRow('LSIG', group.lsig.toString()),
-                  _buildDetailRow(
-                      'Power Polling', '${group.powerPollingMinutes} minutes'),
-                  if (group.gatewayRouterIpAddress.isNotEmpty)
-                    _buildDetailRow(
-                        'Gateway Router', group.gatewayRouterIpAddress),
-                  _buildDetailRow('Refresh Props After Action',
-                      group.refreshPropsAfterAction.toString()),
-                  OverflowBar(
-                    alignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => _showGroupDetails(context, group),
-                        child: const Text('View Details'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -230,6 +32,22 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       appBar: AppBar(
         title: Text(widget.workgroup.description),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.group_work),
+            tooltip: 'View Groups',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GroupsListScreen(
+                    workgroup: widget.workgroup,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -240,7 +58,32 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                 children: [
                   _buildInfoCard(context),
                   const SizedBox(height: 24),
-                  _buildGroupsSection(context),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Groups',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.navigate_next),
+                        label: const Text('View All Groups'),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GroupsListScreen(
+                                workgroup: widget.workgroup,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                   const Text(
                     'Routers',
@@ -255,223 +98,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
               ),
             ),
     );
-  }
-
-  Future<void> _discoverGroups(BuildContext context) async {
-    if (widget.workgroup.routers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('No routers available to discover groups')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final router = widget.workgroup.routers.first;
-      final discoveredGroups =
-          await _discoveryService.discoverGroups(router.ipAddress);
-
-      if (discoveredGroups.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No groups discovered')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      if (!mounted) return;
-      final shouldAdd = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Groups Discovered'),
-              content: Text(
-                  'Found ${discoveredGroups.length} groups. Do you want to add them?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Add Groups'),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-
-      if (!shouldAdd || !mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      final existingGroupIds =
-          widget.workgroup.groups.map((g) => g.groupId).toSet();
-      final newGroups = discoveredGroups
-          .where((g) => !existingGroupIds.contains(g.groupId))
-          .toList();
-
-      for (final group in newGroups) {
-        await ref.read(workgroupsProvider.notifier).addGroupToWorkgroup(
-              widget.workgroup.id,
-              group,
-            );
-      }
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Added ${newGroups.length} groups')),
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error discovering groups: $e')),
-      );
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Widget _buildGroupCard(BuildContext context, HelvarGroup group) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      child: ListTile(
-        title: Text(
-          group.description.isEmpty
-              ? "Group ${group.groupId}"
-              : group.description,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Group ID: ${group.groupId}'),
-            Text('Type: ${group.type}'),
-          ],
-        ),
-        leading: const CircleAvatar(
-          backgroundColor: Colors.green,
-          child: Icon(Icons.layers, color: Colors.white),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => _editGroup(context, group),
-              tooltip: 'Edit group',
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => _confirmDeleteGroup(context, group),
-              tooltip: 'Remove group',
-            ),
-          ],
-        ),
-        onTap: () => _showGroupDetails(context, group),
-      ),
-    );
-  }
-
-  void _showGroupDetails(BuildContext context, HelvarGroup group) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          group.description.isEmpty
-              ? 'Group ${group.groupId}'
-              : group.description,
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDetailRow('Group ID', group.groupId),
-              _buildDetailRow('Type', group.type),
-              if (group.lsig != null)
-                _buildDetailRow('LSIG', group.lsig.toString()),
-              _buildDetailRow(
-                  'Power Polling', '${group.powerPollingMinutes} minutes'),
-              _buildDetailRow('Gateway Router', group.gatewayRouterIpAddress),
-              _buildDetailRow('Refresh Props After Action',
-                  group.refreshPropsAfterAction.toString()),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () => _editGroup(context, group),
-            child: const Text('Edit'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _editGroup(BuildContext context, HelvarGroup group) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit Group feature coming soon')),
-    );
-  }
-
-  Future<void> _confirmDeleteGroup(
-      BuildContext context, HelvarGroup group) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Group'),
-        content: Text(
-          'Are you sure you want to delete the group "${group.description.isEmpty ? 'Group ${group.groupId}' : group.description}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      await ref.read(workgroupsProvider.notifier).removeGroupFromWorkgroup(
-            widget.workgroup.id,
-            group,
-          );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Group deleted'),
-        ),
-      );
-    }
   }
 
   Widget _buildInfoCard(BuildContext context) {

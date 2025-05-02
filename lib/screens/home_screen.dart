@@ -4,6 +4,7 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import '../models/helvar_device.dart';
 import '../models/workgroup.dart';
 import 'group_detail_screen.dart';
+import 'groups_list_screen.dart';
 import 'settings_screen.dart';
 import 'workgroup_detail_screen.dart';
 import 'workgroup_list_screen.dart';
@@ -289,15 +290,28 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 children: [
                                   TreeNode(
-                                    content: const Row(
-                                      children: [
-                                        Icon(Icons.group_work,
-                                            color: Colors.blue),
-                                        Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: Text("Groups"),
-                                        ),
-                                      ],
+                                    content: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                GroupsListScreen(
+                                              workgroup: workgroup,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.group_work,
+                                              color: Colors.blue),
+                                          Padding(
+                                            padding: EdgeInsets.all(8.0),
+                                            child: Text("Groups"),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     children: workgroup.groups
                                         .map(
