@@ -22,14 +22,15 @@ class WorkgroupDetailScreen extends ConsumerStatefulWidget {
 class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   bool _isLoading = false;
   final DiscoveryService _discoveryService = DiscoveryService();
-  Map<String, bool> _expandedGroups = {};
+  Map<String, bool> expandedGroups = {};
+  bool _showGroups = true;
 
   @override
   void initState() {
     super.initState();
     _isLoading = false;
     for (var group in widget.workgroup.groups) {
-      _expandedGroups[group.groupId] = false;
+      expandedGroups[group.groupId] = false;
     }
   }
 
@@ -50,12 +51,22 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
             Row(
               children: [
                 IconButton(
+                  icon: Icon(
+                      _showGroups ? Icons.visibility : Icons.visibility_off),
+                  tooltip: _showGroups ? 'Hide Groups' : 'Show Groups',
+                  onPressed: () {
+                    setState(() {
+                      _showGroups = !_showGroups;
+                    });
+                  },
+                ),
+                IconButton(
                   icon: const Icon(Icons.unfold_less),
                   tooltip: 'Collapse All',
                   onPressed: () {
                     setState(() {
                       for (var group in widget.workgroup.groups) {
-                        _expandedGroups[group.groupId] = false;
+                        expandedGroups[group.groupId] = false;
                       }
                     });
                   },
@@ -66,7 +77,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                   onPressed: () {
                     setState(() {
                       for (var group in widget.workgroup.groups) {
-                        _expandedGroups[group.groupId] = true;
+                        expandedGroups[group.groupId] = true;
                       }
                     });
                   },
@@ -81,7 +92,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        _buildCollapsibleGroupsList(context),
+        if (_showGroups) _buildCollapsibleGroupsList(context),
       ],
     );
   }
@@ -127,7 +138,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   }
 
   Widget _buildCollapsibleGroupItem(BuildContext context, HelvarGroup group) {
-    final isExpanded = _expandedGroups[group.groupId] ?? false;
+    final isExpanded = expandedGroups[group.groupId] ?? false;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -159,7 +170,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                   ),
                   onPressed: () {
                     setState(() {
-                      _expandedGroups[group.groupId] = !isExpanded;
+                      expandedGroups[group.groupId] = !isExpanded;
                     });
                   },
                 ),
@@ -175,7 +186,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
             ),
             onTap: () {
               setState(() {
-                _expandedGroups[group.groupId] = !isExpanded;
+                expandedGroups[group.groupId] = !isExpanded;
               });
             },
           ),
