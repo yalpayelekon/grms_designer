@@ -22,59 +22,71 @@ class WorkgroupDetailScreen extends ConsumerStatefulWidget {
 class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   bool _isLoading = false;
   final DiscoveryService _discoveryService = DiscoveryService();
+  Map<String, bool> _expandedGroups = {};
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.workgroup.description),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInfoCard(context),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Groups',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.search),
-                        tooltip: 'Discover Groups',
-                        onPressed: () => _discoverGroups(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  _buildGroupsList(context),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Routers',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildRoutersList(context),
-                ],
+  void initState() {
+    super.initState();
+    _isLoading = false;
+    for (var group in widget.workgroup.groups) {
+      _expandedGroups[group.groupId] = false;
+    }
+  }
+
+  Widget _buildGroupsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Groups',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.unfold_less),
+                  tooltip: 'Collapse All',
+                  onPressed: () {
+                    setState(() {
+                      for (var group in widget.workgroup.groups) {
+                        _expandedGroups[group.groupId] = false;
+                      }
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.unfold_more),
+                  tooltip: 'Expand All',
+                  onPressed: () {
+                    setState(() {
+                      for (var group in widget.workgroup.groups) {
+                        _expandedGroups[group.groupId] = true;
+                      }
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.search),
+                  tooltip: 'Discover Groups',
+                  onPressed: () => _discoverGroups(context),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _buildCollapsibleGroupsList(context),
+      ],
     );
   }
 
-  Widget _buildGroupsList(BuildContext context) {
+  Widget _buildCollapsibleGroupsList(BuildContext context) {
     return widget.workgroup.groups.isEmpty
         ? Card(
             margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
@@ -109,9 +121,129 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
             itemCount: widget.workgroup.groups.length,
             itemBuilder: (context, index) {
               final group = widget.workgroup.groups[index];
-              return _buildGroupCard(context, group);
+              return _buildCollapsibleGroupItem(context, group);
             },
           );
+  }
+
+  Widget _buildCollapsibleGroupItem(BuildContext context, HelvarGroup group) {
+    final isExpanded = _expandedGroups[group.groupId] ?? false;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(
+              group.description.isEmpty
+                  ? "Group ${group.groupId}"
+                  : group.description,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text('Group ID: ${group.groupId}'),
+            leading: const CircleAvatar(
+              backgroundColor: Colors.green,
+              child: Icon(
+                Icons.layers,
+                color: Colors.white,
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _expandedGroups[group.groupId] = !isExpanded;
+                    });
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _editGroup(context, group),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _confirmDeleteGroup(context, group),
+                ),
+              ],
+            ),
+            onTap: () {
+              setState(() {
+                _expandedGroups[group.groupId] = !isExpanded;
+              });
+            },
+          ),
+          if (isExpanded)
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDetailRow('Type', group.type),
+                  if (group.lsig != null)
+                    _buildDetailRow('LSIG', group.lsig.toString()),
+                  _buildDetailRow(
+                      'Power Polling', '${group.powerPollingMinutes} minutes'),
+                  if (group.gatewayRouterIpAddress.isNotEmpty)
+                    _buildDetailRow(
+                        'Gateway Router', group.gatewayRouterIpAddress),
+                  _buildDetailRow('Refresh Props After Action',
+                      group.refreshPropsAfterAction.toString()),
+                  OverflowBar(
+                    alignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => _showGroupDetails(context, group),
+                        child: const Text('View Details'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.workgroup.description),
+        centerTitle: true,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoCard(context),
+                  const SizedBox(height: 24),
+                  _buildGroupsSection(context),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Routers',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildRoutersList(context),
+                ],
+              ),
+            ),
+    );
   }
 
   Future<void> _discoverGroups(BuildContext context) async {

@@ -27,8 +27,7 @@ class RouterDetailScreen extends ConsumerStatefulWidget {
 class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   late List<HelvarDevice> _devices;
   bool _isLoading = false;
-  final DiscoveryService _discoveryService =
-      DiscoveryService(); // Updated service
+  final DiscoveryService _discoveryService = DiscoveryService();
   final Map<String, List<HelvarDevice>> _devicesBySubnet = {};
 
   @override
