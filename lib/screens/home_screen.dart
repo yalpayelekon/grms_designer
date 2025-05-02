@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import '../models/helvar_device.dart';
 import '../models/workgroup.dart';
+import 'group_detail_screen.dart';
 import 'settings_screen.dart';
 import 'workgroup_detail_screen.dart';
 import 'workgroup_list_screen.dart';
@@ -301,19 +302,35 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                     children: workgroup.groups
                                         .map(
                                           (group) => TreeNode(
-                                            content: Row(
-                                              children: [
-                                                const Icon(Icons.layers,
-                                                    color: Colors.green),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text(group
-                                                          .description.isEmpty
-                                                      ? "Group ${group.groupId}"
-                                                      : group.description),
-                                                ),
-                                              ],
+                                            content: GestureDetector(
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        GroupDetailScreen(
+                                                      group: group,
+                                                      workgroup: workgroup,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.layers,
+                                                      color: Colors.green),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(
+                                                      group.description.isEmpty
+                                                          ? "Group ${group.groupId}"
+                                                          : group.description,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         )
