@@ -1,6 +1,7 @@
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 
 import 'helvar_router.dart';
+import 'helvar_group.dart';
 
 class Workgroup extends TreeNode {
   final String id;
@@ -11,6 +12,7 @@ class Workgroup extends TreeNode {
   final bool refreshPropsAfterAction;
 
   List<HelvarRouter> routers;
+  List<HelvarGroup> groups;
 
   Workgroup({
     required this.id,
@@ -20,7 +22,9 @@ class Workgroup extends TreeNode {
     this.gatewayRouterIpAddress = '',
     this.refreshPropsAfterAction = false,
     List<HelvarRouter>? routers,
-  }) : routers = routers ?? [];
+    List<HelvarGroup>? groups,
+  })  : routers = routers ?? [],
+        groups = groups ?? [];
 
   void addRouter(HelvarRouter router) {
     routers.add(router);
@@ -30,13 +34,13 @@ class Workgroup extends TreeNode {
     routers.remove(router);
   }
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Workgroup && runtimeType == other.runtimeType && id == other.id;
+  void addGroup(HelvarGroup group) {
+    groups.add(group);
+  }
 
-  @override
-  int get hashCode => id.hashCode;
+  void removeGroup(HelvarGroup group) {
+    groups.remove(group);
+  }
 
   factory Workgroup.fromJson(Map<String, dynamic> json) {
     return Workgroup(
@@ -50,6 +54,10 @@ class Workgroup extends TreeNode {
       routers: (json['routers'] as List?)
           ?.map((routerJson) => HelvarRouter.fromJson(routerJson))
           .toList(),
+      groups: (json['groups'] as List?)
+              ?.map((groupJson) => HelvarGroup.fromJson(groupJson))
+              .toList() ??
+          [],
     );
   }
 
@@ -62,6 +70,9 @@ class Workgroup extends TreeNode {
       'gatewayRouterIpAddress': gatewayRouterIpAddress,
       'refreshPropsAfterAction': refreshPropsAfterAction,
       'routers': routers.map((router) => router.toJson()).toList(),
+      'groups': groups
+          .map((group) => group.toJson())
+          .toList(), // Include groups in JSON
     };
   }
 }

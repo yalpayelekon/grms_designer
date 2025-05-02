@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/helvar_group.dart';
 import '../models/workgroup.dart';
 import '../models/helvar_device.dart';
 import '../services/file_storage_service.dart';
@@ -193,6 +194,34 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
           }
         }
       }
+    }
+  }
+
+  Future<void> addGroupToWorkgroup(
+      String workgroupId, HelvarGroup group) async {
+    final index = state.indexWhere((wg) => wg.id == workgroupId);
+
+    if (index >= 0) {
+      final updatedState = List<Workgroup>.from(state);
+      final workgroup = updatedState[index];
+      workgroup.addGroup(group);
+
+      state = updatedState;
+      await _saveToStorage();
+    }
+  }
+
+  Future<void> removeGroupFromWorkgroup(
+      String workgroupId, HelvarGroup group) async {
+    final index = state.indexWhere((wg) => wg.id == workgroupId);
+
+    if (index >= 0) {
+      final updatedState = List<Workgroup>.from(state);
+      final workgroup = updatedState[index];
+      workgroup.removeGroup(group);
+
+      state = updatedState;
+      await _saveToStorage();
     }
   }
 

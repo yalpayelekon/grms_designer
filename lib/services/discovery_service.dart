@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../models/helvar_device.dart';
+import '../models/helvar_group.dart';
 import '../models/helvar_router.dart';
 import '../models/input_device.dart';
 import '../models/output_device.dart';
@@ -290,6 +292,62 @@ class DiscoveryService {
     } catch (e) {
       debugPrint('Error discovering router: $e');
       return null;
+    } finally {
+      socket?.destroy();
+    }
+  }
+
+  // Add to lib/services/discovery_service.dart
+
+  Future<List<HelvarGroup>> discoverGroups(String routerIpAddress) async {
+    Socket? socket;
+    final groups = <HelvarGroup>[];
+
+    try {
+      socket = await Socket.connect(routerIpAddress, defaultTcpPort);
+      final broadcastStream = socket.asBroadcastStream();
+
+      final groupsResponse = await _sendCommand(
+          socket,
+          HelvarNetCommands.queryGroups(2), // Using version 2 protocol
+          broadcastStream);
+
+      final groupsValue = extractResponseValue(groupsResponse);
+      if (groupsValue != null && groupsValue.isNotEmpty) {
+        final groupIds = groupsValue.split(',');
+
+        for (final groupId in groupIds) {
+          if (groupId.isEmpty) continue;
+
+          try {
+            final id = int.parse(groupId);
+
+            final descResponse = await _sendCommand(
+                socket,
+                HelvarNetCommands.queryDescriptionGroup(2, id),
+                broadcastStream);
+
+            final description =
+                extractResponseValue(descResponse) ?? 'Group $id';
+
+            groups.add(HelvarGroup(
+              id: const Uuid().v4(), // Generate a unique ID
+              groupId: groupId,
+              description: description,
+              type: 'Group',
+              powerPollingMinutes: 15,
+              gatewayRouterIpAddress: routerIpAddress,
+            ));
+          } catch (e) {
+            debugPrint('Error processing group $groupId: $e');
+          }
+        }
+      }
+
+      return groups;
+    } catch (e) {
+      debugPrint('Error discovering groups: $e');
+      return [];
     } finally {
       socket?.destroy();
     }

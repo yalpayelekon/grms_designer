@@ -287,6 +287,38 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                 ),
                                 children: [
+                                  TreeNode(
+                                    content: const Row(
+                                      children: [
+                                        Icon(Icons.group_work,
+                                            color: Colors.blue),
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Text("Groups"),
+                                        ),
+                                      ],
+                                    ),
+                                    children: workgroup.groups
+                                        .map(
+                                          (group) => TreeNode(
+                                            content: Row(
+                                              children: [
+                                                const Icon(Icons.layers,
+                                                    color: Colors.green),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Text(group
+                                                          .description.isEmpty
+                                                      ? "Group ${group.groupId}"
+                                                      : group.description),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
                                   ...workgroup.routers.map(
                                     (router) => TreeNode(
                                       content: Row(
@@ -299,7 +331,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                         ],
                                       ),
                                       children: [
-                                        // Group devices by subnet
                                         ...router.devicesBySubnet.entries
                                             .map((entry) {
                                           final subnet = entry.key;
@@ -308,7 +339,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                           return TreeNode(
                                             content: Row(
                                               children: [
-                                                // Use a network node icon for subnet (similar to Niagara)
                                                 const Icon(Icons.hub),
                                                 Padding(
                                                   padding:
@@ -331,7 +361,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                 )
                                                 .toList(),
                                           );
-                                        }).toList(),
+                                        }),
                                       ],
                                     ),
                                   )
