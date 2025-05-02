@@ -1,27 +1,24 @@
 import 'package:flutter/material.dart';
-import 'helvar_node.dart';
+import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'widget_type.dart';
 
-class CanvasItem extends TreeViewNode {
+class CanvasItem extends TreeNode {
   final WidgetType type;
   Offset position;
   Size size;
   Map<String, dynamic> properties;
+  String? id;
   String? label;
 
   CanvasItem({
     required this.type,
     required this.position,
     required this.size,
+    this.id,
     this.label,
-    super.children,
     Map<String, dynamic>? properties,
   })  : properties = properties ?? {},
-        super(
-          id: UniqueKey().toString(),
-          name: label ?? "Item",
-          nodeType: TreeViewNodeType.outputDeviceNode,
-        );
+        super(content: Text(label ?? "Item"));
 
   factory CanvasItem.fromJson(Map<String, dynamic> json) {
     return CanvasItem(
@@ -37,6 +34,7 @@ class CanvasItem extends TreeViewNode {
         (json['size']['width'] as num).toDouble(),
         (json['size']['height'] as num).toDouble(),
       ),
+      id: json['id'] as String?,
       label: json['label'] as String?,
       properties: json['properties'] as Map<String, dynamic>? ?? {},
     );
@@ -71,6 +69,7 @@ class CanvasItem extends TreeViewNode {
       type: type ?? this.type,
       position: position ?? this.position,
       size: size ?? this.size,
+      id: id ?? this.id,
       label: label ?? this.label,
       properties: properties ?? Map.from(this.properties),
     );
