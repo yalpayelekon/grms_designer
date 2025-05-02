@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import '../models/helvar_device.dart';
 import '../models/workgroup.dart';
 import 'settings_screen.dart';
 import 'workgroup_detail_screen.dart';
@@ -288,22 +289,50 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 children: [
                                   ...workgroup.routers.map(
                                     (router) => TreeNode(
-                                      content: _buildDraggable(
-                                          router.description,
-                                          Icons.router,
-                                          WidgetType.text),
-                                      children: router.devices
-                                          .map(
-                                            (device) => TreeNode(
-                                              content: _buildDraggable(
-                                                  device.description.isEmpty
-                                                      ? "Device_${device.deviceId}"
-                                                      : device.description,
-                                                  Icons.device_unknown,
-                                                  WidgetType.text),
+                                      content: Row(
+                                        children: [
+                                          const Icon(Icons.router),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(router.description),
+                                          ),
+                                        ],
+                                      ),
+                                      children: [
+                                        // Group devices by subnet
+                                        ...router.devicesBySubnet.entries
+                                            .map((entry) {
+                                          final subnet = entry.key;
+                                          final subnetDevices = entry.value;
+
+                                          return TreeNode(
+                                            content: Row(
+                                              children: [
+                                                // Use a network node icon for subnet (similar to Niagara)
+                                                const Icon(Icons.hub),
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: Text("Subnet$subnet"),
+                                                ),
+                                              ],
                                             ),
-                                          )
-                                          .toList(),
+                                            children: subnetDevices
+                                                .map(
+                                                  (device) => TreeNode(
+                                                    content: _buildDraggable(
+                                                      device.description.isEmpty
+                                                          ? "Device_${device.deviceId}"
+                                                          : device.description,
+                                                      _getDeviceIcon(device),
+                                                      WidgetType.text,
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                          );
+                                        }).toList(),
+                                      ],
                                     ),
                                   )
                                 ],
@@ -346,6 +375,20 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  IconData _getDeviceIcon(HelvarDevice device) {
+    if (device.isButtonDevice) {
+      return Icons.touch_app;
+    } else if (device.isMultisensor) {
+      return Icons.sensors;
+    } else if (device.helvarType == 'emergency') {
+      return Icons.emergency;
+    } else if (device.helvarType == 'output') {
+      return Icons.lightbulb;
+    } else {
+      return Icons.device_unknown;
+    }
   }
 
   Widget _buildMainContent() {

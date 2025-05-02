@@ -57,11 +57,14 @@ class HelvarRouter {
   void organizeDevicesBySubnet() {
     devicesBySubnet.clear();
     for (final device in devices) {
-      final subnet = device.subnet;
-      if (!devicesBySubnet.containsKey(subnet)) {
-        devicesBySubnet[subnet] = [];
+      final parts = device.address.split('.');
+      if (parts.length >= 3) {
+        final subnet = int.parse(parts[2]);
+        if (!devicesBySubnet.containsKey(subnet)) {
+          devicesBySubnet[subnet] = [];
+        }
+        devicesBySubnet[subnet]!.add(device);
       }
-      devicesBySubnet[subnet]!.add(device);
     }
   }
 
