@@ -1,6 +1,6 @@
-// lib/screens/group_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../models/helvar_group.dart';
 import '../models/workgroup.dart';
 
@@ -58,17 +58,28 @@ class GroupDetailScreen extends ConsumerWidget {
               ],
             ),
             const Divider(),
-            _buildDetailRow('ID', group.id),
-            _buildDetailRow('Group ID', group.groupId),
+            _buildDetailRow('ID', group.groupId),
             _buildDetailRow('Description', group.description),
             _buildDetailRow('Type', group.type),
             if (group.lsig != null)
               _buildDetailRow('LSIG', group.lsig.toString()),
+            for (int i = 0; i < group.blockValues.length; i++)
+              _buildDetailRow('Block${i + 1}', group.blockValues[i].toString()),
+            _buildDetailRow('Power Consumption', '${group.powerConsumption} W'),
             _buildDetailRow(
                 'Power Polling', '${group.powerPollingMinutes} minutes'),
             _buildDetailRow('Gateway Router', group.gatewayRouterIpAddress),
             _buildDetailRow('Refresh Props After Action',
                 group.refreshPropsAfterAction.toString()),
+            if (group.actionResult.isNotEmpty)
+              _buildDetailRow('Action Result', group.actionResult),
+            if (group.lastMessage.isNotEmpty)
+              _buildDetailRow('Last Message', group.lastMessage),
+            if (group.lastMessageTime != null)
+              _buildDetailRow(
+                  'Message Time',
+                  DateFormat('MMM d, yyyy h:mm:ss a')
+                      .format(group.lastMessageTime!)),
             _buildDetailRow('Workgroup', workgroup.description),
           ],
         ),
