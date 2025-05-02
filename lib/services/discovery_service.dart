@@ -74,7 +74,7 @@ class DiscoveryService {
 
     try {
       socket = await Socket.connect(routerIpAddress, defaultTcpPort);
-
+      final broadcastStream = socket.asBroadcastStream();
       final ipParts = routerIpAddress.split('.');
       if (ipParts.length != 4) {
         debugPrint('Invalid router IP address format: $routerIpAddress');
@@ -95,55 +95,50 @@ class DiscoveryService {
         clusterMemberId: clusterMemberId,
       );
 
-      debugPrint('Querying router type...');
       final typeResponse = await _sendCommand(
           socket,
           HelvarNetCommands.queryDeviceType(
-              router.version, clusterId, clusterMemberId, 0, 0));
+              router.version, "$clusterId.$clusterMemberId"),
+          broadcastStream);
       final typeValue = extractResponseValue(typeResponse);
       if (typeValue != null) {
         final typeCode = int.tryParse(typeValue) ?? 0;
         router.deviceTypeCode = typeCode;
         router.deviceType = getDeviceTypeDescription(typeCode);
-        debugPrint('Router type: $typeCode (${router.deviceType})');
       } else {
         debugPrint('Failed to get router type: $typeResponse');
       }
 
-      debugPrint('Querying router description...');
       final descResponse = await _sendCommand(
           socket,
           HelvarNetCommands.queryDescriptionDevice(
-              router.version, clusterId, clusterMemberId, 0, 0));
+              router.version, "$clusterId.$clusterMemberId"),
+          broadcastStream);
       final descValue = extractResponseValue(descResponse);
       if (descValue != null) {
         router.description = descValue;
-        debugPrint('Router description: ${router.description}');
       } else {
         debugPrint('Failed to get router description: $descResponse');
       }
 
-      debugPrint('Querying router state...');
       final stateResponse = await _sendCommand(
           socket,
           HelvarNetCommands.queryDeviceState(
-              router.version, clusterId, clusterMemberId, 0, 0));
+              router.version, "$clusterId.$clusterMemberId"),
+          broadcastStream);
       final stateValue = extractResponseValue(stateResponse);
       if (stateValue != null) {
         final stateCode = int.tryParse(stateValue) ?? 0;
         router.deviceStateCode = stateCode;
         router.deviceState = getStateFlagsDescription(stateCode);
-        debugPrint('Router state: $stateCode (${router.deviceState})');
       } else {
         debugPrint('Failed to get router state: $stateResponse');
       }
 
-      debugPrint('Querying router for device types and addresses...');
       final typesAndAddressesResponse = await _sendCommand(
-          socket, '>V:1,C:100,@$clusterId.$clusterMemberId#');
+          socket, '>V:1,C:100,@$clusterId.$clusterMemberId#', broadcastStream);
       final addressesValue = extractResponseValue(typesAndAddressesResponse);
       if (addressesValue != null) {
-        debugPrint('Router device types and addresses: $addressesValue');
         router.deviceAddresses = addressesValue.split(',');
       } else {
         debugPrint(
@@ -151,10 +146,11 @@ class DiscoveryService {
       }
 
       for (int subnet = 1; subnet <= 4; subnet++) {
-        debugPrint('\nScanning subnet $subnet...');
-
         final devicesResponse = await _sendCommand(
-            socket, '>V:1,C:100,@$clusterId.$clusterMemberId.$subnet#');
+            socket,
+            HelvarNetCommands.queryDeviceTypesAndAddresses(
+                router.version, '$clusterId.$clusterMemberId.$subnet'),
+            broadcastStream);
         final devicesValue = extractResponseValue(devicesResponse);
 
         if (devicesValue == null || devicesValue.isEmpty) {
@@ -162,13 +158,8 @@ class DiscoveryService {
           continue;
         }
 
-        debugPrint('Subnet $subnet device information: $devicesValue');
         final deviceAddressTypes = parseDeviceAddressesAndTypes(devicesValue);
-        debugPrint(
-            'Found ${deviceAddressTypes.length} devices in subnet $subnet');
-
         final subnetDevices = <HelvarDevice>[];
-
         for (final entry in deviceAddressTypes.entries) {
           final deviceId = entry.key;
           final typeCode = entry.value;
@@ -179,20 +170,17 @@ class DiscoveryService {
           }
 
           final deviceAddress = '$clusterId.$clusterMemberId.$subnet.$deviceId';
-          debugPrint('Querying device: $deviceAddress (TypeCode: $typeCode)');
-
-          final descResponse = await _sendCommand(
-              socket,
-              HelvarNetCommands.queryDescriptionDevice(router.version,
-                  clusterId, clusterMemberId, subnet, deviceId));
+          final descriptionCmd = HelvarNetCommands.queryDescriptionDevice(
+              router.version, deviceAddress);
+          final descResponse =
+              await _sendCommand(socket, descriptionCmd, broadcastStream);
           final description =
               extractResponseValue(descResponse) ?? 'Device $deviceId';
-          debugPrint('  Description: $description');
 
           final deviceStateResponse = await _sendCommand(
               socket,
-              HelvarNetCommands.queryDeviceState(router.version, clusterId,
-                  clusterMemberId, subnet, deviceId));
+              HelvarNetCommands.queryDeviceState(router.version, deviceAddress),
+              broadcastStream);
           int? deviceStateCode;
           String deviceState = '';
 
@@ -208,12 +196,12 @@ class DiscoveryService {
             try {
               final levelResponse = await _sendCommand(
                   socket,
-                  HelvarNetCommands.queryLoadLevel(router.version, clusterId,
-                      clusterMemberId, subnet, deviceId));
+                  HelvarNetCommands.queryLoadLevel(
+                      router.version, deviceAddress),
+                  broadcastStream);
               final levelValue = extractResponseValue(levelResponse);
               if (levelValue != null) {
                 loadLevel = int.tryParse(levelValue) ?? 0;
-                debugPrint('  Load level: $loadLevel%');
               }
             } catch (e) {
               debugPrint('Error getting load level: $e');
@@ -227,7 +215,6 @@ class DiscoveryService {
           HelvarDevice device;
 
           if (isButton) {
-            debugPrint('  Creating Input Device (Button Panel): $description');
             device = HelvarDriverInputDevice(
               deviceId: deviceId,
               address: deviceAddress,
@@ -242,7 +229,6 @@ class DiscoveryService {
               buttonPoints: generateButtonPoints(description),
             );
           } else if (isMultisensor) {
-            debugPrint('  Creating Input Device (Multisensor): $description');
             device = HelvarDriverInputDevice(
               deviceId: deviceId,
               address: deviceAddress,
@@ -262,7 +248,6 @@ class DiscoveryService {
             );
           } else if (typeCode == 0x0101 ||
               (typeCode & 0xFF) == 0x01 && ((typeCode >> 8) & 0xFF) == 0x01) {
-            debugPrint('  Creating Emergency Device: $description');
             device = HelvarDriverEmergencyDevice(
               deviceId: deviceId,
               address: deviceAddress,
@@ -276,7 +261,6 @@ class DiscoveryService {
               emergency: true,
             );
           } else {
-            debugPrint('  Creating Output Device: $description');
             device = HelvarDriverOutputDevice(
               deviceId: deviceId,
               address: deviceAddress,
@@ -326,10 +310,11 @@ class DiscoveryService {
     return routers;
   }
 
-  static Future<String> _sendCommand(Socket socket, String command) async {
+  static Future<String> _sendCommand(
+      Socket socket, String command, Stream<List<int>> broadcastStream) async {
     final completer = Completer<String>();
 
-    final subscription = socket.asBroadcastStream().listen(
+    final subscription = broadcastStream.listen(
       (List<int> data) {
         final response = String.fromCharCodes(data).trim();
         completer.complete(response);

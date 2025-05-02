@@ -1,9 +1,7 @@
 class HelvarNetCommands {
   // Query commands
-  static String queryDeviceType(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:104,@$cluster.$router.$subnet.$device#';
+  static String queryDeviceType(int version, String address) {
+    return '>V:$version,C:104,@$address#';
   }
 
   static String queryDescriptionGroup(int version, int group) {
@@ -14,10 +12,8 @@ class HelvarNetCommands {
     return '>V:$version,C:105,G:$group#';
   }
 
-  static String queryDescriptionDevice(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:106,@$cluster.$router.$subnet.$device#';
+  static String queryDescriptionDevice(int version, String address) {
+    return '>V:$version,C:106,@$address#';
   }
 
   static String queryWorkgroupName(int version) {
@@ -39,66 +35,36 @@ class HelvarNetCommands {
     return '>V:$version,C:109,G:$group#';
   }
 
-  static String queryDeviceState(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:110,@$cluster.$router.$subnet.$device#';
+  static String queryDeviceState(int version, String address) {
+    return '>V:$version,C:110,@$address#';
   }
 
-  static String queryDeviceIsDisabled(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:111,@$cluster.$router.$subnet.$device#';
+  static String queryDeviceIsDisabled(int version, String address) {
+    return '>V:$version,C:111,@$address#';
   }
 
-  static String queryLampFailure(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:112,@$cluster.$router.$subnet.$device#';
+  static String queryLampFailure(int version, String address) {
+    return '>V:$version,C:112,@$address#';
   }
 
-  static String queryDeviceIsMissing(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:113,@$cluster.$router.$subnet.$device#';
+  static String queryDeviceIsMissing(int version, String address) {
+    return '>V:$version,C:113,@$address#';
   }
 
-  static String queryDeviceIsFaulty(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:114,@$cluster.$router.$subnet.$device#';
+  static String queryDeviceIsFaulty(int version, String address) {
+    return '>V:$version,C:114,@$address#';
   }
 
-  static String queryEmergencyBatteryFailure(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:129,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyBatteryFailure(int version, String address) {
+    return '>V:$version,C:129,@$address#';
   }
 
-  static String queryMeasurement(int version, int cluster, int router,
-      int subnet, int device, int subdevice) {
-    _validateAddress(cluster, router, subnet, device);
-    _validateSubdevice(subdevice);
-    return '>V:$version,C:150,@$cluster.$router.$subnet.$device.$subdevice#';
+  static String queryLoadLevel(int version, String address) {
+    return '>V:$version,C:152,@$address#';
   }
 
-  static String queryInputs(int version, int cluster, int router, int subnet,
-      int device, int subdevice) {
-    _validateAddress(cluster, router, subnet, device);
-    _validateSubdevice(subdevice);
-    return '>V:$version,C:151,@$cluster.$router.$subnet.$device.$subdevice#';
-  }
-
-  static String queryLoadLevel(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:152,@$cluster.$router.$subnet.$device#';
-  }
-
-  static String queryPowerConsumption(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:160,@$cluster.$router.$subnet.$device#';
+  static String queryPowerConsumption(int version, String address) {
+    return '>V:$version,C:160,@$address#';
   }
 
   static String queryGroupPowerConsumption(int version, int group) {
@@ -106,46 +72,32 @@ class HelvarNetCommands {
     return '>V:$version,C:161,G:$group#';
   }
 
-  static String queryEmergencyFunctionTestTime(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:170,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyFunctionTestTime(int version, String address) {
+    return '>V:$version,C:170,@$address#';
   }
 
-  static String queryEmergencyFunctionTestState(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:171,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyFunctionTestState(int version, String address) {
+    return '>V:$version,C:171,@$address#';
   }
 
-  static String queryEmergencyDurationTestTime(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:172,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyDurationTestTime(int version, String address) {
+    return '>V:$version,C:172,@$address#';
   }
 
-  static String queryEmergencyDurationTestState(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:173,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyDurationTestState(int version, String address) {
+    return '>V:$version,C:173,@$address#';
   }
 
-  static String queryEmergencyBatteryCharge(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:174,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyBatteryCharge(int version, String address) {
+    return '>V:$version,C:174,@$address#';
   }
 
-  static String queryEmergencyBatteryTime(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:175,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyBatteryTime(int version, String address) {
+    return '>V:$version,C:175,@$address#';
   }
 
-  static String queryEmergencyTotalLampTime(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:176,@$cluster.$router.$subnet.$device#';
+  static String queryEmergencyTotalLampTime(int version, String address) {
+    return '>V:$version,C:176,@$address#';
   }
 
   static String queryTime(int version) {
@@ -179,19 +131,8 @@ class HelvarNetCommands {
     return '>V:$version,C:102,@$cluster#';
   }
 
-  static String queryDeviceTypesAndAddresses(
-      int version, int cluster, int router, int subnet) {
-    if (cluster < 1 || cluster > 253) {
-      throw ArgumentError('Cluster must be between 1 and 253');
-    }
-    if (router < 1 || router > 254) {
-      throw ArgumentError('Router must be between 1 and 254');
-    }
-    if (subnet < 1 || subnet > 4) {
-      throw ArgumentError('Subnet must be between 1 and 4');
-    }
-
-    return '>V:$version,C:100@$cluster.$router.$subnet#';
+  static String queryDeviceTypesAndAddresses(int version, String address) {
+    return '>V:$version,C:100@$address#';
   }
 
   static String queryGroups(int version) {
@@ -207,10 +148,8 @@ class HelvarNetCommands {
     return '>V:$version,C:166#';
   }
 
-  static String querySceneInfo(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:167@$cluster.$router.$subnet.$device#';
+  static String querySceneInfo(int version, String address) {
+    return '>V:$version,C:167@$address#';
   }
 
   // Control commands
@@ -228,12 +167,11 @@ class HelvarNetCommands {
   static String recallSceneDevice(int version, int cluster, int router,
       int subnet, int device, int block, int scene,
       {int fadeTime = 0}) {
-    _validateAddress(cluster, router, subnet, device);
     _validateBlock(block);
     _validateScene(scene);
     _validateFadeTime(fadeTime);
-
-    return '>V:$version,C:12,B:$block,S:$scene,F:$fadeTime,@$cluster.$router.$subnet.$device#';
+    String address = '$cluster.$router.$subnet.$device';
+    return '>V:$version,C:12,B:$block,S:$scene,F:$fadeTime,@$address#';
   }
 
   static String directLevelGroup(int version, int group, int level,
@@ -245,14 +183,12 @@ class HelvarNetCommands {
     return '>V:$version,C:13,G:$group,L:$level,F:$fadeTime#';
   }
 
-  static String directLevelDevice(
-      int version, int cluster, int router, int subnet, int device, int level,
+  static String directLevelDevice(int version, String address, int level,
       {int fadeTime = 0}) {
-    _validateAddress(cluster, router, subnet, device);
     _validateLevel(level);
     _validateFadeTime(fadeTime);
 
-    return '>V:$version,C:14,L:$level,F:$fadeTime,@$cluster.$router.$subnet.$device#';
+    return '>V:$version,C:14,L:$level,F:$fadeTime,@$address#';
   }
 
   static String directProportionGroup(int version, int group, int proportion,
@@ -267,11 +203,10 @@ class HelvarNetCommands {
   static String directProportionDevice(int version, int cluster, int router,
       int subnet, int device, int proportion,
       {int fadeTime = 0}) {
-    _validateAddress(cluster, router, subnet, device);
     _validateProportion(proportion);
     _validateFadeTime(fadeTime);
-
-    return '>V:$version,C:16,P:$proportion,F:$fadeTime,@$cluster.$router.$subnet.$device#';
+    String address = '$cluster.$router.$subnet.$device';
+    return '>V:$version,C:16,P:$proportion,F:$fadeTime,@$address#';
   }
 
   static String modifyProportionGroup(
@@ -287,11 +222,10 @@ class HelvarNetCommands {
   static String modifyProportionDevice(int version, int cluster, int router,
       int subnet, int device, int proportionChange,
       {int fadeTime = 0}) {
-    _validateAddress(cluster, router, subnet, device);
     _validateProportionChange(proportionChange);
     _validateFadeTime(fadeTime);
-
-    return '>V:$version,C:18,P:$proportionChange,F:$fadeTime,@$cluster.$router.$subnet.$device#';
+    String address = '$cluster.$router.$subnet.$device';
+    return '>V:$version,C:18,P:$proportionChange,F:$fadeTime,@$address#';
   }
 
   // Emergency test control commands
@@ -300,10 +234,8 @@ class HelvarNetCommands {
     return '>V:$version,C:19,G:$group#';
   }
 
-  static String emergencyFunctionTestDevice(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:20,@$cluster.$router.$subnet.$device#';
+  static String emergencyFunctionTestDevice(int version, String address) {
+    return '>V:$version,C:20,@$address#';
   }
 
   static String emergencyDurationTestGroup(int version, int group) {
@@ -311,10 +243,8 @@ class HelvarNetCommands {
     return '>V:$version,C:21,G:$group#';
   }
 
-  static String emergencyDurationTestDevice(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:22,@$cluster.$router.$subnet.$device#';
+  static String emergencyDurationTestDevice(int version, String address) {
+    return '>V:$version,C:22,@$address#';
   }
 
   static String stopEmergencyTestsGroup(int version, int group) {
@@ -322,10 +252,8 @@ class HelvarNetCommands {
     return '>V:$version,C:23,G:$group#';
   }
 
-  static String stopEmergencyTestsDevice(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:24,@$cluster.$router.$subnet.$device#';
+  static String stopEmergencyTestsDevice(int version, String address) {
+    return '>V:$version,C:24,@$address#';
   }
 
   // Configuration commands
@@ -344,13 +272,12 @@ class HelvarNetCommands {
   static String storeSceneDevice(int version, int cluster, int router,
       int subnet, int device, int block, int scene, int level,
       {bool forceStore = false}) {
-    _validateAddress(cluster, router, subnet, device);
     _validateBlock(block);
     _validateScene(scene);
     _validateLevel(level);
-
+    String address = '$cluster.$router.$subnet.$device';
     final forceStoreValue = forceStore ? 1 : 0;
-    return '>V:$version,C:202,@$cluster.$router.$subnet.$device,O:$forceStoreValue,B:$block,S:$scene,L:$level#';
+    return '>V:$version,C:202,@$address,O:$forceStoreValue,B:$block,S:$scene,L:$level#';
   }
 
   static String storeAsSceneGroup(int version, int group, int block, int scene,
@@ -366,12 +293,11 @@ class HelvarNetCommands {
   static String storeAsSceneDevice(int version, int cluster, int router,
       int subnet, int device, int block, int scene,
       {bool forceStore = false}) {
-    _validateAddress(cluster, router, subnet, device);
     _validateBlock(block);
     _validateScene(scene);
-
+    String address = '$cluster.$router.$subnet.$device';
     final forceStoreValue = forceStore ? 1 : 0;
-    return '>V:$version,C:204,@$cluster.$router.$subnet.$device,O:$forceStoreValue,B:$block,S:$scene#';
+    return '>V:$version,C:204,@$address,O:$forceStoreValue,B:$block,S:$scene#';
   }
 
   static String resetEmergencyBatteryAndTotalLampTimeGroup(
@@ -381,26 +307,8 @@ class HelvarNetCommands {
   }
 
   static String resetEmergencyBatteryAndTotalLampTimeDevice(
-      int version, int cluster, int router, int subnet, int device) {
-    _validateAddress(cluster, router, subnet, device);
-    return '>V:$version,C:206,@$cluster.$router.$subnet.$device#';
-  }
-
-  // Validation methods
-  static void _validateAddress(
-      int cluster, int router, int subnet, int device) {
-    if (cluster < 1 || cluster > 253) {
-      throw ArgumentError('Cluster must be between 1 and 253');
-    }
-    if (router < 1 || router > 254) {
-      throw ArgumentError('Router must be between 1 and 254');
-    }
-    if (subnet < 1 || subnet > 4) {
-      throw ArgumentError('Subnet must be between 1 and 4');
-    }
-    if (device < 1 || device > 255) {
-      throw ArgumentError('Device must be between 1 and 255');
-    }
+      int version, String address) {
+    return '>V:$version,C:206,@$address#';
   }
 
   static void _validateGroup(int group) {
