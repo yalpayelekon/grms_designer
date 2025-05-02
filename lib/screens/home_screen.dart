@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import 'package:grms_designer/models/helvar_group.dart';
 import '../models/helvar_device.dart';
 import '../models/workgroup.dart';
 import 'group_detail_screen.dart';
@@ -317,7 +318,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                         .map(
                                           (group) => TreeNode(
                                             content: GestureDetector(
-                                              onTap: () {
+                                              onDoubleTap: () {
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
@@ -328,6 +329,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                     ),
                                                   ),
                                                 );
+                                              },
+                                              onSecondaryTap: () {
+                                                _showGroupContextMenu(
+                                                    context, group, workgroup);
                                               },
                                               child: Row(
                                                 children: [
@@ -707,5 +712,395 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
       ),
     );
+  }
+
+  Future<void> _showDirectProportionDialog(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Image.asset('assets/icons/helvar_icon.png',
+                width: 24,
+                height: 24,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.lightbulb)),
+            const SizedBox(width: 8),
+            const Text('Direct Proportion'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      _performDirectProportion(context, group, int.parse(result));
+    }
+  }
+
+  Future<void> _showModifyProportionDialog(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Image.asset('assets/icons/helvar_icon.png',
+                width: 24,
+                height: 24,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.lightbulb)),
+            const SizedBox(width: 8),
+            const Text('Modify Proportion'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      _performModifyProportion(context, group, int.parse(result));
+    }
+  }
+
+  Future<void> _showRecallSceneDialog(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero); // Allow popup menu to close
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Image.asset('assets/icons/helvar_icon.png',
+                width: 24,
+                height: 24,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.lightbulb)),
+            const SizedBox(width: 8),
+            const Text('Recall Scene'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      // Perform the recall scene action with the entered value
+      _performRecallScene(context, group, int.parse(result));
+    }
+  }
+
+  Future<void> _showStoreSceneDialog(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Image.asset('assets/icons/helvar_icon.png',
+                width: 24,
+                height: 24,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.lightbulb)),
+            const SizedBox(width: 8),
+            const Text('Store Scene'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      _performStoreScene(context, group, int.parse(result));
+    }
+  }
+
+  Future<void> _showDirectLevelDialog(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Image.asset('assets/icons/helvar_icon.png',
+                width: 24,
+                height: 24,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.lightbulb)),
+            const SizedBox(width: 8),
+            const Text('Direct Level'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      _performDirectLevel(context, group, int.parse(result));
+    }
+  }
+
+  void _performRecallScene(
+      BuildContext context, HelvarGroup group, int sceneNumber) {
+    // TODO: Here we would use the Helvar protocol implementation to recall a scene
+    // For now, just show a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content:
+              Text('Recalling scene $sceneNumber for group ${group.groupId}')),
+    );
+  }
+
+  void _performStoreScene(
+      BuildContext context, HelvarGroup group, int sceneNumber) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content:
+              Text('Storing scene $sceneNumber for group ${group.groupId}')),
+    );
+  }
+
+  void _performDirectLevel(BuildContext context, HelvarGroup group, int level) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content:
+              Text('Setting direct level $level for group ${group.groupId}')),
+    );
+  }
+
+  void _performDirectProportion(
+      BuildContext context, HelvarGroup group, int proportion) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              'Setting direct proportion $proportion for group ${group.groupId}')),
+    );
+  }
+
+  void _performModifyProportion(
+      BuildContext context, HelvarGroup group, int proportion) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              'Modifying proportion by $proportion for group ${group.groupId}')),
+    );
+  }
+
+  void _performEmergencyFunctionTest(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Emergency Function Test for group ${group.groupId}')),
+    );
+  }
+
+  void _performEmergencyDurationTest(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Emergency Duration Test for group ${group.groupId}')),
+    );
+  }
+
+  void _stopEmergencyTest(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Stopping Emergency Test for group ${group.groupId}')),
+    );
+  }
+
+  void _resetEmergencyBatteryTotalLampTime(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              'Reset Emergency Battery Total Lamp Time for group ${group.groupId}')),
+    );
+  }
+
+  void _refreshGroupProperties(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Refreshing properties for group ${group.groupId}')),
+    );
+  }
+
+  void _showGroupContextMenu(
+      BuildContext context, HelvarGroup group, Workgroup workgroup) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+
+    final buttonBottomCenter = button.localToGlobal(
+      Offset(300, button.size.height / 3),
+      ancestor: overlay,
+    );
+
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+          buttonBottomCenter, buttonBottomCenter + const Offset(1, 1)),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu(context: context, position: position, items: [
+      PopupMenuItem(
+        child: const Text('Recall Scene'),
+        onTap: () => _showRecallSceneDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Store Scene'),
+        onTap: () => _showStoreSceneDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Direct Level'),
+        onTap: () => _showDirectLevelDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Direct Proportion'),
+        onTap: () => _showDirectProportionDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Modify Proportion'),
+        onTap: () => _showModifyProportionDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Emergency Function Test'),
+        onTap: () => _performEmergencyFunctionTest(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Emergency Duration Test'),
+        onTap: () => _performEmergencyDurationTest(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Stop Emergency Test'),
+        onTap: () => _stopEmergencyTest(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Reset Emergency Battery Total Lamp Time'),
+        onTap: () =>
+            _resetEmergencyBatteryTotalLampTime(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Refresh Group Properties'),
+        onTap: () => _refreshGroupProperties(context, group, workgroup),
+      ),
+    ]);
   }
 }
