@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_group.dart';
 import '../models/helvar_device.dart';
+import '../models/output_device.dart';
 import '../models/workgroup.dart';
 import 'group_detail_screen.dart';
 import 'groups_list_screen.dart';
@@ -405,12 +406,19 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                             children: subnetDevices
                                                 .map(
                                                   (device) => TreeNode(
-                                                    content: _buildDraggable(
-                                                      device.description.isEmpty
-                                                          ? "Device_${device.deviceId}"
-                                                          : device.description,
-                                                      _getDeviceIcon(device),
-                                                      WidgetType.text,
+                                                    content: GestureDetector(
+                                                      onSecondaryTap: () =>
+                                                          _showDeviceContextMenu(
+                                                              context, device),
+                                                      child: _buildDraggable(
+                                                        device.description
+                                                                .isEmpty
+                                                            ? "Device_${device.deviceId}"
+                                                            : device
+                                                                .description,
+                                                        _getDeviceIcon(device),
+                                                        WidgetType.text,
+                                                      ),
                                                     ),
                                                   ),
                                                 )
@@ -726,7 +734,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             borderRadius: BorderRadius.circular(8.0),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
           ),
         ),
@@ -742,6 +749,349 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
       ),
     );
+  }
+
+  void _showDeviceContextMenu(BuildContext context, HelvarDevice device) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+
+    final buttonBottomCenter = button.localToGlobal(
+      Offset(300, button.size.height / 3),
+      ancestor: overlay,
+    );
+
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+          buttonBottomCenter, buttonBottomCenter + const Offset(1, 1)),
+      Offset.zero & overlay.size,
+    );
+
+    final List<PopupMenuEntry<String>> menuItems = [];
+
+    menuItems.add(
+      const PopupMenuItem(
+        value: 'clear_result',
+        child: Text('Clear Result'),
+      ),
+    );
+
+    if (device.helvarType == 'output') {
+      menuItems.addAll([
+        const PopupMenuItem(
+          value: 'recall_scene',
+          child: Text('Recall Scene'),
+        ),
+        const PopupMenuItem(
+          value: 'direct_level',
+          child: Text('Direct Level'),
+        ),
+        const PopupMenuItem(
+          value: 'direct_proportion',
+          child: Text('Direct Proportion'),
+        ),
+        const PopupMenuItem(
+          value: 'modify_proportion',
+          child: Text('Modify Proportion'),
+        ),
+      ]);
+    }
+
+    showMenu<String>(context: context, position: position, items: menuItems)
+        .then((String? value) {
+      if (value == null) return;
+
+      switch (value) {
+        case 'clear_result':
+          _clearDeviceResult(context, device);
+          break;
+        case 'recall_scene':
+          _showDeviceRecallSceneDialog(context, device);
+          break;
+        case 'direct_level':
+          _showDeviceDirectLevelDialog(context, device);
+          break;
+        case 'direct_proportion':
+          _showDeviceDirectProportionDialog(context, device);
+          break;
+        case 'modify_proportion':
+          _showDeviceModifyProportionDialog(context, device);
+          break;
+      }
+    });
+  }
+
+  void _clearDeviceResult(BuildContext context, HelvarDevice device) {
+    device.clearResult();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Cleared result for device ${device.deviceId}')),
+    );
+  }
+
+  Future<void> _showDeviceRecallSceneDialog(
+      BuildContext context, HelvarDevice device) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lightbulb),
+            SizedBox(width: 8),
+            Text('Recall Scene'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Scene Number',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      _performDeviceRecallScene(context, device, int.parse(result));
+    }
+  }
+
+  void _performDeviceRecallScene(
+      BuildContext context, HelvarDevice device, int sceneNumber) {
+    device.recallScene('block=1,scene=$sceneNumber,fade=700');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              'Recalled scene $sceneNumber for device ${device.deviceId}')),
+    );
+  }
+
+  Future<void> _showDeviceDirectLevelDialog(
+      BuildContext context, HelvarDevice device) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lightbulb),
+            SizedBox(width: 8),
+            Text('Direct Level'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Level (0-100)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      try {
+        final level = int.parse(result);
+        if (level >= 0 && level <= 100) {
+          _performDeviceDirectLevel(context, device, level);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Level must be between 0 and 100')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid level value')),
+        );
+      }
+    }
+  }
+
+  void _performDeviceDirectLevel(
+      BuildContext context, HelvarDevice device, int level) {
+    if (device is HelvarDriverOutputDevice) {
+      device.directLevel('$level,700');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Set level to $level for device ${device.deviceId}')),
+      );
+    }
+  }
+
+  Future<void> _showDeviceDirectProportionDialog(
+      BuildContext context, HelvarDevice device) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lightbulb),
+            SizedBox(width: 8),
+            Text('Direct Proportion'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Proportion (-100 to 100)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      try {
+        final proportion = int.parse(result);
+        if (proportion >= -100 && proportion <= 100) {
+          _performDeviceDirectProportion(context, device, proportion);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Proportion must be between -100 and 100')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid proportion value')),
+        );
+      }
+    }
+  }
+
+  void _performDeviceDirectProportion(
+      BuildContext context, HelvarDevice device, int proportion) {
+    if (device is HelvarDriverOutputDevice) {
+      device.directProportion('$proportion,700');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Set proportion to $proportion for device ${device.deviceId}')),
+      );
+    }
+  }
+
+  Future<void> _showDeviceModifyProportionDialog(
+      BuildContext context, HelvarDevice device) async {
+    final TextEditingController controller = TextEditingController();
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.lightbulb),
+            SizedBox(width: 8),
+            Text('Modify Proportion'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Change amount (-100 to 100)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      try {
+        final change = int.parse(result);
+        if (change >= -100 && change <= 100) {
+          _performDeviceModifyProportion(context, device, change);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Change amount must be between -100 and 100')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid change amount')),
+        );
+      }
+    }
+  }
+
+  void _performDeviceModifyProportion(
+      BuildContext context, HelvarDevice device, int proportion) {
+    if (device is HelvarDriverOutputDevice) {
+      device.modifyProportion('$proportion,700');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Modified proportion by $proportion for device ${device.deviceId}')),
+      );
+    }
   }
 
   Future<void> _showDirectProportionDialog(
