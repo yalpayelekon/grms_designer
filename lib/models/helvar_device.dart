@@ -1,11 +1,9 @@
-// lib/models/helvar_device.dart
-import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
-
+import 'helvar_node.dart';
 import 'emergency_device.dart';
 import 'input_device.dart';
 import 'output_device.dart';
 
-abstract class HelvarDevice extends TreeNode {
+abstract class HelvarDevice extends TreeViewNode {
   int cluster;
   int routerId;
   int subnet;
@@ -33,7 +31,6 @@ abstract class HelvarDevice extends TreeNode {
   bool isMultisensor;
 
   Map<String, dynamic> sensorInfo;
-
   Map<String, dynamic> additionalInfo;
 
   HelvarDevice({
@@ -62,8 +59,18 @@ abstract class HelvarDevice extends TreeNode {
     this.isMultisensor = false,
     Map<String, dynamic>? sensorInfo,
     Map<String, dynamic>? additionalInfo,
+    super.children,
   })  : sensorInfo = sensorInfo ?? {},
-        additionalInfo = additionalInfo ?? {} {
+        additionalInfo = additionalInfo ?? {},
+        super(
+          id: deviceId.toString(),
+          name: description.isNotEmpty ? description : "Device_$deviceId",
+          nodeType: helvarType == "input"
+              ? TreeViewNodeType.inputDevice
+              : (helvarType == "output"
+                  ? TreeViewNodeType.outputDevice
+                  : TreeViewNodeType.group),
+        ) {
     if (address.startsWith('@')) {
       address = address.substring(1);
     }

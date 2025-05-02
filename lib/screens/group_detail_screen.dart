@@ -60,7 +60,7 @@ class GroupDetailScreen extends ConsumerWidget {
             const Divider(),
             _buildDetailRow('ID', group.groupId),
             _buildDetailRow('Description', group.description),
-            _buildDetailRow('Type', group.type),
+            _buildDetailRow('Type', group.nodeType.name),
             if (group.lsig != null)
               _buildDetailRow('LSIG', group.lsig.toString()),
             for (int i = 0; i < group.blockValues.length; i++)

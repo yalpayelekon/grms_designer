@@ -12,12 +12,12 @@ enum TreeViewNodeType {
 class TreeViewNode extends TreeNode {
   final String id;
   final String name;
-  final TreeViewNodeType type;
+  final TreeViewNodeType nodeType;
 
   TreeViewNode({
     required this.id,
     required this.name,
-    required this.type,
+    required this.nodeType,
     super.children,
   }) : super(content: Text(name));
 }

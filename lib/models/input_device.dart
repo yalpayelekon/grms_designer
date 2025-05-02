@@ -1,4 +1,3 @@
-// lib/models/input_device.dart
 import 'helvar_device.dart';
 
 class HelvarDriverInputDevice extends HelvarDevice {
@@ -27,6 +26,7 @@ class HelvarDriverInputDevice extends HelvarDevice {
     super.sensorInfo,
     super.additionalInfo,
     List<ButtonPoint>? buttonPoints,
+    super.children,
   }) : buttonPoints = buttonPoints ?? [];
 
   @override

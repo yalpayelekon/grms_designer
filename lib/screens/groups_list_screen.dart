@@ -219,7 +219,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildDetailRow('Type', group.type),
+                  _buildDetailRow('Type', group.nodeType.name),
                   if (group.lsig != null)
                     _buildDetailRow('LSIG', group.lsig.toString()),
                   _buildDetailRow(

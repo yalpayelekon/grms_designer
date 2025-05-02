@@ -332,7 +332,6 @@ class DiscoveryService {
               id: const Uuid().v4(), // Generate a unique ID
               groupId: groupId,
               description: description,
-              type: 'Group',
               powerPollingMinutes: 15,
               gatewayRouterIpAddress: routerIpAddress,
             ));

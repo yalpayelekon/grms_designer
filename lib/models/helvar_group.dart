@@ -1,12 +1,10 @@
 // lib/models/helvar_group.dart
-import 'package:flutter/material.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import 'helvar_node.dart';
 
-class HelvarGroup extends TreeNode {
-  final String id;
+class HelvarGroup extends TreeViewNode {
   final String groupId;
   final String description;
-  final String type;
   final int? lsig;
   final List<double> blockValues;
   final double powerConsumption;
@@ -18,10 +16,9 @@ class HelvarGroup extends TreeNode {
   final DateTime? lastMessageTime;
 
   HelvarGroup({
-    required this.id,
+    required super.id,
     required this.groupId,
     this.description = '',
-    this.type = 'Group',
     this.lsig,
     this.blockValues = const [],
     this.powerConsumption = 0.0,
@@ -31,9 +28,11 @@ class HelvarGroup extends TreeNode {
     this.actionResult = '',
     this.lastMessage = '',
     this.lastMessageTime,
+    super.children,
   }) : super(
-            content:
-                Text(description.isEmpty ? "Group $groupId" : description));
+          name: description.isEmpty ? "Group $groupId" : description,
+          nodeType: TreeViewNodeType.group,
+        );
 
   @override
   bool operator ==(Object other) =>
@@ -50,7 +49,6 @@ class HelvarGroup extends TreeNode {
       id: json['id'] as String,
       groupId: json['groupId'] as String,
       description: json['description'] as String? ?? '',
-      type: json['type'] as String? ?? 'Group',
       lsig: json['lsig'] as int?,
       blockValues: (json['blockValues'] as List?)
               ?.map((e) => (e as num).toDouble())
@@ -74,7 +72,7 @@ class HelvarGroup extends TreeNode {
       'id': id,
       'groupId': groupId,
       'description': description,
-      'type': type,
+      'type': nodeType,
       'lsig': lsig,
       'blockValues': blockValues,
       'powerConsumption': powerConsumption,
@@ -106,7 +104,6 @@ class HelvarGroup extends TreeNode {
       id: id ?? this.id,
       groupId: groupId ?? this.groupId,
       description: description ?? this.description,
-      type: type ?? this.type,
       lsig: lsig ?? this.lsig,
       blockValues: blockValues ?? this.blockValues,
       powerConsumption: powerConsumption ?? this.powerConsumption,

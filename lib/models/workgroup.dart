@@ -1,9 +1,8 @@
-import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
-
+import 'helvar_node.dart';
 import 'helvar_router.dart';
 import 'helvar_group.dart';
 
-class Workgroup extends TreeNode {
+class Workgroup extends TreeViewNode {
   final String id;
   final String description;
   final String networkInterface;
@@ -23,8 +22,14 @@ class Workgroup extends TreeNode {
     this.refreshPropsAfterAction = false,
     List<HelvarRouter>? routers,
     List<HelvarGroup>? groups,
+    super.children,
   })  : routers = routers ?? [],
-        groups = groups ?? [];
+        groups = groups ?? [],
+        super(
+          id: id,
+          name: description.isNotEmpty ? description : 'Workgroup $id',
+          nodeType: TreeViewNodeType.group,
+        );
 
   void addRouter(HelvarRouter router) {
     routers.add(router);
