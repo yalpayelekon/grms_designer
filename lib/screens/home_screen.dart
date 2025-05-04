@@ -91,14 +91,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       TreeNode(
                         content: GestureDetector(
                           onDoubleTap: () {
-                            setState(() {
-                              showingProject = true;
-                              openWorkGroup = false;
-                              openWiresheet = false;
-                              showingGroups = false;
-                              openSettings = false;
-                              showingGroupDetail = false;
-                            });
+                            _setActiveNode('project');
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
@@ -112,14 +105,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                           TreeNode(
                             content: GestureDetector(
                               onDoubleTap: () {
-                                setState(() {
-                                  showingProject = false;
-                                  openWorkGroup = false;
-                                  openWiresheet = false;
-                                  openSettings = true;
-                                  showingGroups = false;
-                                  showingGroupDetail = false;
-                                });
+                                _setActiveNode('settings');
                               },
                               child: const Padding(
                                 padding: EdgeInsets.all(8.0),
@@ -130,14 +116,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                           TreeNode(
                             content: GestureDetector(
                               onDoubleTap: () {
-                                setState(() {
-                                  showingProject = true;
-                                  openWorkGroup = false;
-                                  openWiresheet = false;
-                                  showingGroups = false;
-                                  openSettings = false;
-                                  showingGroupDetail = false;
-                                });
+                                _setActiveNode('files');
                               },
                               child: const Padding(
                                 padding: EdgeInsets.all(8.0),
@@ -148,18 +127,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               TreeNode(
                                 content: GestureDetector(
                                   onDoubleTap: () {
-                                    setState(() {
-                                      showingProject = false;
-                                      openWorkGroup = false;
-                                      openWiresheet = false;
-                                      showingGroups = false;
-                                      showingGroupDetail = false;
-                                      showingProjectSettings = false;
-                                      showingImages = true;
-                                      showingIcons = false;
-                                      currentFileDirectory =
-                                          AppDirectoryService.imagesDir;
-                                    });
+                                    _setActiveNode('images');
                                   },
                                   child: const Padding(
                                     padding: EdgeInsets.all(8.0),
@@ -170,18 +138,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               TreeNode(
                                 content: GestureDetector(
                                   onDoubleTap: () {
-                                    setState(() {
-                                      showingProject = false;
-                                      openWorkGroup = false;
-                                      openWiresheet = false;
-                                      showingGroups = false;
-                                      showingGroupDetail = false;
-                                      showingProjectSettings = false;
-                                      showingImages = false;
-                                      showingIcons = true;
-                                      currentFileDirectory =
-                                          AppDirectoryService.imagesDir;
-                                    });
+                                    _setActiveNode('icons');
                                   },
                                   child: const Padding(
                                     padding: EdgeInsets.all(8.0),
@@ -196,14 +153,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   children: [
                                     GestureDetector(
                                       onDoubleTap: () {
-                                        setState(() {
-                                          openSettings = false;
-                                          showingProject = true;
-                                          openWorkGroup = false;
-                                          openWiresheet = false;
-                                          showingGroups = false;
-                                          showingGroupDetail = false;
-                                        });
+                                        _setActiveNode('wiresheets');
                                       },
                                       child: const Padding(
                                         padding: EdgeInsets.all(8.0),
@@ -222,16 +172,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   ...wiresheets.map((wiresheet) => TreeNode(
                                         content: GestureDetector(
                                           onDoubleTap: () {
-                                            setState(() {
-                                              showingProject = false;
-                                              openWorkGroup = false;
-                                              openWiresheet = true;
-                                              openSettings = false;
-                                              showingGroups = false;
-                                              showingGroupDetail = false;
-                                              selectedWiresheetId =
-                                                  wiresheet.id;
-                                            });
+                                            _setActiveNode('project');
                                           },
                                           child: Row(
                                             mainAxisAlignment:
@@ -280,15 +221,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       TreeNode(
                         content: GestureDetector(
                           onDoubleTap: () {
-                            setState(() {
-                              showingProject = false;
-                              openWorkGroup = true;
-                              openSettings = false;
-                              openWiresheet = false;
-                              showingGroups = false;
-                              showingGroupDetail = false;
-                              selectedWorkgroup = null;
-                            });
+                            _setActiveNode('workgroups');
                           },
                           child: const Row(
                             children: [
@@ -305,15 +238,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               (workgroup) => TreeNode(
                                 content: GestureDetector(
                                   onDoubleTap: () {
-                                    setState(() {
-                                      showingProject = false;
-                                      openWorkGroup = true;
-                                      openSettings = false;
-                                      openWiresheet = false;
-                                      showingGroups = false;
-                                      showingGroupDetail = false;
-                                      selectedWorkgroup = workgroup;
-                                    });
+                                    _setActiveNode('workgroups',
+                                        additionalData: workgroup);
                                   },
                                   child: Row(
                                     children: [
@@ -341,14 +267,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   TreeNode(
                                     content: GestureDetector(
                                       onDoubleTap: () {
-                                        setState(() {
-                                          showingProject = false;
-                                          openWorkGroup = false;
-                                          openWiresheet = false;
-                                          showingGroups = true;
-                                          showingGroupDetail = false;
-                                          selectedWorkgroup = workgroup;
-                                        });
+                                        _setActiveNode('group',
+                                            additionalData: {
+                                              'workgroup': workgroup,
+                                            });
                                       },
                                       child: const Row(
                                         children: [
@@ -366,16 +288,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                           (group) => TreeNode(
                                             content: GestureDetector(
                                               onDoubleTap: () {
-                                                setState(() {
-                                                  showingProject = false;
-                                                  openWorkGroup = false;
-                                                  openWiresheet = false;
-                                                  openSettings = false;
-                                                  showingGroups = false;
-                                                  showingGroupDetail = true;
-                                                  selectedWorkgroup = workgroup;
-                                                  selectedGroup = group;
-                                                });
+                                                _setActiveNode('groupDetail',
+                                                    additionalData: {
+                                                      'workgroup': workgroup,
+                                                      'group': group,
+                                                    });
                                               },
                                               onSecondaryTap: () {
                                                 showGroupContextMenu(
@@ -526,83 +443,86 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     if (openSettings) {
       return const ProjectSettingsScreen();
     }
-    if (openWorkGroup && selectedWorkgroup == null) {
-      return const WorkgroupListScreen();
-    } else if (openWiresheet && selectedWiresheetId != null) {
+    if (openWorkGroup) {
+      if (selectedWorkgroup == null) {
+        return const WorkgroupListScreen();
+      }
+      return WorkgroupDetailScreen(workgroup: selectedWorkgroup!);
+    }
+    if (showingImages) {
+      return const ProjectFilesScreen(
+          directoryName: AppDirectoryService.imagesDir);
+    }
+    if (showingIcons) {
+      return const ProjectFilesScreen(
+          directoryName: AppDirectoryService.imagesDir);
+    }
+    if (openWiresheet) {
+      if (selectedWiresheetId == null) {
+        return const Text("Wiresheet list will be added here");
+      }
       return WiresheetScreen(
         wiresheetId: selectedWiresheetId!,
       );
-    } else if (openWorkGroup && selectedWorkgroup != null) {
-      return WorkgroupDetailScreen(workgroup: selectedWorkgroup!);
-    } else if (showingImages) {
-      return const ProjectFilesScreen(
-          directoryName: AppDirectoryService.imagesDir);
-    } else if (showingIcons) {
-      return const ProjectFilesScreen(
-          directoryName: AppDirectoryService.imagesDir);
-    } else if (showingProject) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.lightbulb_outline,
-              size: 80,
-              color: Colors.amber,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Welcome to HelvarNet Manager',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Select a Wiresheet to edit or discover Workgroups',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.add),
-                  label: const Text('Create New Wiresheet'),
-                  onPressed: () => _createNewWiresheet(context),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 15,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.search),
-                  label: const Text('Discover Workgroups'),
-                  onPressed: () {
-                    setState(() {
-                      showingProject = false;
-                      openWorkGroup = true;
-                      openWiresheet = false;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 15,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    } else {
-      return const Center(
-        child: Text('Please select an option from the sidebar'),
-      );
     }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.lightbulb_outline,
+            size: 80,
+            color: Colors.amber,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Welcome to HelvarNet Manager',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Select a Wiresheet to edit or discover Workgroups',
+            style: TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('Create New Wiresheet'),
+                onPressed: () => _createNewWiresheet(context),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.search),
+                label: const Text('Discover Workgroups'),
+                onPressed: () {
+                  setState(() {
+                    showingProject = false;
+                    openWorkGroup = true;
+                    openWiresheet = false;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _exportWorkgroups(BuildContext context) async {
@@ -864,10 +784,69 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _setActiveNode(dynamic _activeNode) {
+  void _setActiveNode(String nodeName, {dynamic additionalData}) {
     setState(() {
-      if (_activeNode.runtimeType == bool) {
-        _activeNode = true;
+      openWorkGroup = false;
+      openWiresheet = false;
+      openSettings = false;
+      showingImages = false;
+      showingIcons = false;
+      showingProject = false;
+      showingGroups = false;
+      showingGroupDetail = false;
+      showingProjectSettings = false;
+
+      switch (nodeName) {
+        case 'project':
+          showingProject = true;
+          break;
+        case 'settings':
+          openSettings = true;
+          break;
+        case 'workgroups':
+          openWorkGroup = true;
+          if (additionalData is Workgroup) {
+            selectedWorkgroup = additionalData;
+          } else {
+            selectedWorkgroup = null;
+          }
+          break;
+        case 'wiresheet':
+          openWiresheet = true;
+          if (additionalData is String) {
+            selectedWiresheetId = additionalData;
+          }
+          break;
+        case 'images':
+          showingImages = true;
+          currentFileDirectory = AppDirectoryService.imagesDir;
+          break;
+        case 'icons':
+          showingIcons = true;
+          currentFileDirectory = AppDirectoryService.imagesDir;
+          break;
+        case 'groups':
+          showingGroups = true;
+          if (additionalData is Workgroup) {
+            selectedWorkgroup = additionalData;
+          }
+          break;
+        case 'groupDetail':
+          showingGroupDetail = true;
+          if (additionalData is Map<String, dynamic>) {
+            if (additionalData['workgroup'] is Workgroup) {
+              selectedWorkgroup = additionalData['workgroup'];
+            }
+            if (additionalData['group'] is HelvarGroup) {
+              selectedGroup = additionalData['group'];
+            }
+          }
+          break;
+        case 'projectSettings':
+          showingProjectSettings = true;
+          break;
+        default:
+          showingProject = true;
       }
     });
   }
