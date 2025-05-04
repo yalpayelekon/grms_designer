@@ -105,6 +105,10 @@ class AppDirectoryService {
     return getFilePath(imagesDir, fileName);
   }
 
+  Future<String> getIconFilePath(String fileName) async {
+    return getFilePath(iconsDir, fileName);
+  }
+
   Future<String> getBackupFilePath(String fileName) async {
     return getFilePath(backupsDir, fileName);
   }

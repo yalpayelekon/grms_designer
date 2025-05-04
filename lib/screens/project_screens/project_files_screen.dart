@@ -96,7 +96,7 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
             targetPath = await _directoryService.getImageFilePath(fileName);
             break;
           case AppDirectoryService.iconsDir:
-            targetPath = await _directoryService.getImageFilePath(fileName);
+            targetPath = await _directoryService.getIconFilePath(fileName);
             break;
           default:
             targetPath = await _directoryService.getFilePath(
