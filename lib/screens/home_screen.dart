@@ -172,7 +172,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   ...wiresheets.map((wiresheet) => TreeNode(
                                         content: GestureDetector(
                                           onDoubleTap: () {
-                                            _setActiveNode('project');
+                                            _setActiveNode('wiresheet',
+                                                additionalData: wiresheet.id);
                                           },
                                           child: Row(
                                             mainAxisAlignment:
@@ -267,7 +268,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   TreeNode(
                                     content: GestureDetector(
                                       onDoubleTap: () {
-                                        _setActiveNode('group',
+                                        _setActiveNode('groups',
                                             additionalData: {
                                               'workgroup': workgroup,
                                             });
@@ -455,7 +456,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
     if (showingIcons) {
       return const ProjectFilesScreen(
-          directoryName: AppDirectoryService.imagesDir);
+          directoryName: AppDirectoryService.iconsDir);
     }
     if (openWiresheet) {
       if (selectedWiresheetId == null) {
@@ -505,11 +506,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 icon: const Icon(Icons.search),
                 label: const Text('Discover Workgroups'),
                 onPressed: () {
-                  setState(() {
-                    showingProject = false;
-                    openWorkGroup = true;
-                    openWiresheet = false;
-                  });
+                  _setActiveNode('workgroups');
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -823,7 +820,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           break;
         case 'icons':
           showingIcons = true;
-          currentFileDirectory = AppDirectoryService.imagesDir;
+          currentFileDirectory = AppDirectoryService.iconsDir;
           break;
         case 'groups':
           showingGroups = true;

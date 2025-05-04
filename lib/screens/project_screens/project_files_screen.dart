@@ -1,4 +1,3 @@
-// lib/screens/project_files_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/app_directory_service.dart';
@@ -65,7 +64,7 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.directoryName} Files'),
+        title: Text(widget.directoryName.toUpperCase()),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

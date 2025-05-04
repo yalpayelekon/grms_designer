@@ -10,6 +10,7 @@ class AppDirectoryService {
   static const String routersDir = 'routers';
   static const String wiresheetsDir = 'wiresheets';
   static const String imagesDir = 'images';
+  static const String iconsDir = 'icons';
   static const String backupsDir = 'backups';
   static const String exportsDir = 'exports';
   static const String settingsDir = 'settings';
