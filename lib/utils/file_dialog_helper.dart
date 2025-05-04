@@ -24,4 +24,21 @@ class FileDialogHelper {
 
     return outputFile;
   }
+
+  static Future<String?> pickFileToOpen({
+    List<String> allowedExtensions = const ['json'],
+    String dialogTitle = 'Select file to import',
+    FileType type = FileType.custom,
+  }) async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: type,
+      allowedExtensions: type == FileType.custom ? allowedExtensions : null,
+      dialogTitle: dialogTitle,
+    );
+
+    if (result != null && result.files.single.path != null) {
+      return result.files.single.path;
+    }
+    return null;
+  }
 }

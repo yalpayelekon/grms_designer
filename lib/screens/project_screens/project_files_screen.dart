@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/app_directory_service.dart';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import '../../utils/file_dialog_helper.dart';
 
 class ProjectFilesScreen extends ConsumerStatefulWidget {
   final String directoryName;
@@ -46,8 +48,114 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
   }
 
   Future<void> _importFile() async {
-    // Implement file import
-    // You can use your existing FileDialogHelper or other methods
+    try {
+      String? filePath;
+
+      if (widget.directoryName == AppDirectoryService.imagesDir) {
+        filePath = await FileDialogHelper.pickFileToOpen(
+          type: FileType.image,
+          dialogTitle: 'Select image to import',
+        );
+      } else if (widget.directoryName == AppDirectoryService.iconsDir) {
+        filePath = await FileDialogHelper.pickFileToOpen(
+          type: FileType.image,
+          dialogTitle: 'Select icon to import',
+        );
+      } else if (widget.directoryName == AppDirectoryService.workgroupsDir) {
+        filePath = await FileDialogHelper.pickFileToOpen(
+          allowedExtensions: ['json'],
+          dialogTitle: 'Select workgroup file to import',
+        );
+      } else if (widget.directoryName == AppDirectoryService.wiresheetsDir) {
+        filePath = await FileDialogHelper.pickFileToOpen(
+          allowedExtensions: ['json'],
+          dialogTitle: 'Select wiresheet file to import',
+        );
+      } else {
+        filePath = await FileDialogHelper.pickFileToOpen(
+          type: FileType.any,
+          dialogTitle: 'Select file to import',
+        );
+      }
+
+      if (filePath != null) {
+        setState(() {
+          _isLoading = true;
+        });
+
+        final fileName = filePath.split(Platform.pathSeparator).last;
+        String targetPath;
+        switch (widget.directoryName) {
+          case AppDirectoryService.workgroupsDir:
+            targetPath = await _directoryService.getWorkgroupFilePath(fileName);
+            break;
+          case AppDirectoryService.wiresheetsDir:
+            targetPath = await _directoryService.getWiresheetFilePath(fileName);
+            break;
+          case AppDirectoryService.imagesDir:
+            targetPath = await _directoryService.getImageFilePath(fileName);
+            break;
+          case AppDirectoryService.iconsDir:
+            targetPath = await _directoryService.getImageFilePath(fileName);
+            break;
+          default:
+            targetPath = await _directoryService.getFilePath(
+                widget.directoryName, fileName);
+        }
+
+        final sourceFile = File(filePath);
+        final targetFile = File(targetPath);
+
+        if (await targetFile.exists()) {
+          if (!mounted) return;
+          final shouldReplace = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('File Already Exists'),
+              content: Text(
+                  'A file named "$fileName" already exists. Do you want to replace it?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Replace'),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldReplace != true) {
+            setState(() {
+              _isLoading = false;
+            });
+            return;
+          }
+        }
+
+        await sourceFile.copy(targetPath);
+        await _loadFiles();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('File "$fileName" imported successfully')),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error importing file: $e')),
+        );
+      }
+      debugPrint('Error importing file: $e');
+    }
   }
 
   Future<void> _deleteFile(FileSystemEntity file) async {
