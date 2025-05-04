@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/project_settings_provider.dart';
+import '../../providers/settings_provider.dart';
 
 class ProjectSettingsScreen extends ConsumerWidget {
   const ProjectSettingsScreen({super.key});
@@ -8,6 +9,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectSettings = ref.watch(projectSettingsProvider);
+    final discoveryTimeout = ref.watch(discoveryTimeoutProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -65,6 +67,13 @@ class ProjectSettingsScreen extends ConsumerWidget {
                     onTap: () => _showSocketTimeoutDialog(
                         context, ref, projectSettings.socketTimeoutMs),
                   ),
+                  ListTile(
+                    title: const Text('Discovery Timeout'),
+                    subtitle: Text('${discoveryTimeout / 1000} seconds'),
+                    trailing: const Icon(Icons.timer_outlined),
+                    onTap: () => _showDiscoveryTimeoutDialog(
+                        context, ref, discoveryTimeout),
+                  ),
                 ],
               ),
             ),
@@ -110,6 +119,61 @@ class ProjectSettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showDiscoveryTimeoutDialog(
+      BuildContext context, WidgetRef ref, int currentTimeout) {
+    double timeoutInSec = currentTimeout / 1000;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Discovery Timeout'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${timeoutInSec.toStringAsFixed(1)} seconds'),
+                  Slider(
+                    min: 1.0,
+                    max: 30.0,
+                    divisions: 29,
+                    value: timeoutInSec,
+                    onChanged: (value) {
+                      setState(() {
+                        timeoutInSec = value;
+                      });
+                    },
+                  ),
+                  const Text(
+                    'Longer timeouts may find more devices but will take longer to complete.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final timeoutMs = (timeoutInSec * 1000).round();
+                    ref
+                        .read(settingsProvider.notifier)
+                        .setDiscoveryTimeout(timeoutMs);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
