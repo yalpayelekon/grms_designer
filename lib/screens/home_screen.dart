@@ -93,11 +93,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                           onDoubleTap: () {
                             _setActiveNode('project');
                           },
-                          child: const Padding(
-                            padding: EdgeInsets.all(8.0),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
                             child: Text(
                               "Project",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: showingProject
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: showingProject ? Colors.blue : null,
+                              ),
                             ),
                           ),
                         ),
@@ -107,9 +112,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               onDoubleTap: () {
                                 _setActiveNode('settings');
                               },
-                              child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text("Settings"),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Settings",
+                                  style: TextStyle(
+                                    fontWeight: openSettings
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: openSettings ? Colors.blue : null,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -118,9 +131,23 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               onDoubleTap: () {
                                 _setActiveNode('files');
                               },
-                              child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text("Files"),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Files",
+                                  style: TextStyle(
+                                    fontWeight: currentFileDirectory != null &&
+                                            !showingImages &&
+                                            !showingIcons
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: currentFileDirectory != null &&
+                                            !showingImages &&
+                                            !showingIcons
+                                        ? Colors.blue
+                                        : null,
+                                  ),
+                                ),
                               ),
                             ),
                             children: [
@@ -129,9 +156,18 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   onDoubleTap: () {
                                     _setActiveNode('images');
                                   },
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text("Images"),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      "Images",
+                                      style: TextStyle(
+                                        fontWeight: showingImages
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color:
+                                            showingImages ? Colors.blue : null,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -140,9 +176,18 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   onDoubleTap: () {
                                     _setActiveNode('icons');
                                   },
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Text("Icons"),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      "Icons",
+                                      style: TextStyle(
+                                        fontWeight: showingIcons
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color:
+                                            showingIcons ? Colors.blue : null,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -155,9 +200,21 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                       onDoubleTap: () {
                                         _setActiveNode('wiresheets');
                                       },
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Text("Wiresheets"),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          "Wiresheets",
+                                          style: TextStyle(
+                                            fontWeight: openWiresheet &&
+                                                    selectedWiresheetId == null
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: openWiresheet &&
+                                                    selectedWiresheetId == null
+                                                ? Colors.blue
+                                                : null,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     IconButton(
@@ -224,12 +281,24 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                           onDoubleTap: () {
                             _setActiveNode('workgroups');
                           },
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.group_work),
+                              const Icon(Icons.group_work),
                               Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text('Workgroups'),
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  'Workgroups',
+                                  style: TextStyle(
+                                    fontWeight: openWorkGroup &&
+                                            selectedWorkgroup == null
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: openWorkGroup &&
+                                            selectedWorkgroup == null
+                                        ? Colors.blue
+                                        : null,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -250,14 +319,18 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                         child: Text(
                                           workgroup.description,
                                           style: TextStyle(
-                                            fontWeight:
-                                                selectedWorkgroup == workgroup
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                            color:
-                                                selectedWorkgroup == workgroup
-                                                    ? Colors.blue
-                                                    : null,
+                                            fontWeight: selectedWorkgroup ==
+                                                        workgroup &&
+                                                    !showingGroups &&
+                                                    selectedGroup == null
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: selectedWorkgroup ==
+                                                        workgroup &&
+                                                    !showingGroups &&
+                                                    selectedGroup == null
+                                                ? Colors.blue
+                                                : null,
                                           ),
                                         ),
                                       ),
@@ -268,18 +341,34 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   TreeNode(
                                     content: GestureDetector(
                                       onDoubleTap: () {
-                                        _setActiveNode('groups',
-                                            additionalData: {
-                                              'workgroup': workgroup,
-                                            });
+                                        _setActiveNode(
+                                          'groups',
+                                          additionalData: workgroup,
+                                        );
                                       },
-                                      child: const Row(
+                                      child: Row(
                                         children: [
-                                          Icon(Icons.group_work,
+                                          const Icon(Icons.group_work,
                                               color: Colors.blue),
                                           Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Text("Groups"),
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              "Groups",
+                                              style: TextStyle(
+                                                fontWeight: showingGroups &&
+                                                        selectedWorkgroup ==
+                                                            workgroup &&
+                                                        selectedGroup == null
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                color: showingGroups &&
+                                                        selectedWorkgroup ==
+                                                            workgroup &&
+                                                        selectedGroup == null
+                                                    ? Colors.blue
+                                                    : null,
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -850,6 +939,19 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           currentFileDirectory = null;
           showingImages = true;
           currentFileDirectory = AppDirectoryService.imagesDir;
+          break;
+        case 'files':
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
+          break;
+        case 'wiresheets':
+          openWiresheet = true;
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
           break;
         case 'icons':
           showingIcons = true;
