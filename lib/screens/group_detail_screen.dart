@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../models/helvar_group.dart';
-import '../models/workgroup.dart';
+import '../models/helvar_models/helvar_group.dart';
+import '../models/helvar_models/workgroup.dart';
 
 class GroupDetailScreen extends ConsumerWidget {
   final HelvarGroup group;

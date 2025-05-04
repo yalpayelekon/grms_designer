@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../models/helvar_device.dart';
-import '../../models/helvar_group.dart';
-import '../../models/output_device.dart';
-import '../../models/workgroup.dart';
+import '../../models/helvar_models/helvar_device.dart';
+import '../../models/helvar_models/helvar_group.dart';
+import '../../models/helvar_models/output_device.dart';
+import '../../models/helvar_models/workgroup.dart';
 import 'dialogs.dart';
 
 void performDeviceRecallScene(

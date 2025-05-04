@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/helvar_group.dart';
-import '../models/workgroup.dart';
-import '../models/helvar_device.dart';
+import '../models/helvar_models/helvar_group.dart';
+import '../models/helvar_models/workgroup.dart';
+import '../models/helvar_models/helvar_device.dart';
 import '../services/file_storage_service.dart';
 import '../services/router_storage_service.dart';
 

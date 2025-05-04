@@ -1,7 +1,7 @@
 // lib/models/helvar_device.dart
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 
-import 'emergency_device.dart';
+import '../emergency_device.dart';
 import 'input_device.dart';
 import 'output_device.dart';
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
-import 'package:grms_designer/models/helvar_group.dart';
-import '../../models/helvar_device.dart';
-import '../../models/workgroup.dart';
+import 'package:grms_designer/models/helvar_models/helvar_group.dart';
+import '../../models/helvar_models/helvar_device.dart';
+import '../../models/helvar_models/workgroup.dart';
 import '../../services/app_directory_service.dart';
 import 'actions.dart';
 import 'dialogs.dart';

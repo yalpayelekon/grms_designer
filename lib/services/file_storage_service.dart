@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import '../models/workgroup.dart';
+import '../models/helvar_models/workgroup.dart';
 import 'app_directory_service.dart';
 
 class FileStorageService {

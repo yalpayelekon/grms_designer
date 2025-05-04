@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/emergency_device.dart';
-import '../models/helvar_device.dart';
-import '../models/input_device.dart';
-import '../models/output_device.dart';
+import '../models/helvar_models/helvar_device.dart';
+import '../models/helvar_models/input_device.dart';
+import '../models/helvar_models/output_device.dart';
 
 enum DeviceType { output, input, emergency }
 

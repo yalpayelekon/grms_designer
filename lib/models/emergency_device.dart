@@ -1,4 +1,4 @@
-import 'helvar_device.dart';
+import 'helvar_models/helvar_device.dart';
 
 class HelvarDriverEmergencyDevice extends HelvarDevice {
   String missing;

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/helvar_router.dart';
-import '../models/helvar_device.dart';
+import '../models/helvar_models/helvar_router.dart';
+import '../models/helvar_models/helvar_device.dart';
 
 class RouterStorageService {
   Future<String> get _localPath async {
