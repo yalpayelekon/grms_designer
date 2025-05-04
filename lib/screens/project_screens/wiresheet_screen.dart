@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/wiresheet.dart';
-import '../providers/wiresheets_provider.dart';
-import '../widgets/wiresheet_editor.dart';
+import '../../models/wiresheet.dart';
+import '../../providers/wiresheets_provider.dart';
+import '../../widgets/wiresheet_editor.dart';
 
 class WiresheetScreen extends ConsumerWidget {
   final String wiresheetId;
