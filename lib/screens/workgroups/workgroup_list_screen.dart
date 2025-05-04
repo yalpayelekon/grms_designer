@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/screens/workgroup_detail_screen.dart';
+import 'package:grms_designer/screens/workgroups/workgroup_detail_screen.dart';
 
-import '../models/workgroup.dart';
-import '../models/helvar_router.dart';
-import '../comm/discovery_manager.dart';
-import 'network_interface_dialog.dart';
+import '../../models/workgroup.dart';
+import '../../models/helvar_router.dart';
+import '../../comm/discovery_manager.dart';
+import '../network_interface_dialog.dart';
 import 'workgroup_selection_dialog.dart';
-import '../providers/settings_provider.dart';
-import '../providers/workgroups_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../providers/workgroups_provider.dart';
 
 class WorkgroupListScreen extends ConsumerStatefulWidget {
   const WorkgroupListScreen({super.key});
