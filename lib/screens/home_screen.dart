@@ -570,55 +570,19 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.lightbulb_outline,
             size: 80,
             color: Colors.amber,
           ),
-          const SizedBox(height: 20),
-          const Text(
+          SizedBox(height: 20),
+          Text(
             'Welcome to HelvarNet Manager',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Select a Wiresheet to edit or discover Workgroups',
-            style: TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Create New Wiresheet'),
-                onPressed: () => _createNewWiresheet(context),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 20),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.search),
-                label: const Text('Discover Workgroups'),
-                onPressed: () {
-                  _setActiveNode('workgroups');
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
