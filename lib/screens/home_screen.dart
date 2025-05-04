@@ -4,6 +4,7 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/workgroup.dart';
+import '../providers/project_settings_provider.dart';
 import '../services/app_directory_service.dart';
 import 'actions.dart';
 import 'dialogs/home_screen_dialogs.dart';
@@ -48,10 +49,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final workgroups = ref.watch(workgroupsProvider);
     final wiresheets = ref.watch(wiresheetsProvider);
-
+    final projectName = ref.watch(projectNameProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HelvarNet Manager'),
+        title: Text('HelvarNet Manager - $projectName'),
         centerTitle: true,
         actions: [
           IconButton(
