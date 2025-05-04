@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/helvar_models/helvar_group.dart';
-import '../models/helvar_models/workgroup.dart';
-import '../providers/workgroups_provider.dart';
-import '../services/discovery_service.dart';
-import 'group_detail_screen.dart';
+import '../../models/helvar_models/helvar_group.dart';
+import '../../models/helvar_models/workgroup.dart';
+import '../../providers/workgroups_provider.dart';
+import '../../services/discovery_service.dart';
+import '../details/group_detail_screen.dart';
 
 class GroupsListScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;

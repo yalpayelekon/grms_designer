@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
-import '../groups_list_screen.dart';
-import '../router_detail_screen.dart';
+import '../lists/groups_list_screen.dart';
+import '../details/router_detail_screen.dart';
 
 class WorkgroupDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;

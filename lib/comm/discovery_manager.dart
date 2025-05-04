@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:grms_designer/protocol/query_commands.dart';
 
 import '../protocol/protocol_constants.dart';
-import '../screens/network_interface_dialog.dart';
+import '../screens/dialogs/network_interface_dialog.dart';
 
 class DiscoveryManager {
   RawDatagramSocket? _socket;

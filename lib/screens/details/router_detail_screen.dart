@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/helvar_models/helvar_router.dart';
-import '../models/helvar_models/helvar_device.dart';
-import '../models/helvar_models/input_device.dart';
-import '../models/helvar_models/output_device.dart';
-import '../models/helvar_models/workgroup.dart';
-import '../providers/workgroups_provider.dart';
-import '../utils/file_dialog_helper.dart';
-import '../services/discovery_service.dart';
-import 'add_device_dialog.dart';
+import '../../models/helvar_models/helvar_router.dart';
+import '../../models/helvar_models/helvar_device.dart';
+import '../../models/helvar_models/input_device.dart';
+import '../../models/helvar_models/output_device.dart';
+import '../../models/helvar_models/workgroup.dart';
+import '../../providers/workgroups_provider.dart';
+import '../../utils/file_dialog_helper.dart';
+import '../../services/discovery_service.dart';
+import '../dialogs/add_device_dialog.dart';
 
 class RouterDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
