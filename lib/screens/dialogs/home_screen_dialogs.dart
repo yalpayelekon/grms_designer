@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
-import 'actions.dart';
+import '../home_screen/actions.dart';
 
 Future<void> showDeviceDirectProportionDialog(
     BuildContext context, HelvarDevice device) async {
