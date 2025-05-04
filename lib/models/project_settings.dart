@@ -1,6 +1,3 @@
-// lib/models/project_settings.dart
-import 'package:flutter/foundation.dart';
-
 class ProjectSettings {
   String projectName;
   int socketTimeoutMs;

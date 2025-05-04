@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/helvar_device.dart';
-import '../models/helvar_group.dart';
-import '../models/workgroup.dart';
+import '../../models/helvar_device.dart';
+import '../../models/helvar_group.dart';
+import '../../models/workgroup.dart';
 import 'actions.dart';
 
 Future<void> showDeviceDirectProportionDialog(
