@@ -4,6 +4,7 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_group.dart';
 import '../models/helvar_device.dart';
 import '../models/workgroup.dart';
+import '../services/app_directory_service.dart';
 import 'actions.dart';
 import 'dialogs.dart';
 import 'group_detail_screen.dart';
@@ -16,6 +17,8 @@ import '../models/widget_type.dart';
 import '../providers/workgroups_provider.dart';
 import '../providers/wiresheets_provider.dart';
 import '../utils/file_dialog_helper.dart';
+import 'project_settings_screen.dart';
+import 'project_files_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -27,12 +30,17 @@ class HomeScreen extends ConsumerStatefulWidget {
 class HomeScreenState extends ConsumerState<HomeScreen> {
   bool openWorkGroup = false;
   bool openWiresheet = false;
+  bool openSettings = false;
+  bool showingImages = false;
+  bool showingIcons = false;
+  String? currentFileDirectory;
   String? selectedWiresheetId;
   Workgroup? selectedWorkgroup;
   HelvarGroup? selectedGroup;
   bool showingProject = true;
   bool showingGroups = false;
   bool showingGroupDetail = false;
+  bool showingProjectSettings = false;
   double _leftPanelWidth = 400;
   bool _isDragging = false;
 
@@ -88,6 +96,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                               openWorkGroup = false;
                               openWiresheet = false;
                               showingGroups = false;
+                              openSettings = false;
                               showingGroupDetail = false;
                             });
                           },
@@ -104,9 +113,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                             content: GestureDetector(
                               onDoubleTap: () {
                                 setState(() {
-                                  showingProject = true;
+                                  showingProject = false;
                                   openWorkGroup = false;
                                   openWiresheet = false;
+                                  openSettings = true;
                                   showingGroups = false;
                                   showingGroupDetail = false;
                                 });
@@ -125,6 +135,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   openWorkGroup = false;
                                   openWiresheet = false;
                                   showingGroups = false;
+                                  openSettings = false;
                                   showingGroupDetail = false;
                                 });
                               },
@@ -138,11 +149,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 content: GestureDetector(
                                   onDoubleTap: () {
                                     setState(() {
-                                      showingProject = true;
+                                      showingProject = false;
                                       openWorkGroup = false;
                                       openWiresheet = false;
                                       showingGroups = false;
                                       showingGroupDetail = false;
+                                      showingProjectSettings = false;
+                                      showingImages = true;
+                                      showingIcons = false;
+                                      currentFileDirectory =
+                                          AppDirectoryService.imagesDir;
                                     });
                                   },
                                   child: const Padding(
@@ -155,11 +171,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                 content: GestureDetector(
                                   onDoubleTap: () {
                                     setState(() {
-                                      showingProject = true;
+                                      showingProject = false;
                                       openWorkGroup = false;
                                       openWiresheet = false;
                                       showingGroups = false;
                                       showingGroupDetail = false;
+                                      showingProjectSettings = false;
+                                      showingImages = false;
+                                      showingIcons = true;
+                                      currentFileDirectory =
+                                          AppDirectoryService.imagesDir;
                                     });
                                   },
                                   child: const Padding(
@@ -176,6 +197,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                     GestureDetector(
                                       onDoubleTap: () {
                                         setState(() {
+                                          openSettings = false;
                                           showingProject = true;
                                           openWorkGroup = false;
                                           openWiresheet = false;
@@ -204,6 +226,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                               showingProject = false;
                                               openWorkGroup = false;
                                               openWiresheet = true;
+                                              openSettings = false;
                                               showingGroups = false;
                                               showingGroupDetail = false;
                                               selectedWiresheetId =
@@ -260,6 +283,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                             setState(() {
                               showingProject = false;
                               openWorkGroup = true;
+                              openSettings = false;
                               openWiresheet = false;
                               showingGroups = false;
                               showingGroupDetail = false;
@@ -284,6 +308,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                     setState(() {
                                       showingProject = false;
                                       openWorkGroup = true;
+                                      openSettings = false;
                                       openWiresheet = false;
                                       showingGroups = false;
                                       showingGroupDetail = false;
@@ -345,6 +370,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                   showingProject = false;
                                                   openWorkGroup = false;
                                                   openWiresheet = false;
+                                                  openSettings = false;
                                                   showingGroups = false;
                                                   showingGroupDetail = true;
                                                   selectedWorkgroup = workgroup;
@@ -497,6 +523,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         workgroup: selectedWorkgroup!,
       );
     }
+    if (openSettings) {
+      return const ProjectSettingsScreen();
+    }
     if (openWorkGroup && selectedWorkgroup == null) {
       return const WorkgroupListScreen();
     } else if (openWiresheet && selectedWiresheetId != null) {
@@ -505,6 +534,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     } else if (openWorkGroup && selectedWorkgroup != null) {
       return WorkgroupDetailScreen(workgroup: selectedWorkgroup!);
+    } else if (showingImages) {
+      return const ProjectFilesScreen(
+          directoryName: AppDirectoryService.imagesDir);
+    } else if (showingIcons) {
+      return const ProjectFilesScreen(
+          directoryName: AppDirectoryService.imagesDir);
     } else if (showingProject) {
       return Center(
         child: Column(
