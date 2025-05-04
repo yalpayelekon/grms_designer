@@ -311,6 +311,20 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                       group.description.isEmpty
                                                           ? "Group ${group.groupId}"
                                                           : group.description,
+                                                      style: TextStyle(
+                                                        fontWeight: selectedWorkgroup ==
+                                                                    workgroup &&
+                                                                selectedGroup ==
+                                                                    group
+                                                            ? FontWeight.bold
+                                                            : FontWeight.normal,
+                                                        color: selectedWorkgroup ==
+                                                                    workgroup &&
+                                                                selectedGroup ==
+                                                                    group
+                                                            ? Colors.blue
+                                                            : null,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
@@ -795,13 +809,24 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
       switch (nodeName) {
         case 'project':
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
           showingProject = true;
           break;
         case 'settings':
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
           openSettings = true;
           break;
         case 'workgroups':
           openWorkGroup = true;
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          currentFileDirectory = null;
           if (additionalData is Workgroup) {
             selectedWorkgroup = additionalData;
           } else {
@@ -809,26 +834,43 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           }
           break;
         case 'wiresheet':
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
           openWiresheet = true;
           if (additionalData is String) {
             selectedWiresheetId = additionalData;
           }
           break;
         case 'images':
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
           showingImages = true;
           currentFileDirectory = AppDirectoryService.imagesDir;
           break;
         case 'icons':
           showingIcons = true;
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
           currentFileDirectory = AppDirectoryService.iconsDir;
           break;
         case 'groups':
           showingGroups = true;
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          currentFileDirectory = null;
           if (additionalData is Workgroup) {
             selectedWorkgroup = additionalData;
           }
           break;
         case 'groupDetail':
+          selectedWiresheetId = null;
+          currentFileDirectory = null;
           showingGroupDetail = true;
           if (additionalData is Map<String, dynamic>) {
             if (additionalData['workgroup'] is Workgroup) {
@@ -840,6 +882,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           }
           break;
         case 'projectSettings':
+          selectedGroup = null;
+          selectedWiresheetId = null;
+          selectedWorkgroup = null;
+          currentFileDirectory = null;
           showingProjectSettings = true;
           break;
         default:
