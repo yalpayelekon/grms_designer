@@ -33,7 +33,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool openWiresheet = false;
   bool openSettings = false;
   bool showingImages = false;
-  bool showingIcons = false;
   String? currentFileDirectory;
   String? selectedWiresheetId;
   Workgroup? selectedWorkgroup;
@@ -138,13 +137,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   "Files",
                                   style: TextStyle(
                                     fontWeight: currentFileDirectory != null &&
-                                            !showingImages &&
-                                            !showingIcons
+                                            !showingImages
                                         ? FontWeight.bold
                                         : FontWeight.normal,
                                     color: currentFileDirectory != null &&
-                                            !showingImages &&
-                                            !showingIcons
+                                            !showingImages
                                         ? Colors.blue
                                         : null,
                                   ),
@@ -167,26 +164,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                             : FontWeight.normal,
                                         color:
                                             showingImages ? Colors.blue : null,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              TreeNode(
-                                content: GestureDetector(
-                                  onDoubleTap: () {
-                                    _setActiveNode('icons');
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      "Icons",
-                                      style: TextStyle(
-                                        fontWeight: showingIcons
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        color:
-                                            showingIcons ? Colors.blue : null,
                                       ),
                                     ),
                                   ),
@@ -558,10 +535,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       return const ProjectFilesScreen(
           directoryName: AppDirectoryService.imagesDir);
     }
-    if (showingIcons) {
-      return const ProjectFilesScreen(
-          directoryName: AppDirectoryService.iconsDir);
-    }
+
     if (openWiresheet) {
       if (selectedWiresheetId == null) {
         return const Text("Wiresheet list will be added here");
@@ -855,7 +829,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       openWiresheet = false;
       openSettings = false;
       showingImages = false;
-      showingIcons = false;
       showingProject = false;
       showingGroups = false;
       showingGroupDetail = false;
@@ -918,14 +891,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedWorkgroup = null;
           currentFileDirectory = null;
           break;
-        case 'icons':
-          showingIcons = true;
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
-          currentFileDirectory = null;
-          currentFileDirectory = AppDirectoryService.iconsDir;
-          break;
+
         case 'groups':
           showingGroups = true;
           selectedGroup = null;

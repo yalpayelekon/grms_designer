@@ -56,11 +56,6 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
           type: FileType.image,
           dialogTitle: 'Select image to import',
         );
-      } else if (widget.directoryName == AppDirectoryService.iconsDir) {
-        filePath = await FileDialogHelper.pickFileToOpen(
-          type: FileType.image,
-          dialogTitle: 'Select icon to import',
-        );
       } else if (widget.directoryName == AppDirectoryService.workgroupsDir) {
         filePath = await FileDialogHelper.pickFileToOpen(
           allowedExtensions: ['json'],
@@ -94,9 +89,6 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
             break;
           case AppDirectoryService.imagesDir:
             targetPath = await _directoryService.getImageFilePath(fileName);
-            break;
-          case AppDirectoryService.iconsDir:
-            targetPath = await _directoryService.getIconFilePath(fileName);
             break;
           default:
             targetPath = await _directoryService.getFilePath(

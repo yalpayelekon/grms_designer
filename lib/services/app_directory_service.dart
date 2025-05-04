@@ -10,7 +10,6 @@ class AppDirectoryService {
   static const String routersDir = 'routers';
   static const String wiresheetsDir = 'wiresheets';
   static const String imagesDir = 'images';
-  static const String iconsDir = 'icons';
   static const String backupsDir = 'backups';
   static const String exportsDir = 'exports';
   static const String settingsDir = 'settings';
@@ -103,10 +102,6 @@ class AppDirectoryService {
 
   Future<String> getImageFilePath(String fileName) async {
     return getFilePath(imagesDir, fileName);
-  }
-
-  Future<String> getIconFilePath(String fileName) async {
-    return getFilePath(iconsDir, fileName);
   }
 
   Future<String> getBackupFilePath(String fileName) async {
