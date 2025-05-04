@@ -5,7 +5,7 @@ import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../services/app_directory_service.dart';
-import 'home_screen/actions.dart';
+import 'actions.dart';
 import 'dialogs/home_screen_dialogs.dart';
 import 'details/group_detail_screen.dart';
 import 'lists/groups_list_screen.dart';
@@ -862,5 +862,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Cleared result for device ${device.deviceId}')),
     );
+  }
+
+  void _setActiveNode(dynamic _activeNode) {
+    setState(() {
+      if (_activeNode.runtimeType == bool) {
+        _activeNode = true;
+      }
+    });
   }
 }
