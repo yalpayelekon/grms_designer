@@ -748,7 +748,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           final commandService = ref.read(routerCommandServiceProvider);
           final result = await commandService.sendCommand(
             router.ipAddress,
-            '>V:2,C:191#', // Query version command
+            '>V:2,C:191#',
+            routerId: router.address,
           );
 
           if (mounted) {

@@ -114,21 +114,13 @@ class RouterCommandService {
       }
 
       try {
-        final completer = Completer<String?>();
-        _activeCommands[commandId] = Completer<CommandResult>();
+        final response = await connection.sendCommandWithResponse(
+          command,
+          timeout: localTimeout,
+        );
 
-        final success = await connection.sendCommand(command);
-        if (!success) {
-          lastError = 'Failed to send command';
-          continue;
-        }
-
-        String? response;
-        try {
-          response = await completer.future.timeout(localTimeout);
-        } on TimeoutException {
-          lastError =
-              'Command timed out after ${localTimeout.inSeconds} seconds';
+        if (response == null) {
+          lastError = 'Command timed out or failed to get response';
 
           if (attempt == localMaxRetries) {
             queuedCommand.status = CommandStatus.timedOut;
@@ -142,6 +134,7 @@ class RouterCommandService {
           continue;
         }
 
+        // If we got here, we have a successful response
         queuedCommand.status = CommandStatus.completed;
         queuedCommand.completedAt = DateTime.now();
         queuedCommand.response = response;
@@ -161,8 +154,6 @@ class RouterCommandService {
 
           return CommandResult.failure(lastError!, queuedCommand.attemptsMade);
         }
-      } finally {
-        _activeCommands.remove(commandId);
       }
     }
 

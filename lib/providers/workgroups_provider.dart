@@ -1,5 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../comm/models/command_models.dart';
+import '../comm/router_command_service.dart';
+import '../comm/router_connection.dart';
+import '../comm/router_connection_manager.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../models/helvar_models/helvar_device.dart';
@@ -19,6 +23,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         super([]) {
     _initializeData();
   }
+
   Future<void> _initializeData() async {
     if (_initialized) return;
 
@@ -44,6 +49,57 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
       _initialized = true;
     } catch (e) {
       debugPrint('Error initializing workgroups: $e');
+    }
+  }
+
+  Future<RouterConnection?> getRouterConnection(
+      String workgroupId, String routerAddress) async {
+    final connectionManager = RouterConnectionManager();
+
+    try {
+      final workgroup = state.firstWhere((wg) => wg.id == workgroupId);
+      final router =
+          workgroup.routers.firstWhere((r) => r.address == routerAddress);
+
+      if (router.ipAddress.isEmpty) {
+        return null;
+      }
+
+      return await connectionManager.getConnection(
+        router.ipAddress,
+        router.address,
+      );
+    } catch (e) {
+      debugPrint('Error getting router connection: $e');
+      return null;
+    }
+  }
+
+  Future<CommandResult> sendRouterCommand(
+    String workgroupId,
+    String routerAddress,
+    String command, {
+    CommandPriority priority = CommandPriority.normal,
+  }) async {
+    try {
+      final workgroup = state.firstWhere((wg) => wg.id == workgroupId);
+      final router =
+          workgroup.routers.firstWhere((r) => r.address == routerAddress);
+
+      if (router.ipAddress.isEmpty) {
+        return CommandResult.failure('Router has no IP address', 0);
+      }
+
+      final commandService = RouterCommandService();
+      return await commandService.sendCommand(
+        router.ipAddress,
+        command,
+        routerId: router.address,
+        priority: priority,
+      );
+    } catch (e) {
+      debugPrint('Error sending router command: $e');
+      return CommandResult.failure(e.toString(), 0);
     }
   }
 
