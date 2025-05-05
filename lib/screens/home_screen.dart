@@ -4,6 +4,7 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../comm/discovery_manager.dart';
 import '../comm/models/router_connection_status.dart';
+import '../comm/router_connection.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
@@ -51,14 +52,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isDragging = false;
   List<RouterConnectionStatus>? connectionStatuses;
   Map<String, dynamic>? connectionStats;
+  AsyncValue<RouterConnectionStatus>? connectionStream;
 
   @override
   Widget build(BuildContext context) {
     final workgroups = ref.watch(workgroupsProvider);
     final wiresheets = ref.watch(wiresheetsProvider);
     final projectName = ref.watch(projectNameProvider);
+    connectionStream = ref.watch(routerConnectionStatusStreamProvider);
     connectionStatuses = ref.watch(routerConnectionStatusesProvider);
     connectionStats = ref.watch(connectionStatsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('HelvarNet Manager - $projectName'),
@@ -440,6 +444,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                             .map((entry) {
                                           final subnet = entry.key;
                                           final subnetDevices = entry.value;
+                                          print(connectionStream);
                                           return TreeNode(
                                             content: Row(
                                               children: [
@@ -567,7 +572,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return _buildConnectionMonitor();
+    return connectionStream!.when(
+      data: (latestStatus) {
+        return _buildConnectionMonitor();
+      },
+      loading: () => const CircularProgressIndicator(),
+      error: (e, st) => Text('Error: $e'),
+    );
   }
 
   Future<void> _exportWorkgroups(BuildContext context) async {
@@ -753,7 +764,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               onPressed: () {
                 _discoverAndConnectRouters(context);
               },
-              child: const Text('Discover Routers'),
+              child: const Text('Connect to all routers'),
             ),
             if (connectionStatuses!.isEmpty)
               const Center(

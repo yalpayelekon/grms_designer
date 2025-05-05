@@ -78,6 +78,7 @@ class RouterConnectionManager {
       });
 
       connections[connectionKey] = connection;
+      connectionstatusController.add(connection.status);
       await connection.connect();
 
       return connection;
