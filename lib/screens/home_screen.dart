@@ -6,7 +6,6 @@ import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
-import '../providers/router_connection_provider.dart';
 import '../services/app_directory_service.dart';
 import '../widgets/router_connection_monitor.dart';
 import 'actions.dart';
@@ -714,61 +713,28 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           if (exampleRouter != null)
             ElevatedButton(
               onPressed: () async {
-                final commandService = ref.read(routerCommandServiceProvider);
-                final response = await commandService.testConnection(
-                  exampleRouter!.ipAddress,
-                  exampleRouter!.address,
-                );
+                final result = await ref
+                    .read(workgroupsProvider.notifier)
+                    .sendRouterCommand(
+                      "1", // Workgroup ID - you'll need the actual ID
+                      exampleRouter!.address,
+                      '>V:2,C:191#',
+                    );
 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Response: ${response ?? "Timeout"}'),
+                      content: Text(result.success
+                          ? 'Response: ${result.response}'
+                          : 'Error: ${result.errorMessage}'),
                     ),
                   );
                 }
               },
-              child: const Text('Test Direct Connection'),
+              child: const Text('Test Router Command'),
             ),
-          if (exampleRouter != null) _buildCommandTestButton(exampleRouter!),
-          Text(testState),
         ],
       ),
-    );
-  }
-
-  Widget _buildCommandTestButton(HelvarRouter router) {
-    return ElevatedButton(
-      onPressed: () async {
-        final connectionManager = ref.read(routerConnectionManagerProvider);
-        try {
-          final connection = await connectionManager.getConnection(
-            router.ipAddress,
-            router.address,
-          );
-          setState(() {
-            testState = connection.status.toString();
-          });
-
-          final commandService = ref.read(routerCommandServiceProvider);
-          final result = await commandService.sendCommand(
-            router.ipAddress,
-            '>V:2,C:191#',
-            routerId: router.address,
-          );
-          setState(() {
-            testState = connection.status.toString() +
-                (result.success
-                    ? 'Command executed. Response: ${result.response}'
-                    : 'Command failed: ${result.errorMessage}');
-          });
-        } catch (e) {
-          setState(() {
-            testState = 'Error: $e';
-          });
-        }
-      },
-      child: const Text('Test Connection'),
     );
   }
 

@@ -1,19 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/output_device.dart';
 import '../models/helvar_models/workgroup.dart';
+import '../providers/workgroups_provider.dart';
 import 'dialogs/home_screen_dialogs.dart';
 
 void performDeviceRecallScene(
     BuildContext context, HelvarDevice device, int sceneNumber) {
-  device.recallScene('block=1,scene=$sceneNumber,fade=700');
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-        content:
-            Text('Recalled scene $sceneNumber for device ${device.deviceId}')),
-  );
+  final container = ProviderScope.containerOf(context);
+  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
+
+  final parts = device.address.split('.');
+  if (parts.length >= 2) {
+    final cluster = parts[0];
+    final router = parts[1];
+    final routerAddress = '$cluster.$router';
+
+    final command = '>V:2,C:12,B:1,S:$sceneNumber,F:700,@${device.address}#';
+
+    workgroupsNotifier
+        .sendRouterCommand(
+      _getWorkgroupIdForDevice(context, device),
+      routerAddress,
+      command,
+    )
+        .then((result) {
+      if (result.success) {
+        device.out = "Scene $sceneNumber recalled (${result.response})";
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Recalled scene $sceneNumber for device ${device.deviceId}')),
+        );
+      } else {
+        device.out = "Failed to recall scene: ${result.errorMessage}";
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Failed to recall scene: ${result.errorMessage}')),
+        );
+      }
+    });
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text('Invalid device address format: ${device.address}')),
+    );
+  }
+}
+
+String _getWorkgroupIdForDevice(BuildContext context, HelvarDevice device) {
+  final container = ProviderScope.containerOf(context);
+  final workgroups = container.read(workgroupsProvider);
+
+  for (final workgroup in workgroups) {
+    for (final router in workgroup.routers) {
+      for (final routerDevice in router.devices) {
+        if (routerDevice.address == device.address) {
+          return workgroup.id;
+        }
+      }
+    }
+  }
+
+  return workgroups.isNotEmpty ? workgroups.first.id : "1";
 }
 
 void performRecallScene(

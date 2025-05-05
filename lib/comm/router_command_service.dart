@@ -296,19 +296,6 @@ class RouterCommandService {
     }
   }
 
-  Future<String?> testConnection(String routerIp, String routerId) async {
-    try {
-      final connection =
-          await _connectionManager.getConnection(routerIp, routerId);
-      final response = await connection.sendCommandWithResponse('>V:2,C:191#');
-
-      return response;
-    } catch (e) {
-      debugPrint('Test connection error: $e');
-      return 'ERROR: $e';
-    }
-  }
-
   Future<void> _executeQueuedCommand(QueuedCommand command) async {
     try {
       command.status = CommandStatus.executing;

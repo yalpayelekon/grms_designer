@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+
 import 'router_connection.dart';
 import 'models/router_connection_status.dart';
 
@@ -40,36 +42,53 @@ class RouterConnectionManager {
   }) async {
     final connectionKey = '$ipAddress:$port';
 
-    if (connections.containsKey(connectionKey) && !forceReconnect) {
-      final connection = connections[connectionKey]!;
+    try {
+      if (connections.containsKey(connectionKey) && !forceReconnect) {
+        final connection = connections[connectionKey]!;
 
-      if (!connection.isConnected) {
-        await connection.connect();
+        if (!connection.isConnected) {
+          debugPrint('Reconnecting to router at $ipAddress ($routerId)');
+          await connection.connect();
+        }
+
+        return connection;
       }
 
+      if (connections.length >= _maxConcurrentConnections) {
+        throw Exception(
+            'Maximum connection limit reached ($_maxConcurrentConnections)');
+      }
+
+      debugPrint('Creating new connection to router at $ipAddress ($routerId)');
+      final connection = RouterConnection(
+        ipAddress: ipAddress,
+        routerId: routerId,
+        port: port,
+        heartbeatInterval: heartbeatInterval ?? const Duration(seconds: 30),
+        connectionTimeout: connectionTimeout ?? const Duration(seconds: 5),
+      );
+
+      connection.statusStream.listen((status) {
+        connectionstatusController.add(status);
+        if (status.state == RouterConnectionState.failed ||
+            status.state == RouterConnectionState.disconnected) {
+          debugPrint(
+              'Router $routerId ($ipAddress) connection status: ${status.state}');
+          if (status.errorMessage != null) {
+            debugPrint('Error: ${status.errorMessage}');
+          }
+        }
+      });
+
+      connections[connectionKey] = connection;
+      await connection.connect();
+
       return connection;
+    } catch (e) {
+      debugPrint(
+          'Failed to establish connection to $ipAddress ($routerId): $e');
+      throw Exception('Connection failed to $ipAddress ($routerId): $e');
     }
-
-    if (connections.length >= _maxConcurrentConnections) {
-      throw Exception('Maximum connection limit reached ($maxConnections)');
-    }
-
-    final connection = RouterConnection(
-      ipAddress: ipAddress,
-      routerId: routerId,
-      port: port,
-      heartbeatInterval: heartbeatInterval ?? const Duration(seconds: 30),
-      connectionTimeout: connectionTimeout ?? const Duration(seconds: 5),
-    );
-
-    connection.statusStream.listen((status) {
-      connectionstatusController.add(status);
-    });
-
-    connections[connectionKey] = connection;
-    await connection.connect();
-
-    return connection;
   }
 
   bool hasConnection(String ipAddress, [int port = 50000]) {
