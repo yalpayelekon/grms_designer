@@ -52,7 +52,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Connection',
+                    'Router Connection',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -432,15 +432,217 @@ class ProjectSettingsScreen extends ConsumerWidget {
     );
   }
 
-  _showHeartbeatIntervalDialog(
-      BuildContext context, WidgetRef ref, int heartbeatIntervalSeconds) {}
+  void _showHeartbeatIntervalDialog(
+      BuildContext context, WidgetRef ref, int heartbeatIntervalSeconds) {
+    double intervalInSec = heartbeatIntervalSeconds.toDouble();
 
-  _showMaxRetriesDialog(
-      BuildContext context, WidgetRef ref, int maxCommandRetries) {}
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Heartbeat Interval'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${intervalInSec.toStringAsFixed(0)} seconds'),
+                  Slider(
+                    min: 5.0,
+                    max: 300.0,
+                    divisions: 59,
+                    value: intervalInSec,
+                    onChanged: (value) {
+                      setState(() {
+                        intervalInSec = value;
+                      });
+                    },
+                  ),
+                  const Text(
+                    'The heartbeat interval determines how often the application checks if router connections are still alive.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final interval = intervalInSec.round();
+                    ref
+                        .read(projectSettingsProvider.notifier)
+                        .setHeartbeatInterval(interval);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
-  _showMaxConcurrentCommandsDialog(BuildContext context, WidgetRef ref,
-      int maxConcurrentCommandsPerRouter) {}
+  void _showMaxRetriesDialog(
+      BuildContext context, WidgetRef ref, int maxCommandRetries) {
+    final retriesController =
+        TextEditingController(text: maxCommandRetries.toString());
 
-  _showCommandHistorySizeDialog(
-      BuildContext context, WidgetRef ref, int commandHistorySize) {}
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Max Command Retries'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: retriesController,
+                decoration: const InputDecoration(
+                  labelText: 'Retries',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Maximum number of times to retry a failed command before giving up.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final String text = retriesController.text.trim();
+                final int? retries = int.tryParse(text);
+                if (retries != null && retries >= 0) {
+                  ref
+                      .read(projectSettingsProvider.notifier)
+                      .setMaxCommandRetries(retries);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showMaxConcurrentCommandsDialog(
+      BuildContext context, WidgetRef ref, int maxConcurrentCommandsPerRouter) {
+    final commandsController =
+        TextEditingController(text: maxConcurrentCommandsPerRouter.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Max Concurrent Commands'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: commandsController,
+                decoration: const InputDecoration(
+                  labelText: 'Commands',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Maximum number of commands that can be executed simultaneously on a single router.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final String text = commandsController.text.trim();
+                final int? commands = int.tryParse(text);
+                if (commands != null && commands > 0) {
+                  ref
+                      .read(projectSettingsProvider.notifier)
+                      .setMaxConcurrentCommands(commands);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showCommandHistorySizeDialog(
+      BuildContext context, WidgetRef ref, int commandHistorySize) {
+    final historySizeController =
+        TextEditingController(text: commandHistorySize.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Command History Size'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: historySizeController,
+                decoration: const InputDecoration(
+                  labelText: 'History Size',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                autofocus: true,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Number of commands to keep in the history. Older commands will be removed when this limit is reached.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final String text = historySizeController.text.trim();
+                final int? size = int.tryParse(text);
+                if (size != null && size > 0) {
+                  ref
+                      .read(projectSettingsProvider.notifier)
+                      .setCommandHistorySize(size);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
