@@ -152,7 +152,7 @@ class RouterCommandService {
           _updateCommandStatus(queuedCommand);
           _addToHistory(queuedCommand);
 
-          return CommandResult.failure(lastError!, queuedCommand.attemptsMade);
+          return CommandResult.failure(lastError, queuedCommand.attemptsMade);
         }
       }
     }

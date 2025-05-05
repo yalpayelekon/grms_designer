@@ -47,6 +47,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingProjectSettings = false;
   double _leftPanelWidth = 400;
   bool _isDragging = false;
+  String testState = "Test State";
 
   @override
   Widget build(BuildContext context) {
@@ -730,6 +731,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               child: const Text('Test Direct Connection'),
             ),
           if (exampleRouter != null) _buildCommandTestButton(exampleRouter!),
+          Text(testState),
         ],
       ),
     );
@@ -744,6 +746,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             router.ipAddress,
             router.address,
           );
+          setState(() {
+            testState = connection.status.toString();
+          });
 
           final commandService = ref.read(routerCommandServiceProvider);
           final result = await commandService.sendCommand(
@@ -751,24 +756,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             '>V:2,C:191#',
             routerId: router.address,
           );
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  result.success
-                      ? 'Command executed. Response: ${result.response}'
-                      : 'Command failed: ${result.errorMessage}',
-                ),
-              ),
-            );
-          }
+          setState(() {
+            testState = connection.status.toString() +
+                (result.success
+                    ? 'Command executed. Response: ${result.response}'
+                    : 'Command failed: ${result.errorMessage}');
+          });
         } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e')),
-            );
-          }
+          setState(() {
+            testState = 'Error: $e';
+          });
         }
       },
       child: const Text('Test Connection'),

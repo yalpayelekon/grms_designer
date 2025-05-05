@@ -4,7 +4,7 @@ import '../providers/router_connection_provider.dart';
 import '../comm/models/router_connection_status.dart';
 
 class RouterConnectionMonitor extends ConsumerWidget {
-  const RouterConnectionMonitor({Key? key}) : super(key: key);
+  const RouterConnectionMonitor({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -63,7 +63,7 @@ class RouterConnectionMonitor extends ConsumerWidget {
   Widget _buildStatCard(BuildContext context, String label, int value,
       [Color? color]) {
     return Card(
-      color: color != null ? color.withOpacity(0.1) : null,
+      color: color?.withOpacity(0.1),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Column(
