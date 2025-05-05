@@ -12,7 +12,6 @@ class RouterCommandService {
 
   final RouterConnectionManager _connectionManager = RouterConnectionManager();
   final Map<String, List<QueuedCommand>> _commandQueues = {};
-  final Map<String, Completer<CommandResult>> _activeCommands = {};
   final List<QueuedCommand> _commandHistory = [];
   final int _maxHistorySize = 100;
   final _commandStatusController = StreamController<QueuedCommand>.broadcast();

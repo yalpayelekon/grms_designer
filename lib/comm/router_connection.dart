@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:grms_designer/protocol/query_commands.dart';
 import 'models/router_connection_status.dart';
 import '../protocol/protocol_constants.dart';
 
@@ -258,6 +259,6 @@ class RouterConnection {
       return;
     }
 
-    sendCommand('>V:2,C:191#');
+    sendCommand(HelvarNetCommands.queryHelvarNetVersion(2));
   }
 }

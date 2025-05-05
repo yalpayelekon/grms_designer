@@ -4,7 +4,6 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../comm/discovery_manager.dart';
 import '../comm/models/router_connection_status.dart';
-import '../comm/router_connection.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
@@ -576,7 +575,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       data: (latestStatus) {
         return _buildConnectionMonitor();
       },
-      loading: () => const CircularProgressIndicator(),
+      loading: () => const Center(
+        child: Text("Click on routers to start connection"),
+      ),
       error: (e, st) => Text('Error: $e'),
     );
   }
@@ -1217,17 +1218,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           break;
         case 'router':
           if (additionalData is Map<String, dynamic>) {
-            final workgroup = additionalData['workgroup'] as Workgroup?;
-            final router = additionalData['router'] as HelvarRouter?;
-
-            if (workgroup != null &&
-                router != null &&
-                router.ipAddress.isNotEmpty) {
-              ref.read(workgroupsProvider.notifier).getRouterConnection(
-                    workgroup.id,
-                    router.address,
-                  );
-            }
+            final workgroup = additionalData['workgroup'] as Workgroup;
+            final router = additionalData['router'] as HelvarRouter;
+            ref.read(workgroupsProvider.notifier).getRouterConnection(
+                  workgroup.id,
+                  router.address,
+                );
           }
           break;
         default:

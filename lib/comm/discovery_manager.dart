@@ -50,7 +50,7 @@ class DiscoveryManager {
       List<int> commandBytes = List<int>.from(command.codeUnits);
       Uint8List data = Uint8List.fromList(commandBytes);
 
-      _socket!.send(data, InternetAddress(targetNetwork), 50001);
+      _socket!.send(data, InternetAddress(targetNetwork), defaultUdpPort);
 
       await Future.delayed(Duration(milliseconds: timeout));
     } catch (e) {
@@ -82,9 +82,7 @@ class DiscoveryManager {
     final interfaces = parseIpConfig(output);
 
     final filteredInterfaces = interfaces.where((interface) {
-      return interface.ipv4 != null &&
-          interface.subnetMask !=
-              null; // You can also check gateway if you want
+      return interface.ipv4 != null && interface.subnetMask != null;
     }).toList();
 
     if (filteredInterfaces.isEmpty) {
