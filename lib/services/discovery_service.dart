@@ -11,6 +11,7 @@ import '../models/emergency_device.dart';
 import '../protocol/device_types.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
+import '../comm/router_connection_manager.dart';
 
 class DiscoveryService {
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
@@ -69,6 +70,34 @@ class DiscoveryService {
     }
 
     return deviceMap;
+  }
+
+  Future<HelvarRouter?> discoverRouterWithPersistentConnection(
+      String routerIpAddress) async {
+    // Get the connection manager
+    final connectionManager = RouterConnectionManager();
+
+    try {
+      // First, attempt to discover the router using the original method
+      // This will get us router metadata
+      final router = await discoverRouter(routerIpAddress);
+
+      if (router == null) {
+        return null;
+      }
+
+      // Now establish a persistent connection
+      await connectionManager.getConnection(
+        routerIpAddress,
+        router.address,
+        heartbeatInterval: const Duration(seconds: 60),
+      );
+
+      return router;
+    } catch (e) {
+      debugPrint('Error discovering router with persistent connection: $e');
+      return null;
+    }
   }
 
   Future<HelvarRouter?> discoverRouter(String routerIpAddress) async {

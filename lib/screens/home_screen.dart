@@ -6,6 +6,7 @@ import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
 import '../services/app_directory_service.dart';
+import '../widgets/router_connection_monitor.dart';
 import 'actions.dart';
 import 'dialogs/home_screen_dialogs.dart';
 import 'details/group_detail_screen.dart';
@@ -545,23 +546,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.lightbulb_outline,
-            size: 80,
-            color: Colors.amber,
-          ),
-          SizedBox(height: 20),
-          Text(
-            'Welcome to HelvarNet Manager',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
+    return _buildConnectionMonitor();
   }
 
   Future<void> _exportWorkgroups(BuildContext context) async {
@@ -715,6 +700,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         );
       }
     }
+  }
+
+  Widget _buildConnectionMonitor() {
+    return const RouterConnectionMonitor();
   }
 
   Widget _buildDraggable(String label, IconData icon, WidgetType type) {
