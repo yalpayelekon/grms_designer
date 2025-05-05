@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
-import 'package:grms_designer/models/helvar_models/helvar_router.dart';
 import '../comm/discovery_manager.dart';
 import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_device.dart';
@@ -759,7 +758,75 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<void> _discoverAndConnectRouters(BuildContext context, List<HelvarRouter> discoveredRouters) async {
+  Future<void> _discoverAndConnectRouters(BuildContext context) async {
+    DiscoveryManager? discoveryManager;
+    bool isDiscovering = false;
+
+    setState(() {
+      isDiscovering = true;
+    });
+
+    try {
+      discoveryManager = DiscoveryManager();
+
+      // Get network interfaces using your existing pattern
+      List<NetworkInterfaceDetails> interfaces =
+          await discoveryManager.getNetworkInterfaces();
+
+      if (interfaces.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No network interfaces found')),
+          );
+        }
+        return;
+      }
+
+      if (!mounted) return;
+
+      // Use your existing dialog for interface selection
+      final interfaceResult = await showDialog<NetworkInterfaceDetails>(
+        context: context,
+        builder: (BuildContext context) {
+          return NetworkInterfaceDialog(interfaces: interfaces);
+        },
+      );
+
+      if (interfaceResult == null) {
+        return;
+      }
+
+      // Show a loading indicator during discovery
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Discovering routers...'),
+            ],
+          ),
+        ),
+      );
+
+      await discoveryManager.start(interfaceResult.ipv4!);
+      final discoveryTimeout = ref.read(discoveryTimeoutProvider);
+      final broadcastAddress = discoveryManager.calculateBroadcastAddress(
+        interfaceResult.ipv4!,
+        interfaceResult.subnetMask!,
+      );
+      await discoveryManager.sendDiscoveryRequest(
+          discoveryTimeout, broadcastAddress);
+      List<Map<String, String>> discoveredRouters =
+          discoveryManager.getDiscoveredRouters();
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
       if (discoveredRouters.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
