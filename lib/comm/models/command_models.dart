@@ -101,4 +101,22 @@ class QueuedCommand {
 
     return queuedAt.compareTo(other.queuedAt);
   }
+
+  @override
+  String toString() {
+    return 'QueuedCommand{'
+        'id: $id, '
+        'routerIp: $routerIp, '
+        'command: $command, '
+        'priority: $priority, '
+        'groupId: $groupId, '
+        'queuedAt: $queuedAt, '
+        'executedAt: $executedAt, '
+        'completedAt: $completedAt, '
+        'status: $status, '
+        'response: ${response != null ? '${response!.length} chars' : null}, '
+        'errorMessage: $errorMessage, '
+        'attemptsMade: $attemptsMade'
+        '}';
+  }
 }

@@ -41,7 +41,6 @@ class RouterCommandService {
     }
   }
 
-  // Send a command to a router with immediate execution
   Future<CommandResult> sendCommand(
     String routerIp,
     String command, {
@@ -59,20 +58,16 @@ class RouterCommandService {
       queuedAt: DateTime.now(),
     );
 
-    // Update command status
     queuedCommand.status = CommandStatus.executing;
     queuedCommand.executedAt = DateTime.now();
     _updateCommandStatus(queuedCommand);
 
-    // Try to get an existing connection or create a new one
     RouterConnection? connection;
     try {
       if (routerId != null) {
         connection = await _connectionManager.getConnection(routerIp, routerId);
       } else {
-        // Check if we already have a connection to this router
         if (_connectionManager.hasConnection(routerIp)) {
-          // Use existing connection
           final connectionKey = '$routerIp:50000';
           if (_connectionManager.connections.containsKey(connectionKey)) {
             connection = _connectionManager.connections[connectionKey];
@@ -80,7 +75,6 @@ class RouterCommandService {
         }
       }
     } catch (e) {
-      // Connection error
       queuedCommand.status = CommandStatus.failed;
       queuedCommand.completedAt = DateTime.now();
       queuedCommand.errorMessage = 'Connection error: ${e.toString()}';
@@ -199,13 +193,9 @@ class RouterCommandService {
     }
 
     _commandQueues[routerIp]!.add(queuedCommand);
-
     _commandQueues[routerIp]!.sort((a, b) => a.compareTo(b));
-
     _updateCommandStatus(queuedCommand);
-
     _startQueueExecution(routerIp);
-
     return commandId;
   }
 
@@ -264,6 +254,7 @@ class RouterCommandService {
   }
 
   void _updateCommandStatus(QueuedCommand command) {
+    print(command.toString());
     _commandStatusController.add(command);
   }
 

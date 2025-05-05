@@ -133,40 +133,25 @@ class RouterConnection {
 
   void _handleData(Uint8List data) {
     _lastActivity = DateTime.now();
-
-    // Add to the message buffer
     final message = String.fromCharCodes(data);
     _messageBuffer.write(message);
-
-    // Add raw data to the stream for any listeners
     _incomingDataController.add(data);
-
-    // Process complete messages if they exist
     _processMessageBuffer();
   }
 
-// In RouterConnection class, update the _processMessageBuffer method:
-
   void _processMessageBuffer() {
     final bufferContent = _messageBuffer.toString();
-
-    // Look for message terminators
     final terminatorIndex = bufferContent.indexOf(MessageType.terminator);
 
     if (terminatorIndex >= 0) {
-      // We have a complete message
       final completeMessage = bufferContent.substring(0, terminatorIndex + 1);
       debugPrint('Complete message received: $completeMessage');
-
-      // Remove the complete message from buffer
       _messageBuffer.clear();
       if (terminatorIndex + 1 < bufferContent.length) {
         _messageBuffer.write(bufferContent.substring(terminatorIndex + 1));
       }
 
-      // If we have any pending commands, complete them with this response
       if (_commandResponses.isNotEmpty) {
-        // Complete the oldest pending command (FIFO)
         final commandId = _commandResponses.keys.first;
         final completer = _commandResponses.remove(commandId)!;
         if (!completer.isCompleted) {
@@ -176,7 +161,6 @@ class RouterConnection {
         }
       }
 
-      // Process any additional complete messages in the buffer
       if (_messageBuffer.isNotEmpty) {
         _processMessageBuffer();
       }
@@ -195,14 +179,9 @@ class RouterConnection {
     final completer = Completer<String>();
 
     try {
-      // Register this command for a response
       _commandResponses[commandId] = completer;
-
-      // Send the command
       _socket!.write(command);
       _lastActivity = DateTime.now();
-
-      // Wait for response with timeout
       final response = await completer.future.timeout(timeout);
       return response;
     } on TimeoutException {
@@ -284,8 +263,6 @@ class RouterConnection {
       return;
     }
 
-    // Send a heartbeat command that won't affect router state
-    // Using the query version command as it's lightweight
     sendCommand('>V:2,C:191#');
   }
 }
