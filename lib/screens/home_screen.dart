@@ -6,7 +6,9 @@ import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
+import '../providers/router_connection_provider.dart';
 import '../services/app_directory_service.dart';
+import '../widgets/router_connection_monitor.dart';
 import 'actions.dart';
 import 'dialogs/home_screen_dialogs.dart';
 import 'details/group_detail_screen.dart';
@@ -547,7 +549,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return const Text("Welcome to Helvarnet!");
+    return _buildConnectionMonitor();
   }
 
   Future<void> _exportWorkgroups(BuildContext context) async {
@@ -701,6 +703,75 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         );
       }
     }
+  }
+
+  Widget _buildConnectionMonitor() {
+    return Center(
+      child: Column(
+        children: [
+          const RouterConnectionMonitor(),
+          if (exampleRouter != null)
+            ElevatedButton(
+              onPressed: () async {
+                final commandService = ref.read(routerCommandServiceProvider);
+                final response = await commandService.testConnection(
+                  exampleRouter!.ipAddress,
+                  exampleRouter!.address,
+                );
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Response: ${response ?? "Timeout"}'),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Test Direct Connection'),
+            ),
+          if (exampleRouter != null) _buildCommandTestButton(exampleRouter!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommandTestButton(HelvarRouter router) {
+    return ElevatedButton(
+      onPressed: () async {
+        final connectionManager = ref.read(routerConnectionManagerProvider);
+        try {
+          final connection = await connectionManager.getConnection(
+            router.ipAddress,
+            router.address,
+          );
+
+          final commandService = ref.read(routerCommandServiceProvider);
+          final result = await commandService.sendCommand(
+            router.ipAddress,
+            '>V:2,C:191#', // Query version command
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  result.success
+                      ? 'Command executed. Response: ${result.response}'
+                      : 'Command failed: ${result.errorMessage}',
+                ),
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e')),
+            );
+          }
+        }
+      },
+      child: const Text('Test Connection'),
+    );
   }
 
   Widget _buildDraggable(String label, IconData icon, WidgetType type) {
