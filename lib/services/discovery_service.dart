@@ -12,6 +12,7 @@ import '../protocol/device_types.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
 import '../comm/router_connection_manager.dart';
+import '../comm/router_command_service.dart';
 
 class DiscoveryService {
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
@@ -427,5 +428,30 @@ class DiscoveryService {
 
     await subscription.cancel();
     return result;
+  }
+
+// Add a new method that uses the RouterCommandService
+  Future<String?> sendPersistentCommand(
+      String routerIp, String routerId, String command) async {
+    final commandService = RouterCommandService();
+
+    try {
+      final result = await commandService.sendCommand(
+        routerIp,
+        command,
+        routerId: routerId,
+        timeout: const Duration(seconds: 15),
+      );
+
+      if (result.success) {
+        return result.response;
+      } else {
+        debugPrint('Command failed: ${result.errorMessage}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error sending command: $e');
+      return null;
+    }
   }
 }

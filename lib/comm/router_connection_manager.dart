@@ -10,10 +10,10 @@ class RouterConnectionManager {
   RouterConnectionManager._internal();
 
   // Connection storage
-  final Map<String, RouterConnection> _connections = {};
+  final Map<String, RouterConnection> connections = {};
 
   // Status stream controller
-  final _connectionStatusController =
+  final connectionstatusController =
       StreamController<RouterConnectionStatus>.broadcast();
 
   // Configuration
@@ -21,13 +21,13 @@ class RouterConnectionManager {
 
   // Public getters
   Stream<RouterConnectionStatus> get connectionStatusStream =>
-      _connectionStatusController.stream;
+      connectionstatusController.stream;
 
-  int get connectionCount => _connections.length;
+  int get connectionCount => connections.length;
   int get maxConnections => _maxConcurrentConnections;
 
   List<RouterConnectionStatus> get allConnectionStatuses =>
-      _connections.values.map((conn) => conn.status).toList();
+      connections.values.map((conn) => conn.status).toList();
 
   // Configure the manager
   void configure({int? maxConnections}) {
@@ -48,8 +48,8 @@ class RouterConnectionManager {
     final connectionKey = '$ipAddress:$port';
 
     // Check if we already have a connection
-    if (_connections.containsKey(connectionKey) && !forceReconnect) {
-      final connection = _connections[connectionKey]!;
+    if (connections.containsKey(connectionKey) && !forceReconnect) {
+      final connection = connections[connectionKey]!;
 
       // If disconnected, try to reconnect
       if (!connection.isConnected) {
@@ -60,7 +60,7 @@ class RouterConnectionManager {
     }
 
     // Check if we've hit connection limit
-    if (_connections.length >= _maxConcurrentConnections) {
+    if (connections.length >= _maxConcurrentConnections) {
       throw Exception('Maximum connection limit reached ($maxConnections)');
     }
 
@@ -75,11 +75,11 @@ class RouterConnectionManager {
 
     // Forward status updates to our global stream
     connection.statusStream.listen((status) {
-      _connectionStatusController.add(status);
+      connectionstatusController.add(status);
     });
 
     // Store and connect
-    _connections[connectionKey] = connection;
+    connections[connectionKey] = connection;
     await connection.connect();
 
     return connection;
@@ -88,32 +88,32 @@ class RouterConnectionManager {
   // Check if we have a connection to a router
   bool hasConnection(String ipAddress, [int port = 50000]) {
     final connectionKey = '$ipAddress:$port';
-    return _connections.containsKey(connectionKey);
+    return connections.containsKey(connectionKey);
   }
 
   // Close a specific connection
   Future<void> closeConnection(String ipAddress, [int port = 50000]) async {
     final connectionKey = '$ipAddress:$port';
 
-    if (_connections.containsKey(connectionKey)) {
-      final connection = _connections[connectionKey]!;
+    if (connections.containsKey(connectionKey)) {
+      final connection = connections[connectionKey]!;
       await connection.dispose();
-      _connections.remove(connectionKey);
+      connections.remove(connectionKey);
     }
   }
 
   // Close all connections
   Future<void> closeAllConnections() async {
     final futures =
-        _connections.values.map((connection) => connection.dispose());
+        connections.values.map((connection) => connection.dispose());
     await Future.wait(futures);
-    _connections.clear();
+    connections.clear();
   }
 
   // Dispose of the manager
   Future<void> dispose() async {
     await closeAllConnections();
-    await _connectionStatusController.close();
+    await connectionstatusController.close();
   }
 
   // Send a command to a router
@@ -121,11 +121,11 @@ class RouterConnectionManager {
       [int port = 50000]) async {
     final connectionKey = '$ipAddress:$port';
 
-    if (!_connections.containsKey(connectionKey)) {
+    if (!connections.containsKey(connectionKey)) {
       return false;
     }
 
-    return await _connections[connectionKey]!.sendCommand(command);
+    return await connections[connectionKey]!.sendCommand(command);
   }
 
   // Get connection stats
@@ -136,7 +136,7 @@ class RouterConnectionManager {
     int failed = 0;
     int disconnected = 0;
 
-    for (var connection in _connections.values) {
+    for (var connection in connections.values) {
       switch (connection.status.state) {
         case RouterConnectionState.connected:
           connected++;
@@ -157,7 +157,7 @@ class RouterConnectionManager {
     }
 
     return {
-      'total': _connections.length,
+      'total': connections.length,
       'connected': connected,
       'connecting': connecting,
       'reconnecting': reconnecting,

@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_device.dart';
+import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
+import '../providers/router_connection_provider.dart';
 import '../services/app_directory_service.dart';
 import '../widgets/router_connection_monitor.dart';
 import 'actions.dart';
@@ -30,6 +32,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
+  HelvarRouter? exampleRouter;
   bool openWorkGroup = false;
   bool openWiresheet = false;
   bool openSettings = false;
@@ -418,7 +421,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                             .map((entry) {
                                           final subnet = entry.key;
                                           final subnetDevices = entry.value;
-
+                                          exampleRouter = router;
                                           return TreeNode(
                                             content: Row(
                                               children: [
@@ -703,7 +706,53 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildConnectionMonitor() {
-    return const RouterConnectionMonitor();
+    return Center(
+      child: Column(
+        children: [
+          const RouterConnectionMonitor(),
+          if (exampleRouter != null) _buildCommandTestButton(exampleRouter!),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommandTestButton(HelvarRouter router) {
+    return ElevatedButton(
+      onPressed: () async {
+        final connectionManager = ref.read(routerConnectionManagerProvider);
+        try {
+          final connection = await connectionManager.getConnection(
+            router.ipAddress,
+            router.address,
+          );
+
+          final commandService = ref.read(routerCommandServiceProvider);
+          final result = await commandService.sendCommand(
+            router.ipAddress,
+            '>V:2,C:191#', // Query version command
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  result.success
+                      ? 'Command executed. Response: ${result.response}'
+                      : 'Command failed: ${result.errorMessage}',
+                ),
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e')),
+            );
+          }
+        }
+      },
+      child: const Text('Test Connection'),
+    );
   }
 
   Widget _buildDraggable(String label, IconData icon, WidgetType type) {
