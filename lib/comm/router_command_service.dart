@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import '../models/project_settings.dart';
 import 'models/command_models.dart';
 import 'router_connection.dart';
 import 'router_connection_manager.dart';
@@ -13,7 +14,7 @@ class RouterCommandService {
   final RouterConnectionManager _connectionManager = RouterConnectionManager();
   final Map<String, List<QueuedCommand>> _commandQueues = {};
   final List<QueuedCommand> _commandHistory = [];
-  final int _maxHistorySize = 100;
+  int _maxHistorySize = 100;
   final _commandStatusController = StreamController<QueuedCommand>.broadcast();
   int _maxConcurrentCommandsPerRouter = 5;
   int _maxRetries = 3;
@@ -38,6 +39,13 @@ class RouterCommandService {
     if (commandTimeout != null) {
       _commandTimeout = commandTimeout;
     }
+  }
+
+  void configureFromSettings(ProjectSettings settings) {
+    _maxConcurrentCommandsPerRouter = settings.maxConcurrentCommandsPerRouter;
+    _maxRetries = settings.maxCommandRetries;
+    _commandTimeout = Duration(milliseconds: settings.commandTimeoutMs);
+    _maxHistorySize = settings.commandHistorySize;
   }
 
   Future<CommandResult> sendCommand(

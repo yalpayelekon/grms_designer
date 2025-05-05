@@ -6,6 +6,7 @@ import '../comm/router_command_service.dart';
 import '../comm/router_connection.dart';
 import '../comm/router_connection_manager.dart';
 import '../comm/models/router_connection_status.dart';
+import 'project_settings_provider.dart';
 
 final routerConnectionManagerProvider =
     Provider<RouterConnectionManager>((ref) {
@@ -55,6 +56,15 @@ final routerConnectionStatusStreamProvider =
 final commandHistoryProvider = Provider<List<QueuedCommand>>((ref) {
   final service = ref.watch(routerCommandServiceProvider);
   return service.commandHistory;
+});
+
+final routerCommandConfigurationProvider = Provider<void>((ref) {
+  final settings = ref.watch(projectSettingsProvider);
+  final commandService = ref.watch(routerCommandServiceProvider);
+
+  commandService.configureFromSettings(settings);
+
+  return;
 });
 
 class RouterConnectionsNotifier

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
+import '../models/project_settings.dart';
 import 'router_connection.dart';
 import 'models/router_connection_status.dart';
 
@@ -30,6 +31,11 @@ class RouterConnectionManager {
     if (maxConnections != null) {
       _maxConcurrentConnections = maxConnections;
     }
+  }
+
+  void configureFromSettings(ProjectSettings settings) {
+    _maxConcurrentConnections =
+        settings.maxConcurrentCommandsPerRouter * 2; // A reasonable default
   }
 
   Future<RouterConnection> getConnection(

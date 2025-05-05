@@ -97,6 +97,31 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
       return false;
     }
   }
+
+  Future<void> setCommandTimeout(int timeoutMs) async {
+    state = state.copyWith(commandTimeoutMs: timeoutMs);
+    await _saveSettings();
+  }
+
+  Future<void> setHeartbeatInterval(int seconds) async {
+    state = state.copyWith(heartbeatIntervalSeconds: seconds);
+    await _saveSettings();
+  }
+
+  Future<void> setMaxCommandRetries(int retries) async {
+    state = state.copyWith(maxCommandRetries: retries);
+    await _saveSettings();
+  }
+
+  Future<void> setMaxConcurrentCommands(int maxCommands) async {
+    state = state.copyWith(maxConcurrentCommandsPerRouter: maxCommands);
+    await _saveSettings();
+  }
+
+  Future<void> setCommandHistorySize(int size) async {
+    state = state.copyWith(commandHistorySize: size);
+    await _saveSettings();
+  }
 }
 
 final projectSettingsProvider =
@@ -118,4 +143,24 @@ final autoSaveEnabledProvider = Provider<bool>((ref) {
 
 final autoSaveIntervalProvider = Provider<int>((ref) {
   return ref.watch(projectSettingsProvider).autoSaveIntervalMinutes;
+});
+
+final commandTimeoutProvider = Provider<int>((ref) {
+  return ref.watch(projectSettingsProvider).commandTimeoutMs;
+});
+
+final heartbeatIntervalProvider = Provider<int>((ref) {
+  return ref.watch(projectSettingsProvider).heartbeatIntervalSeconds;
+});
+
+final maxCommandRetriesProvider = Provider<int>((ref) {
+  return ref.watch(projectSettingsProvider).maxCommandRetries;
+});
+
+final maxConcurrentCommandsProvider = Provider<int>((ref) {
+  return ref.watch(projectSettingsProvider).maxConcurrentCommandsPerRouter;
+});
+
+final commandHistorySizeProvider = Provider<int>((ref) {
+  return ref.watch(projectSettingsProvider).commandHistorySize;
 });

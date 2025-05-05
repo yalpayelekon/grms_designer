@@ -894,6 +894,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
         if (shouldConnect == true) {
           final connectionManager = ref.read(routerConnectionManagerProvider);
+          final settings = ref.read(projectSettingsProvider);
           int connectedCount = 0;
 
           for (final router in discoveredRouters) {
@@ -902,7 +903,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               if (ipAddress != null && ipAddress.isNotEmpty) {
                 await connectionManager.getConnection(
                   ipAddress,
-                  heartbeatInterval: const Duration(seconds: 60),
+                  heartbeatInterval:
+                      Duration(seconds: settings.heartbeatIntervalSeconds),
+                  connectionTimeout:
+                      Duration(milliseconds: settings.socketTimeoutMs),
                 );
                 connectedCount++;
               }
