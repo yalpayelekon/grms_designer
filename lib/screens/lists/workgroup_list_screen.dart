@@ -147,9 +147,10 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             router['workgroup'] == workgroupName &&
             !existingRouterIps.contains(router['ip']),
       )) {
+        List<String> ipParts = routerInfo['ip']!.split('.');
         newRouters.add(
           HelvarRouter(
-            address: '1.${workgroup.routers.length + newRouters.length + 1}',
+            address: '@${ipParts[2]}.${ipParts[3]}',
             ipAddress: routerInfo['ip'] ?? '',
             description: '${routerInfo['workgroup']} Router',
           ),
@@ -195,9 +196,10 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     for (var routerInfo in discoveredRouters.where(
       (router) => router['workgroup'] == workgroupName,
     )) {
+      List<String> ipParts = routerInfo['ip']!.split('.');
       helvarRouters.add(
         HelvarRouter(
-          address: '1.${helvarRouters.length + 1}',
+          address: '@${ipParts[2]}.${ipParts[3]}',
           ipAddress: routerInfo['ip'] ?? '',
           description: '${routerInfo['workgroup']} Router',
         ),
@@ -272,6 +274,20 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
           )
         : Column(
             children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 300),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.search),
+                    label: const Text('Discover New Workgroup'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                    onPressed: isDiscovering ? null : _discoverWorkgroups,
+                  ),
+                ),
+              ),
               Expanded(
                 child: ListView.builder(
                   itemCount: workgroups.length,
@@ -329,17 +345,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                       ),
                     );
                   },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.search),
-                  label: const Text('Discover New Workgroup'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                  onPressed: isDiscovering ? null : _discoverWorkgroups,
                 ),
               ),
             ],

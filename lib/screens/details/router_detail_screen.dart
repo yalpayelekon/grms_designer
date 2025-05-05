@@ -581,8 +581,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     });
 
     try {
-      final discoveredRouter =
-          await _discoveryService.discoverRouter(widget.router.ipAddress);
+      final discoveredRouter = await _discoveryService
+          .discoverRouterWithPersistentConnection(widget.router.ipAddress);
 
       if (discoveredRouter == null || discoveredRouter.devices.isEmpty) {
         if (!mounted) return;

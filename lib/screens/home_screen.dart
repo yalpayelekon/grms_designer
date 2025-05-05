@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
+import 'package:grms_designer/models/helvar_models/helvar_router.dart';
+import '../comm/discovery_manager.dart';
+import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_device.dart';
-import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
+import '../providers/router_connection_provider.dart';
+import '../providers/settings_provider.dart';
 import '../services/app_directory_service.dart';
-import '../widgets/router_connection_monitor.dart';
+import '../screens/dialogs/network_interface_dialog.dart';
 import 'actions.dart';
 import 'dialogs/home_screen_dialogs.dart';
 import 'details/group_detail_screen.dart';
@@ -31,7 +35,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
-  HelvarRouter? exampleRouter;
   bool openWorkGroup = false;
   bool openWiresheet = false;
   bool openSettings = false;
@@ -46,13 +49,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingProjectSettings = false;
   double _leftPanelWidth = 400;
   bool _isDragging = false;
-  String testState = "Test State";
 
   @override
   Widget build(BuildContext context) {
     final workgroups = ref.watch(workgroupsProvider);
     final wiresheets = ref.watch(wiresheetsProvider);
     final projectName = ref.watch(projectNameProvider);
+    final connectionStatuses = ref.watch(routerConnectionStatusesProvider);
+    final connectionStats = ref.watch(connectionStatsProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text('HelvarNet Manager - $projectName'),
@@ -421,7 +425,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                             .map((entry) {
                                           final subnet = entry.key;
                                           final subnetDevices = entry.value;
-                                          exampleRouter = router;
                                           return TreeNode(
                                             content: Row(
                                               children: [
@@ -493,7 +496,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           Expanded(
-            child: _buildMainContent(),
+            child: _buildMainContent(connectionStats, connectionStatuses),
           ),
         ],
       ),
@@ -514,7 +517,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent(connectionStats, connectionStatuses) {
     if (showingGroups) {
       return GroupsListScreen(
         workgroup: selectedWorkgroup!,
@@ -549,7 +552,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return _buildConnectionMonitor();
+    return _buildConnectionMonitor(connectionStats, connectionStatuses);
   }
 
   Future<void> _exportWorkgroups(BuildContext context) async {
@@ -705,37 +708,148 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Widget _buildConnectionMonitor() {
-    return Center(
-      child: Column(
-        children: [
-          const RouterConnectionMonitor(),
-          if (exampleRouter != null)
-            ElevatedButton(
-              onPressed: () async {
-                final result = await ref
-                    .read(workgroupsProvider.notifier)
-                    .sendRouterCommand(
-                      "1", // Workgroup ID - you'll need the actual ID
-                      exampleRouter!.address,
-                      '>V:2,C:191#',
-                    );
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(result.success
-                          ? 'Response: ${result.response}'
-                          : 'Error: ${result.errorMessage}'),
-                    ),
-                  );
-                }
-              },
-              child: const Text('Test Router Command'),
+  Widget _buildConnectionMonitor(connectionStats, connectionStatuses) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Router Connections',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
-        ],
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatCard(context, 'Total', connectionStats['total'] ?? 0),
+                _buildStatCard(context, 'Connected',
+                    connectionStats['connected'] ?? 0, Colors.green),
+                _buildStatCard(context, 'Reconnecting',
+                    connectionStats['reconnecting'] ?? 0, Colors.orange),
+                _buildStatCard(context, 'Failed',
+                    connectionStats['failed'] ?? 0, Colors.red),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                _discoverAndConnectRouters(context);
+              },
+              child: const Text('Discover Routers'),
+            ),
+            if (connectionStatuses.isEmpty)
+              const Center(
+                child: Text('No active router connections'),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: connectionStatuses.length,
+                  itemBuilder: (context, index) {
+                    final status = connectionStatuses[index];
+                    return _buildConnectionStatusItem(context, status);
+                  },
+                ),
+              ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _discoverAndConnectRouters(BuildContext context, List<HelvarRouter> discoveredRouters) async {
+      if (discoveredRouters.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No Helvar routers discovered')),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        final shouldConnect = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Routers Discovered'),
+            content: SizedBox(
+              width: 300,
+              height: 200,
+              child: ListView.builder(
+                itemCount: discoveredRouters.length,
+                itemBuilder: (context, index) {
+                  final router = discoveredRouters[index];
+                  return ListTile(
+                    title: Text(router['workgroup'] ?? 'Unknown'),
+                    subtitle: Text(router['ip'] ?? 'No IP'),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Connect'),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldConnect == true) {
+          final connectionManager = ref.read(routerConnectionManagerProvider);
+          int connectedCount = 0;
+
+          for (final router in discoveredRouters) {
+            try {
+              final ipAddress = router['ip'];
+              if (ipAddress != null && ipAddress.isNotEmpty) {
+                final workgroupName = router['workgroup'];
+                final routerId = workgroupName! + ipAddress;
+
+                await connectionManager.getConnection(
+                  ipAddress,
+                  routerId,
+                  heartbeatInterval: const Duration(seconds: 60),
+                );
+                connectedCount++;
+              }
+            } catch (e) {
+              debugPrint('Error connecting to router: $e');
+            }
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Connected to $connectedCount routers')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Discovery error: $e');
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error during discovery: $e')),
+        );
+      }
+    } finally {
+      if (discoveryManager != null) {
+        discoveryManager.stop();
+      }
+
+      if (mounted) {
+        setState(() {
+          isDiscovering = false;
+        });
+      }
+    }
   }
 
   Widget _buildDraggable(String label, IconData icon, WidgetType type) {
@@ -835,6 +949,85 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           break;
       }
     });
+  }
+
+  Widget _buildStatCard(BuildContext context, String label, int value,
+      [Color? color]) {
+    return Card(
+      color: color?.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          children: [
+            Text(
+              value.toString(),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            Text(label),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConnectionStatusItem(
+      BuildContext context, RouterConnectionStatus status) {
+    IconData icon;
+    Color color;
+
+    switch (status.state) {
+      case RouterConnectionState.connected:
+        icon = Icons.check_circle;
+        color = Colors.green;
+        break;
+      case RouterConnectionState.connecting:
+        icon = Icons.pending;
+        color = Colors.blue;
+        break;
+      case RouterConnectionState.reconnecting:
+        icon = Icons.sync;
+        color = Colors.orange;
+        break;
+      case RouterConnectionState.failed:
+        icon = Icons.error;
+        color = Colors.red;
+        break;
+      case RouterConnectionState.disconnected:
+        icon = Icons.cancel;
+        color = Colors.grey;
+        break;
+    }
+
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text('${status.routerId} (${status.routerIp})'),
+      subtitle: Text(
+        status.errorMessage != null
+            ? 'Error: ${status.errorMessage}'
+            : 'Last change: ${_formatDateTime(status.lastStateChange)}',
+      ),
+      trailing: status.reconnectAttempts > 0
+          ? Chip(label: Text('Retry: ${status.reconnectAttempts}'))
+          : null,
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
+    }
   }
 
   void _clearDeviceResult(BuildContext context, HelvarDevice device) {

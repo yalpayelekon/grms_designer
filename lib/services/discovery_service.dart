@@ -79,15 +79,12 @@ class DiscoveryService {
     final connectionManager = RouterConnectionManager();
 
     try {
-      // First, attempt to discover the router using the original method
-      // This will get us router metadata
       final router = await discoverRouter(routerIpAddress);
 
       if (router == null) {
         return null;
       }
 
-      // Now establish a persistent connection
       await connectionManager.getConnection(
         routerIpAddress,
         router.address,
