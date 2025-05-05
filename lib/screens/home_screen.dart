@@ -710,6 +710,25 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         children: [
           const RouterConnectionMonitor(),
+          if (exampleRouter != null)
+            ElevatedButton(
+              onPressed: () async {
+                final commandService = ref.read(routerCommandServiceProvider);
+                final response = await commandService.testConnection(
+                  exampleRouter!.ipAddress,
+                  exampleRouter!.address,
+                );
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Response: ${response ?? "Timeout"}'),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Test Direct Connection'),
+            ),
           if (exampleRouter != null) _buildCommandTestButton(exampleRouter!),
         ],
       ),

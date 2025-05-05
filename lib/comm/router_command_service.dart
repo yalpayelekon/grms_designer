@@ -368,6 +368,23 @@ class RouterCommandService {
     }
   }
 
+  // Add this method to RouterCommandService
+  Future<String?> testConnection(String routerIp, String routerId) async {
+    try {
+      // Get a connection
+      final connection =
+          await _connectionManager.getConnection(routerIp, routerId);
+
+      // Send a simple version query command
+      final response = await connection.sendCommandWithResponse('>V:2,C:191#');
+
+      return response;
+    } catch (e) {
+      debugPrint('Test connection error: $e');
+      return 'ERROR: $e';
+    }
+  }
+
   Future<void> _executeQueuedCommand(QueuedCommand command) async {
     try {
       // Update status

@@ -23,9 +23,9 @@ class RouterConnection {
   DateTime _lastActivity = DateTime.now();
   int _reconnectAttempts = 0;
   bool _isClosing = false;
-
+  final Map<String, Completer<String>> _commandResponses = {};
   RouterConnectionStatus _status;
-
+  final StringBuffer _messageBuffer = StringBuffer();
   RouterConnection({
     required this.ipAddress,
     required this.routerId,
@@ -133,7 +133,86 @@ class RouterConnection {
 
   void _handleData(Uint8List data) {
     _lastActivity = DateTime.now();
+
+    // Add to the message buffer
+    final message = String.fromCharCodes(data);
+    _messageBuffer.write(message);
+
+    // Add raw data to the stream for any listeners
     _incomingDataController.add(data);
+
+    // Process complete messages if they exist
+    _processMessageBuffer();
+  }
+
+  void _processMessageBuffer() {
+    final bufferContent = _messageBuffer.toString();
+
+    // Look for message terminators
+    final terminatorIndex = bufferContent.indexOf(MessageType.terminator);
+
+    if (terminatorIndex >= 0) {
+      // We have a complete message
+      final completeMessage = bufferContent.substring(0, terminatorIndex + 1);
+
+      // Remove the complete message from buffer
+      _messageBuffer.clear();
+      if (terminatorIndex + 1 < bufferContent.length) {
+        _messageBuffer.write(bufferContent.substring(terminatorIndex + 1));
+      }
+
+      // Find a matching command Completer
+      // First, check if this is a reply or error
+      if (completeMessage.startsWith(MessageType.reply) ||
+          completeMessage.startsWith(MessageType.error)) {
+        // Find a pending command that's waiting for a response
+        if (_commandResponses.isNotEmpty) {
+          // Use the first available completer (FIFO)
+          final commandId = _commandResponses.keys.first;
+          final completer = _commandResponses.remove(commandId)!;
+          if (!completer.isCompleted) {
+            completer.complete(completeMessage);
+          }
+        }
+      }
+
+      // Process any additional complete messages in the buffer
+      if (_messageBuffer.isNotEmpty) {
+        _processMessageBuffer();
+      }
+    }
+  }
+
+  Future<String?> sendCommandWithResponse(
+    String command, {
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    if (!isConnected) {
+      return null;
+    }
+
+    final commandId = DateTime.now().millisecondsSinceEpoch.toString();
+    final completer = Completer<String>();
+
+    try {
+      // Register this command for a response
+      _commandResponses[commandId] = completer;
+
+      // Send the command
+      _socket!.write(command);
+      _lastActivity = DateTime.now();
+
+      // Wait for response with timeout
+      final response = await completer.future.timeout(timeout);
+      return response;
+    } on TimeoutException {
+      _commandResponses.remove(commandId);
+      return null;
+    } catch (e) {
+      _commandResponses.remove(commandId);
+      debugPrint('Error sending command: $e');
+      return null;
+    }
   }
 
   void _handleError(dynamic error) {
