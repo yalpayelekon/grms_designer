@@ -5,6 +5,7 @@ import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../comm/discovery_manager.dart';
 import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_device.dart';
+import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
 import '../providers/router_connection_provider.dart';
@@ -48,14 +49,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingProjectSettings = false;
   double _leftPanelWidth = 400;
   bool _isDragging = false;
+  List<RouterConnectionStatus>? connectionStatuses;
+  Map<String, dynamic>? connectionStats;
 
   @override
   Widget build(BuildContext context) {
     final workgroups = ref.watch(workgroupsProvider);
     final wiresheets = ref.watch(wiresheetsProvider);
     final projectName = ref.watch(projectNameProvider);
-    final connectionStatuses = ref.watch(routerConnectionStatusesProvider);
-    final connectionStats = ref.watch(connectionStatsProvider);
+    connectionStatuses = ref.watch(routerConnectionStatusesProvider);
+    connectionStats = ref.watch(connectionStatsProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text('HelvarNet Manager - $projectName'),
@@ -410,14 +413,27 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   ...workgroup.routers.map(
                                     (router) => TreeNode(
-                                      content: Row(
-                                        children: [
-                                          const Icon(Icons.router),
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(router.description),
-                                          ),
-                                        ],
+                                      content: GestureDetector(
+                                        onDoubleTap: () {
+                                          _setActiveNode('router',
+                                              additionalData: {
+                                                'workgroup': workgroup,
+                                                'router': router,
+                                              });
+                                        },
+                                        onSecondaryTap: () {
+                                          _setActiveNode('router');
+                                        },
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.router),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(router.description),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       children: [
                                         ...router.devicesBySubnet.entries
@@ -495,7 +511,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           Expanded(
-            child: _buildMainContent(connectionStats, connectionStatuses),
+            child: _buildMainContent(),
           ),
         ],
       ),
@@ -516,7 +532,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Widget _buildMainContent(connectionStats, connectionStatuses) {
+  Widget _buildMainContent() {
     if (showingGroups) {
       return GroupsListScreen(
         workgroup: selectedWorkgroup!,
@@ -551,7 +567,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    return _buildConnectionMonitor(connectionStats, connectionStatuses);
+    return _buildConnectionMonitor();
   }
 
   Future<void> _exportWorkgroups(BuildContext context) async {
@@ -707,7 +723,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Widget _buildConnectionMonitor(connectionStats, connectionStatuses) {
+  Widget _buildConnectionMonitor() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -722,13 +738,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatCard(context, 'Total', connectionStats['total'] ?? 0),
+                _buildStatCard(
+                    context, 'Total', connectionStats!['total'] ?? 0),
                 _buildStatCard(context, 'Connected',
-                    connectionStats['connected'] ?? 0, Colors.green),
+                    connectionStats!['connected'] ?? 0, Colors.green),
                 _buildStatCard(context, 'Reconnecting',
-                    connectionStats['reconnecting'] ?? 0, Colors.orange),
+                    connectionStats!['reconnecting'] ?? 0, Colors.orange),
                 _buildStatCard(context, 'Failed',
-                    connectionStats['failed'] ?? 0, Colors.red),
+                    connectionStats!['failed'] ?? 0, Colors.red),
               ],
             ),
             const SizedBox(height: 16),
@@ -738,16 +755,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               },
               child: const Text('Discover Routers'),
             ),
-            if (connectionStatuses.isEmpty)
+            if (connectionStatuses!.isEmpty)
               const Center(
                 child: Text('No active router connections'),
               )
             else
               Expanded(
                 child: ListView.builder(
-                  itemCount: connectionStatuses.length,
+                  itemCount: connectionStatuses!.length,
                   itemBuilder: (context, index) {
-                    final status = connectionStatuses[index];
+                    final status = connectionStatuses![index];
                     return _buildConnectionStatusItem(context, status);
                   },
                 ),
@@ -760,11 +777,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _discoverAndConnectRouters(BuildContext context) async {
     DiscoveryManager? discoveryManager;
-    bool isDiscovering = false;
-
-    setState(() {
-      isDiscovering = true;
-    });
 
     try {
       discoveryManager = DiscoveryManager();
@@ -876,12 +888,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             try {
               final ipAddress = router['ip'];
               if (ipAddress != null && ipAddress.isNotEmpty) {
-                final workgroupName = router['workgroup'];
-                final routerId = workgroupName! + ipAddress;
-
                 await connectionManager.getConnection(
                   ipAddress,
-                  routerId,
                   heartbeatInterval: const Duration(seconds: 60),
                 );
                 connectedCount++;
@@ -909,12 +917,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     } finally {
       if (discoveryManager != null) {
         discoveryManager.stop();
-      }
-
-      if (mounted) {
-        setState(() {
-          isDiscovering = false;
-        });
       }
     }
   }
@@ -1070,7 +1072,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text('${status.routerId} (${status.routerIp})'),
+      title: Text(status.routerIp),
       subtitle: Text(
         status.errorMessage != null
             ? 'Error: ${status.errorMessage}'
@@ -1201,6 +1203,21 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedWorkgroup = null;
           currentFileDirectory = null;
           showingProjectSettings = true;
+          break;
+        case 'router':
+          if (additionalData is Map<String, dynamic>) {
+            final workgroup = additionalData['workgroup'] as Workgroup?;
+            final router = additionalData['router'] as HelvarRouter?;
+
+            if (workgroup != null &&
+                router != null &&
+                router.ipAddress.isNotEmpty) {
+              ref.read(workgroupsProvider.notifier).getRouterConnection(
+                    workgroup.id,
+                    router.address,
+                  );
+            }
+          }
           break;
         default:
           showingProject = true;

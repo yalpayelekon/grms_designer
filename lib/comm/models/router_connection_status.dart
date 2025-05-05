@@ -8,7 +8,6 @@ enum RouterConnectionState {
 
 class RouterConnectionStatus {
   final String routerIp;
-  final String routerId;
   final RouterConnectionState state;
   final DateTime lastStateChange;
   final String? errorMessage;
@@ -16,7 +15,6 @@ class RouterConnectionStatus {
 
   RouterConnectionStatus({
     required this.routerIp,
-    required this.routerId,
     required this.state,
     required this.lastStateChange,
     this.errorMessage,
@@ -30,7 +28,6 @@ class RouterConnectionStatus {
   }) {
     return RouterConnectionStatus(
       routerIp: routerIp,
-      routerId: routerId,
       state: state ?? this.state,
       lastStateChange: DateTime.now(),
       errorMessage: errorMessage ?? this.errorMessage,

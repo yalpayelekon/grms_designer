@@ -33,21 +33,20 @@ class RouterConnectionManager {
   }
 
   Future<RouterConnection> getConnection(
-    String ipAddress,
-    String routerId, {
+    String ipAddress, {
     bool forceReconnect = false,
     int port = 50000,
     Duration? heartbeatInterval,
     Duration? connectionTimeout,
   }) async {
     final connectionKey = '$ipAddress:$port';
-
+    print("trying to get connection for:$connectionKey");
     try {
       if (connections.containsKey(connectionKey) && !forceReconnect) {
         final connection = connections[connectionKey]!;
 
         if (!connection.isConnected) {
-          debugPrint('Reconnecting to router at $ipAddress ($routerId)');
+          debugPrint('Reconnecting to router at $ipAddress');
           await connection.connect();
         }
 
@@ -59,10 +58,9 @@ class RouterConnectionManager {
             'Maximum connection limit reached ($_maxConcurrentConnections)');
       }
 
-      debugPrint('Creating new connection to router at $ipAddress ($routerId)');
+      debugPrint('Creating new connection to router at $ipAddress');
       final connection = RouterConnection(
         ipAddress: ipAddress,
-        routerId: routerId,
         port: port,
         heartbeatInterval: heartbeatInterval ?? const Duration(seconds: 30),
         connectionTimeout: connectionTimeout ?? const Duration(seconds: 5),
@@ -72,8 +70,7 @@ class RouterConnectionManager {
         connectionstatusController.add(status);
         if (status.state == RouterConnectionState.failed ||
             status.state == RouterConnectionState.disconnected) {
-          debugPrint(
-              'Router $routerId ($ipAddress) connection status: ${status.state}');
+          debugPrint('Router($ipAddress) connection status: ${status.state}');
           if (status.errorMessage != null) {
             debugPrint('Error: ${status.errorMessage}');
           }
@@ -85,9 +82,8 @@ class RouterConnectionManager {
 
       return connection;
     } catch (e) {
-      debugPrint(
-          'Failed to establish connection to $ipAddress ($routerId): $e');
-      throw Exception('Connection failed to $ipAddress ($routerId): $e');
+      debugPrint('Failed to establish connection to $ipAddress: $e');
+      throw Exception('Connection failed to $ipAddress: $e');
     }
   }
 

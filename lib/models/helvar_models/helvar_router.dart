@@ -2,7 +2,7 @@ import 'helvar_device.dart';
 
 class HelvarRouter {
   final String type;
-  final String address;
+  String address;
   final String ipAddress;
   String description;
   List<String>? deviceAddresses;
@@ -22,8 +22,8 @@ class HelvarRouter {
 
   HelvarRouter({
     this.type = 'HelvarRouter',
-    required this.address,
-    this.ipAddress = '',
+    this.address = "",
+    required this.ipAddress,
     this.version = 2,
     this.description = '',
     this.isNormal = true,
@@ -37,12 +37,13 @@ class HelvarRouter {
     this.deviceStateCode,
     List<HelvarDevice>? devices,
   }) : devices = devices ?? [] {
-    if (address.contains('.')) {
-      final ipParts = address.split('.');
+    if (ipAddress.contains('.')) {
+      final ipParts = ipAddress.split('.');
       if (ipParts.length == 4) {
         try {
           clusterId = int.parse(ipParts[2]);
           clusterMemberId = int.parse(ipParts[3]);
+          address = '@${ipParts[2]}.${ipParts[3]}';
         } catch (e) {
           print(e);
         }

@@ -6,15 +6,12 @@ import '../protocol/protocol_constants.dart';
 
 class RouterConnection {
   final String ipAddress;
-  final String routerId;
   final int port;
   final Duration heartbeatInterval;
   final Duration connectionTimeout;
 
   Socket? _socket;
   StreamSubscription? _dataSubscription;
-  StreamSubscription? _errorSubscription;
-  StreamSubscription? _doneSubscription;
   StreamController<Uint8List> _incomingDataController =
       StreamController<Uint8List>.broadcast();
   StreamController<RouterConnectionStatus> _statusController =
@@ -28,13 +25,11 @@ class RouterConnection {
   final StringBuffer _messageBuffer = StringBuffer();
   RouterConnection({
     required this.ipAddress,
-    required this.routerId,
     this.port = defaultTcpPort,
     this.heartbeatInterval = const Duration(seconds: 30),
     this.connectionTimeout = const Duration(seconds: 5),
   }) : _status = RouterConnectionStatus(
           routerIp: ipAddress,
-          routerId: routerId,
           state: RouterConnectionState.disconnected,
           lastStateChange: DateTime.now(),
         );

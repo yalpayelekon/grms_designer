@@ -65,10 +65,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         return null;
       }
 
-      return await connectionManager.getConnection(
-        router.ipAddress,
-        router.address,
-      );
+      return await connectionManager.getConnection(router.ipAddress);
     } catch (e) {
       debugPrint('Error getting router connection: $e');
       return null;
@@ -94,7 +91,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
       return await commandService.sendCommand(
         router.ipAddress,
         command,
-        routerId: router.address,
         priority: priority,
       );
     } catch (e) {

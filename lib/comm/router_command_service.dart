@@ -44,7 +44,6 @@ class RouterCommandService {
   Future<CommandResult> sendCommand(
     String routerIp,
     String command, {
-    String? routerId,
     Duration? timeout,
     int? maxRetries,
     CommandPriority priority = CommandPriority.normal,
@@ -64,14 +63,11 @@ class RouterCommandService {
 
     RouterConnection? connection;
     try {
-      if (routerId != null) {
-        connection = await _connectionManager.getConnection(routerIp, routerId);
-      } else {
-        if (_connectionManager.hasConnection(routerIp)) {
-          final connectionKey = '$routerIp:50000';
-          if (_connectionManager.connections.containsKey(connectionKey)) {
-            connection = _connectionManager.connections[connectionKey];
-          }
+      connection = await _connectionManager.getConnection(routerIp);
+      if (_connectionManager.hasConnection(routerIp)) {
+        final connectionKey = '$routerIp:50000';
+        if (_connectionManager.connections.containsKey(connectionKey)) {
+          connection = _connectionManager.connections[connectionKey];
         }
       }
     } catch (e) {
@@ -226,7 +222,6 @@ class RouterCommandService {
       final result = await sendCommand(
         routerIp,
         command,
-        routerId: routerId,
         priority: priority,
       );
 

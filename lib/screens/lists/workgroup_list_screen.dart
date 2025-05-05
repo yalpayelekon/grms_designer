@@ -147,10 +147,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             router['workgroup'] == workgroupName &&
             !existingRouterIps.contains(router['ip']),
       )) {
-        List<String> ipParts = routerInfo['ip']!.split('.');
         newRouters.add(
           HelvarRouter(
-            address: '@${ipParts[2]}.${ipParts[3]}',
             ipAddress: routerInfo['ip'] ?? '',
             description: '${routerInfo['workgroup']} Router',
           ),

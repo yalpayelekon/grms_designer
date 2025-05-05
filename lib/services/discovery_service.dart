@@ -75,7 +75,6 @@ class DiscoveryService {
 
   Future<HelvarRouter?> discoverRouterWithPersistentConnection(
       String routerIpAddress) async {
-    // Get the connection manager
     final connectionManager = RouterConnectionManager();
 
     try {
@@ -87,7 +86,6 @@ class DiscoveryService {
 
       await connectionManager.getConnection(
         routerIpAddress,
-        router.address,
         heartbeatInterval: const Duration(seconds: 60),
       );
 
@@ -436,7 +434,6 @@ class DiscoveryService {
       final result = await commandService.sendCommand(
         routerIp,
         command,
-        routerId: routerId,
         timeout: const Duration(seconds: 15),
       );
 
