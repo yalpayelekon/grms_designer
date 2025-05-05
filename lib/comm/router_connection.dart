@@ -145,6 +145,8 @@ class RouterConnection {
     _processMessageBuffer();
   }
 
+// In RouterConnection class, update the _processMessageBuffer method:
+
   void _processMessageBuffer() {
     final bufferContent = _messageBuffer.toString();
 
@@ -154,6 +156,7 @@ class RouterConnection {
     if (terminatorIndex >= 0) {
       // We have a complete message
       final completeMessage = bufferContent.substring(0, terminatorIndex + 1);
+      debugPrint('Complete message received: $completeMessage');
 
       // Remove the complete message from buffer
       _messageBuffer.clear();
@@ -161,18 +164,15 @@ class RouterConnection {
         _messageBuffer.write(bufferContent.substring(terminatorIndex + 1));
       }
 
-      // Find a matching command Completer
-      // First, check if this is a reply or error
-      if (completeMessage.startsWith(MessageType.reply) ||
-          completeMessage.startsWith(MessageType.error)) {
-        // Find a pending command that's waiting for a response
-        if (_commandResponses.isNotEmpty) {
-          // Use the first available completer (FIFO)
-          final commandId = _commandResponses.keys.first;
-          final completer = _commandResponses.remove(commandId)!;
-          if (!completer.isCompleted) {
-            completer.complete(completeMessage);
-          }
+      // If we have any pending commands, complete them with this response
+      if (_commandResponses.isNotEmpty) {
+        // Complete the oldest pending command (FIFO)
+        final commandId = _commandResponses.keys.first;
+        final completer = _commandResponses.remove(commandId)!;
+        if (!completer.isCompleted) {
+          completer.complete(completeMessage);
+          debugPrint(
+              'Completed command $commandId with response: $completeMessage');
         }
       }
 

@@ -3,23 +3,18 @@ import 'router_connection.dart';
 import 'models/router_connection_status.dart';
 
 class RouterConnectionManager {
-  // Singleton pattern
   static final RouterConnectionManager _instance =
       RouterConnectionManager._internal();
   factory RouterConnectionManager() => _instance;
   RouterConnectionManager._internal();
 
-  // Connection storage
   final Map<String, RouterConnection> connections = {};
 
-  // Status stream controller
   final connectionstatusController =
       StreamController<RouterConnectionStatus>.broadcast();
 
-  // Configuration
   int _maxConcurrentConnections = 1000; // Default limit, can be changed
 
-  // Public getters
   Stream<RouterConnectionStatus> get connectionStatusStream =>
       connectionstatusController.stream;
 
@@ -29,14 +24,12 @@ class RouterConnectionManager {
   List<RouterConnectionStatus> get allConnectionStatuses =>
       connections.values.map((conn) => conn.status).toList();
 
-  // Configure the manager
   void configure({int? maxConnections}) {
     if (maxConnections != null) {
       _maxConcurrentConnections = maxConnections;
     }
   }
 
-  // Get or create a connection to a router
   Future<RouterConnection> getConnection(
     String ipAddress,
     String routerId, {
@@ -47,11 +40,9 @@ class RouterConnectionManager {
   }) async {
     final connectionKey = '$ipAddress:$port';
 
-    // Check if we already have a connection
     if (connections.containsKey(connectionKey) && !forceReconnect) {
       final connection = connections[connectionKey]!;
 
-      // If disconnected, try to reconnect
       if (!connection.isConnected) {
         await connection.connect();
       }
@@ -59,12 +50,10 @@ class RouterConnectionManager {
       return connection;
     }
 
-    // Check if we've hit connection limit
     if (connections.length >= _maxConcurrentConnections) {
       throw Exception('Maximum connection limit reached ($maxConnections)');
     }
 
-    // Create a new connection
     final connection = RouterConnection(
       ipAddress: ipAddress,
       routerId: routerId,
@@ -73,25 +62,21 @@ class RouterConnectionManager {
       connectionTimeout: connectionTimeout ?? const Duration(seconds: 5),
     );
 
-    // Forward status updates to our global stream
     connection.statusStream.listen((status) {
       connectionstatusController.add(status);
     });
 
-    // Store and connect
     connections[connectionKey] = connection;
     await connection.connect();
 
     return connection;
   }
 
-  // Check if we have a connection to a router
   bool hasConnection(String ipAddress, [int port = 50000]) {
     final connectionKey = '$ipAddress:$port';
     return connections.containsKey(connectionKey);
   }
 
-  // Close a specific connection
   Future<void> closeConnection(String ipAddress, [int port = 50000]) async {
     final connectionKey = '$ipAddress:$port';
 
@@ -102,7 +87,6 @@ class RouterConnectionManager {
     }
   }
 
-  // Close all connections
   Future<void> closeAllConnections() async {
     final futures =
         connections.values.map((connection) => connection.dispose());
@@ -110,13 +94,11 @@ class RouterConnectionManager {
     connections.clear();
   }
 
-  // Dispose of the manager
   Future<void> dispose() async {
     await closeAllConnections();
     await connectionstatusController.close();
   }
 
-  // Send a command to a router
   Future<bool> sendCommand(String ipAddress, String command,
       [int port = 50000]) async {
     final connectionKey = '$ipAddress:$port';
@@ -128,7 +110,6 @@ class RouterConnectionManager {
     return await connections[connectionKey]!.sendCommand(command);
   }
 
-  // Get connection stats
   Map<String, dynamic> getConnectionStats() {
     int connected = 0;
     int connecting = 0;

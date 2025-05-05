@@ -93,15 +93,12 @@ class QueuedCommand {
       ..attemptsMade = attemptsMade ?? this.attemptsMade;
   }
 
-  // Compare commands for queuing
   int compareTo(QueuedCommand other) {
-    // First compare by priority (higher priority first)
     final priorityComparison = other.priority.index.compareTo(priority.index);
     if (priorityComparison != 0) {
       return priorityComparison;
     }
 
-    // Then by queue time (older first)
     return queuedAt.compareTo(other.queuedAt);
   }
 }
