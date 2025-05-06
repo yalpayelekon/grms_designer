@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/dragging_link_painter.dart';
 import 'package:grms_designer/models/link.dart';
 import 'package:uuid/uuid.dart';
+import '../models/helvar_models/helvar_device.dart';
 import '../models/wiresheet.dart';
 import '../models/canvas_item.dart';
 import '../models/widget_type.dart';
@@ -286,86 +287,45 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
   void _handleItemDrop(Object data, Offset position) {
     if (data is WidgetData) {
-      // Create canvas item based on the widget type
       CanvasItem newItem;
 
-      // Generate a unique ID
-      final id = const Uuid().v4();
-      final size = const Size(150, 100);
-
-      // Determine item type and create appropriate ports
-      switch (data.type) {
-        case WidgetType.button:
-          newItem = CanvasItem(
-            type: data.type,
-            position: position,
-            size: size,
-            id: id,
-            label: 'Button',
-            ports: [
-              Port(
-                id: 'onClick',
-                type: PortType.boolean,
-                name: 'On Click',
-                isInput: false,
-              ),
-              Port(
-                id: 'enabled',
-                type: PortType.boolean,
-                name: 'Enabled',
-                isInput: true,
-              ),
-            ],
-            category: ComponentCategory.ui,
-          );
+      switch (data.category) {
+        case ComponentCategory.logic:
+          final logicType =
+              data.additionalData['logicType'] as String? ?? 'AND';
+          newItem = CanvasItem.createLogicItem(logicType, position);
           break;
 
-        case WidgetType.image:
-          newItem = CanvasItem(
-            type: data.type,
-            position: position,
-            size: size,
-            id: id,
-            label: 'Image',
-            ports: [
-              Port(
-                id: 'source',
-                type: PortType.string,
-                name: 'Source',
-                isInput: true,
-              ),
-              Port(
-                id: 'loaded',
-                type: PortType.boolean,
-                name: 'Loaded',
-                isInput: false,
-              ),
-            ],
-            category: ComponentCategory.ui,
-          );
+        case ComponentCategory.treeview:
+          if (data.additionalData.containsKey('device')) {
+            final device = data.additionalData['device'] as HelvarDevice;
+            newItem = CanvasItem.createDeviceItem(device, position);
+          } else {
+            newItem = CanvasItem(
+              type: data.type,
+              position: position,
+              size: const Size(150, 100),
+              id: const Uuid().v4(),
+              label: data.additionalData['label'] as String? ?? 'Treeview Item',
+              category: ComponentCategory.treeview,
+              ports: [],
+            );
+          }
           break;
 
-        case WidgetType.text:
+        case ComponentCategory.ui:
         default:
           newItem = CanvasItem(
             type: data.type,
             position: position,
-            size: size,
-            id: id,
-            label: 'Text',
-            ports: [
-              Port(
-                id: 'content',
-                type: PortType.string,
-                name: 'Content',
-                isInput: true,
-              ),
-            ],
+            size: const Size(150, 100),
+            id: const Uuid().v4(),
+            label: 'New ${data.type.toString().split('.').last}',
             category: ComponentCategory.ui,
+            ports: _createPortsForUiComponent(data.type),
           );
       }
 
-      // Add the item to the wiresheet
       ref.read(wiresheetsProvider.notifier).addWiresheetItem(
             widget.wiresheet.id,
             newItem,
@@ -375,7 +335,56 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         selectedItemIndex = widget.wiresheet.canvasItems.length - 1;
         isPanelExpanded = true;
       });
+
+      _updateCanvasSize();
     }
+  }
+
+  List<Port> _createPortsForUiComponent(WidgetType type) {
+    final ports = <Port>[];
+
+    switch (type) {
+      case WidgetType.button:
+        ports.add(Port(
+          id: 'onClick',
+          type: PortType.boolean,
+          name: 'On Click',
+          isInput: false,
+        ));
+        ports.add(Port(
+          id: 'enabled',
+          type: PortType.boolean,
+          name: 'Enabled',
+          isInput: true,
+        ));
+        break;
+
+      case WidgetType.image:
+        ports.add(Port(
+          id: 'source',
+          type: PortType.string,
+          name: 'Source',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'loaded',
+          type: PortType.boolean,
+          name: 'Loaded',
+          isInput: false,
+        ));
+        break;
+
+      case WidgetType.text:
+      default:
+        ports.add(Port(
+          id: 'content',
+          type: PortType.string,
+          name: 'Content',
+          isInput: true,
+        ));
+    }
+
+    return ports;
   }
 
   CanvasItem _createCanvasItemFromWidgetData(WidgetData data, Offset position) {
@@ -1168,57 +1177,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
     bool needsUpdate = false;
     Size newCanvasSize = widget.wiresheet.canvasSize;
-    Offset newCanvasOffset = widget.wiresheet.canvasOffset;
-
-    if (minX < padding) {
-      double extraWidth = padding - minX;
-      newCanvasSize = Size(
-          widget.wiresheet.canvasSize.width + extraWidth, newCanvasSize.height);
-      newCanvasOffset = Offset(
-        widget.wiresheet.canvasOffset.dx - extraWidth,
-        newCanvasOffset.dy,
-      );
-      final updatedItems = List<CanvasItem>.from(widget.wiresheet.canvasItems);
-      for (int i = 0; i < updatedItems.length; i++) {
-        final item = updatedItems[i];
-        final updatedItem = item.copyWith(
-          position: Offset(item.position.dx + extraWidth, item.position.dy),
-        );
-        ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
-              widget.wiresheet.id,
-              i,
-              updatedItem,
-            );
-      }
-
-      needsUpdate = true;
-    }
-
-    if (minY < padding) {
-      double extraHeight = padding - minY;
-      newCanvasSize = Size(
-        newCanvasSize.width,
-        widget.wiresheet.canvasSize.height + extraHeight,
-      );
-      newCanvasOffset = Offset(
-        newCanvasOffset.dx,
-        widget.wiresheet.canvasOffset.dy - extraHeight,
-      );
-      final updatedItems = List<CanvasItem>.from(widget.wiresheet.canvasItems);
-      for (int i = 0; i < updatedItems.length; i++) {
-        final item = updatedItems[i];
-        final updatedItem = item.copyWith(
-          position: Offset(item.position.dx, item.position.dy + extraHeight),
-        );
-        ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
-              widget.wiresheet.id,
-              i,
-              updatedItem,
-            );
-      }
-
-      needsUpdate = true;
-    }
 
     if (maxX > widget.wiresheet.canvasSize.width - padding) {
       double extraWidth = maxX - (widget.wiresheet.canvasSize.width - padding);
@@ -1241,11 +1199,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
       ref.read(wiresheetsProvider.notifier).updateCanvasSize(
             widget.wiresheet.id,
             newCanvasSize,
-          );
-
-      ref.read(wiresheetsProvider.notifier).updateCanvasOffset(
-            widget.wiresheet.id,
-            newCanvasOffset,
           );
     }
   }

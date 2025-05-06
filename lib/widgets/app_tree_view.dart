@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 
+import '../models/canvas_item.dart';
+import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../models/widget_type.dart';
@@ -524,7 +526,11 @@ class AppTreeView extends ConsumerWidget {
   Widget _buildDraggable(
       String label, IconData icon, WidgetType type, BuildContext context) {
     return Draggable<WidgetData>(
-      data: WidgetData(type: type),
+      data: WidgetData(
+        type: type,
+        category: ComponentCategory.logic,
+        additionalData: {'logicType': label},
+      ),
       feedback: Material(
         elevation: 4.0,
         child: Container(
@@ -547,6 +553,40 @@ class AppTreeView extends ConsumerWidget {
       ),
       child: Row(
         children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
+      ),
+    );
+  }
+
+  Widget _buildDeviceDraggable(HelvarDevice device, BuildContext context) {
+    return Draggable<WidgetData>(
+      data: WidgetData(
+        type: WidgetType.text, // Default type
+        category: ComponentCategory.treeview,
+        additionalData: {
+          'device': device,
+          'label': device.description.isEmpty
+              ? 'Device ${device.deviceId}'
+              : device.description,
+        },
+      ),
+      feedback: Material(
+        elevation: 4.0,
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.blue[100],
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Row(
+            children: [],
+          ),
+        ),
+      ),
+      childWhenDragging: Row(
+        children: [],
+      ),
+      child: Row(
+        children: [],
       ),
     );
   }
