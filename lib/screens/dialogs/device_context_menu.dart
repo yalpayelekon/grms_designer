@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/helvar_models/helvar_device.dart';
-import 'home_screen_dialogs.dart';
+import 'action_dialogs.dart';
 
 void showDeviceContextMenu(BuildContext context, HelvarDevice device) {
   final RenderBox button = context.findRenderObject() as RenderBox;

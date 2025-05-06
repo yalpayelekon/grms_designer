@@ -2,19 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
-import '../comm/discovery_manager.dart';
 import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
 import '../providers/router_connection_provider.dart';
-import '../providers/settings_provider.dart';
 import '../services/app_directory_service.dart';
-import '../screens/dialogs/network_interface_dialog.dart';
 import '../utils/general_ui.dart';
 import 'actions.dart';
 import 'dialogs/device_context_menu.dart';
 import 'details/group_detail_screen.dart';
+import 'dialogs/router_selection.dart';
 import 'dialogs/wiresheet_actions.dart';
 import 'lists/groups_list_screen.dart';
 import 'project_screens/settings_screen.dart';
@@ -52,6 +50,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   List<RouterConnectionStatus>? connectionStatuses;
   Map<String, dynamic>? connectionStats;
   AsyncValue<RouterConnectionStatus>? connectionStream;
+  Set<int> selectedIndices = <int>{};
 
   @override
   Widget build(BuildContext context) {
@@ -617,22 +616,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _connectToExistingRouters(context);
-                  },
-                  child: const Text('Connect to Existing Routers'),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    _discoverAndConnectRouters(context);
-                  },
-                  child: const Text('Discover New Routers'),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: () {
+                _connectToExistingRouters(context);
+              },
+              child: const Text('Connect to Routers'),
             ),
             if (connectionStatuses!.isEmpty)
               const Center(
@@ -680,7 +668,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     if (mounted) {
       final selectedRouters = await showDialog<List<int>>(
         context: context,
-        builder: (context) => _buildRouterSelectionDialog(routersInfo),
+        builder: (context) =>
+            buildRouterSelectionDialog(routersInfo, selectedIndices),
       );
 
       if (selectedRouters == null || selectedRouters.isEmpty) {
@@ -706,7 +695,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
 
-      // Connect to selected routers
       for (final index in selectedRouters) {
         try {
           final routerInfo = routersInfo[index];
@@ -727,239 +715,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         }
       }
 
-      // Close progress dialog and show result
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Connected to $connectedCount routers')),
         );
-      }
-    }
-  }
-
-  Widget _buildRouterSelectionDialog(List<Map<String, dynamic>> routersInfo) {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        Set<int> selectedIndices = <int>{};
-
-        return AlertDialog(
-          title: const Text('Connect to Routers'),
-          content: SizedBox(
-            width: 400,
-            height: 300,
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: routersInfo.length,
-                    itemBuilder: (context, index) {
-                      final routerInfo = routersInfo[index];
-                      final router = routerInfo['router'] as HelvarRouter;
-
-                      return CheckboxListTile(
-                        title: Text(router.description +
-                            index.toString() +
-                            selectedIndices.toString()),
-                        subtitle: Text(
-                            '${routerInfo['workgroup']} - ${router.ipAddress}'),
-                        value: selectedIndices.contains(index),
-                        onChanged: (selected) {
-                          setState(() {
-                            if (selected == true) {
-                              selectedIndices.add(index);
-                            } else {
-                              selectedIndices.remove(index);
-                            }
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          if (selectedIndices.length == routersInfo.length) {
-                            selectedIndices.clear();
-                          } else {
-                            selectedIndices.clear();
-                            selectedIndices.addAll(
-                                List.generate(routersInfo.length, (i) => i));
-                          }
-                        });
-                      },
-                      child: Text(
-                        selectedIndices.length == routersInfo.length
-                            ? 'Deselect All'
-                            : 'Select All',
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(selectedIndices.toList()),
-              child: const Text('Connect'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _discoverAndConnectRouters(BuildContext context) async {
-    DiscoveryManager? discoveryManager;
-
-    try {
-      discoveryManager = DiscoveryManager();
-      List<NetworkInterfaceDetails> interfaces =
-          await discoveryManager.getNetworkInterfaces();
-
-      if (interfaces.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No network interfaces found')),
-          );
-        }
-        return;
-      }
-
-      if (!mounted) return;
-
-      final interfaceResult = await showDialog<NetworkInterfaceDetails>(
-        context: context,
-        builder: (BuildContext context) {
-          return NetworkInterfaceDialog(interfaces: interfaces);
-        },
-      );
-
-      if (interfaceResult == null) {
-        return;
-      }
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Discovering routers...'),
-            ],
-          ),
-        ),
-      );
-
-      await discoveryManager.start(interfaceResult.ipv4!);
-      final discoveryTimeout = ref.read(discoveryTimeoutProvider);
-      final broadcastAddress = discoveryManager.calculateBroadcastAddress(
-        interfaceResult.ipv4!,
-        interfaceResult.subnetMask!,
-      );
-      await discoveryManager.sendDiscoveryRequest(
-          discoveryTimeout, broadcastAddress);
-      List<Map<String, String>> discoveredRouters =
-          discoveryManager.getDiscoveredRouters();
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      if (discoveredRouters.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No Helvar routers discovered')),
-          );
-        }
-        return;
-      }
-
-      if (mounted) {
-        final shouldConnect = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Routers Discovered'),
-            content: SizedBox(
-              width: 300,
-              height: 200,
-              child: ListView.builder(
-                itemCount: discoveredRouters.length,
-                itemBuilder: (context, index) {
-                  final router = discoveredRouters[index];
-                  return ListTile(
-                    title: Text(router['workgroup'] ?? 'Unknown'),
-                    subtitle: Text(router['ip'] ?? 'No IP'),
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Connect'),
-              ),
-            ],
-          ),
-        );
-
-        if (shouldConnect == true) {
-          final connectionManager = ref.read(routerConnectionManagerProvider);
-          final settings = ref.read(projectSettingsProvider);
-          int connectedCount = 0;
-
-          for (final router in discoveredRouters) {
-            try {
-              final ipAddress = router['ip'];
-              if (ipAddress != null && ipAddress.isNotEmpty) {
-                await connectionManager.getConnection(
-                  ipAddress,
-                  heartbeatInterval:
-                      Duration(seconds: settings.heartbeatIntervalSeconds),
-                  connectionTimeout:
-                      Duration(milliseconds: settings.socketTimeoutMs),
-                );
-                connectedCount++;
-              }
-            } catch (e) {
-              debugPrint('Error connecting to router: $e');
-            }
-          }
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Connected to $connectedCount routers')),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Discovery error: $e');
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error during discovery: $e')),
-        );
-      }
-    } finally {
-      if (discoveryManager != null) {
-        discoveryManager.stop();
       }
     }
   }

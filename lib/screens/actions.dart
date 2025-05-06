@@ -6,7 +6,7 @@ import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/output_device.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/workgroups_provider.dart';
-import 'dialogs/home_screen_dialogs.dart';
+import 'dialogs/action_dialogs.dart';
 
 void performDeviceRecallScene(
     BuildContext context, HelvarDevice device, int sceneNumber) {
