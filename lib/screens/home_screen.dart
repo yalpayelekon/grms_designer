@@ -15,6 +15,7 @@ import 'details/group_detail_screen.dart';
 import 'dialogs/router_selection.dart';
 import 'dialogs/wiresheet_actions.dart';
 import 'lists/groups_list_screen.dart';
+import 'lists/wiresheet_list_screen.dart';
 import 'project_screens/settings_screen.dart';
 import 'details/workgroup_detail_screen.dart';
 import 'lists/workgroup_list_screen.dart';
@@ -570,7 +571,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (openWiresheet) {
       if (selectedWiresheetId == null) {
-        return const Text("Wiresheet list will be added here");
+        return const WiresheetListScreen();
       }
       return WiresheetScreen(
         wiresheetId: selectedWiresheetId!,

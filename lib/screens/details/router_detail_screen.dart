@@ -374,7 +374,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         return;
       }
 
-      final filePath = await FileDialogHelper.pickJsonFileToSave();
+      final filePath =
+          await FileDialogHelper.pickJsonFileToSave("helvarnet_devices.json");
       if (filePath == null) return;
 
       setState(() {

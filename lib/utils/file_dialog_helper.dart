@@ -14,10 +14,10 @@ class FileDialogHelper {
     return null;
   }
 
-  static Future<String?> pickJsonFileToSave() async {
+  static Future<String?> pickJsonFileToSave(String fileName) async {
     String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save HelvarNet workgroups',
-      fileName: 'helvarnet_workgroups.json',
+      dialogTitle: 'Save HelvarNet configuration',
+      fileName: fileName,
       type: FileType.custom,
       allowedExtensions: ['json'],
     );

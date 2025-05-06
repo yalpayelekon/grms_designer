@@ -385,7 +385,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   Future<void> _exportWorkgroups(BuildContext context) async {
     try {
-      final filePath = await FileDialogHelper.pickJsonFileToSave();
+      final filePath = await FileDialogHelper.pickJsonFileToSave(
+          'helvarnet_workgroups.json');
       if (filePath != null) {
         await ref.read(workgroupsProvider.notifier).exportWorkgroups(filePath);
 
