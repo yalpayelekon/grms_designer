@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import 'package:uuid/uuid.dart';
+import 'helvar_models/helvar_device.dart';
 import 'link.dart';
 import 'widget_type.dart';
 
@@ -87,13 +89,235 @@ class CanvasItem extends TreeNode {
     return json;
   }
 
-  // Factory methods for creating different types of items
   static CanvasItem createLogicItem(String type, Offset position) {
-    // Create a specific logic item based on type with appropriate ports
+    final id = const Uuid().v4();
+
+    const size = Size(120, 80);
+
+    final ports = <Port>[];
+
+    switch (type) {
+      case 'AND':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.boolean,
+          name: 'Input 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.boolean,
+          name: 'Input 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'Output',
+          isInput: false,
+        ));
+        break;
+
+      case 'OR':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.boolean,
+          name: 'Input 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.boolean,
+          name: 'Input 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'Output',
+          isInput: false,
+        ));
+        break;
+
+      case 'IF':
+        ports.add(Port(
+          id: 'condition',
+          type: PortType.boolean,
+          name: 'Condition',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'true',
+          type: PortType.any,
+          name: 'True',
+          isInput: false,
+        ));
+        ports.add(Port(
+          id: 'false',
+          type: PortType.any,
+          name: 'False',
+          isInput: false,
+        ));
+        break;
+
+      case 'ADD':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.number,
+          name: 'Value 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.number,
+          name: 'Value 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.number,
+          name: 'Sum',
+          isInput: false,
+        ));
+        break;
+
+      case 'SUBTRACT':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.number,
+          name: 'Value 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.number,
+          name: 'Value 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.number,
+          name: 'Difference',
+          isInput: false,
+        ));
+        break;
+    }
+
+    return CanvasItem(
+      type: WidgetType.text,
+      position: position,
+      size: size,
+      id: id,
+      label: type,
+      ports: ports,
+      category: ComponentCategory.logic,
+      properties: {'logic_type': type},
+    );
   }
 
   static CanvasItem createDeviceItem(HelvarDevice device, Offset position) {
-    // Create a device item with appropriate ports based on device type
+    final id = const Uuid().v4();
+
+    const size = Size(150, 100);
+
+    final ports = <Port>[];
+
+    ports.add(Port(
+      id: 'status',
+      type: PortType.boolean,
+      name: 'Status',
+      isInput: false,
+    ));
+
+    if (device.helvarType == 'output') {
+      ports.add(Port(
+        id: 'level',
+        type: PortType.number,
+        name: 'Level',
+        isInput: true,
+      ));
+
+      ports.add(Port(
+        id: 'currentLevel',
+        type: PortType.number,
+        name: 'Current Level',
+        isInput: false,
+      ));
+    } else if (device.helvarType == 'input') {
+      ports.add(Port(
+        id: 'trigger',
+        type: PortType.boolean,
+        name: 'Trigger',
+        isInput: false,
+      ));
+
+      if (device.isButtonDevice) {
+        // For each button, add a button state port
+        for (int i = 1; i <= 7; i++) {
+          ports.add(Port(
+            id: 'button$i',
+            type: PortType.boolean,
+            name: 'Button $i',
+            isInput: false,
+          ));
+        }
+      }
+
+      // If it's a multisensor
+      if (device.isMultisensor) {
+        ports.add(Port(
+          id: 'presence',
+          type: PortType.boolean,
+          name: 'Presence',
+          isInput: false,
+        ));
+
+        ports.add(Port(
+          id: 'light_level',
+          type: PortType.number,
+          name: 'Light Level',
+          isInput: false,
+        ));
+      }
+    } else if (device.helvarType == 'emergency') {
+      ports.add(Port(
+        id: 'test',
+        type: PortType.boolean,
+        name: 'Test',
+        isInput: true,
+      ));
+
+      ports.add(Port(
+        id: 'emergency_state',
+        type: PortType.boolean,
+        name: 'Emergency State',
+        isInput: false,
+      ));
+
+      ports.add(Port(
+        id: 'battery_level',
+        type: PortType.number,
+        name: 'Battery Level',
+        isInput: false,
+      ));
+    }
+
+    return CanvasItem(
+      type: WidgetType.text,
+      position: position,
+      size: size,
+      id: id,
+      label: device.description.isEmpty
+          ? 'Device ${device.deviceId}'
+          : device.description,
+      ports: ports,
+      category: ComponentCategory.treeview,
+      properties: {
+        'device_id': device.deviceId,
+        'device_address': device.address,
+        'device_type': device.helvarType,
+      },
+    );
   }
 
   CanvasItem copyWith({

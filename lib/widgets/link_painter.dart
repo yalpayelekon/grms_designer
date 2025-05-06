@@ -27,8 +27,8 @@ class LinkPainter extends CustomPainter {
       final targetPort = targetItem.getPort(link.targetPortId);
 
       // Calculate start and end points
-      final start = _getPortPosition(sourceItem, sourcePort, false);
-      final end = _getPortPosition(targetItem, targetPort, true);
+      final start = _getPortPosition(sourceItem, sourcePort!, false);
+      final end = _getPortPosition(targetItem, targetPort!, true);
 
       // Draw the link with a bezier curve
       final paint = Paint()
@@ -58,9 +58,28 @@ class LinkPainter extends CustomPainter {
     }
   }
 
-  Offset _getPortPosition(CanvasItem item, Port port, bool isInput) {
-    // Calculate the position of the port on the canvas
-    // This depends on the item's position and size, and the port's position
+  Offset _getPortPosition(CanvasItem item, Port? port, bool isInput) {
+    if (port == null) {
+      return isInput
+          ? Offset(item.position.dx, item.position.dy + item.size.height / 2)
+          : Offset(item.position.dx + item.size.width,
+              item.position.dy + item.size.height / 2);
+    }
+
+    final portList = isInput
+        ? item.ports.where((p) => p.isInput).toList()
+        : item.ports.where((p) => !p.isInput).toList();
+
+    final index = portList.indexWhere((p) => p.id == port.id);
+    final portCount = portList.length;
+
+    final verticalSpacing = item.size.height / (portCount + 1);
+    final verticalPosition = item.position.dy + verticalSpacing * (index + 1);
+
+    final horizontalPosition =
+        isInput ? item.position.dx : item.position.dx + item.size.width;
+
+    return Offset(horizontalPosition, verticalPosition);
   }
 
   @override

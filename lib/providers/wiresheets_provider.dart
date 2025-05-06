@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/link.dart';
 import '../models/wiresheet.dart';
 import '../models/canvas_item.dart';
 import '../services/wiresheet_storage_service.dart';
@@ -165,6 +166,30 @@ class WiresheetsNotifier extends StateNotifier<List<Wiresheet>> {
       final updatedState = List<Wiresheet>.from(state);
       final wiresheet = updatedState[index];
       wiresheet.updateCanvasOffset(newOffset);
+      state = updatedState;
+      await _storageService.saveWiresheet(wiresheet);
+    }
+  }
+
+  Future<void> addLink(String wiresheetId, Link link) async {
+    final index = state.indexWhere((sheet) => sheet.id == wiresheetId);
+
+    if (index >= 0) {
+      final updatedState = List<Wiresheet>.from(state);
+      final wiresheet = updatedState[index];
+      wiresheet.addLink(link);
+      state = updatedState;
+      await _storageService.saveWiresheet(wiresheet);
+    }
+  }
+
+  Future<void> removeLink(String wiresheetId, String linkId) async {
+    final index = state.indexWhere((sheet) => sheet.id == wiresheetId);
+
+    if (index >= 0) {
+      final updatedState = List<Wiresheet>.from(state);
+      final wiresheet = updatedState[index];
+      wiresheet.removeLink(linkId);
       state = updatedState;
       await _storageService.saveWiresheet(wiresheet);
     }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/models/dragging_link_painter.dart';
+import 'package:grms_designer/models/link.dart';
+import 'package:uuid/uuid.dart';
 import '../models/wiresheet.dart';
 import '../models/canvas_item.dart';
 import '../models/widget_type.dart';
@@ -172,8 +175,115 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     );
   }
 
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (isDraggingLink) {
+      setState(() {
+        linkDragEndPoint = event.localPosition;
+      });
+    }
+  }
+
   void _handleLinkSelected(String linkId) {
-    // Show link properties or handle selection
+    // Show link properties panel or context menu
+    final link = widget.wiresheet.links.firstWhere((l) => l.id == linkId);
+
+    // You could show a dialog or update a properties panel here
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Link Properties'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Source: ${_getItemLabel(link.sourceItemId)}'),
+            Text('Target: ${_getItemLabel(link.targetItemId)}'),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _deleteLink(link.id);
+                  },
+                  child:
+                      const Text('Delete', style: TextStyle(color: Colors.red)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getItemLabel(String itemId) {
+    try {
+      final item =
+          widget.wiresheet.canvasItems.firstWhere((i) => i.id == itemId);
+      return item.label ?? 'Untitled Item';
+    } catch (e) {
+      return 'Unknown Item';
+    }
+  }
+
+  void _deleteLink(String linkId) {
+    ref.read(wiresheetsProvider.notifier).removeLink(
+          widget.wiresheet.id,
+          linkId,
+        );
+  }
+
+  void _handlePortTap(String itemId, String portId, bool isInput) {
+    if (isInput) {
+      if (isDraggingLink &&
+          selectedSourceItemId != null &&
+          selectedSourcePortId != null) {
+        final newLink = Link(
+          id: const Uuid().v4(),
+          sourceItemId: selectedSourceItemId!,
+          sourcePortId: selectedSourcePortId!,
+          targetItemId: itemId,
+          targetPortId: portId,
+          type: LinkType.dataFlow,
+        );
+
+        ref.read(wiresheetsProvider.notifier).addLink(
+              widget.wiresheet.id,
+              newLink,
+            );
+
+        setState(() {
+          isDraggingLink = false;
+          selectedSourceItemId = null;
+          selectedSourcePortId = null;
+          linkDragEndPoint = null;
+        });
+      }
+    } else {
+      setState(() {
+        isDraggingLink = true;
+        selectedSourceItemId = itemId;
+        selectedSourcePortId = portId;
+
+        final item =
+            widget.wiresheet.canvasItems.firstWhere((i) => i.id == itemId);
+        final port = item.getPort(portId);
+        if (port != null) {
+          // This will need the _getPortPosition implementation
+          // linkDragEndPoint = _getPortPosition(item, port, false);
+
+          // For now, just set it to somewhere near the item
+          linkDragEndPoint = Offset(item.position.dx + item.size.width + 10,
+              item.position.dy + item.size.height / 2);
+        }
+      });
+    }
   }
 
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
