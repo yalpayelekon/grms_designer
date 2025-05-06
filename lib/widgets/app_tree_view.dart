@@ -369,7 +369,10 @@ class AppTreeView extends ConsumerWidget {
                                 });
                               },
                               onSecondaryTap: () {
-                                setActiveNode('router');
+                                setActiveNode('router', additionalData: {
+                                  'workgroup': workgroup,
+                                  'router': router,
+                                });
                               },
                               child: Row(
                                 children: [
@@ -448,7 +451,6 @@ class AppTreeView extends ConsumerWidget {
         ),
       ),
       children: [
-        // Logic operators section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -469,8 +471,6 @@ class AppTreeView extends ConsumerWidget {
                     "OR", Icons.call_split, WidgetType.text, context)),
           ],
         ),
-
-        // Math operators section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -488,8 +488,6 @@ class AppTreeView extends ConsumerWidget {
                     "SUBTRACT", Icons.remove, WidgetType.text, context)),
           ],
         ),
-
-        // Points section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),

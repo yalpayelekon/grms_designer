@@ -103,6 +103,16 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       appBar: AppBar(
         title: Text('Router: ${widget.router.description}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.wifi),
+            tooltip: 'Connect',
+            onPressed: () {
+              ref.read(workgroupsProvider.notifier).getRouterConnection(
+                    widget.workgroup.id,
+                    widget.router.address,
+                  );
+            },
+          ),
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [

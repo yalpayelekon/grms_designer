@@ -11,6 +11,7 @@ import '../services/app_directory_service.dart';
 import '../utils/general_ui.dart';
 import '../widgets/app_tree_view.dart';
 import 'details/group_detail_screen.dart';
+import 'details/router_detail_screen.dart';
 import 'dialogs/router_selection.dart';
 import 'lists/groups_list_screen.dart';
 import 'lists/wiresheet_list_screen.dart';
@@ -500,14 +501,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           showingProjectSettings = true;
           break;
         case 'router':
-          if (additionalData is Map<String, dynamic>) {
-            final workgroup = additionalData['workgroup'] as Workgroup;
-            final router = additionalData['router'] as HelvarRouter;
-            ref.read(workgroupsProvider.notifier).getRouterConnection(
-                  workgroup.id,
-                  router.address,
-                );
-          }
+          final workgroup = additionalData['workgroup'] as Workgroup;
+          final router = additionalData['router'] as HelvarRouter;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RouterDetailScreen(
+                workgroup: workgroup,
+                router: router,
+              ),
+            ),
+          );
           break;
         default:
           showingProject = true;
