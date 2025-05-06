@@ -5,6 +5,7 @@ import '../models/canvas_item.dart';
 import '../models/widget_type.dart';
 import '../providers/wiresheets_provider.dart';
 import '../widgets/grid_painter.dart';
+import 'link_painter.dart';
 
 class WiresheetEditor extends ConsumerStatefulWidget {
   final Wiresheet wiresheet;
@@ -23,6 +24,10 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   bool isPanelExpanded = false;
   double scale = 1.0;
   Offset viewportOffset = const Offset(0, 0);
+  String? selectedSourceItemId;
+  String? selectedSourcePortId;
+  bool isDraggingLink = false;
+  Offset? linkDragEndPoint;
 
   @override
   Widget build(BuildContext context) {
@@ -143,8 +148,32 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
               ),
             ),
           ),
+        CustomPaint(
+          painter: LinkPainter(
+            links: widget.wiresheet.links,
+            items: widget.wiresheet.canvasItems,
+            onLinkSelected: _handleLinkSelected,
+          ),
+          child: Container(),
+        ),
+        if (isDraggingLink &&
+            selectedSourceItemId != null &&
+            linkDragEndPoint != null)
+          CustomPaint(
+            painter: DraggingLinkPainter(
+              startItem: widget.wiresheet.canvasItems
+                  .firstWhere((item) => item.id == selectedSourceItemId),
+              startPortId: selectedSourcePortId!,
+              endPoint: linkDragEndPoint!,
+            ),
+            child: Container(),
+          ),
       ],
     );
+  }
+
+  void _handleLinkSelected(String linkId) {
+    // Show link properties or handle selection
   }
 
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {

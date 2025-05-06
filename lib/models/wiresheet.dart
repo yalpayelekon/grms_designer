@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'canvas_item.dart';
+import 'link.dart';
 
 class Wiresheet {
   String id;
@@ -9,6 +10,7 @@ class Wiresheet {
   List<CanvasItem> canvasItems;
   Size canvasSize;
   Offset canvasOffset;
+  List<Link> links;
 
   Wiresheet({
     required this.id,
@@ -18,10 +20,12 @@ class Wiresheet {
     List<CanvasItem>? canvasItems,
     Size? canvasSize,
     Offset? canvasOffset,
+    List<Link>? links,
   })  : createdAt = createdAt ?? DateTime.now(),
         modifiedAt = modifiedAt ?? DateTime.now(),
         canvasItems = canvasItems ?? [],
         canvasSize = canvasSize ?? const Size(2000, 2000),
+        links = links ?? [],
         canvasOffset = canvasOffset ?? const Offset(0, 0);
 
   void addItem(CanvasItem item) {
@@ -43,6 +47,16 @@ class Wiresheet {
     }
   }
 
+  void addLink(Link link) {
+    links.add(link);
+    modifiedAt = DateTime.now();
+  }
+
+  void removeLink(String linkId) {
+    links.removeWhere((link) => link.id == linkId);
+    modifiedAt = DateTime.now();
+  }
+
   void updateCanvasSize(Size newSize) {
     canvasSize = newSize;
     modifiedAt = DateTime.now();
@@ -54,6 +68,11 @@ class Wiresheet {
   }
 
   factory Wiresheet.fromJson(Map<String, dynamic> json) {
+    final linksList = (json['links'] as List?)
+            ?.map((item) => Link.fromJson(item as Map<String, dynamic>))
+            .toList() ??
+        [];
+
     return Wiresheet(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -62,6 +81,7 @@ class Wiresheet {
       canvasItems: (json['canvasItems'] as List)
           .map((item) => CanvasItem.fromJson(item as Map<String, dynamic>))
           .toList(),
+      links: linksList,
       canvasSize: Size(
         (json['canvasSize']['width'] as num).toDouble(),
         (json['canvasSize']['height'] as num).toDouble(),
@@ -74,7 +94,7 @@ class Wiresheet {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = {
       'id': id,
       'name': name,
       'createdAt': createdAt.toIso8601String(),
@@ -89,6 +109,8 @@ class Wiresheet {
         'dy': canvasOffset.dy,
       },
     };
+    json['links'] = links.map((link) => link.toJson()).toList();
+    return json;
   }
 
   Wiresheet copy() {
