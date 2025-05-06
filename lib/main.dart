@@ -4,22 +4,37 @@ import 'screens/home_screen.dart';
 import 'providers/settings_provider.dart';
 import 'providers/service_configuration_provider.dart';
 import 'services/app_initialization.dart';
+import 'services/log_service.dart';
+import 'utils/logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final container = ProviderContainer();
+
+  final logService = container.read(logServiceProvider.notifier);
+  initLogger(logService);
+
+  logInfo('Application starting', tag: 'App');
+
   try {
     await AppInitializationService.initialize();
+    logInfo('Application initialized successfully', tag: 'App');
+
     runApp(
-      const ProviderScope(
-        child: HelvarNetApp(),
+      UncontrolledProviderScope(
+        container: container,
+        child: const HelvarNetApp(),
       ),
     );
-  } catch (e) {
+  } catch (e, stackTrace) {
+    logError('Initialization error: $e', tag: 'App', stackTrace: stackTrace);
     await AppInitializationService.handleInitializationFailure(e);
+
     runApp(
-      const ProviderScope(
-        child: HelvarNetApp(),
+      UncontrolledProviderScope(
+        container: container,
+        child: const HelvarNetApp(),
       ),
     );
   }

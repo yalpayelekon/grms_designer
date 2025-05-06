@@ -25,6 +25,17 @@ class FileDialogHelper {
     return outputFile;
   }
 
+  static Future<String?> pickTextFileToSave(String fileName) async {
+    String? outputFile = await FilePicker.platform.saveFile(
+      dialogTitle: 'Save Logs',
+      fileName: fileName,
+      type: FileType.custom,
+      allowedExtensions: ['txt'],
+    );
+
+    return outputFile;
+  }
+
   static Future<String?> pickFileToOpen({
     List<String> allowedExtensions = const ['json'],
     String dialogTitle = 'Select file to import',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/models/helvar_models/helvar_group.dart';
+
+import '../models/helvar_models/helvar_group.dart';
 import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
@@ -13,6 +14,7 @@ import 'details/group_detail_screen.dart';
 import 'dialogs/router_selection.dart';
 import 'lists/groups_list_screen.dart';
 import 'lists/wiresheet_list_screen.dart';
+import 'log_panel_screen.dart';
 import 'project_screens/settings_screen.dart';
 import 'details/workgroup_detail_screen.dart';
 import 'lists/workgroup_list_screen.dart';
@@ -74,7 +76,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.note),
             tooltip: 'Application Director',
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LogPanelScreen(),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.settings),
