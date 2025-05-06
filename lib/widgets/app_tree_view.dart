@@ -1,4 +1,3 @@
-// lib/widgets/app_tree_view.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
@@ -425,9 +424,102 @@ class AppTreeView extends ConsumerWidget {
                   )
                   .toList(),
             ),
+            _buildLogicComponents(context),
           ]),
         ],
       ),
+    );
+  }
+
+  TreeNode _buildLogicComponents(BuildContext context) {
+    return TreeNode(
+      content: GestureDetector(
+        onDoubleTap: () {
+          // Expandable section logic if needed
+        },
+        child: const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Text(
+            "Components",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+      children: [
+        // Logic operators section
+        TreeNode(
+          content: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              "Logic",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          children: [
+            TreeNode(
+                content: _buildDraggable(
+                    "IF", Icons.compare_arrows, WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "AND", Icons.add_link, WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "OR", Icons.call_split, WidgetType.text, context)),
+          ],
+        ),
+
+        // Math operators section
+        TreeNode(
+          content: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              "Math",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          children: [
+            TreeNode(
+                content: _buildDraggable(
+                    "ADD", Icons.add, WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "SUBTRACT", Icons.remove, WidgetType.text, context)),
+          ],
+        ),
+
+        // Points section
+        TreeNode(
+          content: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              "Points",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          children: [
+            TreeNode(
+                content: _buildDraggable("BooleanPoint", Icons.toggle_off,
+                    WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable("BooleanWritable", Icons.toggle_on,
+                    WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable("StringPoint", Icons.text_fields,
+                    WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable("StringWritable", Icons.edit_note,
+                    WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "NumericPoint", Icons.numbers, WidgetType.text, context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "NumericWritable", Icons.edit, WidgetType.text, context)),
+          ],
+        ),
+      ],
     );
   }
 

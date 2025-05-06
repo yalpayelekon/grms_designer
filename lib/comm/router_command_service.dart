@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/project_settings.dart';
+import '../utils/logger.dart';
 import 'models/command_models.dart';
 import 'router_connection.dart';
 import 'router_connection_manager.dart';
@@ -331,6 +331,6 @@ class RouterCommandService {
 
 void unawaited(Future<void> future) {
   future.catchError((error) {
-    debugPrint('Unhandled async error: $error');
+    logError('Unhandled async error: $error', tag: "RouterCommandService");
   });
 }
