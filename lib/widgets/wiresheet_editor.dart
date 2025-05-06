@@ -286,8 +286,84 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
   void _handleItemDrop(Object data, Offset position) {
     if (data is WidgetData) {
-      // Create a new canvas item based on the widget type
-      final newItem = _createCanvasItemFromWidgetData(data, position);
+      // Create canvas item based on the widget type
+      CanvasItem newItem;
+
+      // Generate a unique ID
+      final id = const Uuid().v4();
+      final size = const Size(150, 100);
+
+      // Determine item type and create appropriate ports
+      switch (data.type) {
+        case WidgetType.button:
+          newItem = CanvasItem(
+            type: data.type,
+            position: position,
+            size: size,
+            id: id,
+            label: 'Button',
+            ports: [
+              Port(
+                id: 'onClick',
+                type: PortType.boolean,
+                name: 'On Click',
+                isInput: false,
+              ),
+              Port(
+                id: 'enabled',
+                type: PortType.boolean,
+                name: 'Enabled',
+                isInput: true,
+              ),
+            ],
+            category: ComponentCategory.ui,
+          );
+          break;
+
+        case WidgetType.image:
+          newItem = CanvasItem(
+            type: data.type,
+            position: position,
+            size: size,
+            id: id,
+            label: 'Image',
+            ports: [
+              Port(
+                id: 'source',
+                type: PortType.string,
+                name: 'Source',
+                isInput: true,
+              ),
+              Port(
+                id: 'loaded',
+                type: PortType.boolean,
+                name: 'Loaded',
+                isInput: false,
+              ),
+            ],
+            category: ComponentCategory.ui,
+          );
+          break;
+
+        case WidgetType.text:
+        default:
+          newItem = CanvasItem(
+            type: data.type,
+            position: position,
+            size: size,
+            id: id,
+            label: 'Text',
+            ports: [
+              Port(
+                id: 'content',
+                type: PortType.string,
+                name: 'Content',
+                isInput: true,
+              ),
+            ],
+            category: ComponentCategory.ui,
+          );
+      }
 
       // Add the item to the wiresheet
       ref.read(wiresheetsProvider.notifier).addWiresheetItem(
