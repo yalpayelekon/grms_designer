@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_router.dart';
@@ -9,18 +8,15 @@ import '../providers/project_settings_provider.dart';
 import '../providers/router_connection_provider.dart';
 import '../services/app_directory_service.dart';
 import '../utils/general_ui.dart';
-import 'actions.dart';
-import 'dialogs/device_context_menu.dart';
+import '../widgets/app_tree_view.dart';
 import 'details/group_detail_screen.dart';
 import 'dialogs/router_selection.dart';
-import 'dialogs/wiresheet_actions.dart';
 import 'lists/groups_list_screen.dart';
 import 'lists/wiresheet_list_screen.dart';
 import 'project_screens/settings_screen.dart';
 import 'details/workgroup_detail_screen.dart';
 import 'lists/workgroup_list_screen.dart';
 import 'project_screens/wiresheet_screen.dart';
-import '../models/widget_type.dart';
 import '../providers/workgroups_provider.dart';
 import '../providers/wiresheets_provider.dart';
 import 'project_screens/project_settings_screen.dart';
@@ -100,415 +96,20 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             height: MediaQuery.of(context).size.height - 56,
             child: Container(
               color: Colors.grey[400],
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    TreeView(nodes: [
-                      TreeNode(
-                        content: GestureDetector(
-                          onDoubleTap: () {
-                            _setActiveNode('project');
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              "Project",
-                              style: TextStyle(
-                                fontWeight: showingProject
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: showingProject ? Colors.blue : null,
-                              ),
-                            ),
-                          ),
-                        ),
-                        children: [
-                          TreeNode(
-                            content: GestureDetector(
-                              onDoubleTap: () {
-                                _setActiveNode('settings');
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  "Settings",
-                                  style: TextStyle(
-                                    fontWeight: openSettings
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    color: openSettings ? Colors.blue : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          TreeNode(
-                            content: GestureDetector(
-                              onDoubleTap: () {
-                                _setActiveNode('files');
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  "Files",
-                                  style: TextStyle(
-                                    fontWeight: currentFileDirectory != null &&
-                                            !showingImages
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    color: currentFileDirectory != null &&
-                                            !showingImages
-                                        ? Colors.blue
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            children: [
-                              TreeNode(
-                                content: GestureDetector(
-                                  onDoubleTap: () {
-                                    _setActiveNode('images');
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                      "Images",
-                                      style: TextStyle(
-                                        fontWeight: showingImages
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        color:
-                                            showingImages ? Colors.blue : null,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              TreeNode(
-                                content: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    GestureDetector(
-                                      onDoubleTap: () {
-                                        _setActiveNode('wiresheets');
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          "Wiresheets",
-                                          style: TextStyle(
-                                            fontWeight: openWiresheet &&
-                                                    selectedWiresheetId == null
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            color: openWiresheet &&
-                                                    selectedWiresheetId == null
-                                                ? Colors.blue
-                                                : null,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.add, size: 18),
-                                      tooltip: 'Create New Wiresheet',
-                                      onPressed: () =>
-                                          createNewWiresheet(context, ref),
-                                    ),
-                                  ],
-                                ),
-                                children: [
-                                  ...wiresheets.map((wiresheet) => TreeNode(
-                                        content: GestureDetector(
-                                          onDoubleTap: () {
-                                            _setActiveNode('wiresheet',
-                                                additionalData: wiresheet.id);
-                                          },
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8.0),
-                                                child: Text(
-                                                  wiresheet.name,
-                                                  style: TextStyle(
-                                                    fontWeight:
-                                                        selectedWiresheetId ==
-                                                                wiresheet.id
-                                                            ? FontWeight.bold
-                                                            : FontWeight.normal,
-                                                    color:
-                                                        selectedWiresheetId ==
-                                                                wiresheet.id
-                                                            ? Colors.blue
-                                                            : null,
-                                                  ),
-                                                ),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete,
-                                                    size: 18),
-                                                tooltip: 'Delete Wiresheet',
-                                                onPressed: () async {
-                                                  final result =
-                                                      await confirmDeleteWiresheet(
-                                                          context,
-                                                          wiresheet.id,
-                                                          wiresheet.name,
-                                                          ref);
-                                                  setState(() {
-                                                    if (result &&
-                                                        selectedWiresheetId! ==
-                                                            wiresheet.id) {
-                                                      selectedWiresheetId =
-                                                          null;
-                                                    }
-                                                  });
-                                                  if (result && mounted) {
-                                                    ScaffoldMessenger.of(
-                                                            context)
-                                                        .showSnackBar(
-                                                      const SnackBar(
-                                                          content: Text(
-                                                              'Wiresheet deleted')),
-                                                    );
-                                                  }
-                                                },
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      )),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      TreeNode(
-                        content: GestureDetector(
-                          onDoubleTap: () {
-                            _setActiveNode('workgroups');
-                          },
-                          child: Row(
-                            children: [
-                              const Icon(Icons.group_work),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  'Workgroups',
-                                  style: TextStyle(
-                                    fontWeight: openWorkGroup &&
-                                            selectedWorkgroup == null
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    color: openWorkGroup &&
-                                            selectedWorkgroup == null
-                                        ? Colors.blue
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        children: workgroups
-                            .map(
-                              (workgroup) => TreeNode(
-                                content: GestureDetector(
-                                  onDoubleTap: () {
-                                    _setActiveNode('workgroups',
-                                        additionalData: workgroup);
-                                  },
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.lan),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          workgroup.description,
-                                          style: TextStyle(
-                                            fontWeight: selectedWorkgroup ==
-                                                        workgroup &&
-                                                    !showingGroups &&
-                                                    selectedGroup == null
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            color: selectedWorkgroup ==
-                                                        workgroup &&
-                                                    !showingGroups &&
-                                                    selectedGroup == null
-                                                ? Colors.blue
-                                                : null,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                children: [
-                                  TreeNode(
-                                    content: GestureDetector(
-                                      onDoubleTap: () {
-                                        _setActiveNode(
-                                          'groups',
-                                          additionalData: workgroup,
-                                        );
-                                      },
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.group_work,
-                                              color: Colors.blue),
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              "Groups",
-                                              style: TextStyle(
-                                                fontWeight: showingGroups &&
-                                                        selectedWorkgroup ==
-                                                            workgroup &&
-                                                        selectedGroup == null
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                                color: showingGroups &&
-                                                        selectedWorkgroup ==
-                                                            workgroup &&
-                                                        selectedGroup == null
-                                                    ? Colors.blue
-                                                    : null,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    children: workgroup.groups
-                                        .map(
-                                          (group) => TreeNode(
-                                            content: GestureDetector(
-                                              onDoubleTap: () {
-                                                _setActiveNode('groupDetail',
-                                                    additionalData: {
-                                                      'workgroup': workgroup,
-                                                      'group': group,
-                                                    });
-                                              },
-                                              onSecondaryTap: () {
-                                                showGroupContextMenu(
-                                                    context, group, workgroup);
-                                              },
-                                              child: Row(
-                                                children: [
-                                                  const Icon(Icons.layers,
-                                                      color: Colors.green),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Text(
-                                                      group.description.isEmpty
-                                                          ? "Group ${group.groupId}"
-                                                          : group.description,
-                                                      style: TextStyle(
-                                                        fontWeight: selectedWorkgroup ==
-                                                                    workgroup &&
-                                                                selectedGroup ==
-                                                                    group
-                                                            ? FontWeight.bold
-                                                            : FontWeight.normal,
-                                                        color: selectedWorkgroup ==
-                                                                    workgroup &&
-                                                                selectedGroup ==
-                                                                    group
-                                                            ? Colors.blue
-                                                            : null,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                  ...workgroup.routers.map(
-                                    (router) => TreeNode(
-                                      content: GestureDetector(
-                                        onDoubleTap: () {
-                                          _setActiveNode('router',
-                                              additionalData: {
-                                                'workgroup': workgroup,
-                                                'router': router,
-                                              });
-                                        },
-                                        onSecondaryTap: () {
-                                          _setActiveNode('router');
-                                        },
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.router),
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Text(router.description),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      children: [
-                                        ...router.devicesBySubnet.entries
-                                            .map((entry) {
-                                          final subnet = entry.key;
-                                          final subnetDevices = entry.value;
-                                          return TreeNode(
-                                            content: Row(
-                                              children: [
-                                                const Icon(Icons.hub),
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Text("Subnet$subnet"),
-                                                ),
-                                              ],
-                                            ),
-                                            children: subnetDevices
-                                                .map(
-                                                  (device) => TreeNode(
-                                                    content: GestureDetector(
-                                                      onSecondaryTap: () =>
-                                                          showDeviceContextMenu(
-                                                              context, device),
-                                                      child: _buildDraggable(
-                                                        device.description
-                                                                .isEmpty
-                                                            ? "Device_${device.deviceId}"
-                                                            : device
-                                                                .description,
-                                                        getDeviceIcon(device),
-                                                        WidgetType.text,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                                .toList(),
-                                          );
-                                        }),
-                                      ],
-                                    ),
-                                  )
-                                ],
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ]),
-                  ],
-                ),
+              child: AppTreeView(
+                wiresheets: wiresheets,
+                workgroups: workgroups,
+                showingProject: showingProject,
+                openSettings: openSettings,
+                openWorkGroup: openWorkGroup,
+                openWiresheet: openWiresheet,
+                showingImages: showingImages,
+                showingGroups: showingGroups,
+                currentFileDirectory: currentFileDirectory,
+                selectedWiresheetId: selectedWiresheetId,
+                selectedWorkgroup: selectedWorkgroup,
+                selectedGroup: selectedGroup,
+                setActiveNode: _setActiveNode,
               ),
             ),
           ),
@@ -725,35 +326,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         );
       }
     }
-  }
-
-  Widget _buildDraggable(String label, IconData icon, WidgetType type) {
-    return Draggable<WidgetData>(
-      data: WidgetData(type: type),
-      feedback: Material(
-        elevation: 4.0,
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.blue[100],
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Row(
-            children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
-          ),
-        ),
-      ),
-      childWhenDragging: Row(
-        children: [
-          Icon(icon, color: Colors.grey[600]),
-          const SizedBox(width: 8.0),
-          Text(label, style: TextStyle(color: Colors.grey[600])),
-        ],
-      ),
-      child: Row(
-        children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
-      ),
-    );
   }
 
   Widget _buildStatCard(BuildContext context, String label, int value,
