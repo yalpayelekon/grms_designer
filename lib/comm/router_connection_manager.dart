@@ -16,7 +16,9 @@ class RouterConnectionManager {
   final connectionstatusController =
       StreamController<RouterConnectionStatus>.broadcast();
 
-  int _maxConcurrentConnections = 1000; // Default limit, can be changed
+  int _maxConcurrentConnections = 10;
+  Duration _defaultHeartbeatInterval = const Duration(seconds: 30);
+  Duration _defaultConnectionTimeout = const Duration(seconds: 5);
 
   Stream<RouterConnectionStatus> get connectionStatusStream =>
       connectionstatusController.stream;
@@ -34,8 +36,11 @@ class RouterConnectionManager {
   }
 
   void configureFromSettings(ProjectSettings settings) {
-    _maxConcurrentConnections =
-        settings.maxConcurrentCommandsPerRouter * 2; // A reasonable default
+    _maxConcurrentConnections = settings.maxConcurrentCommandsPerRouter * 2;
+    _defaultHeartbeatInterval =
+        Duration(seconds: settings.heartbeatIntervalSeconds);
+    _defaultConnectionTimeout =
+        Duration(milliseconds: settings.socketTimeoutMs);
   }
 
   Future<RouterConnection> getConnection(
@@ -68,8 +73,8 @@ class RouterConnectionManager {
       final connection = RouterConnection(
         ipAddress: ipAddress,
         port: port,
-        heartbeatInterval: heartbeatInterval ?? const Duration(seconds: 30),
-        connectionTimeout: connectionTimeout ?? const Duration(seconds: 5),
+        heartbeatInterval: heartbeatInterval ?? _defaultHeartbeatInterval,
+        connectionTimeout: connectionTimeout ?? _defaultConnectionTimeout,
       );
 
       connection.statusStream.listen((status) {

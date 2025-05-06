@@ -237,8 +237,6 @@ class ProjectSettingsScreen extends ConsumerWidget {
     );
   }
 
-// Similar methods for other settings...
-
   void _showDiscoveryTimeoutDialog(
       BuildContext context, WidgetRef ref, int currentTimeout) {
     double timeoutInSec = currentTimeout / 1000;
