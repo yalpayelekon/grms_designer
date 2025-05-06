@@ -1,45 +1,61 @@
+import 'dart:math';
+
 import '../models/canvas_item.dart';
 import '../models/link.dart';
 import 'package:flutter/material.dart';
+
+import '../utils/general_ui.dart';
 
 class LinkPainter extends CustomPainter {
   final List<Link> links;
   final List<CanvasItem> items;
   final Function(String) onLinkSelected;
+  final String? hoveredLinkId;
+  final String? selectedLinkId;
 
   LinkPainter({
     required this.links,
     required this.items,
     required this.onLinkSelected,
+    this.hoveredLinkId,
+    this.selectedLinkId,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     for (final link in links) {
-      // Find source and target items
+      // Check if link is hovered or selected
+      final isHovered = link.id == hoveredLinkId;
+      final isSelected = link.id == selectedLinkId;
+
+      // Set line style based on state
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = isHovered || isSelected ? 3 : 2;
+
+      // Set color based on state
+      if (isSelected) {
+        paint.color = Colors.orange;
+      } else if (isHovered) {
+        paint.color = Colors.lightBlue;
+      } else {
+        paint.color = Colors.blue.withOpacity(0.8);
+      }
+
       final sourceItem =
           items.firstWhere((item) => item.id == link.sourceItemId);
       final targetItem =
           items.firstWhere((item) => item.id == link.targetItemId);
 
-      // Find port positions
       final sourcePort = sourceItem.getPort(link.sourcePortId);
       final targetPort = targetItem.getPort(link.targetPortId);
 
-      // Calculate start and end points
-      final start = _getPortPosition(sourceItem, sourcePort!, false);
-      final end = _getPortPosition(targetItem, targetPort!, true);
-
-      // Draw the link with a bezier curve
-      final paint = Paint()
-        ..color = Colors.blue
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke;
+      final start = getPortPosition(sourceItem, sourcePort, false);
+      final end = getPortPosition(targetItem, targetPort, true);
 
       final path = Path();
       path.moveTo(start.dx, start.dy);
 
-      // Control points for the curve
       final controlPoint1 =
           Offset(start.dx + (end.dx - start.dx) * 0.4, start.dy);
       final controlPoint2 =
@@ -55,33 +71,56 @@ class LinkPainter extends CustomPainter {
       );
 
       canvas.drawPath(path, paint);
+
+      // Draw arrows to indicate direction for data flow links
+      if (link.type == LinkType.dataFlow) {
+        _drawArrow(canvas, path, paint.color);
+      }
     }
   }
 
-  Offset _getPortPosition(CanvasItem item, Port? port, bool isInput) {
-    if (port == null) {
-      return isInput
-          ? Offset(item.position.dx, item.position.dy + item.size.height / 2)
-          : Offset(item.position.dx + item.size.width,
-              item.position.dy + item.size.height / 2);
-    }
+  void _drawArrow(Canvas canvas, Path path, Color color) {
+    // Calculate a point near the end of the path
+    final pathMetrics = path.computeMetrics().toList();
+    if (pathMetrics.isEmpty) return;
 
-    final portList = isInput
-        ? item.ports.where((p) => p.isInput).toList()
-        : item.ports.where((p) => !p.isInput).toList();
+    final pathMetric = pathMetrics.first;
+    final arrowPosition = pathMetric.length * 0.9; // 90% along the path
 
-    final index = portList.indexWhere((p) => p.id == port.id);
-    final portCount = portList.length;
+    final tangent = pathMetric.getTangentForOffset(arrowPosition);
+    if (tangent == null) return;
 
-    final verticalSpacing = item.size.height / (portCount + 1);
-    final verticalPosition = item.position.dy + verticalSpacing * (index + 1);
+    // Draw arrowhead
+    final arrowPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
 
-    final horizontalPosition =
-        isInput ? item.position.dx : item.position.dx + item.size.width;
+    final arrowPath = Path();
+    final tipPoint = tangent.position;
+    final angle = tangent.angle;
 
-    return Offset(horizontalPosition, verticalPosition);
+    const arrowSize = 8.0;
+    final arrowLeft = Offset(
+      tipPoint.dx - arrowSize * cos(angle - pi / 6),
+      tipPoint.dy - arrowSize * sin(angle - pi / 6),
+    );
+    final arrowRight = Offset(
+      tipPoint.dx - arrowSize * cos(angle + pi / 6),
+      tipPoint.dy - arrowSize * sin(angle + pi / 6),
+    );
+
+    arrowPath.moveTo(tipPoint.dx, tipPoint.dy);
+    arrowPath.lineTo(arrowLeft.dx, arrowLeft.dy);
+    arrowPath.lineTo(arrowRight.dx, arrowRight.dy);
+    arrowPath.close();
+
+    canvas.drawPath(arrowPath, arrowPaint);
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant LinkPainter oldDelegate) =>
+      links != oldDelegate.links ||
+      items != oldDelegate.items ||
+      hoveredLinkId != oldDelegate.hoveredLinkId ||
+      selectedLinkId != oldDelegate.selectedLinkId;
 }
