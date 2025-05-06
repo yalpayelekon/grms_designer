@@ -407,14 +407,8 @@ class AppTreeView extends ConsumerWidget {
                                             onSecondaryTap: () =>
                                                 showDeviceContextMenu(
                                                     context, device),
-                                            child: _buildDraggable(
-                                              device.description.isEmpty
-                                                  ? "Device_${device.deviceId}"
-                                                  : device.description,
-                                              getDeviceIcon(device),
-                                              WidgetType.text,
-                                              context,
-                                            ),
+                                            child: _buildDeviceDraggable(
+                                                device, context),
                                           ),
                                         ),
                                       )
@@ -558,15 +552,19 @@ class AppTreeView extends ConsumerWidget {
   }
 
   Widget _buildDeviceDraggable(HelvarDevice device, BuildContext context) {
+    final deviceName = device.description.isEmpty
+        ? 'Device ${device.deviceId}'
+        : device.description;
+
+    final deviceIcon = getDeviceIcon(device);
+
     return Draggable<WidgetData>(
       data: WidgetData(
         type: WidgetType.text, // Default type
         category: ComponentCategory.treeview,
         additionalData: {
           'device': device,
-          'label': device.description.isEmpty
-              ? 'Device ${device.deviceId}'
-              : device.description,
+          'label': deviceName,
         },
       ),
       feedback: Material(
@@ -574,19 +572,32 @@ class AppTreeView extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            color: Colors.blue[100],
+            color: Colors.green[100],
             borderRadius: BorderRadius.circular(8.0),
           ),
           child: Row(
-            children: [],
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(deviceIcon),
+              const SizedBox(width: 8.0),
+              Text(deviceName),
+            ],
           ),
         ),
       ),
       childWhenDragging: Row(
-        children: [],
+        children: [
+          Icon(deviceIcon, color: Colors.grey[400]),
+          const SizedBox(width: 8.0),
+          Text(deviceName, style: TextStyle(color: Colors.grey[400])),
+        ],
       ),
       child: Row(
-        children: [],
+        children: [
+          Icon(deviceIcon),
+          const SizedBox(width: 8.0),
+          Text(deviceName),
+        ],
       ),
     );
   }

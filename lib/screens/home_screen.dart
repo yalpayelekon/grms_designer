@@ -45,7 +45,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingGroups = false;
   bool showingGroupDetail = false;
   bool showingProjectSettings = false;
-  double _leftPanelWidth = 400;
+  double _leftPanelWidth = 500;
   bool _isDragging = false;
   List<RouterConnectionStatus>? connectionStatuses;
   Map<String, dynamic>? connectionStats;

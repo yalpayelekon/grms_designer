@@ -37,158 +37,130 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   String? hoveredLinkId;
   String? selectedLinkId;
 
+  // Replace the entire build method with this
   @override
   Widget build(BuildContext context) {
-    return Listener(
-      onPointerMove: _handlePointerMove,
-      onPointerDown: _handlePointerDown,
-      child: Stack(
+    return Scaffold(
+      body: Stack(
         children: [
-          InteractiveViewer(
-            constrained: false,
-            boundaryMargin: const EdgeInsets.all(double.infinity),
-            minScale: 0.5,
-            maxScale: 2.0,
-            scaleEnabled: true,
-            onInteractionEnd: (ScaleEndDetails details) {
-              setState(() {});
+          DragTarget<WidgetData>(
+            onWillAccept: (data) {
+              print("Will accept drag: ${data?.type}");
+              return data != null;
             },
-            child: Stack(
-              children: [
-                DragTarget<Object>(
-                  onAcceptWithDetails: (details) {
-                    final data = details.data;
-                    final globalPosition = details.offset;
-                    final RenderBox box =
-                        context.findRenderObject() as RenderBox;
-                    final localPosition = box.globalToLocal(globalPosition);
+            onAcceptWithDetails: (details) {
+              print("Accepted drop: ${details.data.type}");
+              final data = details.data;
+              final offset = details.offset;
 
-                    if (data is WidgetData) {
-                      final newItem = CanvasItem(
-                        type: data.type,
-                        position: localPosition,
-                        size: const Size(150, 100),
-                        label:
-                            'New Item ${widget.wiresheet.canvasItems.length + 1}',
-                      );
+              CanvasItem newItem;
 
-                      ref.read(wiresheetsProvider.notifier).addWiresheetItem(
-                            widget.wiresheet.id,
-                            newItem,
-                          );
+              // Check if we're dragging a device component
+              if (data.category == ComponentCategory.treeview &&
+                  data.additionalData.containsKey('device')) {
+                // Create device-specific item
+                final device = data.additionalData['device'] as HelvarDevice;
+                newItem = CanvasItem.createDeviceItem(device, offset);
+              }
+              // Check if we're dragging a logic component
+              else if (data.category == ComponentCategory.logic &&
+                  data.additionalData.containsKey('logicType')) {
+                // Create logic-specific item
+                final logicType = data.additionalData['logicType'] as String;
+                newItem = CanvasItem.createLogicItem(logicType, offset);
+              }
+              // Default fallback for UI components
+              else {
+                newItem = CanvasItem(
+                  type: data.type,
+                  position: offset,
+                  size: const Size(150, 100),
+                  id: const Uuid().v4(),
+                  label: 'New ${data.type.toString().split('.').last}',
+                  category: data.category,
+                );
+              }
 
-                      setState(() {
-                        selectedItemIndex =
-                            widget.wiresheet.canvasItems.length - 1;
-                        isPanelExpanded = true;
-                      });
+              ref.read(wiresheetsProvider.notifier).addWiresheetItem(
+                    widget.wiresheet.id,
+                    newItem,
+                  );
 
-                      _updateCanvasSize();
-                    }
-                  },
-                  builder: (context, candidateData, rejectedData) {
-                    return Stack(
-                      children: [
-                        Container(
-                          width: widget.wiresheet.canvasSize.width,
-                          height: widget.wiresheet.canvasSize.height,
-                          color: Colors.grey[50],
-                          child: Center(
-                            child: Text(
-                              widget.wiresheet.canvasItems.isEmpty
-                                  ? 'Drag and drop items here'
-                                  : '',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: widget.wiresheet.canvasSize.width,
-                          height: widget.wiresheet.canvasSize.height,
-                          child: CustomPaint(
-                            painter: GridPainter(),
-                            child: Container(),
-                          ),
-                        ),
-                        ...widget.wiresheet.canvasItems
-                            .asMap()
-                            .entries
-                            .map((entry) {
-                          final index = entry.key;
-                          final item = entry.value;
-                          return Positioned(
-                            left: item.position.dx,
-                            top: item.position.dy,
-                            child: _buildDraggableCanvasItem(item, index),
-                          );
-                        }),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          if (selectedItemIndex != null)
-            Positioned(
-              right: isPanelExpanded ? 250 : 0,
-              top: 10,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    isPanelExpanded = !isPanelExpanded;
-                  });
+              setState(() {
+                selectedItemIndex = widget.wiresheet.canvasItems.length - 1;
+                isPanelExpanded = true;
+              });
+            },
+            builder: (context, candidateData, rejectedData) {
+              return InteractiveViewer(
+                constrained: false,
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                minScale: 0.5,
+                maxScale: 2.0,
+                scaleEnabled: true,
+                onInteractionEnd: (ScaleEndDetails details) {
+                  setState(() {});
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(8.0),
-                      bottomLeft: Radius.circular(8.0),
-                    ),
-                  ),
-                  child: Icon(
-                    isPanelExpanded ? Icons.arrow_forward : Icons.arrow_back,
-                    color: Colors.white,
+                  width: widget.wiresheet.canvasSize.width,
+                  height: widget.wiresheet.canvasSize.height,
+                  color: Colors.grey[50],
+                  child: Stack(
+                    children: [
+                      // Grid
+                      CustomPaint(
+                        size: Size(widget.wiresheet.canvasSize.width,
+                            widget.wiresheet.canvasSize.height),
+                        painter: GridPainter(),
+                      ),
+
+                      // Canvas items
+                      ...widget.wiresheet.canvasItems
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                        final index = entry.key;
+                        final item = entry.value;
+                        return Positioned(
+                          left: item.position.dx,
+                          top: item.position.dy,
+                          child: _buildDraggableCanvasItem(item, index),
+                        );
+                      }),
+
+                      // Links
+                      CustomPaint(
+                        size: Size(widget.wiresheet.canvasSize.width,
+                            widget.wiresheet.canvasSize.height),
+                        painter: LinkPainter(
+                          links: widget.wiresheet.links,
+                          items: widget.wiresheet.canvasItems,
+                          onLinkSelected: _handleLinkSelected,
+                        ),
+                      ),
+
+                      // Dragging link visualization
+                      if (isDraggingLink &&
+                          selectedSourceItemId != null &&
+                          linkDragEndPoint != null)
+                        CustomPaint(
+                          size: Size(widget.wiresheet.canvasSize.width,
+                              widget.wiresheet.canvasSize.height),
+                          painter: DraggingLinkPainter(
+                            startItem: widget.wiresheet.canvasItems.firstWhere(
+                                (item) => item.id == selectedSourceItemId),
+                            startPortId: selectedSourcePortId!,
+                            endPoint: linkDragEndPoint!,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-          CustomPaint(
-            size: Size(widget.wiresheet.canvasSize.width,
-                widget.wiresheet.canvasSize.height),
-            painter: LinkPainter(
-              links: widget.wiresheet.links,
-              items: widget.wiresheet.canvasItems,
-              onLinkSelected: _handleLinkSelected,
-            ),
+              );
+            },
           ),
-          ...widget.wiresheet.canvasItems.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            return Positioned(
-              left: item.position.dx,
-              top: item.position.dy,
-              child: _buildCanvasItemWithPorts(item, index),
-            );
-          }),
-          if (isDraggingLink &&
-              selectedSourceItemId != null &&
-              linkDragEndPoint != null)
-            CustomPaint(
-              size: Size(widget.wiresheet.canvasSize.width,
-                  widget.wiresheet.canvasSize.height),
-              painter: DraggingLinkPainter(
-                startItem: widget.wiresheet.canvasItems
-                    .firstWhere((item) => item.id == selectedSourceItemId),
-                startPortId: selectedSourcePortId!,
-                endPoint: linkDragEndPoint!,
-              ),
-            ),
+
+          // Properties panel
           if (selectedItemIndex != null && isPanelExpanded)
             _buildPropertiesPanel(),
         ],
@@ -283,177 +255,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         });
       }
     }
-  }
-
-  void _handleItemDrop(Object data, Offset position) {
-    if (data is WidgetData) {
-      CanvasItem newItem;
-
-      switch (data.category) {
-        case ComponentCategory.logic:
-          final logicType =
-              data.additionalData['logicType'] as String? ?? 'AND';
-          newItem = CanvasItem.createLogicItem(logicType, position);
-          break;
-
-        case ComponentCategory.treeview:
-          if (data.additionalData.containsKey('device')) {
-            final device = data.additionalData['device'] as HelvarDevice;
-            newItem = CanvasItem.createDeviceItem(device, position);
-          } else {
-            newItem = CanvasItem(
-              type: data.type,
-              position: position,
-              size: const Size(150, 100),
-              id: const Uuid().v4(),
-              label: data.additionalData['label'] as String? ?? 'Treeview Item',
-              category: ComponentCategory.treeview,
-              ports: [],
-            );
-          }
-          break;
-
-        case ComponentCategory.ui:
-        default:
-          newItem = CanvasItem(
-            type: data.type,
-            position: position,
-            size: const Size(150, 100),
-            id: const Uuid().v4(),
-            label: 'New ${data.type.toString().split('.').last}',
-            category: ComponentCategory.ui,
-            ports: _createPortsForUiComponent(data.type),
-          );
-      }
-
-      ref.read(wiresheetsProvider.notifier).addWiresheetItem(
-            widget.wiresheet.id,
-            newItem,
-          );
-
-      setState(() {
-        selectedItemIndex = widget.wiresheet.canvasItems.length - 1;
-        isPanelExpanded = true;
-      });
-
-      _updateCanvasSize();
-    }
-  }
-
-  List<Port> _createPortsForUiComponent(WidgetType type) {
-    final ports = <Port>[];
-
-    switch (type) {
-      case WidgetType.button:
-        ports.add(Port(
-          id: 'onClick',
-          type: PortType.boolean,
-          name: 'On Click',
-          isInput: false,
-        ));
-        ports.add(Port(
-          id: 'enabled',
-          type: PortType.boolean,
-          name: 'Enabled',
-          isInput: true,
-        ));
-        break;
-
-      case WidgetType.image:
-        ports.add(Port(
-          id: 'source',
-          type: PortType.string,
-          name: 'Source',
-          isInput: true,
-        ));
-        ports.add(Port(
-          id: 'loaded',
-          type: PortType.boolean,
-          name: 'Loaded',
-          isInput: false,
-        ));
-        break;
-
-      case WidgetType.text:
-      default:
-        ports.add(Port(
-          id: 'content',
-          type: PortType.string,
-          name: 'Content',
-          isInput: true,
-        ));
-    }
-
-    return ports;
-  }
-
-  CanvasItem _createCanvasItemFromWidgetData(WidgetData data, Offset position) {
-    // Generate a unique ID
-    final id = const Uuid().v4();
-
-    // Default size for items
-    final size = const Size(150, 100);
-
-    // Determine the component category based on dragging source context
-    // (we could add a parameter to this method if needed)
-    ComponentCategory category = ComponentCategory.ui;
-
-    // Create appropriate ports based on widget type
-    final ports = <Port>[];
-
-    switch (data.type) {
-      case WidgetType.button:
-        // Add appropriate ports for a button
-        ports.add(Port(
-          id: 'text',
-          type: PortType.string,
-          name: 'Text',
-          isInput: true,
-        ));
-        ports.add(Port(
-          id: 'clicked',
-          type: PortType.boolean,
-          name: 'Clicked',
-          isInput: false,
-        ));
-        break;
-
-      case WidgetType.image:
-        // Add appropriate ports for an image
-        ports.add(Port(
-          id: 'source',
-          type: PortType.string,
-          name: 'Source',
-          isInput: true,
-        ));
-        ports.add(Port(
-          id: 'loaded',
-          type: PortType.boolean,
-          name: 'Loaded',
-          isInput: false,
-        ));
-        break;
-
-      case WidgetType.text:
-      default:
-        // Add appropriate ports for text
-        ports.add(Port(
-          id: 'content',
-          type: PortType.string,
-          name: 'Content',
-          isInput: true,
-        ));
-    }
-
-    return CanvasItem(
-      type: data.type,
-      position: position,
-      size: size,
-      id: id,
-      label: 'New ${data.type.toString().split('.').last}',
-      ports: ports,
-      category: category,
-    );
   }
 
   Widget _buildCanvasItemWithPorts(CanvasItem item, int index) {
