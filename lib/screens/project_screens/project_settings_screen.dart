@@ -116,9 +116,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          ), // Add these settings to your ProjectSettingsScreen
-// Inside the build method, add these widgets to your ListView
-
+          ),
           Card(
             margin: const EdgeInsets.only(bottom: 16.0),
             child: Padding(

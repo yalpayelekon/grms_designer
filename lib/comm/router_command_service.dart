@@ -137,7 +137,6 @@ class RouterCommandService {
           continue;
         }
 
-        // If we got here, we have a successful response
         queuedCommand.status = CommandStatus.completed;
         queuedCommand.completedAt = DateTime.now();
         queuedCommand.response = response;

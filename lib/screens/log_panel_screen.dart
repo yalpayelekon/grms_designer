@@ -31,7 +31,6 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
   Widget build(BuildContext context) {
     List<LogEntry> logs = ref.watch(logServiceProvider);
 
-    // Apply filters
     if (_selectedLevel != null) {
       logs = logs.where((log) => log.level == _selectedLevel).toList();
     }
@@ -145,7 +144,6 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
     );
   }
 
-  // Add this to your LogPanelScreen class
   Future<void> _exportLogs() async {
     try {
       final logs = ref.read(logServiceProvider);
@@ -193,7 +191,6 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
   }
 
   Widget _buildLogList(List<LogEntry> logs) {
-    // If auto-scroll is enabled, scroll to the bottom when new logs arrive
     if (_autoScroll && logs.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();

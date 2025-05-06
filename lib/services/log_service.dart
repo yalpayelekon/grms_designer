@@ -50,8 +50,7 @@ class LogEntry {
 class LogService extends StateNotifier<List<LogEntry>> {
   LogService() : super([]);
 
-  static const int _maxLogEntries =
-      1000; // Limit log entries to prevent memory issues
+  static const int _maxLogEntries = 1000;
 
   void log(
     String message, {
@@ -66,8 +65,6 @@ class LogService extends StateNotifier<List<LogEntry>> {
       tag: tag,
       stackTrace: stackTrace,
     );
-
-    // Output to console as well for development purposes
     if (kDebugMode) {
       switch (level) {
         case LogLevel.error:
@@ -85,8 +82,6 @@ class LogService extends StateNotifier<List<LogEntry>> {
     }
 
     state = [entry, ...state];
-
-    // Limit number of log entries to prevent memory issues
     if (state.length > _maxLogEntries) {
       state = state.sublist(0, _maxLogEntries);
     }
@@ -116,17 +111,14 @@ class LogService extends StateNotifier<List<LogEntry>> {
     state = [];
   }
 
-  // Filter logs by level
   List<LogEntry> getLogsByLevel(LogLevel level) {
     return state.where((entry) => entry.level == level).toList();
   }
 
-  // Filter logs by tag
   List<LogEntry> getLogsByTag(String tag) {
     return state.where((entry) => entry.tag == tag).toList();
   }
 
-  // Search logs
   List<LogEntry> searchLogs(String query) {
     final lowercaseQuery = query.toLowerCase();
     return state
@@ -137,7 +129,6 @@ class LogService extends StateNotifier<List<LogEntry>> {
   }
 }
 
-// Create a provider for the log service
 final logServiceProvider =
     StateNotifierProvider<LogService, List<LogEntry>>((ref) {
   return LogService();

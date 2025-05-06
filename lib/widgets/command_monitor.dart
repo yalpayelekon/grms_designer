@@ -33,8 +33,6 @@ class CommandMonitor extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-
-            // Command history list
             if (commandHistory.isEmpty)
               const Center(
                 child: Padding(

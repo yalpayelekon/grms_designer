@@ -425,7 +425,6 @@ class DiscoveryService {
     return result;
   }
 
-// Add a new method that uses the RouterCommandService
   Future<String?> sendPersistentCommand(
       String routerIp, String routerId, String command) async {
     final commandService = RouterCommandService();
