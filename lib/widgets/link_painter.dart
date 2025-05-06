@@ -24,16 +24,13 @@ class LinkPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (final link in links) {
-      // Check if link is hovered or selected
       final isHovered = link.id == hoveredLinkId;
       final isSelected = link.id == selectedLinkId;
 
-      // Set line style based on state
       final paint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = isHovered || isSelected ? 3 : 2;
 
-      // Set color based on state
       if (isSelected) {
         paint.color = Colors.orange;
       } else if (isHovered) {
@@ -72,7 +69,6 @@ class LinkPainter extends CustomPainter {
 
       canvas.drawPath(path, paint);
 
-      // Draw arrows to indicate direction for data flow links
       if (link.type == LinkType.dataFlow) {
         _drawArrow(canvas, path, paint.color);
       }
@@ -80,7 +76,6 @@ class LinkPainter extends CustomPainter {
   }
 
   void _drawArrow(Canvas canvas, Path path, Color color) {
-    // Calculate a point near the end of the path
     final pathMetrics = path.computeMetrics().toList();
     if (pathMetrics.isEmpty) return;
 
@@ -90,7 +85,6 @@ class LinkPainter extends CustomPainter {
     final tangent = pathMetric.getTangentForOffset(arrowPosition);
     if (tangent == null) return;
 
-    // Draw arrowhead
     final arrowPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;

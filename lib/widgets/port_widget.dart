@@ -4,14 +4,12 @@ import '../models/link.dart';
 
 class PortWidget extends StatelessWidget {
   final Port port;
-  final bool isInput;
   final VoidCallback onTap;
   final bool isConnected;
 
   const PortWidget({
     super.key,
     required this.port,
-    required this.isInput,
     required this.onTap,
     this.isConnected = false,
   });

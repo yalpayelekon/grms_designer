@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:uuid/uuid.dart';
 import 'helvar_models/helvar_device.dart';
 import 'link.dart';
 import 'widget_type.dart';
 
-class CanvasItem extends TreeNode {
+class CanvasItem {
   final WidgetType type;
   Offset position;
   Size size;
@@ -13,19 +12,19 @@ class CanvasItem extends TreeNode {
   String? id;
   String? label;
   List<Port> ports;
-  ComponentCategory category;
+  ComponentCategory? category;
   CanvasItem({
     required this.type,
     required this.position,
     required this.size,
     this.id,
+    this.category,
     List<Port>? ports,
-    this.category = ComponentCategory.ui,
     this.label,
     Map<String, dynamic>? properties,
   })  : properties = properties ?? {},
         ports = ports ?? [],
-        super(content: Text(label ?? "Item"));
+        super();
 
   void addPort(Port port) {
     ports.add(port);
@@ -62,10 +61,6 @@ class CanvasItem extends TreeNode {
       label: json['label'] as String?,
       properties: json['properties'] as Map<String, dynamic>? ?? {},
       ports: portsList,
-      category: ComponentCategory.values.firstWhere(
-        (e) => e.toString() == 'ComponentCategory.${json['category']}',
-        orElse: () => ComponentCategory.ui,
-      ),
     );
   }
 
@@ -159,7 +154,26 @@ class CanvasItem extends TreeNode {
           isInput: false,
         ));
         break;
+    }
 
+    return CanvasItem(
+      type: WidgetType.treenode,
+      position: position,
+      size: size,
+      id: id,
+      label: type,
+      ports: ports,
+      category: ComponentCategory.logic,
+      properties: {'logic_type': type},
+    );
+  }
+
+  static CanvasItem createMathItem(String type, Offset position) {
+    final id = const Uuid().v4();
+    const size = Size(120, 80);
+    final ports = <Port>[];
+
+    switch (type) {
       case 'ADD':
         ports.add(Port(
           id: 'in1',
@@ -204,14 +218,14 @@ class CanvasItem extends TreeNode {
     }
 
     return CanvasItem(
-      type: WidgetType.text,
+      type: WidgetType.treenode,
       position: position,
       size: size,
       id: id,
       label: type,
       ports: ports,
-      category: ComponentCategory.logic,
-      properties: {'logic_type': type},
+      category: ComponentCategory.math,
+      properties: {'operation': type},
     );
   }
 
@@ -252,7 +266,6 @@ class CanvasItem extends TreeNode {
       ));
 
       if (device.isButtonDevice) {
-        // For each button, add a button state port
         for (int i = 1; i <= 7; i++) {
           ports.add(Port(
             id: 'button$i',
@@ -263,7 +276,6 @@ class CanvasItem extends TreeNode {
         }
       }
 
-      // If it's a multisensor
       if (device.isMultisensor) {
         ports.add(Port(
           id: 'presence',
@@ -303,7 +315,7 @@ class CanvasItem extends TreeNode {
     }
 
     return CanvasItem(
-      type: WidgetType.text,
+      type: WidgetType.treenode,
       position: position,
       size: size,
       id: id,
@@ -311,7 +323,6 @@ class CanvasItem extends TreeNode {
           ? 'Device ${device.deviceId}'
           : device.description,
       ports: ports,
-      category: ComponentCategory.treeview,
       properties: {
         'device_id': device.deviceId,
         'device_address': device.address,
@@ -340,7 +351,7 @@ class CanvasItem extends TreeNode {
 }
 
 enum ComponentCategory {
-  ui,
-  treeview,
   logic,
+  math,
+  point,
 }

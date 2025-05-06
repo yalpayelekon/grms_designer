@@ -21,26 +21,16 @@ class DraggingLinkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final port = startItem.getPort(startPortId);
-
-    // Using a similar method to calculate the start point as in LinkPainter
     final portList = startItem.ports.where((p) => !p.isInput).toList();
     final index = portList.indexWhere((p) => p.id == startPortId);
     final portCount = portList.length;
-
-    // Calculate vertical position
     final verticalSpacing = startItem.size.height / (portCount + 1);
     final verticalPosition =
         startItem.position.dy + verticalSpacing * (index + 1);
-
-    // The start point is on the right side of the item
     final startPoint =
         Offset(startItem.position.dx + startItem.size.width, verticalPosition);
-
-    // Draw a curved line
     final path = Path();
     path.moveTo(startPoint.dx, startPoint.dy);
-
-    // Control points for the curve
     final controlPoint1 = Offset(
         startPoint.dx + (endPoint.dx - startPoint.dx) * 0.4, startPoint.dy);
     final controlPoint2 = Offset(
@@ -56,8 +46,6 @@ class DraggingLinkPainter extends CustomPainter {
     );
 
     canvas.drawPath(path, paint);
-
-    // Draw a small circle at the end point to indicate the dragging end
     final dotPaint = Paint()
       ..color = Colors.blue
       ..style = PaintingStyle.fill;

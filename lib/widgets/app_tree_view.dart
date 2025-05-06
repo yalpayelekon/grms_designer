@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 
 import '../models/canvas_item.dart';
-import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../models/widget_type.dart';
@@ -407,8 +407,16 @@ class AppTreeView extends ConsumerWidget {
                                             onSecondaryTap: () =>
                                                 showDeviceContextMenu(
                                                     context, device),
-                                            child: _buildDeviceDraggable(
-                                                device, context),
+                                            child: _buildDraggable(
+                                              device.description.isEmpty
+                                                  ? "Device_${device.deviceId}"
+                                                  : device.description,
+                                              getDeviceIcon(device),
+                                              WidgetType.treenode,
+                                              device,
+                                              null,
+                                              context,
+                                            ),
                                           ),
                                         ),
                                       )
@@ -458,13 +466,28 @@ class AppTreeView extends ConsumerWidget {
           children: [
             TreeNode(
                 content: _buildDraggable(
-                    "IF", Icons.compare_arrows, WidgetType.text, context)),
+                    "IF",
+                    Icons.compare_arrows,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.logic,
+                    context)),
             TreeNode(
                 content: _buildDraggable(
-                    "AND", Icons.add_link, WidgetType.text, context)),
+                    "AND",
+                    Icons.add_link,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.logic,
+                    context)),
             TreeNode(
                 content: _buildDraggable(
-                    "OR", Icons.call_split, WidgetType.text, context)),
+                    "OR",
+                    Icons.call_split,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.logic,
+                    context)),
           ],
         ),
         TreeNode(
@@ -477,11 +500,16 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable(
-                    "ADD", Icons.add, WidgetType.text, context)),
+                content: _buildDraggable("ADD", Icons.add, WidgetType.treenode,
+                    null, ComponentCategory.math, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "SUBTRACT", Icons.remove, WidgetType.text, context)),
+                    "SUBTRACT",
+                    Icons.remove,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.math,
+                    context)),
           ],
         ),
         TreeNode(
@@ -494,37 +522,66 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable("BooleanPoint", Icons.toggle_off,
-                    WidgetType.text, context)),
-            TreeNode(
-                content: _buildDraggable("BooleanWritable", Icons.toggle_on,
-                    WidgetType.text, context)),
-            TreeNode(
-                content: _buildDraggable("StringPoint", Icons.text_fields,
-                    WidgetType.text, context)),
-            TreeNode(
-                content: _buildDraggable("StringWritable", Icons.edit_note,
-                    WidgetType.text, context)),
+                content: _buildDraggable(
+                    "BooleanPoint",
+                    Icons.toggle_off,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.point,
+                    context)),
             TreeNode(
                 content: _buildDraggable(
-                    "NumericPoint", Icons.numbers, WidgetType.text, context)),
+                    "BooleanWritable",
+                    Icons.toggle_on,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.point,
+                    context)),
             TreeNode(
                 content: _buildDraggable(
-                    "NumericWritable", Icons.edit, WidgetType.text, context)),
+                    "StringPoint",
+                    Icons.text_fields,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.point,
+                    context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "StringWritable",
+                    Icons.edit_note,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.point,
+                    context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "NumericPoint",
+                    Icons.numbers,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.point,
+                    context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "NumericWritable",
+                    Icons.edit,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.point,
+                    context)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildDraggable(
-      String label, IconData icon, WidgetType type, BuildContext context) {
+  Widget _buildDraggable(String label, IconData icon, WidgetType type,
+      HelvarDevice? device, ComponentCategory? category, BuildContext context) {
     return Draggable<WidgetData>(
       data: WidgetData(
-        type: type,
-        category: ComponentCategory.logic,
-        additionalData: {'logicType': label},
-      ),
+          category: category,
+          type: type,
+          additionalData: {"label": label, "icon": icon, "device": device}),
       feedback: Material(
         elevation: 4.0,
         child: Container(
@@ -547,57 +604,6 @@ class AppTreeView extends ConsumerWidget {
       ),
       child: Row(
         children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
-      ),
-    );
-  }
-
-  Widget _buildDeviceDraggable(HelvarDevice device, BuildContext context) {
-    final deviceName = device.description.isEmpty
-        ? 'Device ${device.deviceId}'
-        : device.description;
-
-    final deviceIcon = getDeviceIcon(device);
-
-    return Draggable<WidgetData>(
-      data: WidgetData(
-        type: WidgetType.text, // Default type
-        category: ComponentCategory.treeview,
-        additionalData: {
-          'device': device,
-          'label': deviceName,
-        },
-      ),
-      feedback: Material(
-        elevation: 4.0,
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.green[100],
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(deviceIcon),
-              const SizedBox(width: 8.0),
-              Text(deviceName),
-            ],
-          ),
-        ),
-      ),
-      childWhenDragging: Row(
-        children: [
-          Icon(deviceIcon, color: Colors.grey[400]),
-          const SizedBox(width: 8.0),
-          Text(deviceName, style: TextStyle(color: Colors.grey[400])),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(deviceIcon),
-          const SizedBox(width: 8.0),
-          Text(deviceName),
-        ],
       ),
     );
   }
