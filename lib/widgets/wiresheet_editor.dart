@@ -37,17 +37,12 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   String? hoveredLinkId;
   String? selectedLinkId;
 
-  // Replace the entire build method with this
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           DragTarget<WidgetData>(
-            onWillAccept: (data) {
-              print("Will accept drag: ${data?.type}");
-              return data != null;
-            },
             onAcceptWithDetails: (details) {
               print("Accepted drop: ${details.data.type}");
               final data = details.data;
@@ -55,22 +50,15 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
               CanvasItem newItem;
 
-              // Check if we're dragging a device component
               if (data.category == ComponentCategory.treeview &&
                   data.additionalData.containsKey('device')) {
-                // Create device-specific item
                 final device = data.additionalData['device'] as HelvarDevice;
                 newItem = CanvasItem.createDeviceItem(device, offset);
-              }
-              // Check if we're dragging a logic component
-              else if (data.category == ComponentCategory.logic &&
+              } else if (data.category == ComponentCategory.logic &&
                   data.additionalData.containsKey('logicType')) {
-                // Create logic-specific item
                 final logicType = data.additionalData['logicType'] as String;
                 newItem = CanvasItem.createLogicItem(logicType, offset);
-              }
-              // Default fallback for UI components
-              else {
+              } else {
                 newItem = CanvasItem(
                   type: data.type,
                   position: offset,
@@ -107,14 +95,11 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                   color: Colors.grey[50],
                   child: Stack(
                     children: [
-                      // Grid
                       CustomPaint(
                         size: Size(widget.wiresheet.canvasSize.width,
                             widget.wiresheet.canvasSize.height),
                         painter: GridPainter(),
                       ),
-
-                      // Canvas items
                       ...widget.wiresheet.canvasItems
                           .asMap()
                           .entries
@@ -127,8 +112,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                           child: _buildDraggableCanvasItem(item, index),
                         );
                       }),
-
-                      // Links
                       CustomPaint(
                         size: Size(widget.wiresheet.canvasSize.width,
                             widget.wiresheet.canvasSize.height),
@@ -138,8 +121,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                           onLinkSelected: _handleLinkSelected,
                         ),
                       ),
-
-                      // Dragging link visualization
                       if (isDraggingLink &&
                           selectedSourceItemId != null &&
                           linkDragEndPoint != null)
@@ -159,8 +140,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
               );
             },
           ),
-
-          // Properties panel
           if (selectedItemIndex != null && isPanelExpanded)
             _buildPropertiesPanel(),
         ],
@@ -554,13 +533,11 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
-    // Determine an icon based on the item type and category
     IconData itemIcon;
     Color itemColor;
 
     switch (item.category) {
       case ComponentCategory.logic:
-        // Choose icon based on logic type
         if (item.properties.containsKey('logic_type')) {
           final logicType = item.properties['logic_type'] as String;
           switch (logicType) {
@@ -678,6 +655,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         ),
       ),
       onDragEnd: (details) {
+        print("dragging with these: $details");
         if (details.wasAccepted) {
           final RenderBox box = context.findRenderObject() as RenderBox;
           final localOffset = box.globalToLocal(details.offset);
@@ -694,6 +672,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
       },
       child: GestureDetector(
         onTap: () {
+          print("child $selectedItemIndex onTapped!");
           setState(() {
             selectedItemIndex = index;
             isPanelExpanded = true;
