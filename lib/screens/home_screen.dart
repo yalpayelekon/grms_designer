@@ -4,7 +4,6 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import '../comm/discovery_manager.dart';
 import '../comm/models/router_connection_status.dart';
-import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
@@ -12,9 +11,11 @@ import '../providers/router_connection_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/app_directory_service.dart';
 import '../screens/dialogs/network_interface_dialog.dart';
+import '../utils/general_ui.dart';
 import 'actions.dart';
-import 'dialogs/home_screen_dialogs.dart';
+import 'dialogs/device_context_menu.dart';
 import 'details/group_detail_screen.dart';
+import 'dialogs/wiresheet_actions.dart';
 import 'lists/groups_list_screen.dart';
 import 'project_screens/settings_screen.dart';
 import 'details/workgroup_detail_screen.dart';
@@ -214,7 +215,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                       icon: const Icon(Icons.add, size: 18),
                                       tooltip: 'Create New Wiresheet',
                                       onPressed: () =>
-                                          _createNewWiresheet(context),
+                                          createNewWiresheet(context, ref),
                                     ),
                                   ],
                                 ),
@@ -252,12 +253,29 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                 icon: const Icon(Icons.delete,
                                                     size: 18),
                                                 tooltip: 'Delete Wiresheet',
-                                                onPressed: () =>
-                                                    _confirmDeleteWiresheet(
-                                                  context,
-                                                  wiresheet.id,
-                                                  wiresheet.name,
-                                                ),
+                                                onPressed: () async {
+                                                  final result =
+                                                      await confirmDeleteWiresheet(
+                                                          context,
+                                                          wiresheet.id,
+                                                          wiresheet.name,
+                                                          ref);
+                                                  setState(() {
+                                                    if (result) {
+                                                      selectedWiresheetId =
+                                                          null;
+                                                    }
+                                                  });
+                                                  if (result && mounted) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      const SnackBar(
+                                                          content: Text(
+                                                              'Wiresheet deleted')),
+                                                    );
+                                                  }
+                                                },
                                               ),
                                             ],
                                           ),
@@ -461,7 +479,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                   (device) => TreeNode(
                                                     content: GestureDetector(
                                                       onSecondaryTap: () =>
-                                                          _showDeviceContextMenu(
+                                                          showDeviceContextMenu(
                                                               context, device),
                                                       child: _buildDraggable(
                                                         device.description
@@ -469,7 +487,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                             ? "Device_${device.deviceId}"
                                                             : device
                                                                 .description,
-                                                        _getDeviceIcon(device),
+                                                        getDeviceIcon(device),
                                                         WidgetType.text,
                                                       ),
                                                     ),
@@ -523,20 +541,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  IconData _getDeviceIcon(HelvarDevice device) {
-    if (device.isButtonDevice) {
-      return Icons.touch_app;
-    } else if (device.isMultisensor) {
-      return Icons.sensors;
-    } else if (device.helvarType == 'emergency') {
-      return Icons.emergency;
-    } else if (device.helvarType == 'output') {
-      return Icons.lightbulb;
-    } else {
-      return Icons.device_unknown;
-    }
-  }
-
   Widget _buildMainContent() {
     if (showingGroups) {
       return GroupsListScreen(
@@ -576,94 +580,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       data: (latestStatus) {
         return _buildConnectionMonitor();
       },
-      loading: () => const Center(
-        child: Text("Click on routers to start connection"),
-      ),
+      loading: () => Center(
+          child: Column(
+        children: [
+          const Text("Click on routers to start connection"),
+          _buildConnectionMonitor(),
+        ],
+      )),
       error: (e, st) => Text('Error: $e'),
     );
-  }
-
-  void _createNewWiresheet(BuildContext context) {
-    final nameController = TextEditingController(text: 'New Wiresheet');
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New Wiresheet'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Wiresheet Name',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final name = nameController.text.trim();
-              if (name.isNotEmpty) {
-                final wiresheet = await ref
-                    .read(wiresheetsProvider.notifier)
-                    .createWiresheet(name);
-                Navigator.of(context).pop();
-
-                setState(() {
-                  showingProject = false;
-                  openWorkGroup = false;
-                  openWiresheet = true;
-                  selectedWiresheetId = wiresheet.id;
-                });
-              }
-            },
-            child: const Text('Create'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _confirmDeleteWiresheet(
-      BuildContext context, String wiresheetId, String name) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Wiresheet'),
-        content: Text('Are you sure you want to delete "$name"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      await ref.read(wiresheetsProvider.notifier).deleteWiresheet(wiresheetId);
-      if (selectedWiresheetId == wiresheetId) {
-        setState(() {
-          selectedWiresheetId = null;
-          openWiresheet = false;
-          showingProject = true;
-        });
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Wiresheet deleted')),
-        );
-      }
-    }
   }
 
   Widget _buildConnectionMonitor() {
@@ -692,11 +617,22 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                _discoverAndConnectRouters(context);
-              },
-              child: const Text('Connect to all routers'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _connectToExistingRouters(context);
+                  },
+                  child: const Text('Connect to Existing Routers'),
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    _discoverAndConnectRouters(context);
+                  },
+                  child: const Text('Discover New Routers'),
+                ),
+              ],
             ),
             if (connectionStatuses!.isEmpty)
               const Center(
@@ -715,6 +651,170 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _connectToExistingRouters(BuildContext context) async {
+    final workgroups = ref.read(workgroupsProvider);
+
+    final List<Map<String, dynamic>> routersInfo = [];
+    for (final workgroup in workgroups) {
+      for (final router in workgroup.routers) {
+        routersInfo.add({
+          'workgroup': workgroup.description,
+          'router': router,
+          'workgroupId': workgroup.id,
+        });
+      }
+    }
+
+    if (routersInfo.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No routers found in workgroups')),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      final selectedRouters = await showDialog<List<int>>(
+        context: context,
+        builder: (context) => _buildRouterSelectionDialog(routersInfo),
+      );
+
+      if (selectedRouters == null || selectedRouters.isEmpty) {
+        return;
+      }
+
+      final connectionManager = ref.read(routerConnectionManagerProvider);
+      final settings = ref.read(projectSettingsProvider);
+      int connectedCount = 0;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Connecting to routers...'),
+            ],
+          ),
+        ),
+      );
+
+      // Connect to selected routers
+      for (final index in selectedRouters) {
+        try {
+          final routerInfo = routersInfo[index];
+          final router = routerInfo['router'] as HelvarRouter;
+
+          if (router.ipAddress.isNotEmpty) {
+            await connectionManager.getConnection(
+              router.ipAddress,
+              heartbeatInterval:
+                  Duration(seconds: settings.heartbeatIntervalSeconds),
+              connectionTimeout:
+                  Duration(milliseconds: settings.socketTimeoutMs),
+            );
+            connectedCount++;
+          }
+        } catch (e) {
+          debugPrint('Error connecting to router: $e');
+        }
+      }
+
+      // Close progress dialog and show result
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Connected to $connectedCount routers')),
+        );
+      }
+    }
+  }
+
+  Widget _buildRouterSelectionDialog(List<Map<String, dynamic>> routersInfo) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        Set<int> selectedIndices = <int>{};
+
+        return AlertDialog(
+          title: const Text('Connect to Routers'),
+          content: SizedBox(
+            width: 400,
+            height: 300,
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: routersInfo.length,
+                    itemBuilder: (context, index) {
+                      final routerInfo = routersInfo[index];
+                      final router = routerInfo['router'] as HelvarRouter;
+
+                      return CheckboxListTile(
+                        title: Text(router.description +
+                            index.toString() +
+                            selectedIndices.toString()),
+                        subtitle: Text(
+                            '${routerInfo['workgroup']} - ${router.ipAddress}'),
+                        value: selectedIndices.contains(index),
+                        onChanged: (selected) {
+                          setState(() {
+                            if (selected == true) {
+                              selectedIndices.add(index);
+                            } else {
+                              selectedIndices.remove(index);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          if (selectedIndices.length == routersInfo.length) {
+                            selectedIndices.clear();
+                          } else {
+                            selectedIndices.clear();
+                            selectedIndices.addAll(
+                                List.generate(routersInfo.length, (i) => i));
+                          }
+                        });
+                      },
+                      child: Text(
+                        selectedIndices.length == routersInfo.length
+                            ? 'Deselect All'
+                            : 'Select All',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(selectedIndices.toList()),
+              child: const Text('Connect'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -893,76 +993,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showDeviceContextMenu(BuildContext context, HelvarDevice device) {
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay =
-        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
-
-    final buttonBottomCenter = button.localToGlobal(
-      Offset(300, button.size.height / 3),
-      ancestor: overlay,
-    );
-
-    final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromPoints(
-          buttonBottomCenter, buttonBottomCenter + const Offset(1, 1)),
-      Offset.zero & overlay.size,
-    );
-
-    final List<PopupMenuEntry<String>> menuItems = [];
-
-    menuItems.add(
-      const PopupMenuItem(
-        value: 'clear_result',
-        child: Text('Clear Result'),
-      ),
-    );
-
-    if (device.helvarType == 'output') {
-      menuItems.addAll([
-        const PopupMenuItem(
-          value: 'recall_scene',
-          child: Text('Recall Scene'),
-        ),
-        const PopupMenuItem(
-          value: 'direct_level',
-          child: Text('Direct Level'),
-        ),
-        const PopupMenuItem(
-          value: 'direct_proportion',
-          child: Text('Direct Proportion'),
-        ),
-        const PopupMenuItem(
-          value: 'modify_proportion',
-          child: Text('Modify Proportion'),
-        ),
-      ]);
-    }
-
-    showMenu<String>(context: context, position: position, items: menuItems)
-        .then((String? value) {
-      if (value == null) return;
-
-      switch (value) {
-        case 'clear_result':
-          _clearDeviceResult(context, device);
-          break;
-        case 'recall_scene':
-          showDeviceRecallSceneDialog(context, device);
-          break;
-        case 'direct_level':
-          showDeviceDirectLevelDialog(context, device);
-          break;
-        case 'direct_proportion':
-          showDeviceDirectProportionDialog(context, device);
-          break;
-        case 'modify_proportion':
-          showDeviceModifyProportionDialog(context, device);
-          break;
-      }
-    });
-  }
-
   Widget _buildStatCard(BuildContext context, String label, int value,
       [Color? color]) {
     return Card(
@@ -1019,33 +1049,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       subtitle: Text(
         status.errorMessage != null
             ? 'Error: ${status.errorMessage}'
-            : 'Last change: ${_formatDateTime(status.lastStateChange)}',
+            : 'Last change: ${formatDateTime(status.lastStateChange)}',
       ),
       trailing: status.reconnectAttempts > 0
           ? Chip(label: Text('Retry: ${status.reconnectAttempts}'))
           : null,
-    );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${difference.inDays}d ago';
-    }
-  }
-
-  void _clearDeviceResult(BuildContext context, HelvarDevice device) {
-    device.clearResult();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Cleared result for device ${device.deviceId}')),
     );
   }
 
