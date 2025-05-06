@@ -23,7 +23,6 @@ import 'project_screens/wiresheet_screen.dart';
 import '../models/widget_type.dart';
 import '../providers/workgroups_provider.dart';
 import '../providers/wiresheets_provider.dart';
-import '../utils/file_dialog_helper.dart';
 import 'project_screens/project_settings_screen.dart';
 import 'project_screens/project_files_screen.dart';
 
@@ -71,14 +70,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.upload_file),
-            tooltip: 'Export Workgroups',
-            onPressed: () => _exportWorkgroups(context),
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.download_rounded),
-            tooltip: 'Import Workgroups',
-            onPressed: () => _importWorkgroups(context),
+            icon: const Icon(Icons.note),
+            tooltip: 'Application Director',
+            onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.settings),
@@ -446,7 +445,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                             .map((entry) {
                                           final subnet = entry.key;
                                           final subnetDevices = entry.value;
-                                          print(connectionStream);
                                           return TreeNode(
                                             content: Row(
                                               children: [
@@ -583,76 +581,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       error: (e, st) => Text('Error: $e'),
     );
-  }
-
-  Future<void> _exportWorkgroups(BuildContext context) async {
-    try {
-      final filePath = await FileDialogHelper.pickJsonFileToSave();
-      if (filePath != null) {
-        await ref.read(workgroupsProvider.notifier).exportWorkgroups(filePath);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Workgroups exported to $filePath')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error exporting workgroups: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _importWorkgroups(BuildContext context) async {
-    try {
-      final filePath = await FileDialogHelper.pickJsonFileToOpen();
-      if (filePath != null) {
-        if (mounted) {
-          final result = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Import Workgroups'),
-              content: const Text(
-                  'Do you want to merge with existing workgroups or replace them?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Replace'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Merge'),
-                ),
-              ],
-            ),
-          );
-          if (result != null) {
-            await ref.read(workgroupsProvider.notifier).importWorkgroups(
-                  filePath,
-                  merge: result,
-                );
-
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      'Workgroups ${result ? 'merged' : 'imported'} from $filePath'),
-                ),
-              );
-            }
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error importing workgroups: $e')),
-        );
-      }
-    }
   }
 
   void _createNewWiresheet(BuildContext context) {

@@ -5,6 +5,7 @@ import 'package:grms_designer/screens/details/workgroup_detail_screen.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../comm/discovery_manager.dart';
+import '../../utils/file_dialog_helper.dart';
 import '../dialogs/network_interface_dialog.dart';
 import '../dialogs/workgroup_selection_dialog.dart';
 import '../../providers/settings_provider.dart';
@@ -272,19 +273,52 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
           )
         : Column(
             children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 300),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.search),
-                    label: const Text('Discover New Workgroup'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.search),
+                        label: const Text('Discover New Workgroup'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                        ),
+                        onPressed: isDiscovering ? null : _discoverWorkgroups,
+                      ),
                     ),
-                    onPressed: isDiscovering ? null : _discoverWorkgroups,
                   ),
-                ),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('Export Workgroups'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                        ),
+                        onPressed: () => _exportWorkgroups(context),
+                      ),
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.download_rounded),
+                        label: const Text('Import Workgroups'),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                        ),
+                        onPressed: () => _importWorkgroups(context),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               Expanded(
                 child: ListView.builder(
@@ -347,6 +381,76 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
               ),
             ],
           );
+  }
+
+  Future<void> _exportWorkgroups(BuildContext context) async {
+    try {
+      final filePath = await FileDialogHelper.pickJsonFileToSave();
+      if (filePath != null) {
+        await ref.read(workgroupsProvider.notifier).exportWorkgroups(filePath);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Workgroups exported to $filePath')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error exporting workgroups: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importWorkgroups(BuildContext context) async {
+    try {
+      final filePath = await FileDialogHelper.pickJsonFileToOpen();
+      if (filePath != null) {
+        if (mounted) {
+          final result = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Import Workgroups'),
+              content: const Text(
+                  'Do you want to merge with existing workgroups or replace them?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Replace'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Merge'),
+                ),
+              ],
+            ),
+          );
+          if (result != null) {
+            await ref.read(workgroupsProvider.notifier).importWorkgroups(
+                  filePath,
+                  merge: result,
+                );
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      'Workgroups ${result ? 'merged' : 'imported'} from $filePath'),
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error importing workgroups: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _confirmDeleteWorkgroup(Workgroup workgroup) async {
