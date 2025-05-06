@@ -260,7 +260,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                                           wiresheet.name,
                                                           ref);
                                                   setState(() {
-                                                    if (result) {
+                                                    if (result &&
+                                                        selectedWiresheetId! ==
+                                                            wiresheet.id) {
                                                       selectedWiresheetId =
                                                           null;
                                                     }
