@@ -64,6 +64,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 300,
+        toolbarHeight: 100,
+        leading: Image.asset("assets/logo.jpg"),
         title: Text('HelvarNet Manager - $projectName'),
         centerTitle: true,
         actions: [
@@ -792,8 +795,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     try {
       discoveryManager = DiscoveryManager();
-
-      // Get network interfaces using your existing pattern
       List<NetworkInterfaceDetails> interfaces =
           await discoveryManager.getNetworkInterfaces();
 
@@ -808,7 +809,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (!mounted) return;
 
-      // Use your existing dialog for interface selection
       final interfaceResult = await showDialog<NetworkInterfaceDetails>(
         context: context,
         builder: (BuildContext context) {
@@ -820,7 +820,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      // Show a loading indicator during discovery
       showDialog(
         context: context,
         barrierDismissible: false,

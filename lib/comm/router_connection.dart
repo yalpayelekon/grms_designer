@@ -13,9 +13,9 @@ class RouterConnection {
 
   Socket? _socket;
   StreamSubscription? _dataSubscription;
-  StreamController<Uint8List> _incomingDataController =
+  StreamController<Uint8List> incomingDataController =
       StreamController<Uint8List>.broadcast();
-  StreamController<RouterConnectionStatus> _statusController =
+  StreamController<RouterConnectionStatus> statusController =
       StreamController<RouterConnectionStatus>.broadcast();
   Timer? _heartbeatTimer;
   DateTime _lastActivity = DateTime.now();
@@ -38,8 +38,8 @@ class RouterConnection {
   bool get isConnected =>
       _socket != null && _status.state == RouterConnectionState.connected;
   RouterConnectionStatus get status => _status;
-  Stream<Uint8List> get dataStream => _incomingDataController.stream;
-  Stream<RouterConnectionStatus> get statusStream => _statusController.stream;
+  Stream<Uint8List> get dataStream => incomingDataController.stream;
+  Stream<RouterConnectionStatus> get statusStream => statusController.stream;
 
   Future<void> connect() async {
     if (_isClosing) return;
@@ -123,15 +123,15 @@ class RouterConnection {
     _isClosing = true;
     await disconnect();
 
-    await _statusController.close();
-    await _incomingDataController.close();
+    await statusController.close();
+    await incomingDataController.close();
   }
 
   void _handleData(Uint8List data) {
     _lastActivity = DateTime.now();
     final message = String.fromCharCodes(data);
     _messageBuffer.write(message);
-    _incomingDataController.add(data);
+    incomingDataController.add(data);
     _processMessageBuffer();
   }
 
@@ -212,7 +212,7 @@ class RouterConnection {
       reconnectAttempts: _reconnectAttempts,
     );
 
-    _statusController.add(_status);
+    statusController.add(_status);
   }
 
   void _scheduleReconnect() {
