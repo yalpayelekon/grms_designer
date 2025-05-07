@@ -457,7 +457,20 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
     final isSelected = selectedItemIndex == index;
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
 
+    final buttonBottomCenter = button.localToGlobal(
+      Offset(300, button.size.height / 3),
+      ancestor: overlay,
+    );
+
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+          buttonBottomCenter, buttonBottomCenter + const Offset(1, 1)),
+      Offset.zero & overlay.size,
+    );
     return Stack(
       children: [
         Draggable<int>(
@@ -524,6 +537,15 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                 selectedItemIndex = index;
                 isPanelExpanded = true;
               });
+            },
+            onSecondaryTap: () {
+              showCanvasItemMenu(
+                context,
+                position,
+                item.id!,
+                '',
+                false,
+              );
             },
             child: Container(
               width: item.size.width,
@@ -592,6 +614,16 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         ),
       ],
     );
+  }
+
+  void showCanvasItemMenu(BuildContext context, RelativeRect position,
+      String itemId, String portId, bool isInput) {
+    showMenu(context: context, position: position, items: [
+      PopupMenuItem(
+        child: const Text('Recall Scene'),
+        onTap: () => _handlePortTap(itemId, portId, isInput),
+      ),
+    ]);
   }
 
   Widget _buildPropertiesPanel() {
