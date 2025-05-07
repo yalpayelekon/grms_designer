@@ -75,7 +75,6 @@ void performRecallScene(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -141,7 +140,6 @@ void performStoreScene(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -205,7 +203,6 @@ void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -270,7 +267,6 @@ void performDirectProportion(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -335,7 +331,6 @@ void performModifyProportion(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -383,7 +378,6 @@ void performEmergencyFunctionTest(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -431,7 +425,6 @@ void performEmergencyDurationTest(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -479,7 +472,6 @@ void stopEmergencyTest(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -527,7 +519,6 @@ void resetEmergencyBatteryTotalLampTime(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -575,7 +566,6 @@ void refreshGroupProperties(
   connectionManager
       .getConnection(
     routerIpAddress,
-    connectionTimeout: const Duration(seconds: 5),
   )
       .then((connection) {
     if (connection.isConnected) {
@@ -646,7 +636,6 @@ void performDeviceDirectLevel(
     connectionManager
         .getConnection(
       helvarRouter.ipAddress,
-      connectionTimeout: const Duration(seconds: 5),
     )
         .then((connection) {
       if (connection.isConnected) {
@@ -719,7 +708,6 @@ void performDeviceRecallScene(
     connectionManager
         .getConnection(
       helvarRouter.ipAddress,
-      connectionTimeout: const Duration(seconds: 5),
     )
         .then((connection) {
       if (connection.isConnected) {
@@ -788,7 +776,6 @@ void performDeviceDirectProportion(
     connectionManager
         .getConnection(
       helvarRouter.ipAddress,
-      connectionTimeout: const Duration(seconds: 5),
     )
         .then((connection) {
       if (connection.isConnected) {
@@ -860,7 +847,6 @@ void performDeviceModifyProportion(
     connectionManager
         .getConnection(
       helvarRouter.ipAddress,
-      connectionTimeout: const Duration(seconds: 5),
     )
         .then((connection) {
       if (connection.isConnected) {

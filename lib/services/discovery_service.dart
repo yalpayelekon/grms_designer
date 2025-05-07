@@ -86,7 +86,6 @@ class DiscoveryService {
 
       await connectionManager.getConnection(
         routerIpAddress,
-        heartbeatInterval: const Duration(seconds: 60),
       );
 
       return router;
