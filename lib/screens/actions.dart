@@ -66,7 +66,6 @@ void performRecallScene(
   }
 
   final command = HelvarNetCommands.recallSceneGroup(
-    2, // Protocol version
     groupId,
     1, // Block ID (default to 1)
     sceneNumber,
@@ -133,7 +132,6 @@ void performStoreScene(
   }
 
   final command = HelvarNetCommands.storeAsSceneGroup(
-    2, // Protocol version
     groupId,
     1, // Block ID (default to 1)
     sceneNumber,
@@ -199,7 +197,6 @@ void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
   }
 
   final command = HelvarNetCommands.directLevelGroup(
-    2, // Protocol version
     groupId,
     level,
     fadeTime: 700, // Default fade time in 0.1 seconds
@@ -265,7 +262,6 @@ void performDirectProportion(
   }
 
   final command = HelvarNetCommands.directProportionGroup(
-    2, // Protocol version
     groupId,
     proportion,
     fadeTime: 700, // Default fade time
@@ -331,7 +327,6 @@ void performModifyProportion(
   }
 
   final command = HelvarNetCommands.modifyProportionGroup(
-    2, // Protocol version
     groupId,
     proportion,
     fadeTime: 700, // Default fade time
@@ -382,7 +377,6 @@ void performEmergencyFunctionTest(
   }
 
   final command = HelvarNetCommands.emergencyFunctionTestGroup(
-    2, // Protocol version
     groupId,
   );
 
@@ -431,7 +425,6 @@ void performEmergencyDurationTest(
   }
 
   final command = HelvarNetCommands.emergencyDurationTestGroup(
-    2, // Protocol version
     groupId,
   );
 
@@ -480,7 +473,6 @@ void stopEmergencyTest(
   }
 
   final command = HelvarNetCommands.stopEmergencyTestsGroup(
-    2, // Protocol version
     groupId,
   );
 
@@ -529,7 +521,6 @@ void resetEmergencyBatteryTotalLampTime(
   }
 
   final command = HelvarNetCommands.resetEmergencyBatteryAndTotalLampTimeGroup(
-    2, // Protocol version
     groupId,
   );
 
@@ -568,7 +559,6 @@ void refreshGroupProperties(
   }
 
   final descriptionCommand = HelvarNetCommands.queryDescriptionGroup(
-    2, // Protocol version
     groupId,
   );
 
@@ -648,7 +638,6 @@ void performDeviceDirectLevel(
     }
 
     final command = HelvarNetCommands.directLevelDevice(
-      2,
       device.address,
       level,
       fadeTime: 700, // Default fade time
@@ -718,7 +707,6 @@ void performDeviceRecallScene(
     }
 
     final command = HelvarNetCommands.recallSceneDevice(
-      2, // Protocol version
       cluster,
       router,
       int.parse(parts[2]), // subnet
@@ -789,7 +777,6 @@ void performDeviceDirectProportion(
     }
 
     final command = HelvarNetCommands.directProportionDevice(
-      2, // Protocol version
       cluster,
       router,
       int.parse(parts[2]), // subnet
@@ -862,7 +849,6 @@ void performDeviceModifyProportion(
     }
 
     final command = HelvarNetCommands.modifyProportionDevice(
-      2, // Protocol version
       cluster,
       router,
       int.parse(parts[2]), // subnet

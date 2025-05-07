@@ -260,6 +260,6 @@ class RouterConnection {
       return;
     }
 
-    sendCommand(HelvarNetCommands.queryHelvarNetVersion(2));
+    sendCommand(HelvarNetCommands.queryHelvarNetVersion());
   }
 }

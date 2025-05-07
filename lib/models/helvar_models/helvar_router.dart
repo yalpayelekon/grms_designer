@@ -25,7 +25,8 @@ class HelvarRouter {
     this.type = 'HelvarRouter',
     this.address = "",
     required this.ipAddress,
-    this.version = 2,
+    this.version =
+        2, // TODO: ask Mustafa to see what versions can be used in a project https://claude.ai/chat/a9d9e202-1fbc-420b-a5e4-b7ad2b8c4064
     this.description = '',
     this.isNormal = true,
     this.isMissing = false,

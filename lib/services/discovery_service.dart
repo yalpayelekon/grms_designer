@@ -124,8 +124,7 @@ class DiscoveryService {
 
       final typeResponse = await _sendCommand(
           socket,
-          HelvarNetCommands.queryDeviceType(
-              router.version, "$clusterId.$clusterMemberId"),
+          HelvarNetCommands.queryDeviceType("$clusterId.$clusterMemberId"),
           broadcastStream);
       final typeValue = extractResponseValue(typeResponse);
       if (typeValue != null) {
@@ -139,7 +138,7 @@ class DiscoveryService {
       final descResponse = await _sendCommand(
           socket,
           HelvarNetCommands.queryDescriptionDevice(
-              router.version, "$clusterId.$clusterMemberId"),
+              "$clusterId.$clusterMemberId"),
           broadcastStream);
       final descValue = extractResponseValue(descResponse);
       if (descValue != null) {
@@ -150,8 +149,7 @@ class DiscoveryService {
 
       final stateResponse = await _sendCommand(
           socket,
-          HelvarNetCommands.queryDeviceState(
-              router.version, "$clusterId.$clusterMemberId"),
+          HelvarNetCommands.queryDeviceState("$clusterId.$clusterMemberId"),
           broadcastStream);
       final stateValue = extractResponseValue(stateResponse);
       if (stateValue != null) {
@@ -164,8 +162,7 @@ class DiscoveryService {
 
       final typesAndAddressesResponse = await _sendCommand(
           socket,
-          HelvarNetCommands.queryDeviceTypesAndAddresses(
-              router.version, routerAddress),
+          HelvarNetCommands.queryDeviceTypesAndAddresses(routerAddress),
           broadcastStream);
       final addressesValue = extractResponseValue(typesAndAddressesResponse);
       if (addressesValue != null) {
@@ -179,7 +176,7 @@ class DiscoveryService {
         final devicesResponse = await _sendCommand(
             socket,
             HelvarNetCommands.queryDeviceTypesAndAddresses(
-                router.version, '$clusterId.$clusterMemberId.$subnet'),
+                '$clusterId.$clusterMemberId.$subnet'),
             broadcastStream);
         final devicesValue = extractResponseValue(devicesResponse);
 
@@ -200,8 +197,8 @@ class DiscoveryService {
           }
 
           final deviceAddress = '$clusterId.$clusterMemberId.$subnet.$deviceId';
-          final descriptionCmd = HelvarNetCommands.queryDescriptionDevice(
-              router.version, deviceAddress);
+          final descriptionCmd =
+              HelvarNetCommands.queryDescriptionDevice(deviceAddress);
           final descResponse =
               await _sendCommand(socket, descriptionCmd, broadcastStream);
           final description =
@@ -209,7 +206,7 @@ class DiscoveryService {
 
           final deviceStateResponse = await _sendCommand(
               socket,
-              HelvarNetCommands.queryDeviceState(router.version, deviceAddress),
+              HelvarNetCommands.queryDeviceState(deviceAddress),
               broadcastStream);
           int? deviceStateCode;
           String deviceState = '';
@@ -226,8 +223,7 @@ class DiscoveryService {
             try {
               final levelResponse = await _sendCommand(
                   socket,
-                  HelvarNetCommands.queryLoadLevel(
-                      router.version, deviceAddress),
+                  HelvarNetCommands.queryLoadLevel(deviceAddress),
                   broadcastStream);
               final levelValue = extractResponseValue(levelResponse);
               if (levelValue != null) {
@@ -334,9 +330,7 @@ class DiscoveryService {
       final broadcastStream = socket.asBroadcastStream();
 
       final groupsResponse = await _sendCommand(
-          socket,
-          HelvarNetCommands.queryGroups(2), // Using version 2 protocol
-          broadcastStream);
+          socket, HelvarNetCommands.queryGroups(), broadcastStream);
 
       final groupsValue = extractResponseValue(groupsResponse);
       if (groupsValue != null && groupsValue.isNotEmpty) {
@@ -348,10 +342,8 @@ class DiscoveryService {
           try {
             final id = int.parse(groupId);
 
-            final descResponse = await _sendCommand(
-                socket,
-                HelvarNetCommands.queryDescriptionGroup(2, id),
-                broadcastStream);
+            final descResponse = await _sendCommand(socket,
+                HelvarNetCommands.queryDescriptionGroup(id), broadcastStream);
 
             final description =
                 extractResponseValue(descResponse) ?? 'Group $id';

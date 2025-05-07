@@ -47,7 +47,7 @@ class DiscoveryManager {
     }
 
     try {
-      String command = HelvarNetCommands.queryWorkgroupName(2);
+      String command = HelvarNetCommands.queryWorkgroupName();
       List<int> commandBytes = List<int>.from(command.codeUnits);
       Uint8List data = Uint8List.fromList(commandBytes);
 

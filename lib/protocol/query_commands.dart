@@ -1,10 +1,12 @@
 class HelvarNetCommands {
+  static int version = 2;
+
   // Query commands
-  static String queryDeviceType(int version, String address) {
+  static String queryDeviceType(String address) {
     return '>V:$version,C:104,@$address#';
   }
 
-  static String queryDescriptionGroup(int version, int group) {
+  static String queryDescriptionGroup(int group) {
     if (group < 1 || group > 16383) {
       throw ArgumentError('Group must be between 1 and 16383');
     }
@@ -12,147 +14,147 @@ class HelvarNetCommands {
     return '>V:$version,C:105,G:$group#';
   }
 
-  static String queryDescriptionDevice(int version, String address) {
+  static String queryDescriptionDevice(String address) {
     return '>V:$version,C:106,@$address#';
   }
 
-  static String queryWorkgroupName(int version) {
+  static String queryWorkgroupName() {
     return '>V:$version,C:107#';
   }
 
-  static String queryWorkgroupMembership(int version) {
+  static String queryWorkgroupMembership() {
     return '>V:$version,C:108#';
   }
 
-  static String queryLastSceneInBlock(int version, int group, int block) {
+  static String queryLastSceneInBlock(int group, int block) {
     _validateGroup(group);
     _validateBlock(block);
     return '>V:$version,C:103,G:$group,B:$block#';
   }
 
-  static String queryLastSceneInGroup(int version, int group) {
+  static String queryLastSceneInGroup(int group) {
     _validateGroup(group);
     return '>V:$version,C:109,G:$group#';
   }
 
-  static String queryDeviceState(int version, String address) {
+  static String queryDeviceState(String address) {
     return '>V:$version,C:110,@$address#';
   }
 
-  static String queryDeviceIsDisabled(int version, String address) {
+  static String queryDeviceIsDisabled(String address) {
     return '>V:$version,C:111,@$address#';
   }
 
-  static String queryLampFailure(int version, String address) {
+  static String queryLampFailure(String address) {
     return '>V:$version,C:112,@$address#';
   }
 
-  static String queryDeviceIsMissing(int version, String address) {
+  static String queryDeviceIsMissing(String address) {
     return '>V:$version,C:113,@$address#';
   }
 
-  static String queryDeviceIsFaulty(int version, String address) {
+  static String queryDeviceIsFaulty(String address) {
     return '>V:$version,C:114,@$address#';
   }
 
-  static String queryEmergencyBatteryFailure(int version, String address) {
+  static String queryEmergencyBatteryFailure(String address) {
     return '>V:$version,C:129,@$address#';
   }
 
-  static String queryLoadLevel(int version, String address) {
+  static String queryLoadLevel(String address) {
     return '>V:$version,C:152,@$address#';
   }
 
-  static String queryPowerConsumption(int version, String address) {
+  static String queryPowerConsumption(String address) {
     return '>V:$version,C:160,@$address#';
   }
 
-  static String queryGroupPowerConsumption(int version, int group) {
+  static String queryGroupPowerConsumption(int group) {
     _validateGroup(group);
     return '>V:$version,C:161,G:$group#';
   }
 
-  static String queryEmergencyFunctionTestTime(int version, String address) {
+  static String queryEmergencyFunctionTestTime(String address) {
     return '>V:$version,C:170,@$address#';
   }
 
-  static String queryEmergencyFunctionTestState(int version, String address) {
+  static String queryEmergencyFunctionTestState(String address) {
     return '>V:$version,C:171,@$address#';
   }
 
-  static String queryEmergencyDurationTestTime(int version, String address) {
+  static String queryEmergencyDurationTestTime(String address) {
     return '>V:$version,C:172,@$address#';
   }
 
-  static String queryEmergencyDurationTestState(int version, String address) {
+  static String queryEmergencyDurationTestState(String address) {
     return '>V:$version,C:173,@$address#';
   }
 
-  static String queryEmergencyBatteryCharge(int version, String address) {
+  static String queryEmergencyBatteryCharge(String address) {
     return '>V:$version,C:174,@$address#';
   }
 
-  static String queryEmergencyBatteryTime(int version, String address) {
+  static String queryEmergencyBatteryTime(String address) {
     return '>V:$version,C:175,@$address#';
   }
 
-  static String queryEmergencyTotalLampTime(int version, String address) {
+  static String queryEmergencyTotalLampTime(String address) {
     return '>V:$version,C:176,@$address#';
   }
 
-  static String queryTime(int version) {
+  static String queryTime() {
     return '>V:$version,C:185#';
   }
 
-  static String queryTimeZone(int version) {
+  static String queryTimeZone() {
     return '>V:$version,C:188#';
   }
 
-  static String queryDaylightSavingTime(int version) {
+  static String queryDaylightSavingTime() {
     return '>V:$version,C:189#';
   }
 
-  static String querySoftwareVersion(int version) {
+  static String querySoftwareVersion() {
     return '>V:$version,C:190#';
   }
 
-  static String queryHelvarNetVersion(int version) {
+  static String queryHelvarNetVersion() {
     return '>V:$version,C:191#';
   }
 
-  static String queryClusters(int version) {
+  static String queryClusters() {
     return '>V:$version,C:101#';
   }
 
-  static String queryRouters(int version, int cluster) {
+  static String queryRouters(int cluster) {
     if (cluster < 1 || cluster > 253) {
       throw ArgumentError('Cluster must be between 1 and 253');
     }
     return '>V:$version,C:102,@$cluster#';
   }
 
-  static String queryDeviceTypesAndAddresses(int version, String address) {
+  static String queryDeviceTypesAndAddresses(String address) {
     return '>V:$version,C:100@$address#';
   }
 
-  static String queryGroups(int version) {
+  static String queryGroups() {
     return '>V:$version,C:165#';
   }
 
-  static String queryGroup(int version, int group) {
+  static String queryGroup(int group) {
     _validateGroup(group);
     return '>V:$version,C:164,G:$group#';
   }
 
-  static String querySceneNames(int version) {
+  static String querySceneNames() {
     return '>V:$version,C:166#';
   }
 
-  static String querySceneInfo(int version, String address) {
+  static String querySceneInfo(String address) {
     return '>V:$version,C:167@$address#';
   }
 
-  static String recallSceneGroup(int version, int group, int block, int scene,
+  static String recallSceneGroup(int group, int block, int scene,
       {bool constantLight = false, int fadeTime = 0}) {
     _validateGroup(group);
     _validateBlock(block);
@@ -163,8 +165,8 @@ class HelvarNetCommands {
     return '>V:$version,C:11,G:$group,K:$constantLightValue,B:$block,S:$scene,F:$fadeTime#';
   }
 
-  static String recallSceneDevice(int version, int cluster, int router,
-      int subnet, int device, int block, int scene,
+  static String recallSceneDevice(
+      int cluster, int router, int subnet, int device, int block, int scene,
       {int fadeTime = 0}) {
     _validateBlock(block);
     _validateScene(scene);
@@ -173,8 +175,7 @@ class HelvarNetCommands {
     return '>V:$version,C:12,B:$block,S:$scene,F:$fadeTime,@$address#';
   }
 
-  static String directLevelGroup(int version, int group, int level,
-      {int fadeTime = 0}) {
+  static String directLevelGroup(int group, int level, {int fadeTime = 0}) {
     _validateGroup(group);
     _validateLevel(level);
     _validateFadeTime(fadeTime);
@@ -182,7 +183,7 @@ class HelvarNetCommands {
     return '>V:$version,C:13,G:$group,L:$level,F:$fadeTime#';
   }
 
-  static String directLevelDevice(int version, String address, int level,
+  static String directLevelDevice(String address, int level,
       {int fadeTime = 0}) {
     _validateLevel(level);
     _validateFadeTime(fadeTime);
@@ -190,7 +191,7 @@ class HelvarNetCommands {
     return '>V:$version,C:14,L:$level,F:$fadeTime,@$address#';
   }
 
-  static String directProportionGroup(int version, int group, int proportion,
+  static String directProportionGroup(int group, int proportion,
       {int fadeTime = 0}) {
     _validateGroup(group);
     _validateProportion(proportion);
@@ -199,8 +200,8 @@ class HelvarNetCommands {
     return '>V:$version,C:15,P:$proportion,G:$group,F:$fadeTime#';
   }
 
-  static String directProportionDevice(int version, int cluster, int router,
-      int subnet, int device, int proportion,
+  static String directProportionDevice(
+      int cluster, int router, int subnet, int device, int proportion,
       {int fadeTime = 0}) {
     _validateProportion(proportion);
     _validateFadeTime(fadeTime);
@@ -208,8 +209,7 @@ class HelvarNetCommands {
     return '>V:$version,C:16,P:$proportion,F:$fadeTime,@$address#';
   }
 
-  static String modifyProportionGroup(
-      int version, int group, int proportionChange,
+  static String modifyProportionGroup(int group, int proportionChange,
       {int fadeTime = 0}) {
     _validateGroup(group);
     _validateProportionChange(proportionChange);
@@ -218,8 +218,8 @@ class HelvarNetCommands {
     return '>V:$version,C:17,P:$proportionChange,G:$group,F:$fadeTime#';
   }
 
-  static String modifyProportionDevice(int version, int cluster, int router,
-      int subnet, int device, int proportionChange,
+  static String modifyProportionDevice(
+      int cluster, int router, int subnet, int device, int proportionChange,
       {int fadeTime = 0}) {
     _validateProportionChange(proportionChange);
     _validateFadeTime(fadeTime);
@@ -227,35 +227,34 @@ class HelvarNetCommands {
     return '>V:$version,C:18,P:$proportionChange,F:$fadeTime,@$address#';
   }
 
-  static String emergencyFunctionTestGroup(int version, int group) {
+  static String emergencyFunctionTestGroup(int group) {
     _validateGroup(group);
     return '>V:$version,C:19,G:$group#';
   }
 
-  static String emergencyFunctionTestDevice(int version, String address) {
+  static String emergencyFunctionTestDevice(String address) {
     return '>V:$version,C:20,@$address#';
   }
 
-  static String emergencyDurationTestGroup(int version, int group) {
+  static String emergencyDurationTestGroup(int group) {
     _validateGroup(group);
     return '>V:$version,C:21,G:$group#';
   }
 
-  static String emergencyDurationTestDevice(int version, String address) {
+  static String emergencyDurationTestDevice(String address) {
     return '>V:$version,C:22,@$address#';
   }
 
-  static String stopEmergencyTestsGroup(int version, int group) {
+  static String stopEmergencyTestsGroup(int group) {
     _validateGroup(group);
     return '>V:$version,C:23,G:$group#';
   }
 
-  static String stopEmergencyTestsDevice(int version, String address) {
+  static String stopEmergencyTestsDevice(String address) {
     return '>V:$version,C:24,@$address#';
   }
 
-  static String storeSceneGroup(
-      int version, int group, int block, int scene, int level,
+  static String storeSceneGroup(int group, int block, int scene, int level,
       {bool forceStore = false}) {
     _validateGroup(group);
     _validateBlock(block);
@@ -266,8 +265,8 @@ class HelvarNetCommands {
     return '>V:$version,C:201,G:$group,O:$forceStoreValue,B:$block,S:$scene,L:$level#';
   }
 
-  static String storeSceneDevice(int version, int cluster, int router,
-      int subnet, int device, int block, int scene, int level,
+  static String storeSceneDevice(int cluster, int router, int subnet,
+      int device, int block, int scene, int level,
       {bool forceStore = false}) {
     _validateBlock(block);
     _validateScene(scene);
@@ -277,7 +276,7 @@ class HelvarNetCommands {
     return '>V:$version,C:202,@$address,O:$forceStoreValue,B:$block,S:$scene,L:$level#';
   }
 
-  static String storeAsSceneGroup(int version, int group, int block, int scene,
+  static String storeAsSceneGroup(int group, int block, int scene,
       {bool forceStore = false}) {
     _validateGroup(group);
     _validateBlock(block);
@@ -287,8 +286,8 @@ class HelvarNetCommands {
     return '>V:$version,C:203,G:$group,O:$forceStoreValue,B:$block,S:$scene#';
   }
 
-  static String storeAsSceneDevice(int version, int cluster, int router,
-      int subnet, int device, int block, int scene,
+  static String storeAsSceneDevice(
+      int cluster, int router, int subnet, int device, int block, int scene,
       {bool forceStore = false}) {
     _validateBlock(block);
     _validateScene(scene);
@@ -297,14 +296,12 @@ class HelvarNetCommands {
     return '>V:$version,C:204,@$address,O:$forceStoreValue,B:$block,S:$scene#';
   }
 
-  static String resetEmergencyBatteryAndTotalLampTimeGroup(
-      int version, int group) {
+  static String resetEmergencyBatteryAndTotalLampTimeGroup(int group) {
     _validateGroup(group);
     return '>V:$version,C:205,G:$group#';
   }
 
-  static String resetEmergencyBatteryAndTotalLampTimeDevice(
-      int version, String address) {
+  static String resetEmergencyBatteryAndTotalLampTimeDevice(String address) {
     return '>V:$version,C:206,@$address#';
   }
 
