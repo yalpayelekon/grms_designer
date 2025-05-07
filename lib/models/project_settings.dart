@@ -8,7 +8,7 @@ class ProjectSettings {
   int maxCommandRetries;
   int maxConcurrentCommandsPerRouter;
   int commandHistorySize;
-
+  int protocolVersion;
   ProjectSettings({
     this.projectName = 'Default Project',
     this.socketTimeoutMs = 15000,
@@ -19,6 +19,7 @@ class ProjectSettings {
     this.maxCommandRetries = 3,
     this.maxConcurrentCommandsPerRouter = 5,
     this.commandHistorySize = 100,
+    this.protocolVersion = 2,
   });
 
   ProjectSettings copyWith({
@@ -31,6 +32,7 @@ class ProjectSettings {
     int? maxCommandRetries,
     int? maxConcurrentCommandsPerRouter,
     int? commandHistorySize,
+    int? protocolVersion,
   }) {
     return ProjectSettings(
       projectName: projectName ?? this.projectName,
@@ -45,6 +47,7 @@ class ProjectSettings {
       maxConcurrentCommandsPerRouter:
           maxConcurrentCommandsPerRouter ?? this.maxConcurrentCommandsPerRouter,
       commandHistorySize: commandHistorySize ?? this.commandHistorySize,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
     );
   }
 
@@ -59,6 +62,7 @@ class ProjectSettings {
       'maxCommandRetries': maxCommandRetries,
       'maxConcurrentCommandsPerRouter': maxConcurrentCommandsPerRouter,
       'commandHistorySize': commandHistorySize,
+      'protocolVersion': protocolVersion,
     };
   }
 
@@ -74,6 +78,7 @@ class ProjectSettings {
       maxConcurrentCommandsPerRouter:
           json['maxConcurrentCommandsPerRouter'] as int? ?? 5,
       commandHistorySize: json['commandHistorySize'] as int? ?? 100,
+      protocolVersion: json['protocolVersion'] as int? ?? 2,
     );
   }
 }

@@ -15,6 +15,10 @@ import '../comm/router_command_service.dart';
 import '../utils/logger.dart';
 
 class DiscoveryService {
+  final int protocolVersion;
+
+  DiscoveryService({this.protocolVersion = 2});
+
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
     final points = <ButtonPoint>[];
     points.add(ButtonPoint(
@@ -116,8 +120,9 @@ class DiscoveryService {
 
       final router = HelvarRouter(
         address: routerAddress,
+        version: protocolVersion,
         ipAddress: routerIpAddress,
-        description: 'Router $clusterMemberId', // Default description
+        description: 'Router $clusterMemberId',
         clusterId: clusterId,
         clusterMemberId: clusterMemberId,
       );

@@ -122,7 +122,16 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
     state = state.copyWith(commandHistorySize: size);
     await _saveSettings();
   }
+
+  Future<void> setProtocolVersion(int version) async {
+    state = state.copyWith(protocolVersion: version);
+    await _saveSettings();
+  }
 }
+
+final protocolVersionProvider = Provider<int>((ref) {
+  return ref.watch(projectSettingsProvider).protocolVersion;
+});
 
 final projectSettingsProvider =
     StateNotifierProvider<ProjectSettingsNotifier, ProjectSettings>((ref) {

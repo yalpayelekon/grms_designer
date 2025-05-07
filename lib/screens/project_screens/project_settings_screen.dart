@@ -113,6 +113,13 @@ class ProjectSettingsScreen extends ConsumerWidget {
                             projectSettings.autoSaveIntervalMinutes)
                         : null,
                   ),
+                  ListTile(
+                    title: const Text('Protocol Version'),
+                    subtitle: Text('${projectSettings.protocolVersion}'),
+                    trailing: const Icon(Icons.sync),
+                    onTap: () => _showProtocolVersionDialog(
+                        context, ref, projectSettings.protocolVersion),
+                  ),
                 ],
               ),
             ),
@@ -174,6 +181,66 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProtocolVersionDialog(
+      BuildContext context, WidgetRef ref, int currentVersion) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Protocol Version'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Select HelvarNet protocol version:'),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentVersion == 1 ? Colors.blue : null,
+                    foregroundColor: currentVersion == 1 ? Colors.white : null,
+                  ),
+                  onPressed: () {
+                    ref
+                        .read(projectSettingsProvider.notifier)
+                        .setProtocolVersion(1);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Version 1'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: currentVersion == 2 ? Colors.blue : null,
+                    foregroundColor: currentVersion == 2 ? Colors.white : null,
+                  ),
+                  onPressed: () {
+                    ref
+                        .read(projectSettingsProvider.notifier)
+                        .setProtocolVersion(2);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Version 2'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Version 2 is recommended for newer systems. Only use Version 1 for legacy compatibility.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
           ),
         ],
       ),
