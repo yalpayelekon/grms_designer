@@ -28,7 +28,7 @@ class RouterStorageService {
       final jsonString = jsonEncode(jsonData);
 
       await file.writeAsString(jsonString);
-      debugPrint('Router devices saved to: $filePath');
+      logInfo('Router devices saved to: $filePath');
     } catch (e) {
       logError('Error saving router devices: $e');
       rethrow;
@@ -42,7 +42,7 @@ class RouterStorageService {
       final file = File(filePath);
 
       if (!await file.exists()) {
-        debugPrint('No saved router devices file found.');
+        logWarning('No saved router devices file found.');
         return [];
       }
 
@@ -65,7 +65,7 @@ class RouterStorageService {
       final jsonString = jsonEncode(jsonData);
 
       await file.writeAsString(jsonString);
-      debugPrint('Router devices exported to: $filePath');
+      logInfo('Router devices exported to: $filePath');
     } catch (e) {
       logError('Error exporting router devices: $e');
       rethrow;

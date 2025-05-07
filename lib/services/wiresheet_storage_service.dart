@@ -20,7 +20,7 @@ class WiresheetStorageService {
       final jsonString = jsonEncode(wiresheet.toJson());
 
       await file.writeAsString(jsonString);
-      debugPrint('Wiresheet saved to: $filePath');
+      logInfo('Wiresheet saved to: $filePath');
     } catch (e) {
       logError('Error saving wiresheet: $e');
       rethrow;
@@ -33,7 +33,7 @@ class WiresheetStorageService {
       final file = File(filePath);
 
       if (!await file.exists()) {
-        debugPrint('No wiresheet file found for ID: $id');
+        logWarning('No wiresheet file found for ID: $id');
         return null;
       }
 
@@ -57,11 +57,11 @@ class WiresheetStorageService {
             AppDirectoryService.wiresheetsDir, 'wiresheet_$id.json');
 
         await file.delete();
-        debugPrint('Wiresheet deleted: $filePath');
+        logInfo('Wiresheet deleted: $filePath');
         return true;
       }
 
-      debugPrint('Wiresheet file not found for deletion: $filePath');
+      logWarning('Wiresheet file not found for deletion: $filePath');
       return false;
     } catch (e) {
       logError('Error deleting wiresheet: $e');

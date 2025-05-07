@@ -105,7 +105,7 @@ class DiscoveryService {
       final broadcastStream = socket.asBroadcastStream();
       final ipParts = routerIpAddress.split('.');
       if (ipParts.length != 4) {
-        debugPrint('Invalid router IP address format: $routerIpAddress');
+        logDebug('Invalid router IP address format: $routerIpAddress');
         return null;
       }
 
@@ -113,7 +113,7 @@ class DiscoveryService {
       final clusterMemberId = int.parse(ipParts[3]);
       final routerAddress = '$clusterId.$clusterMemberId';
 
-      debugPrint('Router address derived as: $routerAddress');
+      logInfo('Router address derived as: $routerAddress');
 
       final router = HelvarRouter(
         address: routerAddress,
@@ -134,7 +134,7 @@ class DiscoveryService {
         router.deviceTypeCode = typeCode;
         router.deviceType = getDeviceTypeDescription(typeCode);
       } else {
-        debugPrint('Failed to get router type: $typeResponse');
+        logDebug('Failed to get router type: $typeResponse');
       }
 
       final descResponse = await _sendCommand(
@@ -146,7 +146,7 @@ class DiscoveryService {
       if (descValue != null) {
         router.description = descValue;
       } else {
-        debugPrint('Failed to get router description: $descResponse');
+        logDebug('Failed to get router description: $descResponse');
       }
 
       final stateResponse = await _sendCommand(
@@ -160,7 +160,7 @@ class DiscoveryService {
         router.deviceStateCode = stateCode;
         router.deviceState = getStateFlagsDescription(stateCode);
       } else {
-        debugPrint('Failed to get router state: $stateResponse');
+        logDebug('Failed to get router state: $stateResponse');
       }
 
       final typesAndAddressesResponse = await _sendCommand(
@@ -169,7 +169,7 @@ class DiscoveryService {
       if (addressesValue != null) {
         router.deviceAddresses = addressesValue.split(',');
       } else {
-        debugPrint(
+        logDebug(
             'Failed to get device types and addresses: $typesAndAddressesResponse');
       }
 
@@ -182,7 +182,7 @@ class DiscoveryService {
         final devicesValue = extractResponseValue(devicesResponse);
 
         if (devicesValue == null || devicesValue.isEmpty) {
-          debugPrint('No devices found on subnet $subnet');
+          logWarning('No devices found on subnet $subnet');
           continue;
         }
 
@@ -193,7 +193,7 @@ class DiscoveryService {
           final typeCode = entry.value;
 
           if (deviceId >= 65500) {
-            debugPrint('Skipping high device ID: $deviceId');
+            logWarning('Skipping high device ID: $deviceId');
             continue;
           }
 
@@ -216,7 +216,7 @@ class DiscoveryService {
           if (deviceStateValue != null) {
             deviceStateCode = int.tryParse(deviceStateValue) ?? 0;
             deviceState = getStateFlagsDescription(deviceStateCode);
-            debugPrint('  State: $deviceStateCode ($deviceState)');
+            logInfo('  State: $deviceStateCode ($deviceState)');
           }
 
           int? loadLevel;
@@ -382,7 +382,7 @@ class DiscoveryService {
     final routers = <HelvarRouter>[];
 
     for (final ipAddress in routerIpAddresses) {
-      debugPrint('Discovering router at $ipAddress...');
+      logInfo('Discovering router at $ipAddress...');
       final router = await discoverRouter(ipAddress);
       if (router != null) {
         routers.add(router);
@@ -440,7 +440,7 @@ class DiscoveryService {
       if (result.success) {
         return result.response;
       } else {
-        logDebug('Command failed: ${result.errorMessage}');
+        logVerbose('Command failed: ${result.errorMessage}');
         return null;
       }
     } catch (e) {

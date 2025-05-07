@@ -192,7 +192,7 @@ class RouterConnection {
   }
 
   void _handleError(dynamic error) {
-    debugPrint('Socket error for router $ipAddress: $error');
+    logDebug('Socket error for router $ipAddress: $error');
     _updateStatus(RouterConnectionState.failed, errorMessage: error.toString());
     _scheduleReconnect();
   }
@@ -200,7 +200,7 @@ class RouterConnection {
   void _handleDisconnect() {
     if (_isClosing) return;
 
-    debugPrint('Disconnected from router $ipAddress');
+    logInfo('Disconnected from router $ipAddress');
     _socket = null;
     _updateStatus(RouterConnectionState.disconnected);
     _scheduleReconnect();
@@ -229,7 +229,7 @@ class RouterConnection {
 
     backoffSeconds = backoffSeconds.clamp(1, 300);
 
-    debugPrint(
+    logInfo(
         'Scheduling reconnect to $ipAddress in $backoffSeconds seconds (attempt $_reconnectAttempts)');
     _updateStatus(RouterConnectionState.reconnecting);
 

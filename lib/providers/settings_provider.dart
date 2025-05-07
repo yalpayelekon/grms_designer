@@ -94,7 +94,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       final jsonString = jsonEncode(state.toJson());
       await file.writeAsString(jsonString);
 
-      debugPrint('Settings saved to: $filePath');
+      logInfo('Settings saved to: $filePath');
     } catch (e) {
       logError('Error saving settings: $e');
     }

@@ -19,7 +19,7 @@ class FileStorageService {
       final jsonString = jsonEncode(jsonData);
 
       await file.writeAsString(jsonString);
-      debugPrint('Workgroups saved to: $filePath');
+      logInfo('Workgroups saved to: $filePath');
     } catch (e) {
       logError('Error saving workgroups: $e');
       rethrow;
@@ -33,7 +33,7 @@ class FileStorageService {
       final file = File(filePath);
 
       if (!await file.exists()) {
-        logInfo('No saved workgroups file found.');
+        logWarning('No saved workgroups file found.');
         return [];
       }
 
@@ -57,7 +57,7 @@ class FileStorageService {
       final jsonString = jsonEncode(jsonData);
 
       await file.writeAsString(jsonString);
-      debugPrint('Workgroups exported to: $filePath');
+      logInfo('Workgroups exported to: $filePath');
       final fileName = filePath.split(Platform.pathSeparator).last;
       await _directoryService.exportFile(
           AppDirectoryService.workgroupsDir, _defaultFilename, fileName);

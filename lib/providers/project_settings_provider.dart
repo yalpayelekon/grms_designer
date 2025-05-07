@@ -40,7 +40,7 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
       final jsonString = jsonEncode(state.toJson());
       await file.writeAsString(jsonString);
 
-      debugPrint('Project settings saved to: $filePath');
+      logInfo('Project settings saved to: $filePath');
     } catch (e) {
       logError('Error saving project settings: $e');
     }
