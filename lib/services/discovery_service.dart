@@ -163,7 +163,10 @@ class DiscoveryService {
       }
 
       final typesAndAddressesResponse = await _sendCommand(
-          socket, '>V:1,C:100,@$clusterId.$clusterMemberId#', broadcastStream);
+          socket,
+          HelvarNetCommands.queryDeviceTypesAndAddresses(
+              router.version, routerAddress),
+          broadcastStream);
       final addressesValue = extractResponseValue(typesAndAddressesResponse);
       if (addressesValue != null) {
         router.deviceAddresses = addressesValue.split(',');

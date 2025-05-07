@@ -19,7 +19,7 @@ class WiresheetStorageService {
       final jsonString = jsonEncode(wiresheet.toJson());
 
       await file.writeAsString(jsonString);
-      logInfo('Wiresheet saved to: $filePath');
+      //logInfo('Wiresheet saved to: $filePath');
     } catch (e) {
       logError('Error saving wiresheet: $e');
       rethrow;

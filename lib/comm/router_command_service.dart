@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:grms_designer/protocol/protocol_constants.dart';
 import 'package:uuid/uuid.dart';
 import '../models/project_settings.dart';
 import '../utils/logger.dart';
@@ -72,7 +73,7 @@ class RouterCommandService {
     try {
       connection = await _connectionManager.getConnection(routerIp);
       if (_connectionManager.hasConnection(routerIp)) {
-        final connectionKey = '$routerIp:50000';
+        final connectionKey = '$routerIp:$defaultTcpPort';
         if (_connectionManager.connections.containsKey(connectionKey)) {
           connection = _connectionManager.connections[connectionKey];
         }

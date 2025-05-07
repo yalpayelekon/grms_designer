@@ -319,6 +319,25 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
       logError('Error saving workgroups: $e');
     }
   }
+
+  Future<void> updateGroup(String workgroupId, HelvarGroup updatedGroup) async {
+    final index = state.indexWhere((wg) => wg.id == workgroupId);
+
+    if (index >= 0) {
+      final updatedState = List<Workgroup>.from(state);
+      final workgroup = updatedState[index];
+
+      final groupIndex =
+          workgroup.groups.indexWhere((g) => g.id == updatedGroup.id);
+
+      if (groupIndex >= 0) {
+        workgroup.groups[groupIndex] = updatedGroup;
+
+        state = updatedState;
+        await _saveToStorage();
+      }
+    }
+  }
 }
 
 final fileStorageServiceProvider = Provider<FileStorageService>((ref) {

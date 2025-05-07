@@ -271,10 +271,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           selectedSourceItemId != null &&
           selectedSourcePortId != null) {
         if (selectedSourceItemId == itemId) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Cannot connect a component to itself')),
-          );
+          showSnackBarMsg(context, 'Cannot connect a component to itself');
           setState(() {
             isDraggingLink = false;
             selectedSourceItemId = null;
@@ -291,9 +288,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             link.targetPortId == portId);
 
         if (alreadyExists) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('This connection already exists')),
-          );
+          showSnackBarMsg(context, 'This connection already exists');
           setState(() {
             isDraggingLink = false;
             selectedSourceItemId = null;
