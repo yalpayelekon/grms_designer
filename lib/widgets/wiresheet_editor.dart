@@ -10,7 +10,6 @@ import '../providers/wiresheets_provider.dart';
 import '../utils/general_ui.dart';
 import '../widgets/grid_painter.dart';
 import 'link_painter.dart';
-import 'port_widget.dart';
 import '../models/dragging_link_painter.dart';
 
 class WiresheetEditor extends ConsumerStatefulWidget {
@@ -591,52 +590,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             ),
           ),
         ),
-        ...item.ports
-            .where((p) => p.isInput)
-            .toList()
-            .asMap()
-            .entries
-            .map((entry) {
-          final portIndex = entry.key;
-          final port = entry.value;
-          final totalPorts = item.ports.where((p) => p.isInput).length;
-          final verticalSpacing = item.size.height / (totalPorts + 1);
-          final verticalPosition = verticalSpacing * (portIndex + 1);
-
-          return Positioned(
-            left: -6, // Half of port width to center it on the edge
-            top: verticalPosition - 6, // Center vertically
-            child: PortWidget(
-              port: port,
-              onTap: () => _handlePortTap(item.id!, port.id, true),
-              isConnected: widget.wiresheet.links.any((link) =>
-                  link.targetItemId == item.id && link.targetPortId == port.id),
-            ),
-          );
-        }),
-        ...item.ports
-            .where((p) => !p.isInput)
-            .toList()
-            .asMap()
-            .entries
-            .map((entry) {
-          final portIndex = entry.key;
-          final port = entry.value;
-          final totalPorts = item.ports.where((p) => !p.isInput).length;
-          final verticalSpacing = item.size.height / (totalPorts + 1);
-          final verticalPosition = verticalSpacing * (portIndex + 1);
-
-          return Positioned(
-            right: -6, // Half of port width to center it on the edge
-            top: verticalPosition - 6, // Center vertically
-            child: PortWidget(
-              port: port,
-              onTap: () => _handlePortTap(item.id!, port.id, false),
-              isConnected: widget.wiresheet.links.any((link) =>
-                  link.sourceItemId == item.id && link.sourcePortId == port.id),
-            ),
-          );
-        }),
       ],
     );
   }
