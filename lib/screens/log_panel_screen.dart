@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/log_service.dart';
 import '../utils/file_dialog_helper.dart';
+import '../utils/general_ui.dart';
 import '../utils/logger.dart';
 
 class LogPanelScreen extends ConsumerStatefulWidget {
@@ -148,9 +149,7 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
     try {
       final logs = ref.read(logServiceProvider);
       if (logs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No logs to export')),
-        );
+        showSnackBarMsg(context, 'No logs to export');
         return;
       }
 
@@ -176,15 +175,11 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
       await file.writeAsString(buffer.toString());
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logs exported to $filePath')),
-        );
+        showSnackBarMsg(context, 'Logs exported to $filePath');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error exporting logs: $e')),
-        );
+        showSnackBarMsg(context, 'Error exporting logs: $e');
       }
       logError('Error exporting logs: $e', tag: 'LogPanel');
     }

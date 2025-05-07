@@ -563,9 +563,7 @@ void refreshGroupProperties(
 
   final groupId = int.tryParse(group.groupId);
   if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
     return;
   }
 
@@ -580,10 +578,7 @@ void refreshGroupProperties(
   }
 
   if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
+    showSnackBarMsg(context, 'No router IP address available for this group');
     return;
   }
 

@@ -8,6 +8,7 @@ import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../utils/file_dialog_helper.dart';
 import '../../services/discovery_service.dart';
+import '../../utils/general_ui.dart';
 import '../dialogs/add_device_dialog.dart';
 
 class RouterDetailScreen extends ConsumerStatefulWidget {
@@ -90,9 +91,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Device added successfully')),
-        );
+        showSnackBarMsg(context, 'Device added successfully');
       }
     }
   }
@@ -339,10 +338,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                 device,
               );
         }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added ${newDevices.length} new devices')),
-        );
+        showSnackBarMsg(context, 'Added ${newDevices.length} new devices');
       } else {
         widget.router.devices.clear();
 
@@ -353,12 +349,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                 device,
               );
         }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Replaced with ${devices.length} imported devices')),
-        );
+        showSnackBarMsg(
+            context, 'Replaced with ${devices.length} imported devices');
       }
       setState(() {
         _devices = widget.router.devices;
@@ -366,9 +358,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error importing devices: $e')),
-      );
+      showSnackBarMsg(context, 'Error importing devices: $e');
       setState(() {
         _isLoading = false;
       });
@@ -378,9 +368,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   Future<void> _exportDevices() async {
     try {
       if (_devices.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No devices to export')),
-        );
+        showSnackBarMsg(context, 'No devices to export');
         return;
       }
 
@@ -396,21 +384,15 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       await routerStorageService.exportRouterDevices(_devices, filePath);
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Exported ${_devices.length} devices to $filePath')),
-      );
+      showSnackBarMsg(
+          context, 'Exported ${_devices.length} devices to $filePath');
 
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error exporting devices: $e')),
-      );
+      showSnackBarMsg(context, 'Error exporting devices: $e');
       setState(() {
         _isLoading = false;
       });
@@ -418,9 +400,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   }
 
   void _editDevice(HelvarDevice device) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit Device feature coming soon')),
-    );
+    showSnackBarMsg(context, 'Edit Device feature coming soon');
   }
 
   Future<void> _confirmDeleteDevice(HelvarDevice device) async {
@@ -455,12 +435,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           );
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Device deleted'),
-        ),
-      );
+      showSnackBarMsg(context, 'Device deleted');
       setState(() {
         _devices = widget.router.devices;
         _organizeDevicesBySubnet();
@@ -546,16 +521,11 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   }
 
   void _controlOutputDevice(HelvarDevice device) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Device control feature coming soon')),
-    );
+    showSnackBarMsg(context, 'Device control feature coming soon');
   }
 
   void _testEmergencyDevice(HelvarDevice device) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Emergency device test feature coming soon')),
-    );
+    showSnackBarMsg(context, 'Emergency device test feature coming soon');
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -581,9 +551,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
   Future<void> _discoverDevices() async {
     if (widget.router.ipAddress.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Router IP address is not set')),
-      );
+      showSnackBarMsg(context, 'Router IP address is not set');
       return;
     }
 
@@ -597,9 +565,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
       if (discoveredRouter == null || discoveredRouter.devices.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No devices discovered')),
-        );
+        showSnackBarMsg(context, 'No devices discovered');
         setState(() {
           _isLoading = false;
         });
@@ -650,10 +616,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Added ${newDevices.length} devices')),
-      );
-
+      showSnackBarMsg(context, 'Added ${newDevices.length} devices');
       setState(() {
         _devices = widget.router.devices;
         _organizeDevicesBySubnet();
@@ -661,9 +624,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error discovering devices: $e')),
-      );
+      showSnackBarMsg(context, 'Error discovering devices: $e');
       setState(() {
         _isLoading = false;
       });

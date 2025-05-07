@@ -314,9 +314,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         }
 
         if (!isCompatible) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Incompatible port types')),
-          );
+          showSnackBarMsg(context, 'Incompatible port types');
           setState(() {
             isDraggingLink = false;
             selectedSourceItemId = null;

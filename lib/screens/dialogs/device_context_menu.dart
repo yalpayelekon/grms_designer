@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/helvar_models/helvar_device.dart';
+import '../../utils/general_ui.dart';
 import 'action_dialogs.dart';
 
 void showDeviceContextMenu(BuildContext context, HelvarDevice device) {
@@ -75,7 +76,5 @@ void showDeviceContextMenu(BuildContext context, HelvarDevice device) {
 
 void _clearDeviceResult(BuildContext context, HelvarDevice device) {
   device.clearResult();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Cleared result for device ${device.deviceId}')),
-  );
+  showSnackBarMsg(context, 'Cleared result for device ${device.deviceId}');
 }

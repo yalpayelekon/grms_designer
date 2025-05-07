@@ -7,6 +7,7 @@ import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../comm/discovery_manager.dart';
 import '../../utils/file_dialog_helper.dart';
+import '../../utils/general_ui.dart';
 import '../dialogs/network_interface_dialog.dart';
 import '../dialogs/workgroup_selection_dialog.dart';
 import '../../providers/settings_provider.dart';
@@ -38,9 +39,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
       if (interfaces.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No network interfaces found')),
-          );
+          showSnackBarMsg(context, 'No network interfaces found');
         }
         return null;
       }
@@ -168,23 +167,13 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         ref.read(workgroupsProvider.notifier).updateWorkgroup(updatedWorkgroup);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Updated workgroup: $workgroupName with ${newRouters.length} new routers',
-              ),
-            ),
-          );
+          showSnackBarMsg(context,
+              'Updated workgroup: $workgroupName with ${newRouters.length} new routers');
         }
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'No new routers found for existing workgroup: $workgroupName',
-              ),
-            ),
-          );
+          showSnackBarMsg(context,
+              'No new routers found for existing workgroup: $workgroupName');
         }
       }
 
@@ -217,13 +206,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
       ref.read(workgroupsProvider.notifier).addWorkgroup(workgroup);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Added workgroup: $workgroupName with ${helvarRouters.length} routers',
-            ),
-          ),
-        );
+        showSnackBarMsg(context,
+            'Added workgroup: $workgroupName with ${helvarRouters.length} routers');
       }
     }
   }
@@ -231,9 +215,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
   void _showErrorMessage(String message) {
     logError('Error: $message');
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      showSnackBarMsg(context, message);
     }
   }
 
@@ -392,16 +374,12 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         await ref.read(workgroupsProvider.notifier).exportWorkgroups(filePath);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Workgroups exported to $filePath')),
-          );
+          showSnackBarMsg(context, 'Workgroups exported to $filePath');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error exporting workgroups: $e')),
-        );
+        showSnackBarMsg(context, 'Error exporting workgroups: $e');
       }
     }
   }
@@ -436,21 +414,15 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                 );
 
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      'Workgroups ${result ? 'merged' : 'imported'} from $filePath'),
-                ),
-              );
+              showSnackBarMsg(context,
+                  'Workgroups ${result ? 'merged' : 'imported'} from $filePath');
             }
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error importing workgroups: $e')),
-        );
+        showSnackBarMsg(context, 'Error importing workgroups: $e');
       }
     }
   }
@@ -483,11 +455,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
       ref.read(workgroupsProvider.notifier).removeWorkgroup(workgroup.id);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Workgroup "${workgroup.description}" deleted'),
-          ),
-        );
+        showSnackBarMsg(
+            context, 'Workgroup "${workgroup.description}" deleted');
       }
     }
   }
@@ -506,11 +475,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
     if (matchingRouters.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No matching routers found for this workgroup'),
-          ),
-        );
+        showSnackBarMsg(
+            context, 'No matching routers found for this workgroup');
       }
       return;
     }

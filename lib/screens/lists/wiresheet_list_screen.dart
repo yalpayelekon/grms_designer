@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/wiresheet.dart';
 import '../../providers/wiresheets_provider.dart';
 import '../../utils/file_dialog_helper.dart';
+import '../../utils/general_ui.dart';
 import '../dialogs/wiresheet_actions.dart';
 import '../project_screens/wiresheet_screen.dart';
 
@@ -228,9 +229,7 @@ class WiresheetListScreenState extends ConsumerState<WiresheetListScreen> {
 
                 if (duplicate != null && context.mounted) {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Wiresheet "$newName" created')),
-                  );
+                  showSnackBarMsg(context, 'Wiresheet "$newName" created');
                 }
               }
             },
@@ -266,26 +265,18 @@ class WiresheetListScreenState extends ConsumerState<WiresheetListScreen> {
         setState(() {
           _isLoading = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? 'Wiresheet "${wiresheet.name}" exported successfully'
-                  : 'Failed to export wiresheet',
-            ),
-          ),
-        );
+        showSnackBarMsg(
+            context,
+            success
+                ? 'Wiresheet "${wiresheet.name}" exported successfully'
+                : 'Failed to export wiresheet');
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error exporting wiresheet: $e')),
-        );
+        showSnackBarMsg(context, 'Error exporting wiresheet: $e');
       }
     }
   }
@@ -317,16 +308,10 @@ class WiresheetListScreenState extends ConsumerState<WiresheetListScreen> {
         });
 
         if (importedWiresheet != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  'Wiresheet "${importedWiresheet.name}" imported successfully'),
-            ),
-          );
+          showSnackBarMsg(context,
+              'Wiresheet "${importedWiresheet.name}" imported successfully');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to import wiresheet')),
-          );
+          showSnackBarMsg(context, 'Failed to import wiresheet');
         }
       }
     } catch (e) {
@@ -334,10 +319,7 @@ class WiresheetListScreenState extends ConsumerState<WiresheetListScreen> {
         setState(() {
           _isLoading = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error importing wiresheet: $e')),
-        );
+        showSnackBarMsg(context, 'Error importing wiresheet: $e');
       }
     }
   }
@@ -368,13 +350,8 @@ class WiresheetListScreenState extends ConsumerState<WiresheetListScreen> {
           .deleteWiresheet(wiresheet.id);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success ? 'Wiresheet deleted' : 'Failed to delete wiresheet',
-            ),
-          ),
-        );
+        showSnackBarMsg(context,
+            success ? 'Wiresheet deleted' : 'Failed to delete wiresheet');
       }
     }
   }

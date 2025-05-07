@@ -273,9 +273,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (routersInfo.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No routers found in workgroups')),
-        );
+        showSnackBarMsg(context, 'No routers found in workgroups');
       }
       return;
     }
@@ -332,9 +330,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connected to $connectedCount routers')),
-        );
+        showSnackBarMsg(context, 'Connected to $connectedCount routers');
       }
     }
   }

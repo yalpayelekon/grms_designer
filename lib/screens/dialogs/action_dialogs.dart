@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
+import '../../utils/general_ui.dart';
 import '../actions.dart';
 
 Future<void> showDeviceDirectProportionDialog(
@@ -51,15 +52,10 @@ Future<void> showDeviceDirectProportionDialog(
       if (proportion >= -100 && proportion <= 100) {
         performDeviceDirectProportion(context, device, proportion);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Proportion must be between -100 and 100')),
-        );
+        showSnackBarMsg(context, 'Proportion must be between -100 and 100');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid proportion value')),
-      );
+      showSnackBarMsg(context, 'Invalid proportion value');
     }
   }
 }
@@ -395,14 +391,10 @@ Future<void> showDeviceDirectLevelDialog(
       if (level >= 0 && level <= 100) {
         performDeviceDirectLevel(context, device, level);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Level must be between 0 and 100')),
-        );
+        showSnackBarMsg(context, 'Level must be between 0 and 100');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid level value')),
-      );
+      showSnackBarMsg(context, 'Invalid level value');
     }
   }
 }
@@ -453,15 +445,10 @@ Future<void> showDeviceModifyProportionDialog(
       if (change >= -100 && change <= 100) {
         performDeviceModifyProportion(context, device, change);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Change amount must be between -100 and 100')),
-        );
+        showSnackBarMsg(context, 'Change amount must be between -100 and 100');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid change amount')),
-      );
+      showSnackBarMsg(context, 'Invalid change amount');
     }
   }
 }

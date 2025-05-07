@@ -4,6 +4,7 @@ import '../../services/app_directory_service.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import '../../utils/file_dialog_helper.dart';
+import '../../utils/general_ui.dart';
 import '../../utils/logger.dart';
 
 class ProjectFilesScreen extends ConsumerStatefulWidget {
@@ -132,9 +133,7 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
         await _loadFiles();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('File "$fileName" imported successfully')),
-          );
+          showSnackBarMsg(context, 'File "$fileName" imported successfully');
         }
       }
     } catch (e) {
@@ -143,9 +142,7 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error importing file: $e')),
-        );
+        showSnackBarMsg(context, 'Error importing file: $e');
       }
       logError('Error importing file: $e');
     }

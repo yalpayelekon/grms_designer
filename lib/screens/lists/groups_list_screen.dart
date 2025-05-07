@@ -4,6 +4,7 @@ import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../services/discovery_service.dart';
+import '../../utils/general_ui.dart';
 import '../details/group_detail_screen.dart';
 
 class GroupsListScreen extends ConsumerStatefulWidget {
@@ -268,9 +269,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
   }
 
   void _editGroup(BuildContext context, HelvarGroup group) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit Group feature coming soon')),
-    );
+    showSnackBarMsg(context, 'Edit Group feature coming soon');
   }
 
   void _showGroupDetails(BuildContext context, HelvarGroup group) {
@@ -317,21 +316,13 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
           );
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Group deleted'),
-        ),
-      );
+      showSnackBarMsg(context, 'Group deleted');
     }
   }
 
   Future<void> _discoverGroups(BuildContext context) async {
     if (widget.workgroup.routers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('No routers available to discover groups')),
-      );
+      showSnackBarMsg(context, 'No routers available to discover groups');
       return;
     }
 
@@ -346,9 +337,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
 
       if (discoveredGroups.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No groups discovered')),
-        );
+        showSnackBarMsg(context, 'No groups discovered');
         setState(() {
           _isLoading = false;
         });
@@ -397,18 +386,13 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Added ${newGroups.length} groups')),
-      );
-
+      showSnackBarMsg(context, 'Added ${newGroups.length} groups');
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error discovering groups: $e')),
-      );
+      showSnackBarMsg(context, 'Error discovering groups: $e');
       setState(() {
         _isLoading = false;
       });
