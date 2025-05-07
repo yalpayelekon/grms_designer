@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:grms_designer/protocol/query_commands.dart';
+import 'package:grms_designer/utils/logger.dart';
 
 import '../protocol/protocol_constants.dart';
 import '../screens/dialogs/network_interface_dialog.dart';
@@ -35,7 +36,7 @@ class DiscoveryManager {
         }
       });
     } catch (e) {
-      print('Error starting discovery: $e');
+      logError('Error starting discovery: $e');
       rethrow;
     }
   }

@@ -1,3 +1,4 @@
+import '../utils/logger.dart';
 import 'helvar_models/helvar_device.dart';
 
 class HelvarDriverEmergencyDevice extends HelvarDevice {
@@ -41,7 +42,7 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
       String s = "Success ($timestamp) Emergency Test for device $address";
       out = s;
     } catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
@@ -52,7 +53,7 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
       String s = "Success ($timestamp) Emergency Test for device $address";
       out = s;
     } catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
@@ -63,70 +64,70 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
       String s = "Success ($timestamp) Emergency Test for device $address";
       out = s;
     } catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyFunctionTestTime() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyFunctionTestState() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyDurationTestTime() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyDurationTestState() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyBatteryCharge() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyBatteryTime() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyTotalLampTime() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmergencyBatteryEndurance() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
 
   void queryEmdtActualTestDuration() {
     try {} catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }
@@ -138,7 +139,7 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
           "Success ($timestamp) Reset Emergency Battery and Total Lamp Time for device $address";
       out = s;
     } catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }

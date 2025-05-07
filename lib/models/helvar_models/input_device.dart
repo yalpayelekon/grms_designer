@@ -1,4 +1,5 @@
 // lib/models/input_device.dart
+import '../../utils/logger.dart';
 import 'helvar_device.dart';
 
 class HelvarDriverInputDevice extends HelvarDevice {
@@ -43,7 +44,7 @@ class HelvarDriverInputDevice extends HelvarDevice {
         out = "Please pass a valid scene number!";
       }
     } catch (e) {
-      print(e);
+      logError(e.toString());
       out = e.toString();
     }
   }

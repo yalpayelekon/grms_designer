@@ -1,3 +1,4 @@
+import '../../utils/logger.dart';
 import 'helvar_device.dart';
 
 class HelvarRouter {
@@ -45,7 +46,7 @@ class HelvarRouter {
           clusterMemberId = int.parse(ipParts[3]);
           address = '@${ipParts[2]}.${ipParts[3]}';
         } catch (e) {
-          print(e);
+          logError(e.toString());
         }
       }
     }
