@@ -1,67 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/general_ui.dart';
 
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
+import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/output_device.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../protocol/query_commands.dart';
+import '../providers/router_connection_provider.dart';
 import '../providers/workgroups_provider.dart';
 import 'dialogs/action_dialogs.dart';
-
-void performDeviceRecallScene(
-    BuildContext context, HelvarDevice device, int sceneNumber) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final subnet = int.parse(parts[2]);
-    final deviceIndex = int.parse(parts[3]);
-    final routerAddress = '$cluster.$router';
-
-    final command = HelvarNetCommands.recallSceneDevice(
-      2, // Protocol version
-      cluster,
-      router,
-      subnet,
-      deviceIndex,
-      1, // Block ID (default to 1)
-      sceneNumber,
-      fadeTime: 700, // Default fade time in 0.1 seconds
-    );
-
-    workgroupsNotifier
-        .sendRouterCommand(
-      _getWorkgroupIdForDevice(context, device),
-      routerAddress,
-      command,
-    )
-        .then((result) {
-      if (result.success) {
-        device.out = "Scene $sceneNumber recalled (${result.response})";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Recalled scene $sceneNumber for device ${device.deviceId}')),
-        );
-      } else {
-        device.out = "Failed to recall scene: ${result.errorMessage}";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to recall scene: ${result.errorMessage}')),
-        );
-      }
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('Invalid device address format: ${device.address}')),
-    );
-  }
-}
 
 String _getWorkgroupIdForDevice(BuildContext context, HelvarDevice device) {
   final container = ProviderScope.containerOf(context);
@@ -83,9 +32,8 @@ String _getWorkgroupIdForDevice(BuildContext context, HelvarDevice device) {
 void performRecallScene(
     BuildContext context, HelvarGroup group, int sceneNumber) {
   final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
+  final connectionManager = container.read(routerConnectionManagerProvider);
 
-  // Find the workgroup that contains this group
   final workgroups = container.read(workgroupsProvider);
   Workgroup? workgroup;
 
@@ -97,17 +45,23 @@ void performRecallScene(
   }
 
   if (workgroup == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workgroup not found for this group')),
-    );
+    showSnackBarMsg(context, 'Workgroup not found for this group');
     return;
   }
 
   final groupId = int.tryParse(group.groupId);
   if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
+    return;
+  }
+
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
     return;
   }
 
@@ -119,161 +73,34 @@ void performRecallScene(
     fadeTime: 700, // Default fade time in 0.1 seconds
   );
 
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
+  connectionManager
+      .getConnection(
     routerIpAddress,
-    command,
+    connectionTimeout: const Duration(seconds: 5),
   )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Recalled scene $sceneNumber for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Failed to recall scene: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void performDeviceDirectProportion(
-    BuildContext context, HelvarDevice device, int proportion) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final subnet = int.parse(parts[2]);
-    final deviceIndex = int.parse(parts[3]);
-    final routerAddress = '$cluster.$router';
-
-    // Use HelvarNetCommands to format a proper direct proportion command
-    final command = HelvarNetCommands.directProportionDevice(
-      2, // Protocol version
-      cluster,
-      router,
-      subnet,
-      deviceIndex,
-      proportion,
-      fadeTime: 700, // Default fade time
-    );
-
-    workgroupsNotifier
-        .sendRouterCommand(
-      _getWorkgroupIdForDevice(context, device),
-      routerAddress,
-      command,
-    )
-        .then((result) {
-      if (result.success) {
-        if (device is HelvarDriverOutputDevice) {
-          device.proportion = proportion;
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(context,
+              'Recalled scene $sceneNumber for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
         }
-        device.out = "Proportion set to $proportion (${result.response})";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Set proportion to $proportion for device ${device.deviceId}')),
-        );
-      } else {
-        device.out = "Failed to set proportion: ${result.errorMessage}";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to set proportion: ${result.errorMessage}')),
-        );
-      }
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('Invalid device address format: ${device.address}')),
-    );
-  }
-}
-
-void performDeviceModifyProportion(
-    BuildContext context, HelvarDevice device, int proportion) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final subnet = int.parse(parts[2]);
-    final deviceIndex = int.parse(parts[3]);
-    final routerAddress = '$cluster.$router';
-
-    // Use HelvarNetCommands to format a proper modify proportion command
-    final command = HelvarNetCommands.modifyProportionDevice(
-      2, // Protocol version
-      cluster,
-      router,
-      subnet,
-      deviceIndex,
-      proportion,
-      fadeTime: 700, // Default fade time
-    );
-
-    workgroupsNotifier
-        .sendRouterCommand(
-      _getWorkgroupIdForDevice(context, device),
-      routerAddress,
-      command,
-    )
-        .then((result) {
-      if (result.success) {
-        device.out = "Proportion modified by $proportion (${result.response})";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Modified proportion by $proportion for device ${device.deviceId}')),
-        );
-      } else {
-        device.out = "Failed to modify proportion: ${result.errorMessage}";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to modify proportion: ${result.errorMessage}')),
-        );
-      }
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('Invalid device address format: ${device.address}')),
-    );
-  }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
 }
 
 void performStoreScene(
     BuildContext context, HelvarGroup group, int sceneNumber) {
   final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
+  final connectionManager = container.read(routerConnectionManagerProvider);
 
-  // Find the workgroup that contains this group
   final workgroups = container.read(workgroupsProvider);
   Workgroup? workgroup;
 
@@ -285,21 +112,26 @@ void performStoreScene(
   }
 
   if (workgroup == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workgroup not found for this group')),
-    );
+    showSnackBarMsg(context, 'Workgroup not found for this group');
     return;
   }
 
   final groupId = int.tryParse(group.groupId);
   if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
     return;
   }
 
-  // Format store as scene command for group
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
   final command = HelvarNetCommands.storeAsSceneGroup(
     2, // Protocol version
     groupId,
@@ -308,547 +140,33 @@ void performStoreScene(
     forceStore: true, // Force store
   );
 
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
+  connectionManager
+      .getConnection(
     routerIpAddress,
-    command,
+    connectionTimeout: const Duration(seconds: 5),
   )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Stored scene $sceneNumber for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Failed to store scene: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void performDirectProportion(
-    BuildContext context, HelvarGroup group, int proportion) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  // Find the workgroup that contains this group
-  final workgroups = container.read(workgroupsProvider);
-  Workgroup? workgroup;
-
-  for (final wg in workgroups) {
-    if (wg.groups.any((g) => g.id == group.id)) {
-      workgroup = wg;
-      break;
-    }
-  }
-
-  if (workgroup == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workgroup not found for this group')),
-    );
-    return;
-  }
-
-  final groupId = int.tryParse(group.groupId);
-  if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
-    return;
-  }
-
-  // Format direct proportion command for group
-  final command = HelvarNetCommands.directProportionGroup(
-    2, // Protocol version
-    groupId,
-    proportion,
-    fadeTime: 700, // Default fade time
-  );
-
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
-    routerIpAddress,
-    command,
-  )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Set direct proportion $proportion for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Failed to set proportion: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void performModifyProportion(
-    BuildContext context, HelvarGroup group, int proportion) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  // Find the workgroup that contains this group
-  final workgroups = container.read(workgroupsProvider);
-  Workgroup? workgroup;
-
-  for (final wg in workgroups) {
-    if (wg.groups.any((g) => g.id == group.id)) {
-      workgroup = wg;
-      break;
-    }
-  }
-
-  if (workgroup == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workgroup not found for this group')),
-    );
-    return;
-  }
-
-  final groupId = int.tryParse(group.groupId);
-  if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
-    return;
-  }
-
-  // Format modify proportion command for group
-  final command = HelvarNetCommands.modifyProportionGroup(
-    2, // Protocol version
-    groupId,
-    proportion,
-    fadeTime: 700, // Default fade time
-  );
-
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
-    routerIpAddress,
-    command,
-  )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Modified proportion by $proportion for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Failed to modify proportion: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void performEmergencyFunctionTest(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final groupId = int.tryParse(group.groupId);
-  if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
-    return;
-  }
-
-  // Format emergency function test command for group
-  final command = HelvarNetCommands.emergencyFunctionTestGroup(
-    2, // Protocol version
-    groupId,
-  );
-
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
-    routerIpAddress,
-    command,
-  )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Started emergency function test for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Failed to start emergency test: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void performEmergencyDurationTest(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final groupId = int.tryParse(group.groupId);
-  if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
-    return;
-  }
-
-  // Format emergency duration test command for group
-  final command = HelvarNetCommands.emergencyDurationTestGroup(
-    2, // Protocol version
-    groupId,
-  );
-
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
-    routerIpAddress,
-    command,
-  )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Started emergency duration test for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Failed to start emergency test: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void stopEmergencyTest(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final groupId = int.tryParse(group.groupId);
-  if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
-    return;
-  }
-
-  // Format stop emergency tests command for group
-  final command = HelvarNetCommands.stopEmergencyTestsGroup(
-    2, // Protocol version
-    groupId,
-  );
-
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
-    routerIpAddress,
-    command,
-  )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Stopped emergency tests for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Failed to stop emergency tests: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void resetEmergencyBatteryTotalLampTime(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final groupId = int.tryParse(group.groupId);
-  if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
-    return;
-  }
-
-  // Format reset emergency battery command for group
-  final command = HelvarNetCommands.resetEmergencyBatteryAndTotalLampTimeGroup(
-    2, // Protocol version
-    groupId,
-  );
-
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
-    routerIpAddress,
-    command,
-  )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Reset emergency battery and total lamp time for group ${group.groupId}')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Failed to reset emergency battery: ${result.errorMessage}')),
-      );
-    }
-  });
-}
-
-void refreshGroupProperties(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final groupId = int.tryParse(group.groupId);
-  if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
-    return;
-  }
-
-  // Format query commands for group properties
-  final descriptionCommand = HelvarNetCommands.queryDescriptionGroup(
-    2, // Protocol version
-    groupId,
-  );
-
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
-  if (routerIpAddress.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('No router IP address available for this group')),
-    );
-    return;
-  }
-
-  // Send a query for the group description
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
-    routerIpAddress,
-    descriptionCommand,
-  )
-      .then((result) {
-    if (result.success) {
-      // Parse the description from the response
-      final response = result.response;
-      if (response != null && response.contains('=')) {
-        final parts = response.split('=');
-        if (parts.length > 1) {
-          final description = parts[1].replaceAll('#', '');
-
-          // Update the group description
-          final updatedGroup = group.copyWith(
-            description: description,
-            lastMessage: 'Group properties refreshed',
-            lastMessageTime: DateTime.now(),
-          );
-
-          // Save the updated group
-          workgroupsNotifier.updateGroup(workgroup.id, updatedGroup);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Group properties refreshed')),
-          );
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(
+              context, 'Stored scene $sceneNumber for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
         }
-      }
+      });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Failed to refresh properties: ${result.errorMessage}')),
-      );
+      showSnackBarMsg(context, 'Failed to establish connection to router');
     }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
   });
-}
-
-void performDeviceDirectLevel(
-    BuildContext context, HelvarDevice device, int level) {
-  final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
-
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final routerAddress = '@$cluster.$router';
-
-    String deviceAddress = device.address;
-    if (deviceAddress.startsWith('@')) {
-      deviceAddress = deviceAddress.substring(1);
-    }
-
-    final command = '>V:1,C:14,L:$level,F:700,@$deviceAddress#';
-
-    workgroupsNotifier
-        .sendRouterCommand(
-      _getWorkgroupIdForDevice(context, device),
-      routerAddress,
-      command,
-    )
-        .then((result) {
-      if (result.success) {
-        if (device is HelvarDriverOutputDevice) {
-          device.level = level;
-        }
-        device.out = "Level set to $level (${result.response})";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Set level to $level for device ${device.deviceId}')),
-        );
-      } else {
-        device.out = "Failed to set level: ${result.errorMessage}";
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Failed to set level: ${result.errorMessage}')),
-        );
-      }
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text('Invalid device address format: ${device.address}')),
-    );
-  }
 }
 
 void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
   final container = ProviderScope.containerOf(context);
-  final workgroupsNotifier = container.read(workgroupsProvider.notifier);
+  final connectionManager = container.read(routerConnectionManagerProvider);
 
-  // Find the workgroup that contains this group
   final workgroups = container.read(workgroupsProvider);
   Workgroup? workgroup;
 
@@ -860,21 +178,26 @@ void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
   }
 
   if (workgroup == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workgroup not found for this group')),
-    );
+    showSnackBarMsg(context, 'Workgroup not found for this group');
     return;
   }
 
   final groupId = int.tryParse(group.groupId);
   if (groupId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
-    );
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
     return;
   }
 
-  // Format direct level command for group
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
   final command = HelvarNetCommands.directLevelGroup(
     2, // Protocol version
     groupId,
@@ -882,7 +205,375 @@ void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
     fadeTime: 700, // Default fade time in 0.1 seconds
   );
 
-  // Use gateway router IP address from the group if available, otherwise try to use a router from the workgroup
+  connectionManager
+      .getConnection(
+    routerIpAddress,
+    connectionTimeout: const Duration(seconds: 5),
+  )
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(
+              context, 'Set direct level $level for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
+        }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
+}
+
+void performDirectProportion(
+    BuildContext context, HelvarGroup group, int proportion) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final workgroups = container.read(workgroupsProvider);
+  Workgroup? workgroup;
+
+  for (final wg in workgroups) {
+    if (wg.groups.any((g) => g.id == group.id)) {
+      workgroup = wg;
+      break;
+    }
+  }
+
+  if (workgroup == null) {
+    showSnackBarMsg(context, 'Workgroup not found for this group');
+    return;
+  }
+
+  final groupId = int.tryParse(group.groupId);
+  if (groupId == null) {
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
+    return;
+  }
+
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
+  final command = HelvarNetCommands.directProportionGroup(
+    2, // Protocol version
+    groupId,
+    proportion,
+    fadeTime: 700, // Default fade time
+  );
+
+  connectionManager
+      .getConnection(
+    routerIpAddress,
+    connectionTimeout: const Duration(seconds: 5),
+  )
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(context,
+              'Set direct proportion $proportion for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
+        }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
+}
+
+void performModifyProportion(
+    BuildContext context, HelvarGroup group, int proportion) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final workgroups = container.read(workgroupsProvider);
+  Workgroup? workgroup;
+
+  for (final wg in workgroups) {
+    if (wg.groups.any((g) => g.id == group.id)) {
+      workgroup = wg;
+      break;
+    }
+  }
+
+  if (workgroup == null) {
+    showSnackBarMsg(context, 'Workgroup not found for this group');
+    return;
+  }
+
+  final groupId = int.tryParse(group.groupId);
+  if (groupId == null) {
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
+    return;
+  }
+
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
+  final command = HelvarNetCommands.modifyProportionGroup(
+    2, // Protocol version
+    groupId,
+    proportion,
+    fadeTime: 700, // Default fade time
+  );
+
+  connectionManager
+      .getConnection(
+    routerIpAddress,
+    connectionTimeout: const Duration(seconds: 5),
+  )
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(context,
+              'Modified proportion by $proportion for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
+        }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
+}
+
+void performEmergencyFunctionTest(
+    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final groupId = int.tryParse(group.groupId);
+  if (groupId == null) {
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
+    return;
+  }
+
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
+  final command = HelvarNetCommands.emergencyFunctionTestGroup(
+    2, // Protocol version
+    groupId,
+  );
+
+  connectionManager
+      .getConnection(
+    routerIpAddress,
+    connectionTimeout: const Duration(seconds: 5),
+  )
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(context,
+              'Started emergency function test for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
+        }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
+}
+
+void performEmergencyDurationTest(
+    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final groupId = int.tryParse(group.groupId);
+  if (groupId == null) {
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
+    return;
+  }
+
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
+  final command = HelvarNetCommands.emergencyDurationTestGroup(
+    2, // Protocol version
+    groupId,
+  );
+
+  connectionManager
+      .getConnection(
+    routerIpAddress,
+    connectionTimeout: const Duration(seconds: 5),
+  )
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(context,
+              'Started emergency duration test for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
+        }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
+}
+
+void stopEmergencyTest(
+    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final groupId = int.tryParse(group.groupId);
+  if (groupId == null) {
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
+    return;
+  }
+
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
+  final command = HelvarNetCommands.stopEmergencyTestsGroup(
+    2, // Protocol version
+    groupId,
+  );
+
+  connectionManager
+      .getConnection(
+    routerIpAddress,
+    connectionTimeout: const Duration(seconds: 5),
+  )
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(
+              context, 'Stopped emergency tests for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
+        }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
+}
+
+void resetEmergencyBatteryTotalLampTime(
+    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final groupId = int.tryParse(group.groupId);
+  if (groupId == null) {
+    showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
+    return;
+  }
+
+  String routerIpAddress = group.gatewayRouterIpAddress;
+  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
+    routerIpAddress = workgroup.routers.first.ipAddress;
+  }
+
+  if (routerIpAddress.isEmpty) {
+    showSnackBarMsg(context, 'No router IP address available for this group');
+    return;
+  }
+
+  final command = HelvarNetCommands.resetEmergencyBatteryAndTotalLampTimeGroup(
+    2, // Protocol version
+    groupId,
+  );
+
+  connectionManager
+      .getConnection(
+    routerIpAddress,
+    connectionTimeout: const Duration(seconds: 5),
+  )
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommand(command).then((success) {
+        if (success) {
+          showSnackBarMsg(context,
+              'Reset emergency battery and total lamp time for group ${group.groupId}');
+        } else {
+          showSnackBarMsg(context, 'Failed to send command to group');
+        }
+      });
+    } else {
+      showSnackBarMsg(context, 'Failed to establish connection to router');
+    }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
+  });
+}
+
+void refreshGroupProperties(
+    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final groupId = int.tryParse(group.groupId);
+  if (groupId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Invalid group ID: ${group.groupId}')),
+    );
+    return;
+  }
+
+  final descriptionCommand = HelvarNetCommands.queryDescriptionGroup(
+    2, // Protocol version
+    groupId,
+  );
+
   String routerIpAddress = group.gatewayRouterIpAddress;
   if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
     routerIpAddress = workgroup.routers.first.ipAddress;
@@ -896,25 +587,324 @@ void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
     return;
   }
 
-  workgroupsNotifier
-      .sendRouterCommand(
-    workgroup.id,
+  connectionManager
+      .getConnection(
     routerIpAddress,
-    command,
+    connectionTimeout: const Duration(seconds: 5),
   )
-      .then((result) {
-    if (result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content:
-                Text('Set direct level $level for group ${group.groupId}')),
-      );
+      .then((connection) {
+    if (connection.isConnected) {
+      connection.sendCommandWithResponse(descriptionCommand).then((response) {
+        if (response != null && response.contains('=')) {
+          final parts = response.split('=');
+          if (parts.length > 1) {
+            final description = parts[1].replaceAll('#', '');
+
+            final updatedGroup = group.copyWith(
+              description: description,
+              lastMessage: 'Group properties refreshed',
+              lastMessageTime: DateTime.now(),
+            );
+
+            final workgroupsNotifier =
+                container.read(workgroupsProvider.notifier);
+            workgroupsNotifier.updateGroup(workgroup.id, updatedGroup);
+            showSnackBarMsg(context, 'Group properties refreshed');
+          }
+        }
+      });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to set level: ${result.errorMessage}')),
-      );
+      showSnackBarMsg(context, 'Failed to establish connection to router');
     }
+  }).catchError((error) {
+    showSnackBarMsg(context, 'Connection error: $error');
   });
+}
+
+void performDeviceDirectLevel(
+    BuildContext context, HelvarDevice device, int level) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final parts = device.address.split('.');
+  if (parts.length >= 4) {
+    final cluster = int.parse(parts[0]);
+    final router = int.parse(parts[1]);
+    final routerAddress = '@$cluster.$router';
+
+    final workgroups = container.read(workgroupsProvider);
+    Workgroup? workgroup;
+    HelvarRouter? helvarRouter;
+
+    for (final wg in workgroups) {
+      for (final r in wg.routers) {
+        if (r.address == routerAddress) {
+          workgroup = wg;
+          helvarRouter = r;
+          break;
+        }
+      }
+      if (workgroup != null) break;
+    }
+
+    if (workgroup == null || helvarRouter == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Router not found for this device')),
+      );
+      return;
+    }
+
+    final command = HelvarNetCommands.directLevelDevice(
+      2,
+      device.address,
+      level,
+      fadeTime: 700, // Default fade time
+    );
+
+    connectionManager
+        .getConnection(
+      helvarRouter.ipAddress,
+      connectionTimeout: const Duration(seconds: 5),
+    )
+        .then((connection) {
+      if (connection.isConnected) {
+        connection.sendCommand(command).then((success) {
+          if (success) {
+            if (device is HelvarDriverOutputDevice) {
+              device.level = level;
+            }
+            device.out = "Level set to $level";
+            showSnackBarMsg(
+                context, 'Set level to $level for device ${device.deviceId}');
+          } else {
+            device.out = "Failed to set level: no response";
+            showSnackBarMsg(context, 'Failed to send command to device');
+          }
+        });
+      } else {
+        showSnackBarMsg(context, 'Failed to establish connection to router');
+      }
+    }).catchError((error) {
+      showSnackBarMsg(context, 'Connection error: $error');
+    });
+  } else {
+    showSnackBarMsg(
+        context, 'Invalid device address format: ${device.address}');
+  }
+}
+
+void performDeviceRecallScene(
+    BuildContext context, HelvarDevice device, int sceneNumber) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final parts = device.address.split('.');
+  if (parts.length >= 4) {
+    final cluster = int.parse(parts[0]);
+    final router = int.parse(parts[1]);
+    final routerAddress = '@$cluster.$router';
+
+    final workgroups = container.read(workgroupsProvider);
+    Workgroup? workgroup;
+    HelvarRouter? helvarRouter;
+
+    for (final wg in workgroups) {
+      for (final r in wg.routers) {
+        if (r.address == routerAddress) {
+          workgroup = wg;
+          helvarRouter = r;
+          break;
+        }
+      }
+      if (workgroup != null) break;
+    }
+
+    if (workgroup == null || helvarRouter == null) {
+      showSnackBarMsg(context, 'Router not found for this device');
+      return;
+    }
+
+    final command = HelvarNetCommands.recallSceneDevice(
+      2, // Protocol version
+      cluster,
+      router,
+      int.parse(parts[2]), // subnet
+      int.parse(parts[3]), // device
+      1, // Block ID (default to 1)
+      sceneNumber,
+      fadeTime: 700, // Default fade time in 0.1 seconds
+    );
+
+    connectionManager
+        .getConnection(
+      helvarRouter.ipAddress,
+      connectionTimeout: const Duration(seconds: 5),
+    )
+        .then((connection) {
+      if (connection.isConnected) {
+        connection.sendCommand(command).then((success) {
+          if (success) {
+            device.out = "Scene $sceneNumber recalled";
+            showSnackBarMsg(context,
+                'Recalled scene $sceneNumber for device ${device.deviceId}');
+          } else {
+            device.out = "Failed to recall scene: no response";
+            showSnackBarMsg(context, 'Failed to send command to device');
+          }
+        });
+      } else {
+        showSnackBarMsg(context, 'Failed to establish connection to router');
+      }
+    }).catchError((error) {
+      showSnackBarMsg(context, 'Connection error: $error');
+    });
+  } else {
+    showSnackBarMsg(
+        context, 'Invalid device address format: ${device.address}');
+  }
+}
+
+void performDeviceDirectProportion(
+    BuildContext context, HelvarDevice device, int proportion) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final parts = device.address.split('.');
+  if (parts.length >= 4) {
+    final cluster = int.parse(parts[0]);
+    final router = int.parse(parts[1]);
+    final routerAddress = '@$cluster.$router';
+
+    final workgroups = container.read(workgroupsProvider);
+    Workgroup? workgroup;
+    HelvarRouter? helvarRouter;
+
+    for (final wg in workgroups) {
+      for (final r in wg.routers) {
+        if (r.address == routerAddress) {
+          workgroup = wg;
+          helvarRouter = r;
+          break;
+        }
+      }
+      if (workgroup != null) break;
+    }
+
+    if (workgroup == null || helvarRouter == null) {
+      showSnackBarMsg(context, 'Router not found for this device');
+      return;
+    }
+
+    final command = HelvarNetCommands.directProportionDevice(
+      2, // Protocol version
+      cluster,
+      router,
+      int.parse(parts[2]), // subnet
+      int.parse(parts[3]), // device
+      proportion,
+      fadeTime: 700, // Default fade time
+    );
+
+    connectionManager
+        .getConnection(
+      helvarRouter.ipAddress,
+      connectionTimeout: const Duration(seconds: 5),
+    )
+        .then((connection) {
+      if (connection.isConnected) {
+        connection.sendCommand(command).then((success) {
+          if (success) {
+            if (device is HelvarDriverOutputDevice) {
+              device.proportion = proportion;
+            }
+            device.out = "Proportion set to $proportion";
+            showSnackBarMsg(context,
+                'Set proportion to $proportion for device ${device.deviceId}');
+          } else {
+            device.out = "Failed to set proportion: no response";
+            showSnackBarMsg(context, 'Failed to send command to device');
+          }
+        });
+      } else {
+        showSnackBarMsg(context, 'Failed to establish connection to router');
+      }
+    }).catchError((error) {
+      showSnackBarMsg(context, 'Connection error: $error');
+    });
+  } else {
+    showSnackBarMsg(
+        context, 'Invalid device address format: ${device.address}');
+  }
+}
+
+void performDeviceModifyProportion(
+    BuildContext context, HelvarDevice device, int proportion) {
+  final container = ProviderScope.containerOf(context);
+  final connectionManager = container.read(routerConnectionManagerProvider);
+
+  final parts = device.address.split('.');
+  if (parts.length >= 4) {
+    final cluster = int.parse(parts[0]);
+    final router = int.parse(parts[1]);
+    final routerAddress = '@$cluster.$router';
+
+    final workgroups = container.read(workgroupsProvider);
+    Workgroup? workgroup;
+    HelvarRouter? helvarRouter;
+
+    for (final wg in workgroups) {
+      for (final r in wg.routers) {
+        if (r.address == routerAddress) {
+          workgroup = wg;
+          helvarRouter = r;
+          break;
+        }
+      }
+      if (workgroup != null) break;
+    }
+
+    if (workgroup == null || helvarRouter == null) {
+      showSnackBarMsg(context, 'Router not found for this device');
+      return;
+    }
+
+    final command = HelvarNetCommands.modifyProportionDevice(
+      2, // Protocol version
+      cluster,
+      router,
+      int.parse(parts[2]), // subnet
+      int.parse(parts[3]), // device
+      proportion,
+      fadeTime: 700, // Default fade time
+    );
+
+    connectionManager
+        .getConnection(
+      helvarRouter.ipAddress,
+      connectionTimeout: const Duration(seconds: 5),
+    )
+        .then((connection) {
+      if (connection.isConnected) {
+        connection.sendCommand(command).then((success) {
+          if (success) {
+            device.out = "Proportion modified by $proportion";
+            showSnackBarMsg(context,
+                'Modified proportion by $proportion for device ${device.deviceId}');
+          } else {
+            device.out = "Failed to modify proportion: no response";
+            showSnackBarMsg(context, 'Failed to send command to device');
+          }
+        });
+      } else {
+        showSnackBarMsg(context, 'Failed to establish connection to router');
+      }
+    }).catchError((error) {
+      showSnackBarMsg(context, 'Connection error: $error');
+    });
+  } else {
+    showSnackBarMsg(
+        context, 'Invalid device address format: ${device.address}');
+  }
 }
 
 void showGroupContextMenu(
