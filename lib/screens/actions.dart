@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/providers/project_settings_provider.dart';
 import 'package:grms_designer/utils/general_ui.dart';
 
 import '../models/helvar_models/helvar_device.dart';
@@ -542,7 +543,7 @@ void refreshGroupProperties(
     BuildContext context, HelvarGroup group, Workgroup workgroup) {
   final container = ProviderScope.containerOf(context);
   final connectionManager = container.read(routerConnectionManagerProvider);
-
+  final settingsProvider = container.read(projectSettingsProvider);
   final groupId = int.tryParse(group.groupId);
   if (groupId == null) {
     showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
@@ -569,7 +570,10 @@ void refreshGroupProperties(
   )
       .then((connection) {
     if (connection.isConnected) {
-      connection.sendCommandWithResponse(descriptionCommand).then((response) {
+      connection
+          .sendCommandWithResponse(descriptionCommand,
+              Duration(milliseconds: settingsProvider.commandTimeoutMs))
+          .then((response) {
         if (response != null && response.contains('=')) {
           final parts = response.split('=');
           if (parts.length > 1) {

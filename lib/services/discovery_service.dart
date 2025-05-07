@@ -386,7 +386,8 @@ class DiscoveryService {
   }
 
   static Future<String> _sendCommand(
-      Socket socket, String command, Stream<List<int>> broadcastStream) async {
+      Socket socket, String command, Stream<List<int>> broadcastStream,
+      {Duration timeout = const Duration(seconds: 15)}) async {
     final completer = Completer<String>();
 
     final subscription = broadcastStream.listen(
@@ -408,7 +409,7 @@ class DiscoveryService {
     socket.write(command);
 
     final result = await completer.future.timeout(
-      const Duration(seconds: 15),
+      timeout,
       onTimeout: () {
         logVerbose('Command timed out: $command');
         return 'TIMEOUT';
@@ -420,14 +421,15 @@ class DiscoveryService {
   }
 
   Future<String?> sendPersistentCommand(
-      String routerIp, String routerId, String command) async {
+      String routerIp, String routerId, String command,
+      {Duration? timeout}) async {
     final commandService = RouterCommandService();
 
     try {
       final result = await commandService.sendCommand(
         routerIp,
         command,
-        timeout: const Duration(seconds: 15),
+        timeout: timeout,
       );
 
       if (result.success) {

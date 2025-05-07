@@ -120,7 +120,7 @@ class RouterCommandService {
       try {
         final response = await connection.sendCommandWithResponse(
           command,
-          timeout: localTimeout,
+          localTimeout,
         );
 
         if (response == null) {

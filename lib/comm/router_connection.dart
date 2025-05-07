@@ -165,9 +165,9 @@ class RouterConnection {
   }
 
   Future<String?> sendCommandWithResponse(
-    String command, {
-    Duration timeout = const Duration(seconds: 10),
-  }) async {
+    String command,
+    Duration timeout,
+  ) async {
     if (!isConnected) {
       return null;
     }
