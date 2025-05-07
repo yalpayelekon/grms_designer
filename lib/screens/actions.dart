@@ -648,9 +648,7 @@ void performDeviceDirectLevel(
     }
 
     if (workgroup == null || helvarRouter == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Router not found for this device')),
-      );
+      showSnackBarMsg(context, 'Router not found for this device');
       return;
     }
 
