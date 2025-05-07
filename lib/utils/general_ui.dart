@@ -279,3 +279,32 @@ void showSnackBarMsg(BuildContext context, String message) {
     SnackBar(content: Text(message)),
   );
 }
+
+Color getPortColor(PortType type) {
+  switch (type) {
+    case PortType.boolean:
+      return Colors.green;
+    case PortType.number:
+      return Colors.blue;
+    case PortType.string:
+      return Colors.orange;
+    case PortType.any:
+    default:
+      return Colors.purple;
+  }
+}
+
+Offset evaluateCubic(Offset p0, Offset p1, Offset p2, Offset p3, double t) {
+  final u = 1 - t;
+  final tt = t * t;
+  final uu = u * u;
+  final uuu = uu * u;
+  final ttt = tt * t;
+
+  var result = p0 * uuu;
+  result += p1 * 3 * uu * t;
+  result += p2 * 3 * u * tt;
+  result += p3 * ttt;
+
+  return result;
+}

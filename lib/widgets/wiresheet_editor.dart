@@ -420,7 +420,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         Offset control1, Offset control2, double threshold) {
       for (int i = 0; i <= 20; i++) {
         final t = i / 20;
-        final curvePoint = _evaluateCubic(start, control1, control2, end, t);
+        final curvePoint = evaluateCubic(start, control1, control2, end, t);
         final distance = (curvePoint - point).distance;
 
         if (distance < threshold) {
@@ -454,21 +454,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     }
 
     return null;
-  }
-
-  Offset _evaluateCubic(Offset p0, Offset p1, Offset p2, Offset p3, double t) {
-    final u = 1 - t;
-    final tt = t * t;
-    final uu = u * u;
-    final uuu = uu * u;
-    final ttt = tt * t;
-
-    var result = p0 * uuu;
-    result += p1 * 3 * uu * t;
-    result += p2 * 3 * u * tt;
-    result += p3 * ttt;
-
-    return result;
   }
 
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
@@ -531,6 +516,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                     index,
                     updatedItem,
                   );
+              setState(() {});
             }
           },
           child: GestureDetector(
@@ -719,7 +705,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                         width: 12,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: _getPortColor(port.type),
+                          color: getPortColor(port.type),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -762,19 +748,5 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         ),
       ),
     );
-  }
-
-  Color _getPortColor(PortType type) {
-    switch (type) {
-      case PortType.boolean:
-        return Colors.green;
-      case PortType.number:
-        return Colors.blue;
-      case PortType.string:
-        return Colors.orange;
-      case PortType.any:
-      default:
-        return Colors.purple;
-    }
   }
 }
