@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:grms_designer/protocol/protocol_constants.dart';
+
 import '../models/project_settings.dart';
 import '../utils/logger.dart';
 import 'router_connection.dart';
@@ -46,18 +48,18 @@ class RouterConnectionManager {
   Future<RouterConnection> getConnection(
     String ipAddress, {
     bool forceReconnect = false,
-    int port = 50000,
+    int port = defaultTcpPort,
     Duration? heartbeatInterval,
     Duration? connectionTimeout,
   }) async {
     final connectionKey = '$ipAddress:$port';
-    print("trying to get connection for:$connectionKey");
+    logInfo("trying to get connection for:$connectionKey");
     try {
       if (connections.containsKey(connectionKey) && !forceReconnect) {
         final connection = connections[connectionKey]!;
 
         if (!connection.isConnected) {
-          logInfo('Reconnecting to router at $ipAddress',
+          logDebug('Reconnecting to router at $ipAddress',
               tag: 'RouterConnectionManager');
           await connection.connect();
         }

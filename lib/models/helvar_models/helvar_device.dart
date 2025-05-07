@@ -1,5 +1,6 @@
 // lib/models/helvar_device.dart
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
+import 'package:grms_designer/utils/logger.dart';
 
 import '../emergency_device.dart';
 import 'input_device.dart';
@@ -76,7 +77,7 @@ abstract class HelvarDevice extends TreeNode {
         subnet = int.parse(parts[2]);
         deviceIndex = int.parse(parts[3]);
       } catch (e) {
-        print("Error in HelvarDevice creation:$e");
+        logError("Error in HelvarDevice creation:$e");
       }
     }
   }

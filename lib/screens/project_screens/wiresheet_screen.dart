@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/logger.dart';
 import '../../models/wiresheet.dart';
 import '../../providers/wiresheets_provider.dart';
 import '../../widgets/wiresheet_editor.dart';
@@ -116,7 +117,7 @@ class WiresheetScreen extends ConsumerWidget {
 
                 if (duplicate != null && context.mounted) {
                   Navigator.of(context).pop();
-                  print("Wiresheet created: $newName");
+                  logInfo("Wiresheet created: $newName");
                 }
               }
             },

@@ -37,17 +37,17 @@ class HelvarDriverOutputDevice extends HelvarDevice {
 
   @override
   void recallScene(String sceneParams) {
-    print("doRecallScene()");
+    logInfo("Recalling scene with params: $sceneParams");
     try {
       if (sceneParams.isNotEmpty) {
         List<String> temp = sceneParams.split(',');
 
         String timestamp = DateTime.now().toString();
         String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
-        print(s);
+        logInfo(s);
         out = s;
       } else {
-        print("Please pass a valid scene number!");
+        logWarning("Please pass a valid scene number!");
         out = "Please pass a valid scene number!";
       }
     } catch (e) {
@@ -62,7 +62,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
 
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Level Device: ${temp[0]}";
-      print(s);
+      logInfo(s);
       out = s;
     } catch (e) {
       logError(e.toString());
@@ -77,7 +77,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
       out = s;
-      print(s);
+      logInfo(s);
     } catch (e) {
       logError(e.toString());
       out = e.toString();
@@ -90,7 +90,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
 
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
-      print(s);
+      logInfo(s);
       out = s;
     } catch (e) {
       logError(e.toString());

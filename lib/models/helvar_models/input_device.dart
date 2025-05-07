@@ -40,7 +40,7 @@ class HelvarDriverInputDevice extends HelvarDevice {
         String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
         out = s;
       } else {
-        print("Please pass a valid scene number!");
+        logWarning("Please pass a valid scene number!");
         out = "Please pass a valid scene number!";
       }
     } catch (e) {

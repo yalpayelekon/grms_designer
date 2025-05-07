@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:grms_designer/utils/logger.dart';
+
 class DeviceStateFlags {
   static const int disabled = 0x00000001;
   static const int lampFailure = 0x00000002;
@@ -657,7 +659,6 @@ void main(List<String> args) async {
       print('Router not found or not responding');
     }
   } catch (e) {
-    print('Error: $e');
     print(e.toString());
   }
 

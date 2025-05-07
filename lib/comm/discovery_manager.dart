@@ -55,7 +55,7 @@ class DiscoveryManager {
 
       await Future.delayed(Duration(milliseconds: timeout));
     } catch (e) {
-      print('Error sending discovery request: $e');
+      logError('Error sending discovery request: $e');
       rethrow;
     }
   }
@@ -87,8 +87,8 @@ class DiscoveryManager {
     }).toList();
 
     if (filteredInterfaces.isEmpty) {
-      print('No valid interfaces found.');
-      print('Raw ipconfig output:\n$output');
+      logWarning('No valid interfaces found.');
+      logVerbose('Raw ipconfig output:\n$output');
       return [];
     } else {
       return filteredInterfaces;

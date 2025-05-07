@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/screens/details/workgroup_detail_screen.dart';
+import 'package:grms_designer/utils/logger.dart';
 
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -228,7 +229,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
   }
 
   void _showErrorMessage(String message) {
-    print('Error: $message');
+    logError('Error: $message');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),

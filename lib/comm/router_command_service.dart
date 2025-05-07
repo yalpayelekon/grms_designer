@@ -246,7 +246,7 @@ class RouterCommandService {
   }
 
   void _updateCommandStatus(QueuedCommand command) {
-    print(command.toString());
+    logInfo('Command status updated: ${command.toString()}');
     _commandStatusController.add(command);
   }
 
