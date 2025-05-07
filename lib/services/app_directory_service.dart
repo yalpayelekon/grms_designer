@@ -4,6 +4,8 @@ import 'package:path_provider/path_provider.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as path;
 
+import '../utils/logger.dart';
+
 class AppDirectoryService {
   static const String _appFolderName = 'GRMS_Designer';
   static const String workgroupsDir = 'workgroups';
@@ -134,7 +136,7 @@ class AppDirectoryService {
 
       return false;
     } catch (e) {
-      debugPrint('Error deleting file: $e');
+      logError('Error deleting file: $e');
       return false;
     }
   }
@@ -156,7 +158,7 @@ class AppDirectoryService {
       await sourceFile.copy(backupFilePath);
       return backupFilePath;
     } catch (e) {
-      debugPrint('Error creating backup: $e');
+      logError('Error creating backup: $e');
       return null;
     }
   }
@@ -175,7 +177,7 @@ class AppDirectoryService {
       await sourceFile.copy(exportFilePath);
       return exportFilePath;
     } catch (e) {
-      debugPrint('Error exporting file: $e');
+      logError('Error exporting file: $e');
       return null;
     }
   }

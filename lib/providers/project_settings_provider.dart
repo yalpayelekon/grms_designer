@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/project_settings.dart';
 import '../services/app_directory_service.dart';
+import '../utils/logger.dart';
 
 class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
   final AppDirectoryService _directoryService = AppDirectoryService();
@@ -26,7 +27,7 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
         state = ProjectSettings.fromJson(json);
       }
     } catch (e) {
-      debugPrint('Error loading project settings: $e');
+      logError('Error loading project settings: $e');
     }
   }
 
@@ -41,7 +42,7 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
 
       debugPrint('Project settings saved to: $filePath');
     } catch (e) {
-      debugPrint('Error saving project settings: $e');
+      logError('Error saving project settings: $e');
     }
   }
 
@@ -70,7 +71,7 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
       return _directoryService.createBackup(
           AppDirectoryService.settingsDir, _settingsFileName);
     } catch (e) {
-      debugPrint('Error creating project settings backup: $e');
+      logError('Error creating project settings backup: $e');
       return null;
     }
   }
@@ -93,7 +94,7 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
 
       return true;
     } catch (e) {
-      debugPrint('Error restoring project settings from backup: $e');
+      logError('Error restoring project settings from backup: $e');
       return false;
     }
   }

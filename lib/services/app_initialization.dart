@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import '../utils/logger.dart';
 import 'app_directory_service.dart';
 
 class AppInitializationService {
@@ -7,7 +7,7 @@ class AppInitializationService {
     try {
       await _initializeDirectories();
     } catch (e) {
-      debugPrint('Error during application initialization: $e');
+      logError('Error during application initialization: $e');
       rethrow;
     }
   }
@@ -15,10 +15,10 @@ class AppInitializationService {
   static Future<void> _initializeDirectories() async {
     final directoryService = AppDirectoryService();
     await directoryService.initialize();
-    debugPrint('Application directories initialized successfully');
+    logInfo('Application directories initialized successfully');
   }
 
   static Future<void> handleInitializationFailure(dynamic error) async {
-    debugPrint('Application initialization failed: $error');
+    logError('Application initialization failed: $error');
   }
 }

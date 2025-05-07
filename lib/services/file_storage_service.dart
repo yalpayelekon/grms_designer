@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/helvar_models/workgroup.dart';
+import '../utils/logger.dart';
 import 'app_directory_service.dart';
 
 class FileStorageService {
@@ -20,7 +21,7 @@ class FileStorageService {
       await file.writeAsString(jsonString);
       debugPrint('Workgroups saved to: $filePath');
     } catch (e) {
-      debugPrint('Error saving workgroups: $e');
+      logError('Error saving workgroups: $e');
       rethrow;
     }
   }
@@ -32,7 +33,7 @@ class FileStorageService {
       final file = File(filePath);
 
       if (!await file.exists()) {
-        debugPrint('No saved workgroups file found.');
+        logInfo('No saved workgroups file found.');
         return [];
       }
 
@@ -41,7 +42,7 @@ class FileStorageService {
 
       return jsonData.map((json) => Workgroup.fromJson(json)).toList();
     } catch (e) {
-      debugPrint('Error loading workgroups: $e');
+      logError('Error loading workgroups: $e');
       return [];
     }
   }
@@ -61,7 +62,7 @@ class FileStorageService {
       await _directoryService.exportFile(
           AppDirectoryService.workgroupsDir, _defaultFilename, fileName);
     } catch (e) {
-      debugPrint('Error exporting workgroups: $e');
+      logError('Error exporting workgroups: $e');
       rethrow;
     }
   }
@@ -81,7 +82,7 @@ class FileStorageService {
 
       return jsonData.map((json) => Workgroup.fromJson(json)).toList();
     } catch (e) {
-      debugPrint('Error importing workgroups: $e');
+      logError('Error importing workgroups: $e');
       rethrow;
     }
   }
@@ -110,7 +111,7 @@ class FileStorageService {
       await backupFile.copy(targetFilePath);
       return true;
     } catch (e) {
-      debugPrint('Error restoring workgroups from backup: $e');
+      logError('Error restoring workgroups from backup: $e');
       return false;
     }
   }

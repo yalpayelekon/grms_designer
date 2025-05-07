@@ -9,6 +9,7 @@ import '../models/helvar_models/workgroup.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../services/file_storage_service.dart';
 import '../services/router_storage_service.dart';
+import '../utils/logger.dart';
 
 class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   final FileStorageService _fileStorageService;
@@ -39,7 +40,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices.clear();
             router.devices.addAll(devices);
           } catch (e) {
-            debugPrint(
+            logError(
                 'Error loading devices for router ${router.description}: $e');
           }
         }
@@ -48,7 +49,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
       state = workgroups;
       _initialized = true;
     } catch (e) {
-      debugPrint('Error initializing workgroups: $e');
+      logError('Error initializing workgroups: $e');
     }
   }
 
@@ -67,7 +68,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
 
       return await connectionManager.getConnection(router.ipAddress);
     } catch (e) {
-      debugPrint('Error getting router connection: $e');
+      logError('Error getting router connection: $e');
       return null;
     }
   }
@@ -94,7 +95,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         priority: priority,
       );
     } catch (e) {
-      debugPrint('Error sending router command: $e');
+      logError('Error sending router command: $e');
       return CommandResult.failure(e.toString(), 0);
     }
   }
@@ -111,13 +112,13 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
               router.devices,
             );
           } catch (e) {
-            debugPrint(
+            logError(
                 'Error saving devices for router ${router.description}: $e');
           }
         }
       }
     } catch (e) {
-      debugPrint('Error saving workgroups: $e');
+      logError('Error saving workgroups: $e');
     }
   }
 
@@ -165,13 +166,12 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices,
           );
         } catch (e) {
-          debugPrint(
-              'Error saving devices for router ${router.description}: $e');
+          logError('Error saving devices for router ${router.description}: $e');
         }
         try {
           await _fileStorageService.saveWorkgroups(state);
         } catch (e) {
-          debugPrint('Error saving workgroups: $e');
+          logError('Error saving workgroups: $e');
         }
       }
     }
@@ -199,13 +199,12 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices,
           );
         } catch (e) {
-          debugPrint(
-              'Error saving devices for router ${router.description}: $e');
+          logError('Error saving devices for router ${router.description}: $e');
         }
         try {
           await _fileStorageService.saveWorkgroups(state);
         } catch (e) {
-          debugPrint('Error saving workgroups: $e');
+          logError('Error saving workgroups: $e');
         }
       }
     }
@@ -236,13 +235,13 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
               router.devices,
             );
           } catch (e) {
-            debugPrint(
+            logError(
                 'Error saving devices for router ${router.description}: $e');
           }
           try {
             await _fileStorageService.saveWorkgroups(state);
           } catch (e) {
-            debugPrint('Error saving workgroups: $e');
+            logError('Error saving workgroups: $e');
           }
         }
       }
@@ -311,15 +310,14 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices,
           );
         } catch (e) {
-          debugPrint(
-              'Error saving devices for router ${router.description}: $e');
+          logError('Error saving devices for router ${router.description}: $e');
         }
       }
     }
     try {
       await _fileStorageService.saveWorkgroups(state);
     } catch (e) {
-      debugPrint('Error saving workgroups: $e');
+      logError('Error saving workgroups: $e');
     }
   }
 }

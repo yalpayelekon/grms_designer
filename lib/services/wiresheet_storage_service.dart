@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/wiresheet.dart';
+import '../utils/logger.dart';
 import 'app_directory_service.dart';
 
 class WiresheetStorageService {
@@ -21,7 +22,7 @@ class WiresheetStorageService {
       await file.writeAsString(jsonString);
       debugPrint('Wiresheet saved to: $filePath');
     } catch (e) {
-      debugPrint('Error saving wiresheet: $e');
+      logError('Error saving wiresheet: $e');
       rethrow;
     }
   }
@@ -41,7 +42,7 @@ class WiresheetStorageService {
 
       return Wiresheet.fromJson(json);
     } catch (e) {
-      debugPrint('Error loading wiresheet: $e');
+      logError('Error loading wiresheet: $e');
       return null;
     }
   }
@@ -63,7 +64,7 @@ class WiresheetStorageService {
       debugPrint('Wiresheet file not found for deletion: $filePath');
       return false;
     } catch (e) {
-      debugPrint('Error deleting wiresheet: $e');
+      logError('Error deleting wiresheet: $e');
       return false;
     }
   }
@@ -81,7 +82,7 @@ class WiresheetStorageService {
             final json = jsonDecode(jsonString);
             wiresheets.add(Wiresheet.fromJson(json));
           } catch (e) {
-            debugPrint('Error reading wiresheet file ${entity.path}: $e');
+            logError('Error reading wiresheet file ${entity.path}: $e');
           }
         }
       }
@@ -89,7 +90,7 @@ class WiresheetStorageService {
 
       return wiresheets;
     } catch (e) {
-      debugPrint('Error listing wiresheets: $e');
+      logError('Error listing wiresheets: $e');
       return [];
     }
   }
@@ -161,7 +162,7 @@ class WiresheetStorageService {
 
       return true;
     } catch (e) {
-      debugPrint('Error exporting wiresheet: $e');
+      logError('Error exporting wiresheet: $e');
       return false;
     }
   }
@@ -188,7 +189,7 @@ class WiresheetStorageService {
       await saveWiresheet(importedWiresheet);
       return importedWiresheet;
     } catch (e) {
-      debugPrint('Error importing wiresheet: $e');
+      logError('Error importing wiresheet: $e');
       return null;
     }
   }
@@ -198,7 +199,7 @@ class WiresheetStorageService {
       return _directoryService.createBackup(
           AppDirectoryService.wiresheetsDir, 'wiresheet_$id.json');
     } catch (e) {
-      debugPrint('Error creating wiresheet backup: $e');
+      logError('Error creating wiresheet backup: $e');
       return null;
     }
   }

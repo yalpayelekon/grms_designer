@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/helvar_device.dart';
+import '../utils/logger.dart';
 
 class RouterStorageService {
   Future<String> get _localPath async {
@@ -29,7 +30,7 @@ class RouterStorageService {
       await file.writeAsString(jsonString);
       debugPrint('Router devices saved to: $filePath');
     } catch (e) {
-      debugPrint('Error saving router devices: $e');
+      logError('Error saving router devices: $e');
       rethrow;
     }
   }
@@ -50,7 +51,7 @@ class RouterStorageService {
 
       return jsonData.map((json) => HelvarDevice.fromJson(json)).toList();
     } catch (e) {
-      debugPrint('Error loading router devices: $e');
+      logError('Error loading router devices: $e');
       return [];
     }
   }
@@ -66,7 +67,7 @@ class RouterStorageService {
       await file.writeAsString(jsonString);
       debugPrint('Router devices exported to: $filePath');
     } catch (e) {
-      debugPrint('Error exporting router devices: $e');
+      logError('Error exporting router devices: $e');
       rethrow;
     }
   }
@@ -84,7 +85,7 @@ class RouterStorageService {
 
       return jsonData.map((json) => HelvarDevice.fromJson(json)).toList();
     } catch (e) {
-      debugPrint('Error importing router devices: $e');
+      logError('Error importing router devices: $e');
       rethrow;
     }
   }
@@ -94,7 +95,7 @@ class RouterStorageService {
     try {
       await saveRouterDevices(workgroupId, router.address, router.devices);
     } catch (e) {
-      debugPrint('Error updating router devices: $e');
+      logError('Error updating router devices: $e');
       rethrow;
     }
   }

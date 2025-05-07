@@ -4,6 +4,7 @@ import '../../services/app_directory_service.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import '../../utils/file_dialog_helper.dart';
+import '../../utils/logger.dart';
 
 class ProjectFilesScreen extends ConsumerStatefulWidget {
   final String directoryName;
@@ -40,7 +41,7 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error loading files: $e');
+      logError('Error loading files: $e');
       setState(() {
         _isLoading = false;
       });
@@ -146,7 +147,7 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
           SnackBar(content: Text('Error importing file: $e')),
         );
       }
-      debugPrint('Error importing file: $e');
+      logError('Error importing file: $e');
     }
   }
 
@@ -156,7 +157,7 @@ class ProjectFilesScreenState extends ConsumerState<ProjectFilesScreen> {
       await _directoryService.deleteFile(widget.directoryName, fileName);
       _loadFiles();
     } catch (e) {
-      debugPrint('Error deleting file: $e');
+      logError('Error deleting file: $e');
     }
   }
 

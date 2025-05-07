@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:grms_designer/protocol/query_commands.dart';
+import 'package:grms_designer/utils/logger.dart';
 import 'models/router_connection_status.dart';
 import '../protocol/protocol_constants.dart';
 
@@ -79,7 +80,7 @@ class RouterConnection {
       try {
         await _socket!.close();
       } catch (e) {
-        debugPrint('Error closing socket: $e');
+        logError('Error closing socket: $e');
       }
       _socket = null;
     }
@@ -97,7 +98,7 @@ class RouterConnection {
       _lastActivity = DateTime.now();
       return true;
     } catch (e) {
-      debugPrint('Error sending command: $e');
+      logError('Error sending command: $e');
       _handleError(e);
       return false;
     }
@@ -113,7 +114,7 @@ class RouterConnection {
       _lastActivity = DateTime.now();
       return true;
     } catch (e) {
-      debugPrint('Error sending data: $e');
+      logError('Error sending data: $e');
       _handleError(e);
       return false;
     }
@@ -141,7 +142,7 @@ class RouterConnection {
 
     if (terminatorIndex >= 0) {
       final completeMessage = bufferContent.substring(0, terminatorIndex + 1);
-      debugPrint('Complete message received: $completeMessage');
+      logDebug('Complete message received: $completeMessage');
       _messageBuffer.clear();
       if (terminatorIndex + 1 < bufferContent.length) {
         _messageBuffer.write(bufferContent.substring(terminatorIndex + 1));
@@ -152,7 +153,7 @@ class RouterConnection {
         final completer = _commandResponses.remove(commandId)!;
         if (!completer.isCompleted) {
           completer.complete(completeMessage);
-          debugPrint(
+          logInfo(
               'Completed command $commandId with response: $completeMessage');
         }
       }
@@ -185,7 +186,7 @@ class RouterConnection {
       return null;
     } catch (e) {
       _commandResponses.remove(commandId);
-      debugPrint('Error sending command: $e');
+      logError('Error sending command: $e');
       return null;
     }
   }

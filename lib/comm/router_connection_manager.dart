@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/project_settings.dart';
+import '../utils/logger.dart';
 import 'router_connection.dart';
 import 'models/router_connection_status.dart';
 
@@ -57,7 +58,8 @@ class RouterConnectionManager {
         final connection = connections[connectionKey]!;
 
         if (!connection.isConnected) {
-          debugPrint('Reconnecting to router at $ipAddress');
+          logInfo('Reconnecting to router at $ipAddress',
+              tag: 'RouterConnectionManager');
           await connection.connect();
         }
 
@@ -69,7 +71,7 @@ class RouterConnectionManager {
             'Maximum connection limit reached ($_maxConcurrentConnections)');
       }
 
-      debugPrint('Creating new connection to router at $ipAddress');
+      logInfo('Creating new connection to router at $ipAddress');
       final connection = RouterConnection(
         ipAddress: ipAddress,
         port: port,
@@ -81,9 +83,10 @@ class RouterConnectionManager {
         connectionstatusController.add(status);
         if (status.state == RouterConnectionState.failed ||
             status.state == RouterConnectionState.disconnected) {
-          debugPrint('Router($ipAddress) connection status: ${status.state}');
+          logDebug('Router($ipAddress) connection status: ${status.state}');
           if (status.errorMessage != null) {
-            debugPrint('Error: ${status.errorMessage}');
+            logError(
+                'Router($ipAddress) connection error: ${status.errorMessage}');
           }
         }
       });
@@ -94,7 +97,7 @@ class RouterConnectionManager {
 
       return connection;
     } catch (e) {
-      debugPrint('Failed to establish connection to $ipAddress: $e');
+      logError('Failed to establish connection to $ipAddress: $e');
       throw Exception('Connection failed to $ipAddress: $e');
     }
   }

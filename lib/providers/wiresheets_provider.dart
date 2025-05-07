@@ -6,6 +6,7 @@ import '../models/link.dart';
 import '../models/wiresheet.dart';
 import '../models/canvas_item.dart';
 import '../services/wiresheet_storage_service.dart';
+import '../utils/logger.dart';
 
 class WiresheetsNotifier extends StateNotifier<List<Wiresheet>> {
   final WiresheetStorageService _storageService;
@@ -36,7 +37,7 @@ class WiresheetsNotifier extends StateNotifier<List<Wiresheet>> {
 
       _initialized = true;
     } catch (e) {
-      debugPrint('Error initializing wiresheets: $e');
+      logError('Error initializing wiresheets: $e');
     }
   }
 

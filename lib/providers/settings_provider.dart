@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/app_directory_service.dart';
+import '../utils/logger.dart';
 
 class AppSettings {
   final ThemeMode themeMode;
@@ -80,7 +81,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
         state = AppSettings.fromJson(json);
       }
     } catch (e) {
-      debugPrint('Error loading settings: $e');
+      logError('Error loading settings: $e');
     }
   }
 
@@ -95,7 +96,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
       debugPrint('Settings saved to: $filePath');
     } catch (e) {
-      debugPrint('Error saving settings: $e');
+      logError('Error saving settings: $e');
     }
   }
 
@@ -129,7 +130,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       return _directoryService.createBackup(
           AppDirectoryService.settingsDir, _settingsFileName);
     } catch (e) {
-      debugPrint('Error creating settings backup: $e');
+      logError('Error creating settings backup: $e');
       return null;
     }
   }
@@ -152,7 +153,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
       return true;
     } catch (e) {
-      debugPrint('Error restoring settings from backup: $e');
+      logError('Error restoring settings from backup: $e');
       return false;
     }
   }

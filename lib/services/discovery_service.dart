@@ -13,6 +13,7 @@ import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
 import '../comm/router_connection_manager.dart';
 import '../comm/router_command_service.dart';
+import '../utils/logger.dart';
 
 class DiscoveryService {
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
@@ -64,7 +65,7 @@ class DiscoveryService {
             final deviceId = int.parse(parts[1]);
             deviceMap[deviceId] = deviceType;
           } catch (e) {
-            debugPrint('Error parsing device pair: $pair - $e');
+            logError('Error parsing device pair: $pair - $e');
           }
         }
       }
@@ -91,7 +92,7 @@ class DiscoveryService {
 
       return router;
     } catch (e) {
-      debugPrint('Error discovering router with persistent connection: $e');
+      logError('Error discovering router with persistent connection: $e');
       return null;
     }
   }
@@ -231,7 +232,7 @@ class DiscoveryService {
                 loadLevel = int.tryParse(levelValue) ?? 0;
               }
             } catch (e) {
-              debugPrint('Error getting load level: $e');
+              logError('Error getting load level: $e');
             }
           }
 
@@ -315,7 +316,7 @@ class DiscoveryService {
 
       return router;
     } catch (e) {
-      debugPrint('Error discovering router: $e');
+      logError('Error discovering router: $e');
       return null;
     } finally {
       socket?.destroy();
@@ -362,14 +363,14 @@ class DiscoveryService {
               gatewayRouterIpAddress: routerIpAddress,
             ));
           } catch (e) {
-            debugPrint('Error processing group $groupId: $e');
+            logError('Error processing group $groupId: $e');
           }
         }
       }
 
       return groups;
     } catch (e) {
-      debugPrint('Error discovering groups: $e');
+      logError('Error discovering groups: $e');
       return [];
     } finally {
       socket?.destroy();
@@ -401,7 +402,7 @@ class DiscoveryService {
         completer.complete(response);
       },
       onError: (error) {
-        debugPrint('Socket error: $error');
+        logVerbose('Socket error: $error');
         completer.complete('ERROR: $error');
       },
       onDone: () {
@@ -416,7 +417,7 @@ class DiscoveryService {
     final result = await completer.future.timeout(
       const Duration(seconds: 15),
       onTimeout: () {
-        debugPrint('Command timed out: $command');
+        logVerbose('Command timed out: $command');
         return 'TIMEOUT';
       },
     );
@@ -439,11 +440,11 @@ class DiscoveryService {
       if (result.success) {
         return result.response;
       } else {
-        debugPrint('Command failed: ${result.errorMessage}');
+        logDebug('Command failed: ${result.errorMessage}');
         return null;
       }
     } catch (e) {
-      debugPrint('Error sending command: $e');
+      logError('Error sending command: $e');
       return null;
     }
   }
