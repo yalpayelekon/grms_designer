@@ -12,7 +12,7 @@ import '../providers/router_connection_provider.dart';
 import '../providers/workgroups_provider.dart';
 import 'dialogs/action_dialogs.dart';
 
-String _getWorkgroupIdForDevice(BuildContext context, HelvarDevice device) {
+String getWorkgroupIdForDevice(BuildContext context, HelvarDevice device) {
   final container = ProviderScope.containerOf(context);
   final workgroups = container.read(workgroupsProvider);
 

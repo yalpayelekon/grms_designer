@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:grms_designer/utils/logger.dart';
-
 class DeviceStateFlags {
   static const int disabled = 0x00000001;
   static const int lampFailure = 0x00000002;
