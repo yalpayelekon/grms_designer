@@ -5,7 +5,6 @@ import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/input_device.dart';
 import '../../models/helvar_models/output_device.dart';
 import '../../models/helvar_models/workgroup.dart';
-import '../../providers/project_settings_provider.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../utils/file_dialog_helper.dart';
 import '../../services/discovery_service.dart';
@@ -29,8 +28,7 @@ class RouterDetailScreen extends ConsumerStatefulWidget {
 class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   late List<HelvarDevice> _devices;
   bool _isLoading = false;
-  int protocolVersion = 2;
-  late DiscoveryService discoveryService;
+  DiscoveryService discoveryService = DiscoveryService();
   final Map<String, List<HelvarDevice>> _devicesBySubnet = {};
 
   @override
@@ -38,8 +36,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     super.initState();
     _devices = widget.router.devices;
     _organizeDevicesBySubnet();
-    protocolVersion = ref.watch(protocolVersionProvider);
-    discoveryService = DiscoveryService(protocolVersion: protocolVersion);
   }
 
   void _organizeDevicesBySubnet() {
