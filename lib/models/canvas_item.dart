@@ -229,6 +229,112 @@ class CanvasItem {
     );
   }
 
+  static CanvasItem createPointItem(String type, Offset position) {
+    final id = const Uuid().v4();
+    const size = Size(120, 80);
+    final ports = <Port>[];
+
+    switch (type) {
+      case 'NumericPoint':
+        ports.add(Port(
+          id: 'out',
+          type: PortType.number,
+          name: 'Value',
+          isInput: false,
+        ));
+        break;
+
+      case 'NumericWritable':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.number,
+          name: 'Value 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.number,
+          name: 'Value 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.number,
+          name: 'NumericWritable',
+          isInput: false,
+        ));
+        break;
+
+      case 'StringPoint':
+        ports.add(Port(
+          id: 'out',
+          type: PortType.string,
+          name: 'StringPoint',
+          isInput: false,
+        ));
+        break;
+      case 'StringWritable':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.string,
+          name: 'Value 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.string,
+          name: 'Value 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.string,
+          name: 'StringWritable',
+          isInput: false,
+        ));
+        break;
+      case 'BooleanPoint':
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'BooleanPoint',
+          isInput: false,
+        ));
+        break;
+      case 'BooleanWritable':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.boolean,
+          name: 'Value 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.boolean,
+          name: 'Value 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'BooleanWritable',
+          isInput: false,
+        ));
+        break;
+    }
+
+    return CanvasItem(
+      type: WidgetType.treenode,
+      position: position,
+      size: size,
+      id: id,
+      label: type,
+      ports: ports,
+      category: ComponentCategory.point,
+      properties: {'point': type},
+    );
+  }
+
   static CanvasItem createDeviceItem(HelvarDevice device, Offset position) {
     final id = const Uuid().v4();
 

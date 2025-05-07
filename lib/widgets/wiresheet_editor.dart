@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:uuid/uuid.dart';
+import '../models/helvar_models/helvar_device.dart';
 import '../models/link.dart';
+import '../models/widget_type.dart';
 import '../models/wiresheet.dart';
 import '../models/canvas_item.dart';
-import '../models/widget_type.dart';
 import '../providers/wiresheets_provider.dart';
 import '../utils/general_ui.dart';
 import '../widgets/grid_painter.dart';
 import 'link_painter.dart';
 import 'port_widget.dart';
+import '../models/dragging_link_painter.dart';
 
 class WiresheetEditor extends ConsumerStatefulWidget {
   final Wiresheet wiresheet;
@@ -40,99 +41,142 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        InteractiveViewer(
-          constrained: false,
-          boundaryMargin: const EdgeInsets.all(double.infinity),
-          minScale: 0.5,
-          maxScale: 2.0,
-          scaleEnabled: true,
-          onInteractionEnd: (ScaleEndDetails details) {
-            setState(() {});
-          },
-          child: Stack(
-            children: [
-              DragTarget<Object>(
-                onAcceptWithDetails: (details) {
-                  final data = details.data;
-                  final globalPosition = details.offset;
-                  final RenderBox box = context.findRenderObject() as RenderBox;
-                  final localPosition = box.globalToLocal(globalPosition);
-                  CanvasItem? newItem;
-                  if (data is WidgetData) {
-                    final additionalData = data.additionalData;
-                    HelvarDevice? device;
-                    if (additionalData["device"] != null) {
-                      device = additionalData["device"];
-                      newItem =
-                          CanvasItem.createDeviceItem(device!, localPosition);
-                    } else if (data.type == WidgetType.treenode) {
-                      if (data.category! == ComponentCategory.logic) {
-                        newItem = CanvasItem.createLogicItem(
-                            additionalData["label"]!, localPosition);
-                      } else if (data.category! == ComponentCategory.math) {
-                        newItem = CanvasItem.createMathItem(
-                            additionalData["label"]!, localPosition);
+        Listener(
+          onPointerMove: _handlePointerMove,
+          onPointerDown: _handlePointerDown,
+          child: InteractiveViewer(
+            constrained: false,
+            boundaryMargin: const EdgeInsets.all(double.infinity),
+            minScale: 0.5,
+            maxScale: 2.0,
+            scaleEnabled: true,
+            onInteractionEnd: (ScaleEndDetails details) {
+              setState(() {});
+            },
+            child: Stack(
+              children: [
+                DragTarget<Object>(
+                  onAcceptWithDetails: (details) {
+                    final data = details.data;
+                    final globalPosition = details.offset;
+                    final RenderBox box =
+                        context.findRenderObject() as RenderBox;
+                    final localPosition = box.globalToLocal(globalPosition);
+                    CanvasItem? newItem;
+                    if (data is WidgetData) {
+                      final additionalData = data.additionalData;
+                      HelvarDevice? device;
+                      if (additionalData["device"] != null) {
+                        device = additionalData["device"];
+                        newItem =
+                            CanvasItem.createDeviceItem(device!, localPosition);
+                      } else if (data.type == WidgetType.treenode) {
+                        if (data.category! == ComponentCategory.logic) {
+                          newItem = CanvasItem.createLogicItem(
+                              additionalData["label"]!, localPosition);
+                        } else if (data.category! == ComponentCategory.math) {
+                          newItem = CanvasItem.createMathItem(
+                              additionalData["label"]!, localPosition);
+                        } else if (data.category! == ComponentCategory.point) {
+                          newItem = CanvasItem.createPointItem(
+                              additionalData["label"]!, localPosition);
+                        }
+                      } else {
+                        newItem = CanvasItem(
+                            type: WidgetType.container,
+                            position: localPosition,
+                            size: const Size(120, 80));
                       }
+                      ref.read(wiresheetsProvider.notifier).addWiresheetItem(
+                            widget.wiresheet.id,
+                            newItem!,
+                          );
+
+                      setState(() {
+                        selectedItemIndex =
+                            widget.wiresheet.canvasItems.length - 1;
+                        isPanelExpanded = true;
+                      });
+
+                      updateCanvasSize(widget.wiresheet, ref);
                     }
-
-                    ref.read(wiresheetsProvider.notifier).addWiresheetItem(
-                          widget.wiresheet.id,
-                          newItem!,
-                        );
-
-                    setState(() {
-                      selectedItemIndex =
-                          widget.wiresheet.canvasItems.length - 1;
-                      isPanelExpanded = true;
-                    });
-
-                    updateCanvasSize(widget.wiresheet, ref);
-                  }
-                },
-                builder: (context, candidateData, rejectedData) {
-                  return Stack(
-                    children: [
-                      Container(
-                        width: widget.wiresheet.canvasSize.width,
-                        height: widget.wiresheet.canvasSize.height,
-                        color: Colors.grey[50],
-                        child: Center(
-                          child: Text(
-                            widget.wiresheet.canvasItems.isEmpty
-                                ? 'Drag and drop items here'
-                                : '',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 18,
+                  },
+                  builder: (context, candidateData, rejectedData) {
+                    return Stack(
+                      children: [
+                        Container(
+                          width: widget.wiresheet.canvasSize.width,
+                          height: widget.wiresheet.canvasSize.height,
+                          color: Colors.grey[50],
+                          child: Center(
+                            child: Text(
+                              widget.wiresheet.canvasItems.isEmpty
+                                  ? 'Drag and drop items here'
+                                  : '',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 18,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(
-                        width: widget.wiresheet.canvasSize.width,
-                        height: widget.wiresheet.canvasSize.height,
-                        child: CustomPaint(
-                          painter: GridPainter(),
-                          child: Container(),
+                        SizedBox(
+                          width: widget.wiresheet.canvasSize.width,
+                          height: widget.wiresheet.canvasSize.height,
+                          child: CustomPaint(
+                            painter: GridPainter(),
+                            child: Container(),
+                          ),
                         ),
-                      ),
-                      ...widget.wiresheet.canvasItems
-                          .asMap()
-                          .entries
-                          .map((entry) {
-                        final index = entry.key;
-                        final item = entry.value;
-                        return Positioned(
-                          left: item.position.dx,
-                          top: item.position.dy,
-                          child: _buildDraggableCanvasItem(item, index),
-                        );
-                      }),
-                    ],
-                  );
-                },
-              ),
-            ],
+                        if (widget.wiresheet.links.isNotEmpty)
+                          CustomPaint(
+                            painter: LinkPainter(
+                              links: widget.wiresheet.links,
+                              items: widget.wiresheet.canvasItems,
+                              onLinkSelected: _handleLinkSelected,
+                              hoveredLinkId: hoveredLinkId,
+                              selectedLinkId: selectedLinkId,
+                            ),
+                            size: Size(
+                              widget.wiresheet.canvasSize.width,
+                              widget.wiresheet.canvasSize.height,
+                            ),
+                          ),
+                        if (isDraggingLink &&
+                            selectedSourceItemId != null &&
+                            selectedSourcePortId != null &&
+                            linkDragEndPoint != null)
+                          CustomPaint(
+                            painter: DraggingLinkPainter(
+                              startItem: widget.wiresheet.canvasItems
+                                  .firstWhere((item) =>
+                                      item.id == selectedSourceItemId),
+                              startPortId: selectedSourcePortId!,
+                              endPoint: linkDragEndPoint!,
+                            ),
+                            size: Size(
+                              widget.wiresheet.canvasSize.width,
+                              widget.wiresheet.canvasSize.height,
+                            ),
+                          ),
+                        ...widget.wiresheet.canvasItems
+                            .asMap()
+                            .entries
+                            .map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          return Positioned(
+                            left: item.position.dx,
+                            top: item.position.dy,
+                            child: _buildDraggableCanvasItem(item, index),
+                          );
+                        }),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
         if (selectedItemIndex != null && isPanelExpanded)
@@ -170,10 +214,11 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   void _handlePointerMove(PointerMoveEvent event) {
     if (isDraggingLink) {
       setState(() {
-        linkDragEndPoint = event.localPosition;
+        final RenderBox box = context.findRenderObject() as RenderBox;
+        linkDragEndPoint = box.globalToLocal(event.position);
       });
     } else {
-      final hoveredLink = _findLinkAtPosition(event.localPosition);
+      final hoveredLink = _findLinkAtPosition(event.position);
       if (hoveredLink != hoveredLinkId) {
         setState(() {
           hoveredLinkId = hoveredLink;
@@ -183,7 +228,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   void _handlePointerDown(PointerDownEvent event) {
-    final clickedLinkId = _findLinkAtPosition(event.localPosition);
+    final clickedLinkId = _findLinkAtPosition(event.position);
     if (clickedLinkId != null) {
       setState(() {
         selectedLinkId = clickedLinkId;
@@ -214,6 +259,10 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           widget.wiresheet.id,
           linkId,
         );
+    setState(() {
+      selectedLinkId = null;
+      hoveredLinkId = null;
+    });
   }
 
   void _handlePortTap(String itemId, String portId, bool isInput) {
@@ -226,6 +275,12 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             const SnackBar(
                 content: Text('Cannot connect a component to itself')),
           );
+          setState(() {
+            isDraggingLink = false;
+            selectedSourceItemId = null;
+            selectedSourcePortId = null;
+            linkDragEndPoint = null;
+          });
           return;
         }
 
@@ -267,6 +322,12 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Incompatible port types')),
           );
+          setState(() {
+            isDraggingLink = false;
+            selectedSourceItemId = null;
+            selectedSourcePortId = null;
+            linkDragEndPoint = null;
+          });
           return;
         }
 
@@ -299,45 +360,26 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           selectedSourcePortId = null;
           linkDragEndPoint = null;
         });
-
-        setState(() {
-          isDraggingLink = true;
-          selectedSourceItemId = itemId;
-          selectedSourcePortId = portId;
-
-          final item =
-              widget.wiresheet.canvasItems.firstWhere((i) => i.id == itemId);
-          final ports = item.ports.where((p) => !p.isInput).toList();
-          final portIndex = ports.indexWhere((p) => p.id == portId);
-          final portCount = ports.length;
-
-          final verticalSpacing = item.size.height / (portCount + 1);
-          final verticalPosition =
-              item.position.dy + verticalSpacing * (portIndex + 1);
-
-          linkDragEndPoint =
-              Offset(item.position.dx + item.size.width + 20, verticalPosition);
-        });
-      } else {
-        setState(() {
-          isDraggingLink = true;
-          selectedSourceItemId = itemId;
-          selectedSourcePortId = portId;
-
-          final item =
-              widget.wiresheet.canvasItems.firstWhere((i) => i.id == itemId);
-          final ports = item.ports.where((p) => !p.isInput).toList();
-          final portIndex = ports.indexWhere((p) => p.id == portId);
-          final portCount = ports.length;
-
-          final verticalSpacing = item.size.height / (portCount + 1);
-          final verticalPosition =
-              item.position.dy + verticalSpacing * (portIndex + 1);
-
-          linkDragEndPoint =
-              Offset(item.position.dx + item.size.width + 20, verticalPosition);
-        });
       }
+
+      setState(() {
+        isDraggingLink = true;
+        selectedSourceItemId = itemId;
+        selectedSourcePortId = portId;
+
+        final item =
+            widget.wiresheet.canvasItems.firstWhere((i) => i.id == itemId);
+        final ports = item.ports.where((p) => !p.isInput).toList();
+        final portIndex = ports.indexWhere((p) => p.id == portId);
+        final portCount = ports.length;
+
+        final verticalSpacing = item.size.height / (portCount + 1);
+        final verticalPosition =
+            item.position.dy + verticalSpacing * (portIndex + 1);
+
+        linkDragEndPoint =
+            Offset(item.position.dx + item.size.width + 20, verticalPosition);
+      });
     }
   }
 
@@ -378,6 +420,9 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   String? _findLinkAtPosition(Offset position) {
+    final RenderBox box = context.findRenderObject() as RenderBox;
+    final localPosition = box.globalToLocal(position);
+
     bool isPointNearCurve(Offset point, Offset start, Offset end,
         Offset control1, Offset control2, double threshold) {
       for (int i = 0; i <= 20; i++) {
@@ -401,13 +446,16 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
       final sourcePort = sourceItem.getPort(link.sourcePortId);
       final targetPort = targetItem.getPort(link.targetPortId);
 
-      final start = getPortPosition(sourceItem, sourcePort!, false);
-      final end = getPortPosition(targetItem, targetPort!, true);
+      if (sourcePort == null || targetPort == null) continue;
+
+      final start = getPortPosition(sourceItem, sourcePort, false);
+      final end = getPortPosition(targetItem, targetPort, true);
 
       final control1 = Offset(start.dx + (end.dx - start.dx) * 0.4, start.dy);
       final control2 = Offset(start.dx + (end.dx - start.dx) * 0.6, end.dy);
 
-      if (isPointNearCurve(position, start, end, control1, control2, 10.0)) {
+      if (isPointNearCurve(
+          localPosition, start, end, control1, control2, 10.0)) {
         return link.id;
       }
     }
@@ -431,111 +479,186 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
-    return Draggable<int>(
-      data: index, // Pass the index of the item for identification
-      feedback: Material(
-        elevation: 4,
-        color: Colors.transparent,
-        child: Container(
-          width: item.size.width,
-          height: item.size.height,
-          decoration: BoxDecoration(
-            color: Colors.blue,
-            border: Border.all(
-              color: Colors.blue,
-              width: 2.0,
-            ),
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-          child: Center(
-            child: Text(
-              item.label ?? "Item $index",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: Container(
-          width: item.size.width,
-          height: item.size.height,
-          decoration: BoxDecoration(
-            color: Colors.grey,
-            border: Border.all(
-              color: Colors.grey,
-              width: 1.0,
-            ),
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-        ),
-      ),
-      onDragEnd: (details) {
-        if (details.wasAccepted) {
-          final RenderBox box = context.findRenderObject() as RenderBox;
-          final localOffset = box.globalToLocal(details.offset);
-          final updatedItem = item.copyWith(
-            position: localOffset,
-          );
+    final isSelected = selectedItemIndex == index;
 
-          ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
-                widget.wiresheet.id,
-                index,
-                updatedItem,
-              );
-        }
-      },
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedItemIndex = index;
-            isPanelExpanded = true;
-          });
-        },
-        child: Container(
-          width: item.size.width,
-          height: item.size.height,
-          decoration: BoxDecoration(
-            color: Colors.blue,
-            border: Border.all(
-              color: selectedItemIndex == index ? Colors.blue : Colors.grey,
-              width: selectedItemIndex == index ? 2.0 : 1.0,
-            ),
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-          child: Stack(
-            children: [
-              Center(
+    return Stack(
+      children: [
+        Draggable<int>(
+          data: index, // Pass the index of the item for identification
+          feedback: Material(
+            elevation: 4,
+            color: Colors.transparent,
+            child: Container(
+              width: item.size.width,
+              height: item.size.height,
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.8),
+                border: Border.all(
+                  color: Colors.blue,
+                  width: 2.0,
+                ),
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+              child: Center(
                 child: Text(
                   item.label ?? "Item $index",
-                  style: TextStyle(
-                    fontWeight: selectedItemIndex == index
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
               ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color:
-                        selectedItemIndex == index ? Colors.blue : Colors.grey,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(4.0),
+            ),
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.3,
+            child: Container(
+              width: item.size.width,
+              height: item.size.height,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                border: Border.all(
+                  color: Colors.grey,
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+            ),
+          ),
+          onDragEnd: (details) {
+            if (details.wasAccepted) {
+              final RenderBox box = context.findRenderObject() as RenderBox;
+              final localOffset = box.globalToLocal(details.offset);
+              final updatedItem = item.copyWith(
+                position: localOffset,
+              );
+
+              ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
+                    widget.wiresheet.id,
+                    index,
+                    updatedItem,
+                  );
+            }
+          },
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedItemIndex = index;
+                isPanelExpanded = true;
+              });
+            },
+            child: Container(
+              width: item.size.width,
+              height: item.size.height,
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.blue.shade100 : Colors.white,
+                border: Border.all(
+                  color: isSelected ? Colors.blue : Colors.grey,
+                  width: isSelected ? 2.0 : 1.0,
+                ),
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Text(
+                      item.label ?? "Item $index",
+                      style: TextStyle(
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
                   ),
-                ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: GestureDetector(
+                      onPanUpdate: (details) {
+                        final newWidth = item.size.width + details.delta.dx;
+                        final newHeight = item.size.height + details.delta.dy;
+                        if (newWidth >= 80 && newHeight >= 60) {
+                          final updatedItem = item.copyWith(
+                            size: Size(newWidth, newHeight),
+                          );
+                          ref
+                              .read(wiresheetsProvider.notifier)
+                              .updateWiresheetItem(
+                                widget.wiresheet.id,
+                                index,
+                                updatedItem,
+                              );
+                        }
+                      },
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color:
+                              isSelected ? Colors.blue : Colors.grey.shade300,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4.0),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.drag_handle,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
+        ...item.ports
+            .where((p) => p.isInput)
+            .toList()
+            .asMap()
+            .entries
+            .map((entry) {
+          final portIndex = entry.key;
+          final port = entry.value;
+          final totalPorts = item.ports.where((p) => p.isInput).length;
+          final verticalSpacing = item.size.height / (totalPorts + 1);
+          final verticalPosition = verticalSpacing * (portIndex + 1);
+
+          return Positioned(
+            left: -6, // Half of port width to center it on the edge
+            top: verticalPosition - 6, // Center vertically
+            child: PortWidget(
+              port: port,
+              onTap: () => _handlePortTap(item.id!, port.id, true),
+              isConnected: widget.wiresheet.links.any((link) =>
+                  link.targetItemId == item.id && link.targetPortId == port.id),
+            ),
+          );
+        }),
+        ...item.ports
+            .where((p) => !p.isInput)
+            .toList()
+            .asMap()
+            .entries
+            .map((entry) {
+          final portIndex = entry.key;
+          final port = entry.value;
+          final totalPorts = item.ports.where((p) => !p.isInput).length;
+          final verticalSpacing = item.size.height / (totalPorts + 1);
+          final verticalPosition = verticalSpacing * (portIndex + 1);
+
+          return Positioned(
+            right: -6, // Half of port width to center it on the edge
+            top: verticalPosition - 6, // Center vertically
+            child: PortWidget(
+              port: port,
+              onTap: () => _handlePortTap(item.id!, port.id, false),
+              isConnected: widget.wiresheet.links.any((link) =>
+                  link.sourceItemId == item.id && link.sourcePortId == port.id),
+            ),
+          );
+        }),
+      ],
     );
   }
 
@@ -582,6 +705,37 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             getPositionDetail(
                 item, widget.wiresheet.id, selectedItemIndex!, ref),
             const SizedBox(height: 24),
+            if (item.ports.isNotEmpty) ...[
+              Text(
+                'Ports',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: item.ports.length,
+                  itemBuilder: (context, index) {
+                    final port = item.ports[index];
+                    return ListTile(
+                      title: Text(port.name),
+                      subtitle: Text(
+                        '${port.isInput ? "Input" : "Output"} - ${port.type.toString().split('.').last}',
+                      ),
+                      leading: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: _getPortColor(port.type),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const Divider(),
+            ],
             ElevatedButton.icon(
               icon: const Icon(Icons.delete),
               label: const Text('Delete Item'),
@@ -615,5 +769,19 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         ),
       ),
     );
+  }
+
+  Color _getPortColor(PortType type) {
+    switch (type) {
+      case PortType.boolean:
+        return Colors.green;
+      case PortType.number:
+        return Colors.blue;
+      case PortType.string:
+        return Colors.orange;
+      case PortType.any:
+      default:
+        return Colors.purple;
+    }
   }
 }

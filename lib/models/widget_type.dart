@@ -1,6 +1,6 @@
 import 'canvas_item.dart';
 
-enum WidgetType { text, button, image, treenode }
+enum WidgetType { text, button, image, treenode, container }
 
 class WidgetData {
   final WidgetType type;

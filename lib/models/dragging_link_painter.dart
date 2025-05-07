@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'canvas_item.dart';
+import '../models/canvas_item.dart';
+import '../utils/general_ui.dart';
 
 class DraggingLinkPainter extends CustomPainter {
   final CanvasItem startItem;
@@ -21,20 +21,18 @@ class DraggingLinkPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final port = startItem.getPort(startPortId);
-    final portList = startItem.ports.where((p) => !p.isInput).toList();
-    final index = portList.indexWhere((p) => p.id == startPortId);
-    final portCount = portList.length;
-    final verticalSpacing = startItem.size.height / (portCount + 1);
-    final verticalPosition =
-        startItem.position.dy + verticalSpacing * (index + 1);
-    final startPoint =
-        Offset(startItem.position.dx + startItem.size.width, verticalPosition);
+    if (port == null) return;
+
+    final start = getPortPosition(startItem, port, false);
+
     final path = Path();
-    path.moveTo(startPoint.dx, startPoint.dy);
-    final controlPoint1 = Offset(
-        startPoint.dx + (endPoint.dx - startPoint.dx) * 0.4, startPoint.dy);
-    final controlPoint2 = Offset(
-        startPoint.dx + (endPoint.dx - startPoint.dx) * 0.6, endPoint.dy);
+    path.moveTo(start.dx, start.dy);
+
+    // Create a cubic bezier curve path for the dragging link
+    final controlPoint1 =
+        Offset(start.dx + (endPoint.dx - start.dx) * 0.4, start.dy);
+    final controlPoint2 =
+        Offset(start.dx + (endPoint.dx - start.dx) * 0.6, endPoint.dy);
 
     path.cubicTo(
       controlPoint1.dx,
@@ -46,6 +44,7 @@ class DraggingLinkPainter extends CustomPainter {
     );
 
     canvas.drawPath(path, paint);
+
     final dotPaint = Paint()
       ..color = Colors.blue
       ..style = PaintingStyle.fill;

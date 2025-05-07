@@ -33,7 +33,7 @@ class PortWidget extends StatelessWidget {
     }
 
     return Tooltip(
-      message: port.name,
+      message: "${port.name} (${port.type.toString().split('.').last})",
       child: GestureDetector(
         onTap: onTap,
         child: Container(

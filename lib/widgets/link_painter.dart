@@ -1,9 +1,7 @@
 import 'dart:math';
-
+import 'package:flutter/material.dart';
 import '../models/canvas_item.dart';
 import '../models/link.dart';
-import 'package:flutter/material.dart';
-
 import '../utils/general_ui.dart';
 
 class LinkPainter extends CustomPainter {
@@ -39,38 +37,45 @@ class LinkPainter extends CustomPainter {
         paint.color = Colors.blue.withOpacity(0.8);
       }
 
-      final sourceItem =
-          items.firstWhere((item) => item.id == link.sourceItemId);
-      final targetItem =
-          items.firstWhere((item) => item.id == link.targetItemId);
+      try {
+        final sourceItem =
+            items.firstWhere((item) => item.id == link.sourceItemId);
+        final targetItem =
+            items.firstWhere((item) => item.id == link.targetItemId);
 
-      final sourcePort = sourceItem.getPort(link.sourcePortId);
-      final targetPort = targetItem.getPort(link.targetPortId);
+        final sourcePort = sourceItem.getPort(link.sourcePortId);
+        final targetPort = targetItem.getPort(link.targetPortId);
 
-      final start = getPortPosition(sourceItem, sourcePort, false);
-      final end = getPortPosition(targetItem, targetPort, true);
+        if (sourcePort == null || targetPort == null) continue;
 
-      final path = Path();
-      path.moveTo(start.dx, start.dy);
+        final start = getPortPosition(sourceItem, sourcePort, false);
+        final end = getPortPosition(targetItem, targetPort, true);
 
-      final controlPoint1 =
-          Offset(start.dx + (end.dx - start.dx) * 0.4, start.dy);
-      final controlPoint2 =
-          Offset(start.dx + (end.dx - start.dx) * 0.6, end.dy);
+        final path = Path();
+        path.moveTo(start.dx, start.dy);
 
-      path.cubicTo(
-        controlPoint1.dx,
-        controlPoint1.dy,
-        controlPoint2.dx,
-        controlPoint2.dy,
-        end.dx,
-        end.dy,
-      );
+        final controlPoint1 =
+            Offset(start.dx + (end.dx - start.dx) * 0.4, start.dy);
+        final controlPoint2 =
+            Offset(start.dx + (end.dx - start.dx) * 0.6, end.dy);
 
-      canvas.drawPath(path, paint);
+        path.cubicTo(
+          controlPoint1.dx,
+          controlPoint1.dy,
+          controlPoint2.dx,
+          controlPoint2.dy,
+          end.dx,
+          end.dy,
+        );
 
-      if (link.type == LinkType.dataFlow) {
-        _drawArrow(canvas, path, paint.color);
+        canvas.drawPath(path, paint);
+
+        if (link.type == LinkType.dataFlow) {
+          _drawArrow(canvas, path, paint.color);
+        }
+      } catch (e) {
+        // Handle case where linked items may no longer exist
+        continue;
       }
     }
   }
