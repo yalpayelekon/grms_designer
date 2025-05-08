@@ -36,7 +36,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   Offset? linkDragEndPoint;
   String? hoveredLinkId;
   String? selectedLinkId;
-
+  Offset? _lastTapPosition;
   static const double rowHeight = 22.0;
   static const double headerHeight = 28.0;
 
@@ -330,6 +330,9 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                 isPanelExpanded = true;
               });
             },
+            onSecondaryTapDown: (details) {
+              _lastTapPosition = details.globalPosition;
+            },
             onSecondaryTap: () {
               _showContextMenu(context, item, index);
             },
@@ -524,14 +527,20 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   void _showContextMenu(BuildContext context, CanvasItem item, int index) {
+    if (_lastTapPosition == null) {
+      final RenderBox overlay = Navigator.of(context)
+          .overlay!
+          .context
+          .findRenderObject() as RenderBox;
+
+      _lastTapPosition = overlay.localToGlobal(Offset(
+          item.position.dx + item.size.width / 2,
+          item.position.dy + item.size.height / 2));
+    }
     final RenderBox overlay =
         Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
-
     final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        Offset(item.position.dx, item.position.dy),
-        Offset(item.position.dx + 1, item.position.dy + 1),
-      ),
+      Rect.fromLTWH(_lastTapPosition!.dx, _lastTapPosition!.dy, 1, 1),
       Offset.zero & overlay.size,
     );
 
