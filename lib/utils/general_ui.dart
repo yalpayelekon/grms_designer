@@ -294,6 +294,9 @@ Color getPortColor(PortType type) {
   }
 }
 
+const Color inputPortColor = Colors.blue;
+const Color outputPortColor = Colors.green;
+
 Offset evaluateCubic(Offset p0, Offset p1, Offset p2, Offset p3, double t) {
   final u = 1 - t;
   final tt = t * t;

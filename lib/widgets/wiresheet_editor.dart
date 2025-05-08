@@ -11,6 +11,7 @@ import '../utils/general_ui.dart';
 import '../widgets/grid_painter.dart';
 import 'link_painter.dart';
 import '../models/dragging_link_painter.dart';
+import 'dart:math' as math;
 
 class WiresheetEditor extends ConsumerStatefulWidget {
   final Wiresheet wiresheet;
@@ -249,6 +250,24 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
     final isSelected = selectedItemIndex == index;
 
+    final calculatedHeight =
+        headerHeight + (item.ports.length * rowHeight) + 10;
+    final itemHeight = math.max(item.size.height, calculatedHeight);
+
+    if (itemHeight > item.size.height) {
+      final updatedItem = item.copyWith(
+        size: Size(item.size.width, itemHeight),
+      );
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
+              widget.wiresheet.id,
+              index,
+              updatedItem,
+            );
+      });
+    }
+
     return Stack(
       children: [
         Draggable<int>(
@@ -258,7 +277,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             color: Colors.transparent,
             child: Container(
               width: item.size.width,
-              height: item.size.height,
+              height: itemHeight, // Use the calculated height for feedback
               decoration: BoxDecoration(
                 color: Colors.blue.withOpacity(0.8),
                 border: Border.all(
@@ -274,7 +293,8 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             opacity: 0.3,
             child: Container(
               width: item.size.width,
-              height: item.size.height,
+              height:
+                  itemHeight, // Use the calculated height for dragging placeholder
               decoration: BoxDecoration(
                 color: Colors.grey,
                 border: Border.all(
@@ -291,6 +311,8 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
               final localOffset = box.globalToLocal(details.offset);
               final updatedItem = item.copyWith(
                 position: localOffset,
+                size: Size(item.size.width,
+                    itemHeight), // Preserve the calculated height
               );
 
               ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
@@ -313,7 +335,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             },
             child: Container(
               width: item.size.width,
-              height: item.size.height,
+              height: itemHeight, // Use the calculated height
               decoration: BoxDecoration(
                 color: isSelected ? Colors.blue.shade100 : Colors.white,
                 border: Border.all(
@@ -331,8 +353,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   Widget _buildItemContents(CanvasItem item, bool isFeedback) {
-    final inputPorts = item.ports.where((p) => p.isInput).toList();
-    final outputPorts = item.ports.where((p) => !p.isInput).toList();
+    final List<Port> allPorts = item.ports;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -355,36 +376,13 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           color: Colors.grey.withOpacity(0.5),
         ),
         Expanded(
-          child: Row(
-            children: [
-              if (inputPorts.isNotEmpty)
-                SizedBox(
-                  width: item.size.width * 0.5 - 1,
-                  child: ListView.builder(
-                    itemCount: inputPorts.length,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, i) {
-                      return _buildPortRow(
-                          item, inputPorts[i], true, rowHeight, isFeedback);
-                    },
-                  ),
-                ),
-              Container(
-                width: 2,
-                color: Colors.grey.withOpacity(0.3),
-              ),
-              if (outputPorts.isNotEmpty)
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: outputPorts.length,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, i) {
-                      return _buildPortRow(
-                          item, outputPorts[i], false, rowHeight, isFeedback);
-                    },
-                  ),
-                ),
-            ],
+          child: ListView.builder(
+            itemCount: allPorts.length,
+            physics: const NeverScrollableScrollPhysics(),
+            itemBuilder: (context, i) {
+              return _buildPortRow(item, allPorts[i], allPorts[i].isInput,
+                  rowHeight, isFeedback);
+            },
           ),
         ),
       ],
@@ -393,8 +391,11 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
   Widget _buildPortRow(CanvasItem item, Port port, bool isInput, double height,
       bool isFeedback) {
+    final Color portColor = isInput ? Colors.blue : Colors.green;
+
     return DragTarget<Map<String, dynamic>>(
-      onAccept: (data) {
+      onAcceptWithDetails: (details) {
+        final data = details.data;
         if (isInput &&
             !isFeedback &&
             data.containsKey('itemId') &&
@@ -476,21 +477,19 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                   ),
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Row(
-                mainAxisAlignment:
-                    isInput ? MainAxisAlignment.start : MainAxisAlignment.end,
                 children: [
                   if (isInput) ...[
                     Container(
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: getPortColor(port.type),
+                        color: portColor,
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                   ],
                   Expanded(
                     child: Text(
@@ -502,16 +501,15 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                             : Colors.black87,
                       ),
                       overflow: TextOverflow.ellipsis,
-                      textAlign: isInput ? TextAlign.left : TextAlign.right,
                     ),
                   ),
                   if (!isInput) ...[
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Container(
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: getPortColor(port.type),
+                        color: portColor,
                         shape: BoxShape.circle,
                       ),
                     ),
