@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/logger.dart';
 import '../models/canvas_item.dart';
 import '../models/link.dart';
 import '../utils/general_ui.dart';
@@ -74,7 +75,7 @@ class LinkPainter extends CustomPainter {
           _drawArrow(canvas, path, paint.color);
         }
       } catch (e) {
-        // Handle case where linked items may no longer exist
+        logError("Could not draw link: ${e.toString()}");
         continue;
       }
     }

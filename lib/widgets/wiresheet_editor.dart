@@ -36,7 +36,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   String? hoveredLinkId;
   String? selectedLinkId;
 
-  // Constants for port rows
   static const double rowHeight = 22.0;
   static const double headerHeight = 28.0;
 
@@ -247,14 +246,13 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     }
   }
 
-  // Enhanced version of _buildDraggableCanvasItem with port rows
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
     final isSelected = selectedItemIndex == index;
 
     return Stack(
       children: [
         Draggable<int>(
-          data: index, // Pass the index of the item for identification
+          data: index,
           feedback: Material(
             elevation: 4,
             color: Colors.transparent,
@@ -332,16 +330,13 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     );
   }
 
-  // Helper method to build the internal contents of an item
   Widget _buildItemContents(CanvasItem item, bool isFeedback) {
-    // Get the input and output ports for display
     final inputPorts = item.ports.where((p) => p.isInput).toList();
     final outputPorts = item.ports.where((p) => !p.isInput).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header section with item label
         Container(
           height: headerHeight,
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -355,18 +350,13 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-
-        // Divider between header and ports
         Container(
           height: 1,
           color: Colors.grey.withOpacity(0.5),
         ),
-
-        // Ports section
         Expanded(
           child: Row(
             children: [
-              // Input ports (left side)
               if (inputPorts.isNotEmpty)
                 SizedBox(
                   width: item.size.width * 0.5 - 1,
@@ -379,14 +369,10 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                     },
                   ),
                 ),
-
-              // Vertical divider between input and output ports
               Container(
                 width: 2,
                 color: Colors.grey.withOpacity(0.3),
               ),
-
-              // Output ports (right side)
               if (outputPorts.isNotEmpty)
                 Expanded(
                   child: ListView.builder(
@@ -405,7 +391,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     );
   }
 
-  // Build individual port row with connection functionality
   Widget _buildPortRow(CanvasItem item, Port port, bool isInput, double height,
       bool isFeedback) {
     return DragTarget<Map<String, dynamic>>(
@@ -414,7 +399,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
             !isFeedback &&
             data.containsKey('itemId') &&
             data.containsKey('portId')) {
-          // This is a target port, handle the connection
           if (data['itemId'] != item.id || data['portId'] != port.id) {
             _handlePortConnection(
                 data['itemId'], data['portId'], item.id!, port.id);
@@ -541,7 +525,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     );
   }
 
-  // Show context menu for items
   void _showContextMenu(BuildContext context, CanvasItem item, int index) {
     final RenderBox overlay =
         Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
@@ -558,30 +541,30 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
       context: context,
       position: position,
       items: [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'copy',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.copy, size: 18),
               SizedBox(width: 8),
               Text('Copy'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'edit',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.edit, size: 18),
               SizedBox(width: 8),
               Text('Edit'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'delete',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.delete, size: 18),
               SizedBox(width: 8),
               Text('Delete'),
@@ -606,9 +589,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     });
   }
 
-  // Item handling methods
   void _copyItem(CanvasItem item) {
-    // Create a copy of the item with a new position and ID
     final newPosition = Offset(item.position.dx + 20, item.position.dy + 20);
     final newItem = item.copyWith(
       id: const Uuid().v4(),
@@ -680,7 +661,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   void _deleteItem(int index) {
     final item = widget.wiresheet.canvasItems[index];
 
-    // First, delete any associated links
     final linksToDelete = widget.wiresheet.links
         .where((link) =>
             link.sourceItemId == item.id || link.targetItemId == item.id)
@@ -704,12 +684,10 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     });
   }
 
-  // Link handling methods
   String? _findLinkAtPosition(Offset position) {
     final RenderBox box = context.findRenderObject() as RenderBox;
     final localPosition = box.globalToLocal(position);
 
-    // Helper to determine if a point is near a curve
     bool isPointNearCurve(Offset point, Offset start, Offset end,
         Offset control1, Offset control2, double threshold) {
       for (int i = 0; i <= 20; i++) {
@@ -809,25 +787,20 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   void _handlePortTap(String itemId, String portId, bool isInput) {
-    // If this is the first port selection (source)
     if (selectedSourceItemId == null && !isInput) {
       setState(() {
         selectedSourceItemId = itemId;
         selectedSourcePortId = portId;
       });
       showSnackBarMsg(context, 'Now select a target port');
-    }
-    // If this is the second port selection (target) and it's an input port
-    else if (selectedSourceItemId != null && isInput) {
+    } else if (selectedSourceItemId != null && isInput) {
       if (selectedSourceItemId == itemId && selectedSourcePortId == portId) {
-        // Prevent self-connection
         setState(() {
           selectedSourceItemId = null;
           selectedSourcePortId = null;
         });
         showSnackBarMsg(context, 'Cannot connect a port to itself');
       } else {
-        // Create a connection
         _handlePortConnection(
           selectedSourceItemId!,
           selectedSourcePortId!,
@@ -840,9 +813,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           selectedSourcePortId = null;
         });
       }
-    }
-    // If clicking another output port after selecting a source
-    else if (selectedSourceItemId != null && !isInput) {
+    } else if (selectedSourceItemId != null && !isInput) {
       setState(() {
         selectedSourceItemId = itemId;
         selectedSourcePortId = portId;
@@ -853,7 +824,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
   void _handlePortConnection(String sourceItemId, String sourcePortId,
       String targetItemId, String targetPortId) {
-    // Check if connection already exists
     final alreadyExists = widget.wiresheet.links.any((link) =>
         link.sourceItemId == sourceItemId &&
         link.sourcePortId == sourcePortId &&
@@ -864,8 +834,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
       showSnackBarMsg(context, 'This connection already exists');
       return;
     }
-
-    // Check port compatibility
     final sourceItem =
         widget.wiresheet.canvasItems.firstWhere((i) => i.id == sourceItemId);
     final targetItem =
@@ -888,7 +856,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
       return;
     }
 
-    // Create the link
     final newLink = Link(
       id: const Uuid().v4(),
       sourceItemId: sourceItemId,
@@ -904,7 +871,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         );
   }
 
-  // Properties panel
   Widget _buildPropertiesPanel() {
     if (selectedItemIndex == null ||
         selectedItemIndex! >= widget.wiresheet.canvasItems.length) {
