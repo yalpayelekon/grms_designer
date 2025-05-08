@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../models/helvar_models/device_action.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/link.dart';
 import '../models/widget_type.dart';
 import '../models/wiresheet.dart';
 import '../models/canvas_item.dart';
 import '../providers/wiresheets_provider.dart';
+import '../providers/workgroups_provider.dart';
 import '../utils/general_ui.dart';
+import '../utils/logger.dart';
 import '../widgets/grid_painter.dart';
 import 'link_painter.dart';
 import '../models/dragging_link_painter.dart';
@@ -594,6 +597,73 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           break;
       }
     });
+  }
+
+  void _executeAction(String targetItemId, String targetPortId, dynamic value) {
+    final targetItem = widget.wiresheet.canvasItems.firstWhere(
+      (item) => item.id == targetItemId,
+      orElse: () => null as CanvasItem, // This will throw if not found
+    );
+
+    if (targetItem == null) return;
+
+    final deviceId = targetItem.properties['device_id'] as int?;
+    final deviceAddress = targetItem.properties['device_address'] as String?;
+    final deviceType = targetItem.properties['device_type'] as String?;
+
+    if (deviceId == null || deviceAddress == null || deviceType == null) {
+      return;
+    }
+
+    final workgroups = ref.read(workgroupsProvider);
+    HelvarDevice? targetDevice;
+
+    for (final workgroup in workgroups) {
+      for (final router in workgroup.routers) {
+        for (final device in router.devices) {
+          if (device.deviceId == deviceId && device.address == deviceAddress) {
+            targetDevice = device;
+            break;
+          }
+        }
+        if (targetDevice != null) break;
+      }
+      if (targetDevice != null) break;
+    }
+
+    if (targetDevice == null) return;
+
+    try {
+      final action = DeviceAction.values.firstWhere(
+        (a) => a.name == targetPortId,
+        orElse: () => null as DeviceAction, // This will throw if not found
+      );
+
+      if (action != null) {
+        targetDevice.performAction(action, value);
+      }
+    } catch (e) {
+      logError("Error executing action: $e");
+    }
+  }
+
+  void _evaluateLinks() {
+    for (final link in widget.wiresheet.links) {
+      final sourceItem = widget.wiresheet.canvasItems.firstWhere(
+        (item) => item.id == link.sourceItemId,
+        orElse: () => null as CanvasItem,
+      );
+
+      if (sourceItem == null) continue;
+
+      // Get the value from the source port
+      // This is simplified - in reality, you'd need to track values of all ports
+      dynamic value;
+      // ... logic to determine the value ...
+
+      // Execute the action on the target item
+      _executeAction(link.targetItemId, link.targetPortId, value);
+    }
   }
 
   void _copyItem(CanvasItem item) {

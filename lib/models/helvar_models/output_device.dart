@@ -1,4 +1,5 @@
 import '../../utils/logger.dart';
+import 'device_action.dart';
 import 'helvar_device.dart';
 
 class HelvarDriverOutputDevice extends HelvarDevice {
@@ -115,6 +116,36 @@ class HelvarDriverOutputDevice extends HelvarDevice {
 
   @override
   void stopped() {}
+  @override
+  void performAction(DeviceAction action, dynamic value) {
+    switch (action) {
+      case DeviceAction.clearResult:
+        clearResult();
+        break;
+      case DeviceAction.recallScene:
+        if (value is int) {
+          recallScene("1,$value");
+        }
+        break;
+      case DeviceAction.directLevel:
+        if (value is int) {
+          directLevel("$value");
+        }
+        break;
+      case DeviceAction.directProportion:
+        if (value is int) {
+          directProportion("$value");
+        }
+        break;
+      case DeviceAction.modifyProportion:
+        if (value is int) {
+          modifyProportion("$value");
+        }
+        break;
+      default:
+        logWarning("Action $action not supported for output device");
+    }
+  }
 
   void createOutputPoints(String deviceAddress, String name) {}
 

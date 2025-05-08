@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'helvar_models/device_action.dart';
 import 'helvar_models/helvar_device.dart';
 import 'link.dart';
 import 'widget_type.dart';
@@ -272,39 +273,40 @@ class CanvasItem {
     ));
 
     ports.add(Port(
-      id: 'clear_result',
-      type: PortType.boolean,
-      name: 'Clear Result',
-      isInput: false,
+      id: DeviceAction.clearResult.name,
+      type: DeviceAction.clearResult.portType,
+      name: DeviceAction.clearResult.displayName,
+      isInput: true,
     ));
 
     if (device.helvarType == 'output') {
+      // Add output device specific ports that match the context menu actions
       ports.add(Port(
-        id: 'recall_scene',
-        type: PortType.number,
-        name: 'Recall Scene',
+        id: DeviceAction.recallScene.name,
+        type: DeviceAction.recallScene.portType,
+        name: DeviceAction.recallScene.displayName,
         isInput: true,
       ));
 
       ports.add(Port(
-        id: 'direct_level',
-        type: PortType.number,
-        name: 'Direct Level',
-        isInput: false,
-      ));
-
-      ports.add(Port(
-        id: 'direct_proportion',
-        type: PortType.number,
-        name: 'Direct Proportion',
+        id: DeviceAction.directLevel.name,
+        type: DeviceAction.directLevel.portType,
+        name: DeviceAction.directLevel.displayName,
         isInput: true,
       ));
 
       ports.add(Port(
-        id: 'modify_proportion',
-        type: PortType.number,
-        name: 'Modify Proportion',
-        isInput: false,
+        id: DeviceAction.directProportion.name,
+        type: DeviceAction.directProportion.portType,
+        name: DeviceAction.directProportion.displayName,
+        isInput: true,
+      ));
+
+      ports.add(Port(
+        id: DeviceAction.modifyProportion.name,
+        type: DeviceAction.modifyProportion.portType,
+        name: DeviceAction.modifyProportion.displayName,
+        isInput: true,
       ));
     } else if (device.helvarType == 'input') {
       if (device.isButtonDevice) {
@@ -328,9 +330,30 @@ class CanvasItem {
       }
     } else if (device.helvarType == 'emergency') {
       ports.add(Port(
-        id: 'test',
-        type: PortType.boolean,
-        name: 'Test',
+        id: DeviceAction.emergencyFunctionTest.name,
+        type: DeviceAction.emergencyFunctionTest.portType,
+        name: DeviceAction.emergencyFunctionTest.displayName,
+        isInput: true,
+      ));
+
+      ports.add(Port(
+        id: DeviceAction.emergencyDurationTest.name,
+        type: DeviceAction.emergencyDurationTest.portType,
+        name: DeviceAction.emergencyDurationTest.displayName,
+        isInput: true,
+      ));
+
+      ports.add(Port(
+        id: DeviceAction.stopEmergencyTest.name,
+        type: DeviceAction.stopEmergencyTest.portType,
+        name: DeviceAction.stopEmergencyTest.displayName,
+        isInput: true,
+      ));
+
+      ports.add(Port(
+        id: DeviceAction.resetEmergencyBattery.name,
+        type: DeviceAction.resetEmergencyBattery.portType,
+        name: DeviceAction.resetEmergencyBattery.displayName,
         isInput: true,
       ));
 

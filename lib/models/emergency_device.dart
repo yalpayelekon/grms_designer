@@ -1,4 +1,5 @@
 import '../utils/logger.dart';
+import 'helvar_models/device_action.dart';
 import 'helvar_models/helvar_device.dart';
 
 class HelvarDriverEmergencyDevice extends HelvarDevice {
@@ -34,6 +35,29 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
   @override
   void recallScene(String sceneParams) {
     throw UnimplementedError("Emergency devices do not support scene recall");
+  }
+
+  @override
+  void performAction(DeviceAction action, dynamic value) {
+    switch (action) {
+      case DeviceAction.clearResult:
+        clearResult();
+        break;
+      case DeviceAction.emergencyFunctionTest:
+        emergencyFunctionTest();
+        break;
+      case DeviceAction.emergencyDurationTest:
+        emergencyDurationTest();
+        break;
+      case DeviceAction.stopEmergencyTest:
+        stopEmergencyTest();
+        break;
+      case DeviceAction.resetEmergencyBattery:
+        resetEmergencyBatteryTotalLampTime();
+        break;
+      default:
+        logWarning("Action $action not supported for emergency device");
+    }
   }
 
   void emergencyFunctionTest() {

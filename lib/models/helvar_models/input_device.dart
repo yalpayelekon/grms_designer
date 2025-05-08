@@ -1,5 +1,6 @@
 // lib/models/input_device.dart
 import '../../utils/logger.dart';
+import 'device_action.dart';
 import 'helvar_device.dart';
 
 class HelvarDriverInputDevice extends HelvarDevice {
@@ -75,6 +76,17 @@ class HelvarDriverInputDevice extends HelvarDevice {
 
   @override
   void stopped() {}
+
+  @override
+  void performAction(DeviceAction action, dynamic value) {
+    switch (action) {
+      case DeviceAction.clearResult:
+        clearResult();
+        break;
+      default:
+        logWarning("Action $action not supported for input device");
+    }
+  }
 
   void createInputPoints(
       String deviceAddress, String pointProps, String subAddress) {}
