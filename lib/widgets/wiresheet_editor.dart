@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -10,6 +12,7 @@ import '../models/canvas_item.dart';
 import '../providers/wiresheets_provider.dart';
 import '../providers/workgroups_provider.dart';
 import '../utils/general_ui.dart';
+import '../utils/helpers.dart';
 import '../utils/logger.dart';
 import '../widgets/grid_painter.dart';
 import 'link_painter.dart';
@@ -42,6 +45,58 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   Offset? _lastTapPosition;
   static const double rowHeight = 22.0;
   static const double headerHeight = 28.0;
+  final Map<String, Map<String, dynamic>> _portValues = {};
+  final Set<String> _evaluatingLinks = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePortValues();
+    _setupRampComponents();
+  }
+
+  void _initializePortValues() {
+    for (final item in widget.wiresheet.canvasItems) {
+      if (item.id != null) {
+        _portValues[item.id!] = {};
+
+        _initializeDefaultValues(item);
+      }
+    }
+  }
+
+  void _initializeDefaultValues(CanvasItem item) {
+    if (item.category == ComponentCategory.point) {
+      final pointType = item.properties['point'] as String?;
+      if (pointType == 'NumericPoint') {
+        _portValues[item.id!]!['out'] = 0;
+      } else if (pointType == 'BooleanPoint') {
+        _portValues[item.id!]!['out'] = false;
+      }
+    }
+  }
+
+  dynamic _getPortValue(String itemId, String portId) {
+    if (_portValues.containsKey(itemId) &&
+        _portValues[itemId]!.containsKey(portId)) {
+      return _portValues[itemId]![portId];
+    }
+    return null;
+  }
+
+  void _setPortValue(String itemId, String portId, dynamic value) {
+    if (!_portValues.containsKey(itemId)) {
+      _portValues[itemId] = {};
+    }
+
+    final previousValue = _portValues[itemId]![portId];
+    _portValues[itemId]![portId] = value;
+
+    // Only trigger evaluation if value actually changed
+    if (previousValue != value) {
+      _evaluateLinks(updatedItemId: itemId, updatedPortId: portId);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,23 +124,37 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                         context.findRenderObject() as RenderBox;
                     final localPosition = box.globalToLocal(globalPosition);
                     CanvasItem? newItem;
+
                     if (data is WidgetData) {
                       final additionalData = data.additionalData;
                       HelvarDevice? device;
+
                       if (additionalData["device"] != null) {
                         device = additionalData["device"];
                         newItem =
                             CanvasItem.createDeviceItem(device!, localPosition);
                       } else if (data.type == WidgetType.treenode) {
-                        if (data.category! == ComponentCategory.logic) {
-                          newItem = CanvasItem.createLogicItem(
-                              additionalData["label"]!, localPosition);
-                        } else if (data.category! == ComponentCategory.math) {
-                          newItem = CanvasItem.createMathItem(
-                              additionalData["label"]!, localPosition);
-                        } else if (data.category! == ComponentCategory.point) {
-                          newItem = CanvasItem.createPointItem(
-                              additionalData["label"]!, localPosition);
+                        switch (data.category!) {
+                          case ComponentCategory.logic:
+                            newItem = CanvasItem.createLogicItem(
+                                additionalData["label"]!, localPosition);
+                            break;
+                          case ComponentCategory.math:
+                            newItem = CanvasItem.createMathItem(
+                                additionalData["label"]!, localPosition);
+                            break;
+                          case ComponentCategory.point:
+                            newItem = CanvasItem.createPointItem(
+                                additionalData["label"]!, localPosition);
+                            break;
+                          case ComponentCategory.ui:
+                            newItem = CanvasItem.createUIItem(
+                                additionalData["label"]!, localPosition);
+                            break;
+                          case ComponentCategory.util:
+                            newItem = CanvasItem.createUtilItem(
+                                additionalData["label"]!, localPosition);
+                            break;
                         }
                       } else {
                         newItem = CanvasItem(
@@ -93,6 +162,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                             position: localPosition,
                             size: const Size(120, 80));
                       }
+
                       ref.read(wiresheetsProvider.notifier).addWiresheetItem(
                             widget.wiresheet.id,
                             newItem!,
@@ -360,7 +430,63 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
   Widget _buildItemContents(CanvasItem item, bool isFeedback) {
     final List<Port> allPorts = item.ports;
+    if (item.category == ComponentCategory.ui) {
+      final uiType = item.properties['ui_type'] as String?;
 
+      if (uiType == 'Button') {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: headerHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                item.label ?? "Button",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isFeedback ? Colors.white : Colors.black87,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Container(
+              height: 1,
+              color: Colors.grey.withOpacity(0.5),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: isFeedback ? null : () => _handleButtonClick(item),
+                  child: Text(
+                    _getPortValue(item.id!, 'label') as String? ?? 'Click Me',
+                    style: TextStyle(
+                      color: isFeedback ? Colors.white.withOpacity(0.9) : null,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // We still need to show the ports for connections
+            Container(
+              height: allPorts.length * rowHeight,
+              child: ListView.builder(
+                itemCount: allPorts.length,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (context, i) {
+                  return _buildPortRow(item, allPorts[i], allPorts[i].isInput,
+                      rowHeight, isFeedback);
+                },
+              ),
+            ),
+          ],
+        );
+      } else if (uiType == 'Text') {
+        // Handle text component rendering
+        // ...
+      }
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -393,6 +519,81 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
         ),
       ],
     );
+  }
+
+  // Handle button click - set output port value and trigger link evaluation
+  void _handleButtonClick(CanvasItem buttonItem) {
+    if (buttonItem.id == null) return;
+
+    // Set 'click' port to true
+    _setPortValue(buttonItem.id!, 'click', true);
+
+    // Schedule to reset the click value after a short delay
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) {
+        _setPortValue(buttonItem.id!, 'click', false);
+      }
+    });
+
+    // Update UI
+    setState(() {});
+  }
+
+  Timer? _rampTimer;
+
+  void _setupRampComponents() {
+    _rampTimer?.cancel();
+
+    // Create a new timer that updates ramp values
+    _rampTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      // Find and update all Ramp components
+      for (final item in widget.wiresheet.canvasItems) {
+        if (item.category == ComponentCategory.util &&
+            item.properties['util_type'] == 'Ramp' &&
+            item.id != null) {
+          _updateRampValue(item);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _rampTimer?.cancel();
+    super.dispose();
+  }
+
+  void _updateRampValue(CanvasItem rampItem) {
+    final min =
+        _getPortValue(rampItem.id!, 'min') ?? rampItem.properties['min'] ?? 0;
+    final max =
+        _getPortValue(rampItem.id!, 'max') ?? rampItem.properties['max'] ?? 100;
+    final period = _getPortValue(rampItem.id!, 'period') ??
+        rampItem.properties['period'] ??
+        10.0;
+
+    // Calculate current value based on time
+    final now = DateTime.now().millisecondsSinceEpoch / 1000.0;
+    final phase = (now % period) / period; // 0.0 to 1.0
+
+    // Use sine wave pattern for smooth transition
+    final normalized =
+        (math.sin(phase * 2 * math.pi - math.pi / 2) + 1) / 2; // 0.0 to 1.0
+    final value = min + normalized * (max - min);
+
+    // Update the output port value
+    final previousValue = _getPortValue(rampItem.id!, 'out');
+    _setPortValue(rampItem.id!, 'out', value);
+
+    // Force UI update occasionally
+    if (previousValue == null || (previousValue - value).abs() > 5) {
+      setState(() {});
+    }
   }
 
   Widget _buildPortRow(CanvasItem item, Port port, bool isInput, double height,
@@ -600,69 +801,171 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   void _executeAction(String targetItemId, String targetPortId, dynamic value) {
-    final targetItem = widget.wiresheet.canvasItems.firstWhere(
-      (item) => item.id == targetItemId,
-      orElse: () => null as CanvasItem, // This will throw if not found
-    );
-
-    if (targetItem == null) return;
-
-    final deviceId = targetItem.properties['device_id'] as int?;
-    final deviceAddress = targetItem.properties['device_address'] as String?;
-    final deviceType = targetItem.properties['device_type'] as String?;
-
-    if (deviceId == null || deviceAddress == null || deviceType == null) {
+    CanvasItem? targetItem;
+    for (CanvasItem item in widget.wiresheet.canvasItems) {
+      if (item.id == targetItemId) {
+        targetItem = item;
+        break;
+      }
+    }
+    if (targetItem == null) {
       return;
     }
 
-    final workgroups = ref.read(workgroupsProvider);
-    HelvarDevice? targetDevice;
-
-    for (final workgroup in workgroups) {
-      for (final router in workgroup.routers) {
-        for (final device in router.devices) {
-          if (device.deviceId == deviceId && device.address == deviceAddress) {
-            targetDevice = device;
-            break;
-          }
-        }
-        if (targetDevice != null) break;
-      }
-      if (targetDevice != null) break;
-    }
-
-    if (targetDevice == null) return;
-
-    try {
-      final action = DeviceAction.values.firstWhere(
-        (a) => a.name == targetPortId,
-        orElse: () => null as DeviceAction, // This will throw if not found
-      );
-
-      if (action != null) {
-        targetDevice.performAction(action, value);
-      }
-    } catch (e) {
-      logError("Error executing action: $e");
+    if (targetItem.properties.containsKey('device_id')) {
+      _executeDeviceAction(targetItem, targetPortId, value);
+    } else if (targetItem.category != null) {
+      if (targetItem.category! case ComponentCategory.logic) {
+        _processLogicComponent(targetItem, targetPortId, value);
+      } else if (targetItem.category! case ComponentCategory.math) {
+        _processMathComponent(targetItem, targetPortId, value);
+      } else if (targetItem.category! case ComponentCategory.point) {
+        _processPointComponent(targetItem, targetPortId, value);
+      } else if (targetItem.category!
+          case ComponentCategory.ui || ComponentCategory.util) {}
     }
   }
 
-  void _evaluateLinks() {
-    for (final link in widget.wiresheet.links) {
-      final sourceItem = widget.wiresheet.canvasItems.firstWhere(
-        (item) => item.id == link.sourceItemId,
-        orElse: () => null as CanvasItem,
-      );
+  void _executeDeviceAction(
+      CanvasItem deviceItem, String portId, dynamic value) {
+    final deviceId = deviceItem.properties['device_id'] as int?;
+    final deviceAddress = deviceItem.properties['device_address'] as String?;
 
-      if (sourceItem == null) continue;
+    if (deviceId == null || deviceAddress == null) return;
 
-      // Get the value from the source port
-      // This is simplified - in reality, you'd need to track values of all ports
-      dynamic value;
-      // ... logic to determine the value ...
+    final device =
+        findDevice(deviceId, ref.read(workgroupsProvider), deviceAddress);
+    if (device == null) return;
 
-      // Execute the action on the target item
-      _executeAction(link.targetItemId, link.targetPortId, value);
+    try {
+      DeviceAction? action;
+      for (DeviceAction a in DeviceAction.values) {
+        if (a.name == portId) {
+          action = a;
+          break;
+        }
+      }
+
+      if (action != null) {
+        device.performAction(action, value);
+        setState(() {});
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Executed ${action.displayName} on ${device.description}'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      logError("Error executing device action: ${e.toString()}");
+    }
+  }
+
+  void _processLogicComponent(CanvasItem item, String portId, dynamic value) {
+    final type = item.properties['logic_type'] as String?;
+    if (type == null || item.id == null) return;
+
+    switch (type) {
+      case 'AND':
+        if (portId == 'in1' || portId == 'in2') {
+          // Store the input
+          _setPortValue(item.id!, portId, value);
+
+          // Check if both inputs are available
+          final in1 = _getPortValue(item.id!, 'in1');
+          final in2 = _getPortValue(item.id!, 'in2');
+
+          if (in1 != null && in2 != null) {
+            // Perform AND logic and set output
+            final result = (in1 as bool) && (in2 as bool);
+            _setPortValue(item.id!, 'out', result);
+          }
+        }
+        break;
+
+      case 'OR':
+        if (portId == 'in1' || portId == 'in2') {
+          // Store the input
+          _setPortValue(item.id!, portId, value);
+
+          // Check if both inputs are available
+          final in1 = _getPortValue(item.id!, 'in1');
+          final in2 = _getPortValue(item.id!, 'in2');
+
+          if (in1 != null && in2 != null) {
+            // Perform OR logic and set output
+            final result = (in1 as bool) || (in2 as bool);
+            _setPortValue(item.id!, 'out', result);
+          }
+        }
+        break;
+
+      case 'IF':
+        if (portId == 'in1') {
+          // Store the current condition
+          bool previousCondition =
+              _getPortValue(item.id!, 'last_condition') ?? false;
+          bool newCondition = value as bool;
+
+          // Store the new condition
+          _setPortValue(item.id!, 'in1', newCondition);
+
+          // Check if condition changed - this is key to the "execute only on change" behavior
+          if (previousCondition != newCondition) {
+            // Store the last condition
+            _setPortValue(item.id!, 'last_condition', newCondition);
+
+            // Set the output value based on the condition
+            // This will trigger downstream actions
+            _setPortValue(item.id!, 'out', newCondition ? 1 : 0);
+          }
+        }
+        break;
+
+      case 'GreaterThan':
+        if (portId == 'in1' || portId == 'in2') {
+          _setPortValue(item.id!, portId, value);
+
+          final in1 = _getPortValue(item.id!, 'in1');
+          final in2 = _getPortValue(item.id!, 'in2');
+
+          if (in1 != null && in2 != null) {
+            final previousResult = _getPortValue(item.id!, 'out');
+
+            final num1 = in1 as num;
+            final num2 = in2 as num;
+            final result = num1 > num2;
+
+            if (previousResult != result) {
+              _setPortValue(item.id!, 'out', result);
+            }
+          }
+        }
+        break;
+    }
+  }
+
+  void _evaluateLinks({String? updatedItemId, String? updatedPortId}) {
+    final linksToEvaluate = updatedItemId != null && updatedPortId != null
+        ? widget.wiresheet.links.where((link) =>
+            link.sourceItemId == updatedItemId &&
+            link.sourcePortId == updatedPortId)
+        : widget.wiresheet.links;
+
+    for (final link in linksToEvaluate) {
+      if (_evaluatingLinks.contains(link.id)) continue;
+
+      try {
+        _evaluatingLinks.add(link.id);
+        final value = _getPortValue(link.sourceItemId, link.sourcePortId);
+        if (value == null) continue;
+        _executeAction(link.targetItemId, link.targetPortId, value);
+        _setPortValue(link.targetItemId, link.targetPortId, value);
+      } finally {
+        _evaluatingLinks.remove(link.id);
+      }
     }
   }
 
@@ -946,6 +1249,11 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
           widget.wiresheet.id,
           newLink,
         );
+
+    final sourceValue = _getPortValue(sourceItemId, sourcePortId);
+    if (sourceValue != null) {
+      _setPortValue(targetItemId, targetPortId, sourceValue);
+    }
   }
 
   Widget _buildPropertiesPanel() {
@@ -955,7 +1263,194 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
     }
 
     final item = widget.wiresheet.canvasItems[selectedItemIndex!];
+    if (item.category == ComponentCategory.ui) {
+      final uiType = item.properties['ui_type'] as String?;
 
+      if (uiType == 'Button') {
+        return Positioned(
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: 250,
+          child: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Button Properties',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const Divider(),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Label',
+                    border: OutlineInputBorder(),
+                  ),
+                  controller: TextEditingController(
+                    text: _getPortValue(item.id!, 'label') as String? ??
+                        'Click Me',
+                  ),
+                  onChanged: (value) {
+                    _setPortValue(item.id!, 'label', value);
+                  },
+                ),
+                getPositionDetail(
+                    item, widget.wiresheet.id, selectedItemIndex!, ref),
+                const SizedBox(height: 24),
+
+                // Testing section
+                Text(
+                  'Test',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => _handleButtonClick(item),
+                  child: const Text('Trigger Button Click'),
+                ),
+
+                // Standard delete button and other controls
+                const Spacer(),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Delete Item'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(40),
+                  ),
+                  onPressed: () {
+                    _deleteItem(selectedItemIndex!);
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  icon: const Icon(Icons.close),
+                  label: const Text('Close Panel'),
+                  onPressed: () {
+                    setState(() {
+                      isPanelExpanded = false;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
+    // Add custom properties for util components
+    else if (item.category == ComponentCategory.util) {
+      final utilType = item.properties['util_type'] as String?;
+
+      if (utilType == 'Ramp') {
+        return Positioned(
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: 250,
+          child: Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ramp Properties',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const Divider(),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Min Value',
+                    border: OutlineInputBorder(),
+                  ),
+                  controller: TextEditingController(
+                    text: (item.properties['min'] ?? 0).toString(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final numValue = double.tryParse(value);
+                    if (numValue != null) {
+                      item.properties['min'] = numValue;
+                      _setPortValue(item.id!, 'min', numValue);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Max Value',
+                    border: OutlineInputBorder(),
+                  ),
+                  controller: TextEditingController(
+                    text: (item.properties['max'] ?? 100).toString(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final numValue = double.tryParse(value);
+                    if (numValue != null) {
+                      item.properties['max'] = numValue;
+                      _setPortValue(item.id!, 'max', numValue);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Period (seconds)',
+                    border: OutlineInputBorder(),
+                  ),
+                  controller: TextEditingController(
+                    text: (item.properties['period'] ?? 10.0).toString(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final numValue = double.tryParse(value);
+                    if (numValue != null) {
+                      item.properties['period'] = numValue;
+                      _setPortValue(item.id!, 'period', numValue);
+                    }
+                  },
+                ),
+                getPositionDetail(
+                    item, widget.wiresheet.id, selectedItemIndex!, ref),
+
+                // Standard delete button and other controls
+                const Spacer(),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.delete),
+                  label: const Text('Delete Item'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(40),
+                  ),
+                  onPressed: () {
+                    _deleteItem(selectedItemIndex!);
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  icon: const Icon(Icons.close),
+                  label: const Text('Close Panel'),
+                  onPressed: () {
+                    setState(() {
+                      isPanelExpanded = false;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
     return Positioned(
       right: 0,
       top: 0,
@@ -1049,4 +1544,10 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
       ),
     );
   }
+
+  void _processMathComponent(
+      CanvasItem targetItem, String targetPortId, value) {}
+
+  void _processPointComponent(
+      CanvasItem targetItem, String targetPortId, value) {}
 }

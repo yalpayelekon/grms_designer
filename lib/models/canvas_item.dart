@@ -133,6 +133,28 @@ class CanvasItem {
         ));
 
         break;
+
+      case 'GreaterThan':
+        rowCount = 3;
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.number,
+          name: 'Value',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.number,
+          name: 'Threshold',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'Result',
+          isInput: false,
+        ));
+        break;
     }
 
     return CanvasItem(
@@ -390,6 +412,121 @@ class CanvasItem {
     );
   }
 
+  static CanvasItem createUIItem(String type, Offset position) {
+    final id = const Uuid().v4();
+    const size = Size(120, 80);
+    final ports = <Port>[];
+    int rowCount = 2;
+
+    switch (type) {
+      case 'Button':
+        ports.add(Port(
+          id: 'click',
+          type: PortType.boolean,
+          name: 'Click',
+          isInput: false,
+        ));
+        ports.add(Port(
+          id: 'label',
+          type: PortType.string,
+          name: 'Label',
+          isInput: true,
+        ));
+        break;
+
+      case 'Text':
+        ports.add(Port(
+          id: 'text',
+          type: PortType.string,
+          name: 'Text',
+          isInput: true,
+        ));
+        break;
+    }
+
+    return CanvasItem(
+      type: WidgetType.treenode,
+      position: position,
+      size: size,
+      id: id,
+      label: type,
+      ports: ports,
+      category: ComponentCategory.ui,
+      properties: {'ui_type': type},
+      rowCount: rowCount,
+    );
+  }
+
+  static CanvasItem createUtilItem(String type, Offset position) {
+    final id = const Uuid().v4();
+    const size = Size(120, 80);
+    final ports = <Port>[];
+    int rowCount = 2;
+
+    switch (type) {
+      case 'Ramp':
+        ports.add(Port(
+          id: 'out',
+          type: PortType.number,
+          name: 'Value',
+          isInput: false,
+        ));
+        ports.add(Port(
+          id: 'min',
+          type: PortType.number,
+          name: 'Min',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'max',
+          type: PortType.number,
+          name: 'Max',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'period',
+          type: PortType.number,
+          name: 'Period (s)',
+          isInput: true,
+        ));
+        rowCount = 4;
+        break;
+
+      case 'Toggle':
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'Value',
+          isInput: false,
+        ));
+        ports.add(Port(
+          id: 'toggle',
+          type: PortType.boolean,
+          name: 'Toggle',
+          isInput: true,
+        ));
+        break;
+    }
+
+    return CanvasItem(
+      type: WidgetType.treenode,
+      position: position,
+      size: size,
+      id: id,
+      label: type,
+      ports: ports,
+      category: ComponentCategory.util,
+      properties: {
+        'util_type': type,
+        // Default values
+        'min': 0,
+        'max': 100,
+        'period': 10.0, // 10 seconds for Ramp
+      },
+      rowCount: rowCount,
+    );
+  }
+
   CanvasItem copyWith({
     WidgetType? type,
     Offset? position,
@@ -417,4 +554,6 @@ enum ComponentCategory {
   logic,
   math,
   point,
+  ui,
+  util,
 }

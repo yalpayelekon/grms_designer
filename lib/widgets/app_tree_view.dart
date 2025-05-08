@@ -488,6 +488,14 @@ class AppTreeView extends ConsumerWidget {
                     null,
                     ComponentCategory.logic,
                     context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "GreaterThan",
+                    Icons.trending_up,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.logic,
+                    context)),
           ],
         ),
         TreeNode(
@@ -541,6 +549,50 @@ class AppTreeView extends ConsumerWidget {
                     WidgetType.treenode,
                     null,
                     ComponentCategory.math,
+                    context)),
+          ],
+        ),
+        TreeNode(
+          content: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              "UI",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          children: [
+            TreeNode(
+                content: _buildDraggable("Button", Icons.touch_app,
+                    WidgetType.treenode, null, ComponentCategory.ui, context)),
+            TreeNode(
+                content: _buildDraggable("Text", Icons.text_fields,
+                    WidgetType.treenode, null, ComponentCategory.ui, context)),
+          ],
+        ),
+        TreeNode(
+          content: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              "Util",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          children: [
+            TreeNode(
+                content: _buildDraggable(
+                    "Ramp",
+                    Icons.trending_up,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.util,
+                    context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "Toggle",
+                    Icons.toggle_on,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.util,
                     context)),
           ],
         ),
