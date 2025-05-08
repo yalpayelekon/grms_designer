@@ -265,114 +265,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   }
 
   void _handlePortTap(String itemId, String portId, bool isInput) {
-    if (isInput) {
-      if (isDraggingLink &&
-          selectedSourceItemId != null &&
-          selectedSourcePortId != null) {
-        if (selectedSourceItemId == itemId) {
-          showSnackBarMsg(context, 'Cannot connect a component to itself');
-          setState(() {
-            isDraggingLink = false;
-            selectedSourceItemId = null;
-            selectedSourcePortId = null;
-            linkDragEndPoint = null;
-          });
-          return;
-        }
-
-        final alreadyExists = widget.wiresheet.links.any((link) =>
-            link.sourceItemId == selectedSourceItemId &&
-            link.sourcePortId == selectedSourcePortId &&
-            link.targetItemId == itemId &&
-            link.targetPortId == portId);
-
-        if (alreadyExists) {
-          showSnackBarMsg(context, 'This connection already exists');
-          setState(() {
-            isDraggingLink = false;
-            selectedSourceItemId = null;
-            selectedSourcePortId = null;
-            linkDragEndPoint = null;
-          });
-          return;
-        }
-
-        final sourceItem = widget.wiresheet.canvasItems
-            .firstWhere((i) => i.id == selectedSourceItemId);
-        final sourcePort = sourceItem.getPort(selectedSourcePortId!);
-
-        final targetItem =
-            widget.wiresheet.canvasItems.firstWhere((i) => i.id == itemId);
-        final targetPort = targetItem.getPort(portId);
-
-        bool isCompatible = true;
-        if (sourcePort != null && targetPort != null) {
-          isCompatible = sourcePort.type == targetPort.type ||
-              sourcePort.type == PortType.any ||
-              targetPort.type == PortType.any;
-        }
-
-        if (!isCompatible) {
-          showSnackBarMsg(context, 'Incompatible port types');
-          setState(() {
-            isDraggingLink = false;
-            selectedSourceItemId = null;
-            selectedSourcePortId = null;
-            linkDragEndPoint = null;
-          });
-          return;
-        }
-
-        final newLink = Link(
-          id: const Uuid().v4(),
-          sourceItemId: selectedSourceItemId!,
-          sourcePortId: selectedSourcePortId!,
-          targetItemId: itemId,
-          targetPortId: portId,
-          type: LinkType.dataFlow,
-        );
-
-        ref.read(wiresheetsProvider.notifier).addLink(
-              widget.wiresheet.id,
-              newLink,
-            );
-
-        setState(() {
-          isDraggingLink = false;
-          selectedSourceItemId = null;
-          selectedSourcePortId = null;
-          linkDragEndPoint = null;
-        });
-      }
-    } else {
-      if (isDraggingLink) {
-        setState(() {
-          isDraggingLink = false;
-          selectedSourceItemId = null;
-          selectedSourcePortId = null;
-          linkDragEndPoint = null;
-        });
-      }
-
-      setState(() {
-        isDraggingLink = true;
-        selectedSourceItemId = itemId;
-        selectedSourcePortId = portId;
-
-        final item =
-            widget.wiresheet.canvasItems.firstWhere((i) => i.id == itemId);
-        final ports = item.ports.where((p) => !p.isInput).toList();
-        final portIndex = ports.indexWhere((p) => p.id == portId);
-        final portCount = ports.length;
-
-        final verticalSpacing = item.size.height / (portCount + 1);
-        final verticalPosition =
-            item.position.dy + verticalSpacing * (portIndex + 1);
-
-        linkDragEndPoint =
-            Offset(item.position.dx + item.size.width + 20, verticalPosition);
-      });
-    }
+    //
   }
 
   void _handleLinkSelected(String linkId) {
@@ -457,173 +350,190 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
   Widget _buildDraggableCanvasItem(CanvasItem item, int index) {
     final isSelected = selectedItemIndex == index;
-    final RenderBox button = context.findRenderObject() as RenderBox;
-    final RenderBox overlay =
-        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    const rowHeight = 20.0; // Fixed height for each row
 
-    final buttonBottomCenter = button.localToGlobal(
-      Offset(300, button.size.height / 3),
-      ancestor: overlay,
-    );
-
-    final RelativeRect position = RelativeRect.fromRect(
-      Rect.fromPoints(
-          buttonBottomCenter, buttonBottomCenter + const Offset(1, 1)),
-      Offset.zero & overlay.size,
-    );
     return Stack(
       children: [
-        Draggable<int>(
-          data: index, // Pass the index of the item for identification
-          feedback: Material(
-            elevation: 4,
-            color: Colors.transparent,
-            child: Container(
-              width: item.size.width,
-              height: item.size.height,
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.8),
-                border: Border.all(
-                  color: Colors.blue,
-                  width: 2.0,
-                ),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-              child: Center(
-                child: Text(
-                  item.label ?? "Item $index",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          childWhenDragging: Opacity(
-            opacity: 0.3,
-            child: Container(
-              width: item.size.width,
-              height: item.size.height,
-              decoration: BoxDecoration(
-                color: Colors.grey,
-                border: Border.all(
-                  color: Colors.grey,
-                  width: 1.0,
-                ),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-            ),
-          ),
-          onDragEnd: (details) {
-            if (details.wasAccepted) {
-              final RenderBox box = context.findRenderObject() as RenderBox;
-              final localOffset = box.globalToLocal(details.offset);
-              final updatedItem = item.copyWith(
-                position: localOffset,
-              );
-
-              ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
-                    widget.wiresheet.id,
-                    index,
-                    updatedItem,
-                  );
-              setState(() {});
-            }
-          },
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedItemIndex = index;
-                isPanelExpanded = true;
-              });
-            },
-            onSecondaryTap: () {
-              showCanvasItemMenu(
-                context,
-                position,
-                item.id!,
-                '',
-                false,
-              );
-            },
-            child: Container(
-              width: item.size.width,
-              height: item.size.height,
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.blue.shade100 : Colors.white,
-                border: Border.all(
-                  color: isSelected ? Colors.blue : Colors.grey,
-                  width: isSelected ? 2.0 : 1.0,
-                ),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Text(
-                      item.label ?? "Item $index",
-                      style: TextStyle(
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      onPanUpdate: (details) {
-                        final newWidth = item.size.width + details.delta.dx;
-                        final newHeight = item.size.height + details.delta.dy;
-                        if (newWidth >= 80 && newHeight >= 60) {
-                          final updatedItem = item.copyWith(
-                            size: Size(newWidth, newHeight),
-                          );
-                          ref
-                              .read(wiresheetsProvider.notifier)
-                              .updateWiresheetItem(
-                                widget.wiresheet.id,
-                                index,
-                                updatedItem,
-                              );
-                        }
-                      },
-                      child: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected ? Colors.blue : Colors.grey.shade300,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(4.0),
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.drag_handle,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        // fill in here or modify
       ],
     );
   }
 
-  void showCanvasItemMenu(BuildContext context, RelativeRect position,
-      String itemId, String portId, bool isInput) {
-    showMenu(context: context, position: position, items: [
-      PopupMenuItem(
-        child: const Text('Recall Scene'),
-        onTap: () => _handlePortTap(itemId, portId, isInput),
+  void _showContextMenu(
+      BuildContext context, Offset position, CanvasItem item, int index) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromPoints(position, position + const Offset(1, 1)),
+        Offset.zero & overlay.size,
       ),
-    ]);
+      items: [
+        const PopupMenuItem(
+          value: 'copy',
+          child: Row(
+            children: [
+              Icon(Icons.copy, size: 18),
+              SizedBox(width: 8),
+              Text('Copy'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit, size: 18),
+              SizedBox(width: 8),
+              Text('Edit'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, size: 18),
+              SizedBox(width: 8),
+              Text('Delete'),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == null) return;
+
+      switch (value) {
+        case 'copy':
+          _copyItem(item);
+          break;
+        case 'edit':
+          _editItem(context, item, index);
+          break;
+        case 'delete':
+          _deleteItem(index);
+          break;
+      }
+    });
+  }
+
+  void _copyItem(CanvasItem item) {
+    // Create a copy of the item with a new position and ID
+    final newPosition = Offset(item.position.dx + 20, item.position.dy + 20);
+    final newItem = item.copyWith(
+      id: const Uuid().v4(),
+      position: newPosition,
+      label: '${item.label} (Copy)',
+    );
+
+    ref.read(wiresheetsProvider.notifier).addWiresheetItem(
+          widget.wiresheet.id,
+          newItem,
+        );
+
+    setState(() {
+      selectedItemIndex = widget.wiresheet.canvasItems.length - 1;
+      isPanelExpanded = true;
+    });
+  }
+
+  void _editItem(BuildContext context, CanvasItem item, int index) {
+    TextEditingController labelController =
+        TextEditingController(text: item.label);
+    TextEditingController rowCountController =
+        TextEditingController(text: item.rowCount.toString());
+
+    // Don't allow editing row count for certain item types
+    final bool isRowCountEditable = !((item.properties.containsKey(
+            'device_type')) || // HelvarDevice items have fixed row count
+        (item.category == ComponentCategory.logic &&
+            item.properties.containsKey('logic_type')) ||
+        (item.category == ComponentCategory.math &&
+            item.properties.containsKey('operation')));
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Item'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelController,
+                decoration: const InputDecoration(
+                  labelText: 'Label',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (isRowCountEditable) ...[
+                const SizedBox(height: 16),
+                TextField(
+                  controller: rowCountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Number of Rows',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final updatedItem = item.copyWith(
+                  label: labelController.text,
+                  rowCount: isRowCountEditable
+                      ? int.tryParse(rowCountController.text) ?? item.rowCount
+                      : item.rowCount,
+                );
+
+                ref.read(wiresheetsProvider.notifier).updateWiresheetItem(
+                      widget.wiresheet.id,
+                      index,
+                      updatedItem,
+                    );
+
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteItem(int index) {
+    final itemId = widget.wiresheet.canvasItems[index].id;
+    final affectedLinks = widget.wiresheet.links
+        .where((link) =>
+            link.sourceItemId == itemId || link.targetItemId == itemId)
+        .toList();
+
+    for (final link in affectedLinks) {
+      ref.read(wiresheetsProvider.notifier).removeLink(
+            widget.wiresheet.id,
+            link.id,
+          );
+    }
+
+    ref.read(wiresheetsProvider.notifier).removeWiresheetItem(
+          widget.wiresheet.id,
+          index,
+        );
+
+    setState(() {
+      selectedItemIndex = null;
+      isPanelExpanded = false;
+    });
   }
 
   Widget _buildPropertiesPanel() {

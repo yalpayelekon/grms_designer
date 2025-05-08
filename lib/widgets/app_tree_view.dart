@@ -510,6 +510,38 @@ class AppTreeView extends ConsumerWidget {
                     null,
                     ComponentCategory.math,
                     context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "MULTIPLY",
+                    Icons.close,
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.math,
+                    context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "DIVIDE",
+                    Icons.diamond, // find a suitable one
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.math,
+                    context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "MODULO",
+                    Icons.mode, // find a suitable one
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.math,
+                    context)),
+            TreeNode(
+                content: _buildDraggable(
+                    "POWER",
+                    Icons.star, // find a suitable one
+                    WidgetType.treenode,
+                    null,
+                    ComponentCategory.math,
+                    context)),
           ],
         ),
         TreeNode(
