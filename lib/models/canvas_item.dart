@@ -265,7 +265,54 @@ class CanvasItem {
         ));
         break;
 
-      // ... other cases similar to what you already have
+      case 'StringWritable':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.string,
+          name: 'Value 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.string,
+          name: 'Value 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.string,
+          name: 'StringWritable',
+          isInput: false,
+        ));
+        break;
+      case 'BooleanPoint':
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'BooleanPoint',
+          isInput: false,
+        ));
+        break;
+      case 'BooleanWritable':
+        ports.add(Port(
+          id: 'in1',
+          type: PortType.boolean,
+          name: 'Value 1',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'in2',
+          type: PortType.boolean,
+          name: 'Value 2',
+          isInput: true,
+        ));
+        ports.add(Port(
+          id: 'out',
+          type: PortType.boolean,
+          name: 'BooleanWritable',
+          isInput: false,
+        ));
+        break;
     }
 
     return CanvasItem(

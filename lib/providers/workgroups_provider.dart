@@ -5,6 +5,10 @@ import '../models/helvar_models/helvar_device.dart';
 import '../services/file_storage_service.dart';
 import '../services/router_storage_service.dart';
 import '../utils/logger.dart';
+import '../comm/models/command_models.dart';
+import '../comm/router_command_service.dart';
+import '../comm/router_connection.dart';
+import '../comm/router_connection_manager.dart';
 
 class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   final FileStorageService _fileStorageService;
@@ -45,6 +49,53 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
       _initialized = true;
     } catch (e) {
       logError('Error initializing workgroups: $e');
+    }
+  }
+
+  Future<RouterConnection?> getRouterConnection(
+      String workgroupId, String routerAddress) async {
+    final connectionManager = RouterConnectionManager();
+
+    try {
+      final workgroup = state.firstWhere((wg) => wg.id == workgroupId);
+      final router =
+          workgroup.routers.firstWhere((r) => r.address == routerAddress);
+
+      if (router.ipAddress.isEmpty) {
+        return null;
+      }
+
+      return await connectionManager.getConnection(router.ipAddress);
+    } catch (e) {
+      logError('Error getting router connection: $e');
+      return null;
+    }
+  }
+
+  Future<CommandResult> sendRouterCommand(
+    String workgroupId,
+    String routerAddress,
+    String command, {
+    CommandPriority priority = CommandPriority.normal,
+  }) async {
+    try {
+      final workgroup = state.firstWhere((wg) => wg.id == workgroupId);
+      final router =
+          workgroup.routers.firstWhere((r) => r.address == routerAddress);
+
+      if (router.ipAddress.isEmpty) {
+        return CommandResult.failure('Router has no IP address', 0);
+      }
+
+      final commandService = RouterCommandService();
+      return await commandService.sendCommand(
+        router.ipAddress,
+        command,
+        priority: priority,
+      );
+    } catch (e) {
+      logError('Error sending router command: $e');
+      return CommandResult.failure(e.toString(), 0);
     }
   }
 
