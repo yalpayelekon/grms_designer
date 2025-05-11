@@ -7,6 +7,7 @@ import '../../models/helvar_models/output_device.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../utils/file_dialog_helper.dart';
+import '../../services/discovery_service.dart';
 import '../../utils/general_ui.dart';
 import '../dialogs/add_device_dialog.dart';
 
@@ -27,6 +28,7 @@ class RouterDetailScreen extends ConsumerStatefulWidget {
 class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   late List<HelvarDevice> _devices;
   bool _isLoading = false;
+  DiscoveryService discoveryService = DiscoveryService();
   final Map<String, List<HelvarDevice>> _devicesBySubnet = {};
 
   @override
@@ -100,6 +102,16 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       appBar: AppBar(
         title: Text('Router: ${widget.router.description}'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.wifi),
+            tooltip: 'Connect',
+            onPressed: () {
+              ref.read(workgroupsProvider.notifier).getRouterConnection(
+                    widget.workgroup.id,
+                    widget.router.address,
+                  );
+            },
+          ),
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
@@ -157,6 +169,11 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.search),
+                      label: const Text('Discover Devices'),
+                      onPressed: _discoverDevices,
+                    ),
                     const SizedBox(width: 16),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.add),
@@ -249,6 +266,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
   void _handleMenuAction(String action) async {
     switch (action) {
+      case 'discover':
+        await _discoverDevices();
+        break;
       case 'import':
         await _importDevices();
         break;
@@ -527,5 +547,87 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _discoverDevices() async {
+    if (widget.router.ipAddress.isEmpty) {
+      showSnackBarMsg(context, 'Router IP address is not set');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final discoveredRouter = await discoveryService
+          .discoverRouterWithPersistentConnection(widget.router.ipAddress);
+
+      if (discoveredRouter == null || discoveredRouter.devices.isEmpty) {
+        if (!mounted) return;
+        showSnackBarMsg(context, 'No devices discovered');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final discoveredDevices = discoveredRouter.devices;
+
+      if (!mounted) return;
+      final shouldAdd = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Devices Discovered'),
+              content: Text(
+                  'Found ${discoveredDevices.length} devices. Do you want to add them?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Add Devices'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+
+      if (!shouldAdd || !mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final existingAddresses = _devices.map((d) => d.address).toSet();
+      final newDevices = discoveredDevices
+          .where((d) => !existingAddresses.contains(d.address))
+          .toList();
+
+      for (final device in newDevices) {
+        await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
+              widget.workgroup.id,
+              widget.router.address,
+              device,
+            );
+      }
+
+      if (!mounted) return;
+      showSnackBarMsg(context, 'Added ${newDevices.length} devices');
+      setState(() {
+        _devices = widget.router.devices;
+        _organizeDevicesBySubnet();
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      showSnackBarMsg(context, 'Error discovering devices: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
+import '../../services/discovery_service.dart';
 import '../../utils/general_ui.dart';
 import '../details/group_detail_screen.dart';
 
@@ -20,6 +21,7 @@ class GroupsListScreen extends ConsumerStatefulWidget {
 
 class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
   bool _isLoading = false;
+  final DiscoveryService _discoveryService = DiscoveryService();
   Map<String, bool> expandedGroups = {};
   bool _showGroups = true;
 
@@ -102,6 +104,11 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
                       });
                     },
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    tooltip: 'Discover Groups',
+                    onPressed: () => _discoverGroups(context),
+                  ),
                 ],
               ],
             ),
@@ -115,22 +122,28 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
 
   Widget _buildCollapsibleGroupsList(BuildContext context) {
     return widget.workgroup.groups.isEmpty
-        ? const Card(
-            margin: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        ? Card(
+            margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
             child: Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.group_work,
                     size: 48,
                     color: Colors.grey,
                   ),
-                  SizedBox(height: 16),
-                  Text(
+                  const SizedBox(height: 16),
+                  const Text(
                     'No groups found for this workgroup',
                     style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.search),
+                    label: const Text('Discover Groups'),
+                    onPressed: () => _discoverGroups(context),
                   ),
                 ],
               ),
@@ -304,6 +317,85 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
 
       if (!mounted) return;
       showSnackBarMsg(context, 'Group deleted');
+    }
+  }
+
+  Future<void> _discoverGroups(BuildContext context) async {
+    if (widget.workgroup.routers.isEmpty) {
+      showSnackBarMsg(context, 'No routers available to discover groups');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final router = widget.workgroup.routers.first;
+      final discoveredGroups =
+          await _discoveryService.discoverGroups(router.ipAddress);
+
+      if (discoveredGroups.isEmpty) {
+        if (!mounted) return;
+        showSnackBarMsg(context, 'No groups discovered');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (!mounted) return;
+      final shouldAdd = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Groups Discovered'),
+              content: Text(
+                  'Found ${discoveredGroups.length} groups. Do you want to add them?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Add Groups'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+
+      if (!shouldAdd || !mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final existingGroupIds =
+          widget.workgroup.groups.map((g) => g.groupId).toSet();
+      final newGroups = discoveredGroups
+          .where((g) => !existingGroupIds.contains(g.groupId))
+          .toList();
+
+      for (final group in newGroups) {
+        await ref.read(workgroupsProvider.notifier).addGroupToWorkgroup(
+              widget.workgroup.id,
+              group,
+            );
+      }
+
+      if (!mounted) return;
+      showSnackBarMsg(context, 'Added ${newGroups.length} groups');
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      showSnackBarMsg(context, 'Error discovering groups: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 }

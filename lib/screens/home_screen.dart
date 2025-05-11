@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/niagara/home/flow_screen.dart';
 
+import '../niagara/home/flow_screen.dart';
 import '../models/helvar_models/helvar_group.dart';
+import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
+import '../providers/router_connection_provider.dart';
 import '../services/app_directory_service.dart';
+import '../utils/general_ui.dart';
+import '../utils/logger.dart';
 import '../widgets/app_tree_view.dart';
 import 'details/group_detail_screen.dart';
 import 'details/router_detail_screen.dart';
+import 'dialogs/router_selection.dart';
 import 'lists/groups_list_screen.dart';
 import 'lists/wiresheet_list_screen.dart';
 import 'log_panel_screen.dart';
@@ -44,7 +49,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingProjectSettings = false;
   double _leftPanelWidth = 500;
   bool _isDragging = false;
+  List<RouterConnectionStatus>? connectionStatuses;
   Map<String, dynamic>? connectionStats;
+  AsyncValue<RouterConnectionStatus>? connectionStream;
   Set<int> selectedIndices = <int>{};
 
   @override
@@ -52,6 +59,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     final workgroups = ref.watch(workgroupsProvider);
     final wiresheets = ref.watch(wiresheetsProvider);
     final projectName = ref.watch(projectNameProvider);
+    connectionStream = ref.watch(routerConnectionStatusStreamProvider);
+    connectionStatuses = ref.watch(routerConnectionStatusesProvider);
+    connectionStats = ref.watch(connectionStatsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -185,7 +195,198 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildConnectionMonitor() {
+    Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Router Connections',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatCard(
+                    context, 'Total', connectionStats!['total'] ?? 0),
+                _buildStatCard(context, 'Connected',
+                    connectionStats!['connected'] ?? 0, Colors.green),
+                _buildStatCard(context, 'Reconnecting',
+                    connectionStats!['reconnecting'] ?? 0, Colors.orange),
+                _buildStatCard(context, 'Failed',
+                    connectionStats!['failed'] ?? 0, Colors.red),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                _connectToExistingRouters(context);
+              },
+              child: const Text('Connect to Routers'),
+            ),
+            if (connectionStatuses!.isEmpty)
+              const Center(
+                child: Text('No active router connections'),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: connectionStatuses!.length,
+                  itemBuilder: (context, index) {
+                    final status = connectionStatuses![index];
+                    return _buildConnectionStatusItem(context, status);
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
     return const FlowScreen();
+  }
+
+  Future<void> _connectToExistingRouters(BuildContext context) async {
+    final workgroups = ref.read(workgroupsProvider);
+
+    final List<Map<String, dynamic>> routersInfo = [];
+    for (final workgroup in workgroups) {
+      for (final router in workgroup.routers) {
+        routersInfo.add({
+          'workgroup': workgroup.description,
+          'router': router,
+          'workgroupId': workgroup.id,
+        });
+      }
+    }
+
+    if (routersInfo.isEmpty) {
+      if (mounted) {
+        showSnackBarMsg(context, 'No routers found in workgroups');
+      }
+      return;
+    }
+
+    if (mounted) {
+      final selectedRouters = await showDialog<List<int>>(
+        context: context,
+        builder: (context) =>
+            buildRouterSelectionDialog(routersInfo, selectedIndices),
+      );
+
+      if (selectedRouters == null || selectedRouters.isEmpty) {
+        return;
+      }
+
+      final connectionManager = ref.read(routerConnectionManagerProvider);
+      final settings = ref.read(projectSettingsProvider);
+      int connectedCount = 0;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Connecting to routers...'),
+            ],
+          ),
+        ),
+      );
+
+      for (final index in selectedRouters) {
+        try {
+          final routerInfo = routersInfo[index];
+          final router = routerInfo['router'] as HelvarRouter;
+
+          if (router.ipAddress.isNotEmpty) {
+            await connectionManager.getConnection(
+              router.ipAddress,
+              heartbeatInterval:
+                  Duration(seconds: settings.heartbeatIntervalSeconds),
+              connectionTimeout:
+                  Duration(milliseconds: settings.socketTimeoutMs),
+            );
+            connectedCount++;
+          }
+        } catch (e) {
+          logError('Error connecting to router: $e');
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        showSnackBarMsg(context, 'Connected to $connectedCount routers');
+      }
+    }
+  }
+
+  Widget _buildStatCard(BuildContext context, String label, int value,
+      [Color? color]) {
+    return Card(
+      color: color?.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          children: [
+            Text(
+              value.toString(),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            Text(label),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConnectionStatusItem(
+      BuildContext context, RouterConnectionStatus status) {
+    IconData icon;
+    Color color;
+
+    switch (status.state) {
+      case RouterConnectionState.connected:
+        icon = Icons.check_circle;
+        color = Colors.green;
+        break;
+      case RouterConnectionState.connecting:
+        icon = Icons.pending;
+        color = Colors.blue;
+        break;
+      case RouterConnectionState.reconnecting:
+        icon = Icons.sync;
+        color = Colors.orange;
+        break;
+      case RouterConnectionState.failed:
+        icon = Icons.error;
+        color = Colors.red;
+        break;
+      case RouterConnectionState.disconnected:
+        icon = Icons.cancel;
+        color = Colors.grey;
+        break;
+    }
+
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(status.routerIp),
+      subtitle: Text(
+        status.errorMessage != null
+            ? 'Error: ${status.errorMessage}'
+            : 'Last change: ${formatDateTime(status.lastStateChange)}',
+      ),
+      trailing: status.reconnectAttempts > 0
+          ? Chip(label: Text('Retry: ${status.reconnectAttempts}'))
+          : null,
+    );
   }
 
   void _setActiveNode(String nodeName, {dynamic additionalData}) {

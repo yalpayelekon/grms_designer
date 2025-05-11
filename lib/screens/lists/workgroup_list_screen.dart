@@ -5,9 +5,12 @@ import 'package:grms_designer/utils/logger.dart';
 
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
+import '../../comm/discovery_manager.dart';
 import '../../utils/file_dialog_helper.dart';
 import '../../utils/general_ui.dart';
+import '../dialogs/network_interface_dialog.dart';
 import '../dialogs/workgroup_selection_dialog.dart';
+import '../../providers/settings_provider.dart';
 import '../../providers/workgroups_provider.dart';
 
 class WorkgroupListScreen extends ConsumerStatefulWidget {
@@ -19,6 +22,7 @@ class WorkgroupListScreen extends ConsumerStatefulWidget {
 
 class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
   bool isDiscovering = false;
+  DiscoveryManager? discoveryManager;
 
   void _navigateToWorkgroupDetail(Workgroup workgroup) {
     Navigator.of(context).push(
@@ -26,6 +30,69 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         builder: (context) => WorkgroupDetailScreen(workgroup: workgroup),
       ),
     );
+  }
+
+  Future<NetworkInterfaceDetails?> _selectNetworkInterface() async {
+    try {
+      List<NetworkInterfaceDetails> interfaces =
+          await discoveryManager!.getNetworkInterfaces();
+
+      if (interfaces.isEmpty) {
+        if (mounted) {
+          showSnackBarMsg(context, 'No network interfaces found');
+        }
+        return null;
+      }
+
+      if (!mounted) return null;
+
+      final result = await showDialog<NetworkInterfaceDetails>(
+        context: context,
+        builder: (BuildContext context) {
+          return NetworkInterfaceDialog(interfaces: interfaces);
+        },
+      );
+
+      if (result == null) {
+        return null;
+      }
+
+      return result;
+    } catch (e) {
+      _showErrorMessage('Error finding network interfaces: ${e.toString()}');
+      return null;
+    }
+  }
+
+  Future<List<Map<String, String>>> _performRouterDiscovery(
+      NetworkInterfaceDetails interfaceResult) async {
+    setState(() {
+      isDiscovering = true;
+    });
+
+    try {
+      await discoveryManager!.start(interfaceResult.ipv4!);
+      final discoveryTimeout = ref.read(discoveryTimeoutProvider);
+      final broadcastAddress = discoveryManager!.calculateBroadcastAddress(
+        interfaceResult.ipv4!,
+        interfaceResult.subnetMask!,
+      );
+      await discoveryManager!
+          .sendDiscoveryRequest(discoveryTimeout, broadcastAddress);
+      return discoveryManager!.getDiscoveredRouters();
+    } catch (e) {
+      _showErrorMessage('Discovery error: ${e.toString()}');
+      return [];
+    } finally {
+      if (discoveryManager != null) {
+        discoveryManager!.stop();
+        discoveryManager = null;
+      }
+
+      setState(() {
+        isDiscovering = false;
+      });
+    }
   }
 
   Future<String?> _selectWorkgroup(List<String> workgroupNames) async {
@@ -153,7 +220,23 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
   }
 
   Future<void> _discoverWorkgroups() async {
-    // TODO: will be implemented later
+    discoveryManager = DiscoveryManager();
+    final interfaceResult = await _selectNetworkInterface();
+    if (interfaceResult == null) return;
+
+    List<Map<String, String>> discoveredRouters =
+        await _performRouterDiscovery(interfaceResult);
+
+    List<String> workgroupNames = discoveredRouters
+        .map((router) => router['workgroup'] ?? 'Unknown')
+        .toSet()
+        .toList();
+
+    final selectedWorkgroup = await _selectWorkgroup(workgroupNames);
+    if (selectedWorkgroup == null) return;
+
+    _createWorkgroup(
+        selectedWorkgroup, interfaceResult.name, discoveredRouters);
   }
 
   @override
@@ -257,6 +340,12 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
+                                TextButton.icon(
+                                  icon: const Icon(Icons.search),
+                                  label: const Text('Discover More Routers'),
+                                  onPressed: () =>
+                                      _discoverMoreRouters(workgroup),
+                                ),
                                 const SizedBox(width: 8),
                                 TextButton.icon(
                                   icon: const Icon(Icons.edit),
@@ -370,5 +459,38 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             context, 'Workgroup "${workgroup.description}" deleted');
       }
     }
+  }
+
+  Future<void> _discoverMoreRouters(Workgroup workgroup) async {
+    discoveryManager = DiscoveryManager();
+    final interfaceResult = await _selectNetworkInterface();
+    if (interfaceResult == null) return;
+
+    List<Map<String, String>> discoveredRouters =
+        await _performRouterDiscovery(interfaceResult);
+
+    final matchingRouters = discoveredRouters
+        .where((router) => router['workgroup'] == workgroup.description)
+        .toList();
+
+    if (matchingRouters.isEmpty) {
+      if (mounted) {
+        showSnackBarMsg(
+            context, 'No matching routers found for this workgroup');
+      }
+      return;
+    }
+
+    _createWorkgroup(
+        workgroup.description, workgroup.networkInterface, matchingRouters);
+  }
+
+  @override
+  void dispose() {
+    if (discoveryManager != null) {
+      discoveryManager!.stop();
+      discoveryManager = null;
+    }
+    super.dispose();
   }
 }
