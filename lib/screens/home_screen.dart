@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/niagara/home/flow_screen.dart';
 
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_router.dart';
@@ -184,20 +185,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildConnectionMonitor() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Router Connections will be added later',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ],
-        ),
-      ),
-    );
+    return const FlowScreen();
   }
 
   void _setActiveNode(String nodeName, {dynamic additionalData}) {
