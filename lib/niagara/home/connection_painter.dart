@@ -112,21 +112,17 @@ class ConnectionPainter extends CustomPainter {
         !fromPort.isInput // true for output (right side)
         );
 
-    // Draw dashed line
     _drawDashedLine(canvas, fromPortPos, endPoint, paint);
   }
 
   Offset _calculatePortPosition(
       Offset itemPosition, int portIndex, bool isRightSide) {
-    // Get the center X of the item (estimated width is 160 + padding*2)
-    final double itemWidth = 160.0 + (itemPadding * 2);
+    const double itemWidth = 160.0 + (itemPadding * 2);
 
-    // X position depends on whether it's an input (left) or output (right) port
     final double portX = isRightSide
         ? itemPosition.dx + itemWidth // Right side for outputs
         : itemPosition.dx; // Left side for inputs
 
-    // Y position is based on the port index
     final double portY = itemPosition.dy +
         itemPadding +
         portVerticalOffset +
@@ -141,7 +137,7 @@ class ConnectionPainter extends CustomPainter {
     canvas.drawLine(start, end, paint);
 
     // Draw arrow at end
-    final double arrowSize = 8.0;
+    const double arrowSize = 8.0;
     final double angle = atan2(end.dy - start.dy, end.dx - start.dx);
 
     final Path arrowPath = Path();
@@ -250,7 +246,7 @@ class ConnectionPainter extends CustomPainter {
       ..strokeWidth = 1.0;
 
     // Draw value bubble
-    final double bubbleRadius = 14.0;
+    const double bubbleRadius = 14.0;
     canvas.drawCircle(midpoint, bubbleRadius, backgroundPaint);
     canvas.drawCircle(midpoint, bubbleRadius, borderPaint);
 

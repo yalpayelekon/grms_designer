@@ -894,10 +894,10 @@ class _FlowScreenState extends State<FlowScreen> {
         Offset.zero & overlay.size,
       ),
       items: [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'add-component',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.add_box, size: 18),
               SizedBox(width: 8),
               Text('Add Component'),
@@ -919,20 +919,20 @@ class _FlowScreenState extends State<FlowScreen> {
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'select-all',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.select_all, size: 18),
               SizedBox(width: 8),
               Text('Select All'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'clear-canvas',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.clear, size: 18, color: Colors.red),
               SizedBox(width: 8),
               Text('Clear Canvas', style: TextStyle(color: Colors.red)),
@@ -1151,30 +1151,30 @@ class _FlowScreenState extends State<FlowScreen> {
         Offset.zero & overlay.size,
       ),
       items: [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'copy',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.copy, size: 18),
               SizedBox(width: 8),
               Text('Copy'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'edit',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.edit, size: 18),
               SizedBox(width: 8),
               Text('Edit'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'delete',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.delete, size: 18),
               SizedBox(width: 8),
               Text('Delete'),

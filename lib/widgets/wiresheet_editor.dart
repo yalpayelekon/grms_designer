@@ -165,7 +165,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
                       ref.read(wiresheetsProvider.notifier).addWiresheetItem(
                             widget.wiresheet.id,
-                            newItem!,
+                            newItem,
                           );
 
                       setState(() {
@@ -468,8 +468,7 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
                 ),
               ),
             ),
-            // We still need to show the ports for connections
-            Container(
+            SizedBox(
               height: allPorts.length * rowHeight,
               child: ListView.builder(
                 itemCount: allPorts.length,
