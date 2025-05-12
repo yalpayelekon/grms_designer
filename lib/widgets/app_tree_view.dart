@@ -130,6 +130,40 @@ class AppTreeView extends ConsumerWidget {
                       ),
                     ),
                     TreeNode(
+                      content: GestureDetector(
+                        onDoubleTap: () {
+                          setActiveNode('graphics');
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            "Graphics",
+                            style: TextStyle(
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      children: [
+                        TreeNode(
+                          content: GestureDetector(
+                            onDoubleTap: () {
+                              //
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Text(
+                                "Graphics 1",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TreeNode(
                       content: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
