@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'grid_painter.dart';
+import '../../widgets/grid_painter.dart';
 import '../models/command_history.dart';
 import '../models/component.dart';
 import '../models/enums.dart';
