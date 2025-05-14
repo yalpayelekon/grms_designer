@@ -1,59 +1,104 @@
-import 'enums.dart';
+import 'port_type.dart';
 
-class Port {
-  final bool isInput;
-  final int index;
+// Base Slot interface
+abstract class Slot {
   final String name;
+  final int index;
+
+  Slot({
+    required this.name,
+    required this.index,
+  });
+}
+
+// Property slot (formerly Port)
+class Property extends Slot {
+  final bool isInput;
   final PortType type;
   dynamic value; // Can store boolean, number, or string
 
-  Port({
+  Property({
+    required super.name,
+    required super.index,
     required this.isInput,
-    required this.index,
-    required this.name,
     required this.type,
     this.value,
   });
 
-  factory Port.withDefaultValue({
-    required bool isInput,
-    required int index,
+  factory Property.withDefaultValue({
     required String name,
+    required int index,
+    required bool isInput,
     required PortType type,
   }) {
     dynamic defaultValue;
-    switch (type) {
-      case PortType.boolean:
+    switch (type.type) {
+      case PortType.BOOLEAN:
         defaultValue = false;
         break;
-      case PortType.number:
+      case PortType.NUMERIC:
         defaultValue = 0.0;
         break;
-      case PortType.string:
+      case PortType.STRING:
         defaultValue = '';
         break;
-      case PortType.any:
+      case PortType.ANY:
         defaultValue = null;
         break;
     }
 
-    return Port(
-      isInput: isInput,
-      index: index,
+    return Property(
       name: name,
+      index: index,
+      isInput: isInput,
       type: type,
       value: defaultValue,
     );
   }
 
-  // Check if this port can connect to another port
-  bool canConnectTo(Port otherPort) {
-    // Input can only connect to output and vice versa
-    if (isInput == otherPort.isInput) return false;
+  bool canConnectTo(Property otherProperty) {
+    if (isInput == otherProperty.isInput) return false;
 
-    // Check type compatibility
-    return type == PortType.any ||
-        otherPort.type == PortType.any ||
-        type == otherPort.type;
+    return type.type == PortType.ANY ||
+        otherProperty.type.type == PortType.ANY ||
+        type == otherProperty.type;
+  }
+}
+
+class ActionSlot extends Slot {
+  final PortType? parameterType;
+  final PortType? returnType;
+  dynamic parameter;
+  dynamic returnValue;
+
+  ActionSlot({
+    required super.name,
+    required super.index,
+    this.parameterType,
+    this.returnType,
+    this.parameter,
+    this.returnValue,
+  });
+
+  dynamic execute({dynamic parameter}) {
+    // Base implementation - should be overridden
+    this.parameter = parameter;
+    return returnValue;
+  }
+}
+
+// Topic slot
+class Topic extends Slot {
+  final PortType eventType;
+  dynamic lastEvent;
+
+  Topic({
+    required super.name,
+    required super.index,
+    required this.eventType,
+  });
+
+  void fire(dynamic event) {
+    lastEvent = event; // Store the last event value
   }
 }

@@ -1,7 +1,12 @@
 import '../models/component.dart';
 import '../models/connection.dart';
-import '../models/enums.dart';
+import '../models/component_type.dart';
+import '../models/logic_components.dart';
+import '../models/math_components.dart';
+import '../models/point_components.dart';
+import '../models/port_type.dart';
 import '../models/port.dart';
+import '../models/rectangle.dart';
 
 class FlowManager {
   List<Component> components = [];
@@ -32,38 +37,50 @@ class FlowManager {
 
   bool canCreateConnection(String fromComponentId, int fromPortIndex,
       String toComponentId, int toPortIndex) {
-    // Check if the components exist
     Component? fromComponent = findComponentById(fromComponentId);
     Component? toComponent = findComponentById(toComponentId);
 
     if (fromComponent == null || toComponent == null) return false;
 
-    // Check port indices
-    if (fromPortIndex >= fromComponent.ports.length ||
-        toPortIndex >= toComponent.ports.length) return false;
+    Slot? fromSlot = fromComponent.getSlotByIndex(fromPortIndex);
+    Slot? toSlot = toComponent.getSlotByIndex(toPortIndex);
 
-    Port fromPort = fromComponent.ports[fromPortIndex];
-    Port toPort = toComponent.ports[toPortIndex];
+    if (fromSlot == null || toSlot == null) return false;
 
-    // Check if one is input and one is output
-    if (fromPort.isInput == toPort.isInput) return false;
+    if (fromSlot is Property && toSlot is Property) {
+      if (fromSlot.isInput || !toSlot.isInput) return false;
+      return fromSlot.canConnectTo(toSlot);
+    } else if (fromSlot is Property && toSlot is ActionSlot) {
+      if (fromSlot.isInput) return false;
+      return toSlot.parameterType == null ||
+          toSlot.parameterType!.type == PortType.ANY ||
+          fromSlot.type.type == toSlot.parameterType!.type;
+    } else if (fromSlot is ActionSlot && toSlot is ActionSlot) {
+      return true;
+    } else if (fromSlot is ActionSlot && toSlot is Topic) {
+      return fromSlot.returnType == null ||
+          fromSlot.returnType!.type == PortType.ANY ||
+          toSlot.eventType.type == fromSlot.returnType!.type;
+    } else if (fromSlot is Topic && toSlot is ActionSlot) {
+      return toSlot.parameterType == null ||
+          toSlot.parameterType!.type == PortType.ANY ||
+          fromSlot.eventType.type == toSlot.parameterType!.type;
+    } else if (fromSlot is Topic && toSlot is Topic) {
+      return toSlot.eventType.type == PortType.ANY ||
+          fromSlot.eventType.type == PortType.ANY ||
+          toSlot.eventType.type == fromSlot.eventType.type;
+    }
 
-    // Ensure we're connecting from output to input
-    if (fromPort.isInput) return false;
-
-    // Check type compatibility
-    return fromPort.canConnectTo(toPort);
+    return false;
   }
 
   void createConnection(String fromComponentId, int fromPortIndex,
       String toComponentId, int toPortIndex) {
-    // Check if connection can be created
     if (!canCreateConnection(
         fromComponentId, fromPortIndex, toComponentId, toPortIndex)) {
       return;
     }
 
-    // Check if the connection already exists
     bool connectionExists = connections.any((connection) =>
         connection.fromComponentId == fromComponentId &&
         connection.fromPortIndex == fromPortIndex &&
@@ -82,13 +99,19 @@ class FlowManager {
           toPortIndex: toPortIndex,
         ));
 
-        // Store the connection in the destination component
-        toComponent.inputConnections[toPortIndex] = ConnectionEndpoint(
-          componentId: fromComponentId,
-          portIndex: fromPortIndex,
-        );
+        toComponent.addInputConnection(
+            toPortIndex,
+            ConnectionEndpoint(
+              componentId: fromComponentId,
+              portIndex: fromPortIndex,
+            ));
 
-        propagateValue(fromComponent, fromPortIndex);
+        Slot? fromSlot = fromComponent.getSlotByIndex(fromPortIndex);
+        Slot? toSlot = toComponent.getSlotByIndex(toPortIndex);
+
+        if (fromSlot is Property && toSlot is Property) {
+          propagatePropertyValue(fromComponent, fromPortIndex);
+        }
       }
     }
   }
@@ -101,10 +124,9 @@ class FlowManager {
         connection.toComponentId == toComponentId &&
         connection.toPortIndex == toPortIndex);
 
-    // Remove the connection from the destination component
     Component? toComponent = findComponentById(toComponentId);
     if (toComponent != null) {
-      toComponent.inputConnections.remove(toPortIndex);
+      toComponent.removeInputConnection(toPortIndex);
     }
 
     recalculateAll();
@@ -112,102 +134,222 @@ class FlowManager {
 
   void updatePortValue(String componentId, int portIndex, dynamic value) {
     Component? component = findComponentById(componentId);
-    if (component != null && portIndex < component.ports.length) {
-      component.ports[portIndex].value = value;
+    if (component == null) return;
 
-      if (!component.ports[portIndex].isInput) {
-        propagateValue(component, portIndex);
-      } else {
+    Slot? slot = component.getSlotByIndex(portIndex);
+    if (slot == null) return;
+
+    if (slot is Property) {
+      slot.value = value;
+
+      if (slot.isInput) {
         component.calculate();
-        for (var port in component.ports) {
-          if (!port.isInput) {
-            propagateValue(component, port.index);
+
+        for (var property in component.properties.where((p) => !p.isInput)) {
+          propagatePropertyValue(component, property.index);
+        }
+
+        for (var topic in component.topics) {
+          propagateTopicEvent(component, topic.index);
+        }
+      } else {
+        propagatePropertyValue(component, portIndex);
+      }
+    } else if (slot is ActionSlot) {
+      slot.parameter = value;
+      dynamic result = slot.execute(parameter: value);
+
+      if (slot.returnType != null && result != null) {
+        for (var connection in connections.where((connection) =>
+            connection.isFromComponent(componentId, portIndex))) {
+          Component? targetComponent =
+              findComponentById(connection.toComponentId);
+          if (targetComponent != null) {
+            Slot? targetSlot =
+                targetComponent.getSlotByIndex(connection.toPortIndex);
+
+            if (targetSlot is ActionSlot) {
+              updatePortValue(
+                  connection.toComponentId, connection.toPortIndex, result);
+            } else if (targetSlot is Topic) {
+              targetSlot.fire(result);
+              propagateTopicEvent(targetComponent, connection.toPortIndex);
+            }
           }
         }
       }
     }
   }
 
-  void propagateValue(Component sourceComponent, int sourcePortIndex) {
-    // Only output ports can propagate values
-    if (sourcePortIndex >= sourceComponent.ports.length ||
-        sourceComponent.ports[sourcePortIndex].isInput) {
-      return;
-    }
+  void propagatePropertyValue(
+      Component sourceComponent, int sourcePropertyIndex) {
+    Property? sourceProperty =
+        sourceComponent.getPropertyByIndex(sourcePropertyIndex);
+    if (sourceProperty == null || sourceProperty.isInput) return;
 
-    dynamic valueToPropagate = sourceComponent.ports[sourcePortIndex].value;
+    dynamic valueToPropagate = sourceProperty.value;
 
-    // Find all connections from this output port
     List<Connection> outgoingConnections = connections
         .where((connection) =>
-            connection.isFromComponent(sourceComponent.id, sourcePortIndex))
+            connection.isFromComponent(sourceComponent.id, sourcePropertyIndex))
         .toList();
 
     for (var connection in outgoingConnections) {
       Component? targetComponent = findComponentById(connection.toComponentId);
-      if (targetComponent != null &&
-          connection.toPortIndex < targetComponent.ports.length) {
-        targetComponent.ports[connection.toPortIndex].value = valueToPropagate;
+      if (targetComponent == null) continue;
 
+      Slot? targetSlot = targetComponent.getSlotByIndex(connection.toPortIndex);
+      if (targetSlot == null) continue;
+
+      if (targetSlot is Property) {
+        targetSlot.value = valueToPropagate;
         targetComponent.calculate();
 
-        // Recursively propagate from the target component's output ports
-        for (var port in targetComponent.ports) {
-          if (!port.isInput) {
-            propagateValue(targetComponent, port.index);
+        for (var property
+            in targetComponent.properties.where((p) => !p.isInput)) {
+          propagatePropertyValue(targetComponent, property.index);
+        }
+
+        for (var topic in targetComponent.topics) {
+          propagateTopicEvent(targetComponent, topic.index);
+        }
+      } else if (targetSlot is ActionSlot) {
+        dynamic result = targetSlot.execute(parameter: valueToPropagate);
+
+        if (result != null) {
+          for (var actionConnection in connections.where((conn) => conn
+              .isFromComponent(targetComponent.id, connection.toPortIndex))) {
+            Component? actionTargetComponent =
+                findComponentById(actionConnection.toComponentId);
+            if (actionTargetComponent == null) continue;
+
+            Slot? actionTargetSlot = actionTargetComponent
+                .getSlotByIndex(actionConnection.toPortIndex);
+
+            if (actionTargetSlot is ActionSlot) {
+              actionTargetSlot.execute(parameter: result);
+            } else if (actionTargetSlot is Topic) {
+              actionTargetSlot.fire(result);
+              propagateTopicEvent(
+                  actionTargetComponent, actionConnection.toPortIndex);
+            }
           }
         }
+      }
+    }
+  }
+
+  void propagateTopicEvent(Component sourceComponent, int sourceTopicIndex) {
+    Topic? sourceTopic = sourceComponent.getTopicByIndex(sourceTopicIndex);
+    if (sourceTopic == null) return;
+
+    dynamic eventToPropagate = sourceTopic.lastEvent;
+    if (eventToPropagate == null) return;
+
+    List<Connection> outgoingConnections = connections
+        .where((connection) =>
+            connection.isFromComponent(sourceComponent.id, sourceTopicIndex))
+        .toList();
+
+    for (var connection in outgoingConnections) {
+      Component? targetComponent = findComponentById(connection.toComponentId);
+      if (targetComponent == null) continue;
+
+      Slot? targetSlot = targetComponent.getSlotByIndex(connection.toPortIndex);
+      if (targetSlot == null) continue;
+
+      if (targetSlot is ActionSlot) {
+        dynamic result = targetSlot.execute(parameter: eventToPropagate);
+
+        if (result != null) {
+          for (var actionConnection in connections.where((conn) => conn
+              .isFromComponent(targetComponent.id, connection.toPortIndex))) {
+            Component? actionTargetComponent =
+                findComponentById(actionConnection.toComponentId);
+            if (actionTargetComponent == null) continue;
+
+            Slot? actionTargetSlot = actionTargetComponent
+                .getSlotByIndex(actionConnection.toPortIndex);
+
+            if (actionTargetSlot is ActionSlot) {
+              actionTargetSlot.execute(parameter: result);
+            } else if (actionTargetSlot is Topic) {
+              actionTargetSlot.fire(result);
+              propagateTopicEvent(
+                  actionTargetComponent, actionConnection.toPortIndex);
+            }
+          }
+        }
+      } else if (targetSlot is Topic) {
+        (targetSlot).fire(eventToPropagate);
+        propagateTopicEvent(targetComponent, connection.toPortIndex);
       }
     }
   }
 
   void recalculateAll() {
-    // Reset all input ports that have connections
     for (var component in components) {
       for (var entry in component.inputConnections.entries) {
-        int portIndex = entry.key;
-        if (portIndex < component.ports.length &&
-            component.ports[portIndex].isInput) {
-          // Reset to default value based on type
-          Port port = component.ports[portIndex];
-          switch (port.type) {
-            case PortType.boolean:
-              port.value = false;
-              break;
-            case PortType.number:
-              port.value = 0.0;
-              break;
-            case PortType.string:
-              port.value = '';
-              break;
-            case PortType.any:
-              port.value = null;
-              break;
+        int slotIndex = entry.key;
+        Slot? slot = component.getSlotByIndex(slotIndex);
+
+        if (slot is Property && slot.isInput) {
+          if (slot.type.type == PortType.BOOLEAN) {
+            slot.value = false;
+          } else if (slot.type.type == PortType.NUMERIC) {
+            slot.value = 0.0;
+          } else if (slot.type.type == PortType.STRING) {
+            slot.value = '';
+          } else if (slot.type.type == PortType.ANY) {
+            slot.value = null;
           }
         }
       }
     }
 
-    // Calculate components without input connections first
     for (var component in components) {
-      bool isInputComponent = [
-        ComponentType.booleanInput,
-        ComponentType.numberInput,
-        ComponentType.stringInput,
-      ].contains(component.type);
-
-      if (isInputComponent || component.inputConnections.isEmpty) {
+      if (component.type.isPoint) {
         component.calculate();
       }
     }
 
-    // Propagate values through the network
     for (var component in components) {
-      for (var port in component.ports) {
-        if (!port.isInput) {
-          propagateValue(component, port.index);
+      if (component.type.isPoint) {
+        for (var property in component.properties.where((p) => !p.isInput)) {
+          propagatePropertyValue(component, property.index);
         }
       }
     }
+
+    for (var component in components) {
+      if (!component.type.isPoint) {
+        component.calculate();
+
+        for (var property in component.properties.where((p) => !p.isInput)) {
+          propagatePropertyValue(component, property.index);
+        }
+
+        for (var topic in component.topics) {
+          propagateTopicEvent(component, topic.index);
+        }
+      }
+    }
+  }
+
+  Component createComponentByType(String id, String typeStr) {
+    final type = ComponentType(typeStr);
+
+    if (typeStr == RectangleComponent.RECTANGLE) {
+      return RectangleComponent(id: id);
+    } else if (type.isLogicGate) {
+      return LogicComponent(id: id, type: type);
+    } else if (type.isMathOperation) {
+      return MathComponent(id: id, type: type);
+    } else if (type.isPoint) {
+      return PointComponent(id: id, type: type);
+    }
+
+    return PointComponent(
+        id: id, type: ComponentType(ComponentType.BOOLEAN_WRITABLE));
   }
 }
