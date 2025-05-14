@@ -52,7 +52,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
   void initState() {
     super.initState();
     _initializePortValues();
-    _setupRampComponents();
   }
 
   void _initializePortValues() {
@@ -536,63 +535,6 @@ class WiresheetEditorState extends ConsumerState<WiresheetEditor> {
 
     // Update UI
     setState(() {});
-  }
-
-  Timer? _rampTimer;
-
-  void _setupRampComponents() {
-    _rampTimer?.cancel();
-
-    // Create a new timer that updates ramp values
-    _rampTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-
-      // Find and update all Ramp components
-      for (final item in widget.wiresheet.canvasItems) {
-        if (item.category == ComponentCategory.util &&
-            item.properties['util_type'] == 'Ramp' &&
-            item.id != null) {
-          _updateRampValue(item);
-        }
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _rampTimer?.cancel();
-    super.dispose();
-  }
-
-  void _updateRampValue(CanvasItem rampItem) {
-    final min =
-        _getPortValue(rampItem.id!, 'min') ?? rampItem.properties['min'] ?? 0;
-    final max =
-        _getPortValue(rampItem.id!, 'max') ?? rampItem.properties['max'] ?? 100;
-    final period = _getPortValue(rampItem.id!, 'period') ??
-        rampItem.properties['period'] ??
-        10.0;
-
-    // Calculate current value based on time
-    final now = DateTime.now().millisecondsSinceEpoch / 1000.0;
-    final phase = (now % period) / period; // 0.0 to 1.0
-
-    // Use sine wave pattern for smooth transition
-    final normalized =
-        (math.sin(phase * 2 * math.pi - math.pi / 2) + 1) / 2; // 0.0 to 1.0
-    final value = min + normalized * (max - min);
-
-    // Update the output port value
-    final previousValue = _getPortValue(rampItem.id!, 'out');
-    _setPortValue(rampItem.id!, 'out', value);
-
-    // Force UI update occasionally
-    if (previousValue == null || (previousValue - value).abs() > 5) {
-      setState(() {});
-    }
   }
 
   Widget _buildPortRow(CanvasItem item, Port port, bool isInput, double height,

@@ -50,9 +50,9 @@ class _FlowScreenState extends State<FlowScreen> {
   Offset _canvasOffset = Offset.zero; // Canvas position within the view
   static const double _canvasPadding = 100.0; // Padding around components
 
-  List<Component> _clipboardComponents = [];
-  List<Offset> _clipboardPositions = [];
-  List<Connection> _clipboardConnections = [];
+  final List<Component> _clipboardComponents = [];
+  final List<Offset> _clipboardPositions = [];
+  final List<Connection> _clipboardConnections = [];
   final Set<Component> _selectedComponents = {};
 
   @override
@@ -163,7 +163,7 @@ class _FlowScreenState extends State<FlowScreen> {
   void _initializeComponents() {
     final numericWritable = PointComponent(
       id: 'Numeric Writable',
-      type: ComponentType(ComponentType.NUMERIC_WRITABLE),
+      type: const ComponentType(ComponentType.NUMERIC_WRITABLE),
     );
     _flowManager.addComponent(numericWritable);
     _componentPositions[numericWritable.id] = const Offset(500, 250);
@@ -171,7 +171,7 @@ class _FlowScreenState extends State<FlowScreen> {
 
     final numericPoint = PointComponent(
       id: 'Numeric Point',
-      type: ComponentType(ComponentType.NUMERIC_POINT),
+      type: const ComponentType(ComponentType.NUMERIC_POINT),
     );
     _flowManager.addComponent(numericPoint);
     _componentPositions[numericPoint.id] = const Offset(900, 250);
@@ -894,10 +894,10 @@ class _FlowScreenState extends State<FlowScreen> {
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'select-all',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.select_all, size: 18),
               SizedBox(width: 8),
               Text('Select All'),
@@ -1082,30 +1082,30 @@ class _FlowScreenState extends State<FlowScreen> {
         Offset.zero & overlay.size,
       ),
       items: [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'copy',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.copy, size: 18),
               SizedBox(width: 8),
               Text('Copy'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'edit',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.edit, size: 18),
               SizedBox(width: 8),
               Text('Edit'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'delete',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.delete, size: 18),
               SizedBox(width: 8),
               Text('Delete'),

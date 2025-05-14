@@ -5,7 +5,6 @@ import '../models/connection.dart';
 import '../models/port.dart';
 import '../models/port_type.dart';
 import 'manager.dart';
-import 'component_widget.dart';
 import 'command.dart';
 import 'resize_component_command.dart';
 
