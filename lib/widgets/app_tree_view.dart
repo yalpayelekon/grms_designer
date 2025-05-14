@@ -466,14 +466,14 @@ class AppTreeView extends ConsumerWidget {
                   )
                   .toList(),
             ),
-            _buildLogicComponents(context),
+            _buildLogicComponentsNode(context),
           ]),
         ],
       ),
     );
   }
 
-  TreeNode _buildLogicComponents(BuildContext context) {
+  TreeNode _buildLogicComponentsNode(BuildContext context) {
     return TreeNode(
       content: GestureDetector(
         onDoubleTap: () {
@@ -490,6 +490,7 @@ class AppTreeView extends ConsumerWidget {
         ),
       ),
       children: [
+        // Logic section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -503,36 +504,23 @@ class AppTreeView extends ConsumerWidget {
                 content: _buildDraggable(
                     "IF",
                     Icons.compare_arrows,
-                    WidgetType.treenode,
+                    null, // No longer using WidgetType
                     null,
-                    ComponentCategory.logic,
+                    null, // Using null for category
                     context)),
             TreeNode(
                 content: _buildDraggable(
-                    "AND",
-                    Icons.add_link,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.logic,
-                    context)),
+                    "AND", Icons.add_link, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "OR",
-                    Icons.call_split,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.logic,
-                    context)),
+                    "OR", Icons.call_split, null, null, null, context)),
             TreeNode(
-                content: _buildDraggable(
-                    "GreaterThan",
-                    Icons.trending_up,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.logic,
-                    context)),
+                content: _buildDraggable("GreaterThan", Icons.trending_up, null,
+                    null, null, context)),
           ],
         ),
+
+        // Math section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -543,50 +531,27 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable("ADD", Icons.add, WidgetType.treenode,
-                    null, ComponentCategory.math, context)),
+                content: _buildDraggable(
+                    "ADD", Icons.add, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "SUBTRACT",
-                    Icons.remove,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.math,
-                    context)),
+                    "SUBTRACT", Icons.remove, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "MULTIPLY",
-                    Icons.close,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.math,
-                    context)),
+                    "MULTIPLY", Icons.close, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "DIVIDE",
-                    Icons.diamond, // find a suitable one
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.math,
-                    context)),
+                    "DIVIDE", Icons.diamond, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "MODULO",
-                    Icons.mode, // find a suitable one
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.math,
-                    context)),
+                    "MODULO", Icons.mode, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "POWER",
-                    Icons.star, // find a suitable one
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.math,
-                    context)),
+                    "POWER", Icons.star, null, null, null, context)),
           ],
         ),
+
+        // UI section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -597,13 +562,14 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable("Button", Icons.touch_app,
-                    WidgetType.treenode, null, ComponentCategory.ui, context)),
+                content: _buildDraggable(
+                    "Button", Icons.touch_app, null, null, null, context)),
             TreeNode(
-                content: _buildDraggable("Text", Icons.text_fields,
-                    WidgetType.treenode, null, ComponentCategory.ui, context)),
+                content: _buildDraggable(
+                    "Text", Icons.text_fields, null, null, null, context)),
           ],
         ),
+
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -615,22 +581,13 @@ class AppTreeView extends ConsumerWidget {
           children: [
             TreeNode(
                 content: _buildDraggable(
-                    "Ramp",
-                    Icons.trending_up,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.util,
-                    context)),
+                    "Ramp", Icons.trending_up, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "Toggle",
-                    Icons.toggle_on,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.util,
-                    context)),
+                    "Toggle", Icons.toggle_on, null, null, null, context)),
           ],
         ),
+
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -641,61 +598,31 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable(
-                    "BooleanPoint",
-                    Icons.toggle_off,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.point,
-                    context)),
+                content: _buildDraggable("BooleanPoint", Icons.toggle_off, null,
+                    null, null, context)),
+            TreeNode(
+                content: _buildDraggable("BooleanWritable", Icons.toggle_on,
+                    null, null, null, context)),
+            TreeNode(
+                content: _buildDraggable("StringPoint", Icons.text_fields, null,
+                    null, null, context)),
+            TreeNode(
+                content: _buildDraggable("StringWritable", Icons.edit_note,
+                    null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "BooleanWritable",
-                    Icons.toggle_on,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.point,
-                    context)),
+                    "NumericPoint", Icons.numbers, null, null, null, context)),
             TreeNode(
                 content: _buildDraggable(
-                    "StringPoint",
-                    Icons.text_fields,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.point,
-                    context)),
-            TreeNode(
-                content: _buildDraggable(
-                    "StringWritable",
-                    Icons.edit_note,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.point,
-                    context)),
-            TreeNode(
-                content: _buildDraggable(
-                    "NumericPoint",
-                    Icons.numbers,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.point,
-                    context)),
-            TreeNode(
-                content: _buildDraggable(
-                    "NumericWritable",
-                    Icons.edit,
-                    WidgetType.treenode,
-                    null,
-                    ComponentCategory.point,
-                    context)),
+                    "NumericWritable", Icons.edit, null, null, null, context)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildDraggable(String label, IconData icon, WidgetType type,
-      HelvarDevice? device, ComponentCategory? category, BuildContext context) {
+  Widget _buildDraggable(String label, IconData icon, dynamic type,
+      HelvarDevice? device, dynamic category, BuildContext context) {
     String componentTypeString = "";
     if (device != null) {
       componentTypeString = ComponentType.HELVAR_DEVICE;
