@@ -297,7 +297,6 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
     _currentWiresheet = updatedWiresheet;
   }
 
-  // Handle component addition from drag-drop
   void _handleComponentDrop(
       Map<String, dynamic> componentData, Offset position) {
     final componentType = componentData["componentType"] as String;
@@ -318,7 +317,7 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
       );
     } else {
       String newName = '$label ${_flowManager.components.length + 1}';
-      newComponent = _flowManager.createComponentByType(newName, componentType);
+      newComponent = _flowManager.createComponentByType(newName, label);
     }
 
     final newKey = GlobalKey();
@@ -337,7 +336,6 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
       _componentPositions[newComponent.id] = position;
       _componentKeys[newComponent.id] = newKey;
 
-      // Select the new component
       _selectedComponents.clear();
       _selectedComponents.add(newComponent);
 
@@ -519,7 +517,6 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
     });
   }
 
-// Show dialog to add a new component
   void _showAddComponentDialog(Offset position) {
     showDialog(
       context: context,
@@ -573,7 +570,6 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
     );
   }
 
-// Helper method to build a section of component types
   Widget _buildComponentCategorySection(
       String title, List<String> typeStrings, Offset position) {
     return Column(
@@ -621,7 +617,6 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
                   _componentPositions[newComponent.id] = position;
                   _componentKeys[newComponent.id] = newKey;
 
-                  // Select the new component
                   _selectedComponents.clear();
                   _selectedComponents.add(newComponent);
 
@@ -652,7 +647,6 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
     );
   }
 
-// Helper method to get icon for component type
   IconData _getIconForComponentType(ComponentType type) {
     switch (type.type) {
       case ComponentType.AND_GATE:
@@ -1030,7 +1024,6 @@ class _WiresheetFlowScreenState extends ConsumerState<WiresheetFlowScreen> {
                                     ),
                                   ),
                                 ),
-                              // Replace the placeholder Draggable in the build method with this:
                               ..._flowManager.components.map(
                                 (component) {
                                   return Positioned(
