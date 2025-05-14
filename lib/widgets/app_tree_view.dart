@@ -8,6 +8,7 @@ import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../models/widget_type.dart';
 import '../models/wiresheet.dart';
+import '../niagara/models/component_type.dart';
 import '../screens/actions.dart';
 import '../screens/dialogs/device_context_menu.dart';
 import '../screens/dialogs/wiresheet_actions.dart';
@@ -695,11 +696,96 @@ class AppTreeView extends ConsumerWidget {
 
   Widget _buildDraggable(String label, IconData icon, WidgetType type,
       HelvarDevice? device, ComponentCategory? category, BuildContext context) {
-    return Draggable<WidgetData>(
-      data: WidgetData(
-          category: category,
-          type: type,
-          additionalData: {"label": label, "icon": icon, "device": device}),
+    String componentTypeString = "";
+    if (device != null) {
+      componentTypeString = ComponentType.HELVAR_DEVICE;
+    } else if (category != null) {
+      switch (category) {
+        case ComponentCategory.logic:
+          switch (label) {
+            case "AND":
+              componentTypeString = ComponentType.AND_GATE;
+              break;
+            case "OR":
+              componentTypeString = ComponentType.OR_GATE;
+              break;
+            case "GreaterThan":
+              componentTypeString = ComponentType.IS_GREATER_THAN;
+              break;
+            default:
+              componentTypeString =
+                  ComponentType.AND_GATE; // Default to AND if unknown
+          }
+          break;
+        case ComponentCategory.math:
+          switch (label) {
+            case "ADD":
+              componentTypeString = ComponentType.ADD;
+              break;
+            case "SUBTRACT":
+              componentTypeString = ComponentType.SUBTRACT;
+              break;
+            case "MULTIPLY":
+              componentTypeString = ComponentType.MULTIPLY;
+              break;
+            case "DIVIDE":
+              componentTypeString = ComponentType.DIVIDE;
+              break;
+            case "MODULO":
+              componentTypeString = ComponentType.MIN;
+              break; // Mapping to available type
+            case "POWER":
+              componentTypeString = ComponentType.POWER;
+              break;
+            default:
+              componentTypeString =
+                  ComponentType.ADD; // Default to ADD if unknown
+          }
+          break;
+        case ComponentCategory.point:
+          switch (label) {
+            case "NumericPoint":
+              componentTypeString = ComponentType.NUMERIC_POINT;
+              break;
+            case "NumericWritable":
+              componentTypeString = ComponentType.NUMERIC_WRITABLE;
+              break;
+            case "BooleanPoint":
+              componentTypeString = ComponentType.BOOLEAN_POINT;
+              break;
+            case "BooleanWritable":
+              componentTypeString = ComponentType.BOOLEAN_WRITABLE;
+              break;
+            case "StringPoint":
+              componentTypeString = ComponentType.STRING_POINT;
+              break;
+            case "StringWritable":
+              componentTypeString = ComponentType.STRING_WRITABLE;
+              break;
+            default:
+              componentTypeString = ComponentType.NUMERIC_POINT; // Default
+          }
+          break;
+        default:
+          componentTypeString = ComponentType.NUMERIC_POINT; // Default fallback
+      }
+    }
+
+    return Draggable<Map<String, dynamic>>(
+      data: {
+        "componentType": componentTypeString,
+        "label": label,
+        "icon": icon,
+        "device": device,
+        "deviceData": device != null
+            ? {
+                "deviceId": device.deviceId,
+                "deviceAddress": device.address,
+                "deviceType": device.helvarType,
+                "description": device.description
+              }
+            : null,
+      },
       feedback: Material(
         elevation: 4.0,
         child: Container(

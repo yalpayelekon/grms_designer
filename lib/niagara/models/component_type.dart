@@ -28,6 +28,12 @@ class ComponentType {
   static const String NUMERIC_POINT = "NUMERIC_POINT";
   static const String STRING_POINT = "STRING_POINT";
 
+  // Helvar device types
+  static const String HELVAR_DEVICE = "HELVAR_DEVICE";
+  static const String HELVAR_OUTPUT = "HELVAR_OUTPUT";
+  static const String HELVAR_INPUT = "HELVAR_INPUT";
+  static const String HELVAR_EMERGENCY = "HELVAR_EMERGENCY";
+
   final String type;
 
   const ComponentType(this.type);
