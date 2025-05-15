@@ -21,7 +21,7 @@ import 'log_panel_screen.dart';
 import 'project_screens/settings_screen.dart';
 import 'details/workgroup_detail_screen.dart';
 import 'lists/workgroup_list_screen.dart';
-import 'wiresheet_flow_screen.dart';
+import '../widgets/flow_screen_editor.dart';
 import '../providers/workgroups_provider.dart';
 import '../providers/wiresheets_provider.dart';
 import 'project_screens/project_settings_screen.dart';
@@ -186,9 +186,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       if (selectedWiresheetId == null) {
         return const WiresheetListScreen();
       }
-      return WiresheetFlowScreen(
-        wiresheetId: selectedWiresheetId!,
-      );
+      return const FlowScreen();
     }
 
     return _buildConnectionMonitor();
