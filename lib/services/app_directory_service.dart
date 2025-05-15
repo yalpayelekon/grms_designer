@@ -10,6 +10,7 @@ class AppDirectoryService {
   static const String workgroupsDir = 'workgroups';
   static const String routersDir = 'routers';
   static const String wiresheetsDir = 'wiresheets';
+  static const String flowsheetsDir = 'flowsheets';
   static const String imagesDir = 'images';
   static const String backupsDir = 'backups';
   static const String exportsDir = 'exports';
@@ -99,6 +100,10 @@ class AppDirectoryService {
 
   Future<String> getWiresheetFilePath(String fileName) async {
     return getFilePath(wiresheetsDir, fileName);
+  }
+
+  Future<String> getFlowsheetFilePath(String fileName) async {
+    return getFilePath(flowsheetsDir, fileName);
   }
 
   Future<String> getImageFilePath(String fileName) async {
