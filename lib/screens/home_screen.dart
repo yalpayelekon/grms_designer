@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../niagara/home/flow_screen.dart';
+import 'project_screens/flow_screen.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../comm/models/router_connection_status.dart';
 import '../models/helvar_models/helvar_router.dart';
@@ -21,7 +21,6 @@ import 'log_panel_screen.dart';
 import 'project_screens/settings_screen.dart';
 import 'details/workgroup_detail_screen.dart';
 import 'lists/workgroup_list_screen.dart';
-import '../widgets/flow_screen_editor.dart';
 import '../providers/workgroups_provider.dart';
 import '../providers/wiresheets_provider.dart';
 import 'project_screens/project_settings_screen.dart';

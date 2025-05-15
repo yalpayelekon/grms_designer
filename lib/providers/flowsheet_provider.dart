@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/services/flowsheet_storage_service.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/connection.dart';
 import '../models/flowsheet.dart';
@@ -52,6 +51,44 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
       );
     } catch (e) {
       return state.isNotEmpty ? state.first : null;
+    }
+  }
+
+  // Add these methods to the FlowsheetsNotifier class
+
+  Future<void> updateComponentPosition(
+      String flowsheetId, String componentId, Offset position) async {
+    final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
+
+    if (index >= 0) {
+      final updatedState = List<Flowsheet>.from(state);
+      updatedState[index].updateComponentPosition(componentId, position);
+      state = updatedState;
+      await _storageService.saveFlowsheet(updatedState[index]);
+    }
+  }
+
+  Future<void> updateComponentWidth(
+      String flowsheetId, String componentId, double width) async {
+    final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
+
+    if (index >= 0) {
+      final updatedState = List<Flowsheet>.from(state);
+      updatedState[index].updateComponentWidth(componentId, width);
+      state = updatedState;
+      await _storageService.saveFlowsheet(updatedState[index]);
+    }
+  }
+
+  Future<void> updatePortValue(String flowsheetId, String componentId,
+      int slotIndex, dynamic value) async {
+    final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
+
+    if (index >= 0) {
+      final updatedState = List<Flowsheet>.from(state);
+      updatedState[index].updatePortValue(componentId, slotIndex, value);
+      state = updatedState;
+      await _storageService.saveFlowsheet(updatedState[index]);
     }
   }
 
