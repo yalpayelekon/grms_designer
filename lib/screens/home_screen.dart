@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/providers/flowsheet_provider.dart';
 
 import 'project_screens/flow_screen.dart';
 import '../models/helvar_models/helvar_group.dart';
@@ -16,13 +17,12 @@ import 'details/group_detail_screen.dart';
 import 'details/router_detail_screen.dart';
 import 'dialogs/router_selection.dart';
 import 'lists/groups_list_screen.dart';
-import 'lists/wiresheet_list_screen.dart';
+import 'lists/flowsheet_list_screen.dart';
 import 'log_panel_screen.dart';
 import 'project_screens/settings_screen.dart';
 import 'details/workgroup_detail_screen.dart';
 import 'lists/workgroup_list_screen.dart';
 import '../providers/workgroups_provider.dart';
-import '../providers/wiresheets_provider.dart';
 import 'project_screens/project_settings_screen.dart';
 import 'project_screens/project_files_screen.dart';
 
@@ -56,7 +56,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final workgroups = ref.watch(workgroupsProvider);
-    final wiresheets = ref.watch(wiresheetsProvider);
+    final wiresheets = ref.watch(flowsheetsProvider);
     final projectName = ref.watch(projectNameProvider);
     connectionStream = ref.watch(routerConnectionStatusStreamProvider);
     connectionStatuses = ref.watch(routerConnectionStatusesProvider);
@@ -183,12 +183,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (openWiresheet) {
       if (selectedWiresheetId == null) {
-        return const WiresheetListScreen();
+        return const FlowsheetListScreen();
       }
-      return const FlowScreen();
+      return FlowScreen(
+        flowsheetId: selectedWiresheetId!,
+      );
     }
 
-    return _buildConnectionMonitor();
+    return const FlowsheetListScreen();
   }
 
   Widget _buildConnectionMonitor() {
@@ -241,7 +243,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
-    return const FlowScreen();
+    return FlowScreen(flowsheetId: selectedWiresheetId!);
   }
 
   Future<void> _connectToExistingRouters(BuildContext context) async {

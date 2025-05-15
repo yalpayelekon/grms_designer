@@ -7,7 +7,7 @@ import '../models/canvas_item.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../models/widget_type.dart';
-import '../models/wiresheet.dart';
+import '../models/flowsheet.dart';
 import '../niagara/models/component_type.dart';
 import '../screens/actions.dart';
 import '../screens/dialogs/device_context_menu.dart';
@@ -15,7 +15,7 @@ import '../screens/dialogs/wiresheet_actions.dart';
 import '../utils/general_ui.dart';
 
 class AppTreeView extends ConsumerWidget {
-  final List<Wiresheet> wiresheets;
+  final List<Flowsheet> wiresheets;
   final List<Workgroup> workgroups;
   final bool showingProject;
   final bool openSettings;
