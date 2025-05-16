@@ -37,10 +37,12 @@ class _FlowScreenState extends State<FlowScreen> {
   Offset? _selectionBoxStart;
   Offset? _selectionBoxEnd;
   bool _isDraggingSelectionBox = false;
+
   SlotDragInfo? _currentDraggedPort;
   Offset? _tempLineEndPoint;
   Offset? _dragStartPosition;
   Offset? _clipboardComponentPosition;
+
   final TransformationController _transformationController =
       TransformationController();
   final GlobalKey _interactiveViewerChildKey = GlobalKey();
@@ -49,9 +51,9 @@ class _FlowScreenState extends State<FlowScreen> {
   Offset _canvasOffset = Offset.zero; // Canvas position within the view
   static const double _canvasPadding = 100.0; // Padding around components
 
-  List<Component> _clipboardComponents = [];
-  List<Offset> _clipboardPositions = [];
-  List<Connection> _clipboardConnections = [];
+  final List<Component> _clipboardComponents = [];
+  final List<Offset> _clipboardPositions = [];
+  final List<Connection> _clipboardConnections = [];
   final Set<Component> _selectedComponents = {};
 
   @override
@@ -162,7 +164,7 @@ class _FlowScreenState extends State<FlowScreen> {
   void _initializeComponents() {
     final numericWritable = PointComponent(
       id: 'Numeric Writable',
-      type: ComponentType(ComponentType.NUMERIC_WRITABLE),
+      type: const ComponentType(ComponentType.NUMERIC_WRITABLE),
     );
     _flowManager.addComponent(numericWritable);
     _componentPositions[numericWritable.id] = const Offset(500, 250);
@@ -170,7 +172,7 @@ class _FlowScreenState extends State<FlowScreen> {
 
     final numericPoint = PointComponent(
       id: 'Numeric Point',
-      type: ComponentType(ComponentType.NUMERIC_POINT),
+      type: const ComponentType(ComponentType.NUMERIC_POINT),
     );
     _flowManager.addComponent(numericPoint);
     _componentPositions[numericPoint.id] = const Offset(900, 250);
@@ -964,10 +966,10 @@ class _FlowScreenState extends State<FlowScreen> {
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'select-all',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.select_all, size: 18),
               SizedBox(width: 8),
               Text('Select All'),
@@ -998,7 +1000,6 @@ class _FlowScreenState extends State<FlowScreen> {
     });
   }
 
-  // Replace with a call to the handler method
   void _showPasteSpecialDialog(Offset pastePosition) {
     if (_clipboardComponents.isEmpty) return;
 
@@ -1152,30 +1153,30 @@ class _FlowScreenState extends State<FlowScreen> {
         Offset.zero & overlay.size,
       ),
       items: [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'copy',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.copy, size: 18),
               SizedBox(width: 8),
               Text('Copy'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'edit',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.edit, size: 18),
               SizedBox(width: 8),
               Text('Edit'),
             ],
           ),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 'delete',
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.delete, size: 18),
               SizedBox(width: 8),
               Text('Delete'),
@@ -1252,8 +1253,8 @@ class _FlowScreenState extends State<FlowScreen> {
       ),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
+          const Padding(
+            padding: EdgeInsets.all(12.0),
             child: Text(
               'Component Library',
               style: TextStyle(
@@ -1262,7 +1263,7 @@ class _FlowScreenState extends State<FlowScreen> {
               ),
             ),
           ),
-          Divider(),
+          const Divider(),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(8.0),
@@ -1334,7 +1335,7 @@ class _FlowScreenState extends State<FlowScreen> {
             return _buildDraggableComponentItem(type);
           }).toList(),
         ),
-        Divider(),
+        const Divider(),
       ],
     );
   }
@@ -1355,10 +1356,10 @@ class _FlowScreenState extends State<FlowScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(getIconForComponentType(type), size: 24),
-              SizedBox(height: 4.0),
+              const SizedBox(height: 4.0),
               Text(
                 getNameForComponentType(type),
-                style: TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12),
               ),
             ],
           ),
@@ -1375,9 +1376,9 @@ class _FlowScreenState extends State<FlowScreen> {
           child: Column(
             children: [
               Icon(getIconForComponentType(type)),
-              SizedBox(height: 4.0),
+              const SizedBox(height: 4.0),
               Text(getNameForComponentType(type),
-                  style: TextStyle(fontSize: 12)),
+                  style: const TextStyle(fontSize: 12)),
             ],
           ),
         ),
@@ -1391,8 +1392,9 @@ class _FlowScreenState extends State<FlowScreen> {
         child: Column(
           children: [
             Icon(getIconForComponentType(type)),
-            SizedBox(height: 4.0),
-            Text(getNameForComponentType(type), style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 4.0),
+            Text(getNameForComponentType(type),
+                style: const TextStyle(fontSize: 12)),
           ],
         ),
       ),

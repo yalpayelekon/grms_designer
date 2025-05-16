@@ -1,11 +1,9 @@
 import 'dart:math';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/flowsheet.dart';
-import 'package:uuid/uuid.dart';
 
 import '../niagara/home/command.dart';
 import '../niagara/home/handlers.dart';
@@ -22,11 +20,8 @@ import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
 import '../niagara/models/point_components.dart';
-import '../niagara/models/port.dart';
-import '../niagara/models/port_type.dart';
 import '../niagara/models/ramp_component.dart';
 import '../niagara/models/rectangle.dart';
-import '../providers/flowsheet_provider.dart';
 
 class WiresheetFlowEditor extends ConsumerStatefulWidget {
   final Flowsheet flowsheet;
@@ -55,6 +50,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   Offset? _tempLineEndPoint;
   Offset? _dragStartPosition;
   Offset? _clipboardComponentPosition;
+
   final TransformationController _transformationController =
       TransformationController();
   final GlobalKey _interactiveViewerChildKey = GlobalKey();
@@ -655,258 +651,238 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         }
                       }
                     },
-                    child: Container(
-                      width: _canvasSize.width,
-                      height: _canvasSize.height,
-                      color: Colors.grey[50],
-                      child: Stack(
-                        children: [
-                          DragTarget<Object>(
-                            onAcceptWithDetails: (details) {
-                              final data = details.data;
-                              final globalPosition = details.offset;
-                              final RenderBox box =
-                                  context.findRenderObject() as RenderBox;
-                              final localPosition =
-                                  box.globalToLocal(globalPosition);
-                              final componentData = data as Map;
-                              print(details);
-                              _addNewComponent(
-                                  ComponentType(componentData["componentType"]),
-                                  clickPosition: localPosition);
-                            },
-                            builder: (context, candidateData, rejectedData) {
-                              return Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  CustomPaint(
-                                    painter: GridPainter(),
-                                    size: _canvasSize,
+                    child: DragTarget<ComponentType>(
+                      onAcceptWithDetails:
+                          (DragTargetDetails<ComponentType> details) {
+                        Offset? canvasPosition = getPosition(details.offset);
+                        if (canvasPosition != null) {
+                          _addNewComponent(details.data,
+                              clickPosition: canvasPosition);
+                        }
+                      },
+                      builder: (context, candidateData, rejectedData) {
+                        return Container(
+                          width: _canvasSize.width,
+                          height: _canvasSize.height,
+                          color: Colors.grey[50],
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              CustomPaint(
+                                painter: GridPainter(),
+                                size: _canvasSize,
+                              ),
+                              if (_isDraggingSelectionBox &&
+                                  _selectionBoxStart != null &&
+                                  _selectionBoxEnd != null)
+                                CustomPaint(
+                                  painter: SelectionBoxPainter(
+                                    start: _selectionBoxStart,
+                                    end: _selectionBoxEnd,
                                   ),
-                                  if (_isDraggingSelectionBox &&
-                                      _selectionBoxStart != null &&
-                                      _selectionBoxEnd != null)
-                                    CustomPaint(
-                                      painter: SelectionBoxPainter(
-                                        start: _selectionBoxStart,
-                                        end: _selectionBoxEnd,
-                                      ),
-                                      size: _canvasSize,
+                                  size: _canvasSize,
+                                ),
+                              if (_flowManager.components.isEmpty)
+                                const Center(
+                                  child: Text(
+                                    'Add components to the canvas',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 18,
                                     ),
-                                  if (_flowManager.components.isEmpty)
-                                    const Center(
-                                      child: Text(
-                                        'Add components to the canvas',
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 18,
+                                  ),
+                                ),
+                              ..._flowManager.components.map(
+                                (component) {
+                                  return Positioned(
+                                    left:
+                                        _componentPositions[component.id]?.dx ??
+                                            0,
+                                    top:
+                                        _componentPositions[component.id]?.dy ??
+                                            0,
+                                    child: Draggable<String>(
+                                      data: component.id,
+                                      feedback: Material(
+                                        elevation: 5.0,
+                                        color: Colors.transparent,
+                                        child: ComponentWidget(
+                                          component: component,
+                                          height: component.allSlots.length *
+                                              rowHeight,
+                                          isSelected: _selectedComponents
+                                              .contains(component),
+                                          widgetKey:
+                                              _componentKeys[component.id] ??
+                                                  GlobalKey(),
+                                          position: _componentPositions[
+                                                  component.id] ??
+                                              Offset.zero,
+                                          width:
+                                              _componentWidths[component.id] ??
+                                                  160.0,
+                                          onValueChanged: _handleValueChanged,
+                                          onSlotDragStarted:
+                                              _handlePortDragStarted,
+                                          onSlotDragAccepted:
+                                              _handlePortDragAccepted,
+                                          onWidthChanged:
+                                              _handleComponentResize,
                                         ),
                                       ),
-                                    ),
-                                  ..._flowManager.components.map(
-                                    (component) {
-                                      return Positioned(
-                                        left: _componentPositions[component.id]
-                                                ?.dx ??
-                                            0,
-                                        top: _componentPositions[component.id]
-                                                ?.dy ??
-                                            0,
-                                        child: Draggable<String>(
-                                          data: component.id,
-                                          feedback: Material(
-                                            elevation: 5.0,
-                                            color: Colors.transparent,
-                                            child: ComponentWidget(
-                                              component: component,
-                                              height:
-                                                  component.allSlots.length *
-                                                      rowHeight,
-                                              isSelected: _selectedComponents
-                                                  .contains(component),
-                                              widgetKey: _componentKeys[
-                                                      component.id] ??
-                                                  GlobalKey(),
-                                              position: _componentPositions[
-                                                      component.id] ??
-                                                  Offset.zero,
-                                              width: _componentWidths[
-                                                      component.id] ??
+                                      childWhenDragging: Opacity(
+                                        opacity: 0.3,
+                                        child: ComponentWidget(
+                                          component: component,
+                                          height: component.allSlots.length *
+                                              rowHeight,
+                                          isSelected: _selectedComponents
+                                              .contains(component),
+                                          widgetKey: GlobalKey(),
+                                          position: _componentPositions[
+                                                  component.id] ??
+                                              Offset.zero,
+                                          width:
+                                              _componentWidths[component.id] ??
                                                   160.0,
-                                              onValueChanged:
-                                                  _handleValueChanged,
-                                              onSlotDragStarted:
-                                                  _handlePortDragStarted,
-                                              onSlotDragAccepted:
-                                                  _handlePortDragAccepted,
-                                              onWidthChanged:
-                                                  _handleComponentResize,
-                                            ),
-                                          ),
-                                          childWhenDragging: Opacity(
-                                            opacity: 0.3,
-                                            child: ComponentWidget(
-                                              component: component,
-                                              height:
-                                                  component.allSlots.length *
-                                                      rowHeight,
-                                              isSelected: _selectedComponents
-                                                  .contains(component),
-                                              widgetKey: GlobalKey(),
-                                              position: _componentPositions[
-                                                      component.id] ??
-                                                  Offset.zero,
-                                              width: _componentWidths[
-                                                      component.id] ??
-                                                  160.0,
-                                              onValueChanged:
-                                                  _handleValueChanged,
-                                              onSlotDragStarted:
-                                                  _handlePortDragStarted,
-                                              onSlotDragAccepted:
-                                                  _handlePortDragAccepted,
-                                              onWidthChanged:
-                                                  _handleComponentResize,
-                                            ),
-                                          ),
-                                          onDragStarted: () {
-                                            _dragStartPosition =
-                                                _componentPositions[
-                                                    component.id];
-                                          },
-                                          onDragEnd: (details) {
-                                            final RenderBox?
-                                                viewerChildRenderBox =
-                                                _interactiveViewerChildKey
-                                                        .currentContext
-                                                        ?.findRenderObject()
-                                                    as RenderBox?;
+                                          onValueChanged: _handleValueChanged,
+                                          onSlotDragStarted:
+                                              _handlePortDragStarted,
+                                          onSlotDragAccepted:
+                                              _handlePortDragAccepted,
+                                          onWidthChanged:
+                                              _handleComponentResize,
+                                        ),
+                                      ),
+                                      onDragStarted: () {
+                                        _dragStartPosition =
+                                            _componentPositions[component.id];
+                                      },
+                                      onDragEnd: (details) {
+                                        final RenderBox? viewerChildRenderBox =
+                                            _interactiveViewerChildKey
+                                                    .currentContext
+                                                    ?.findRenderObject()
+                                                as RenderBox?;
 
-                                            if (viewerChildRenderBox != null) {
-                                              final Offset localOffset =
-                                                  viewerChildRenderBox
-                                                      .globalToLocal(
-                                                          details.offset);
+                                        if (viewerChildRenderBox != null) {
+                                          final Offset localOffset =
+                                              viewerChildRenderBox
+                                                  .globalToLocal(
+                                                      details.offset);
 
-                                              if (_dragStartPosition != null &&
-                                                  _dragStartPosition !=
-                                                      localOffset) {
-                                                setState(() {
-                                                  final offset = localOffset -
-                                                      _dragStartPosition!;
+                                          if (_dragStartPosition != null &&
+                                              _dragStartPosition !=
+                                                  localOffset) {
+                                            setState(() {
+                                              final offset = localOffset -
+                                                  _dragStartPosition!;
 
-                                                  if (_selectedComponents
-                                                          .contains(
-                                                              component) &&
-                                                      _selectedComponents
-                                                              .length >
-                                                          1) {
-                                                    for (var selectedComponent
-                                                        in _selectedComponents) {
-                                                      final currentPos =
-                                                          _componentPositions[
-                                                              selectedComponent
-                                                                  .id];
-                                                      if (currentPos != null) {
-                                                        final newPos =
-                                                            currentPos + offset;
-                                                        final command =
-                                                            MoveComponentCommand(
-                                                          selectedComponent.id,
-                                                          newPos,
-                                                          currentPos,
-                                                          _componentPositions,
-                                                        );
-                                                        _commandHistory
-                                                            .execute(command);
-                                                      }
-                                                    }
-                                                  } else {
+                                              if (_selectedComponents
+                                                      .contains(component) &&
+                                                  _selectedComponents.length >
+                                                      1) {
+                                                for (var selectedComponent
+                                                    in _selectedComponents) {
+                                                  final currentPos =
+                                                      _componentPositions[
+                                                          selectedComponent.id];
+                                                  if (currentPos != null) {
+                                                    final newPos =
+                                                        currentPos + offset;
                                                     final command =
                                                         MoveComponentCommand(
-                                                      component.id,
-                                                      localOffset,
-                                                      _dragStartPosition!,
+                                                      selectedComponent.id,
+                                                      newPos,
+                                                      currentPos,
                                                       _componentPositions,
                                                     );
                                                     _commandHistory
                                                         .execute(command);
-
-                                                    _selectedComponents.clear();
-                                                    _selectedComponents
-                                                        .add(component);
                                                   }
-
-                                                  _dragStartPosition = null;
-                                                  _updateCanvasSize();
-                                                });
-                                              }
-                                            }
-                                          },
-                                          child: GestureDetector(
-                                            onSecondaryTapDown: (details) {
-                                              _showContextMenu(
-                                                  context,
-                                                  details.globalPosition,
-                                                  component);
-                                            },
-                                            onTap: () {
-                                              if (HardwareKeyboard
-                                                  .instance.isControlPressed) {
-                                                setState(() {
-                                                  if (_selectedComponents
-                                                      .contains(component)) {
-                                                    _selectedComponents
-                                                        .remove(component);
-                                                  } else {
-                                                    _selectedComponents
-                                                        .add(component);
-                                                  }
-                                                });
+                                                }
                                               } else {
-                                                setState(() {
-                                                  _selectedComponents.clear();
-                                                  _selectedComponents
-                                                      .add(component);
-                                                });
+                                                final command =
+                                                    MoveComponentCommand(
+                                                  component.id,
+                                                  localOffset,
+                                                  _dragStartPosition!,
+                                                  _componentPositions,
+                                                );
+                                                _commandHistory
+                                                    .execute(command);
+
+                                                _selectedComponents.clear();
+                                                _selectedComponents
+                                                    .add(component);
                                               }
-                                            },
-                                            child: ComponentWidget(
-                                              component: component,
-                                              height:
-                                                  component.allSlots.length *
-                                                      rowHeight,
-                                              width: _componentWidths[
-                                                      component.id] ??
+
+                                              _dragStartPosition = null;
+                                              _updateCanvasSize();
+                                            });
+                                          }
+                                        }
+                                      },
+                                      child: GestureDetector(
+                                        onSecondaryTapDown: (details) {
+                                          _showContextMenu(
+                                              context,
+                                              details.globalPosition,
+                                              component);
+                                        },
+                                        onTap: () {
+                                          if (HardwareKeyboard
+                                              .instance.isControlPressed) {
+                                            setState(() {
+                                              if (_selectedComponents
+                                                  .contains(component)) {
+                                                _selectedComponents
+                                                    .remove(component);
+                                              } else {
+                                                _selectedComponents
+                                                    .add(component);
+                                              }
+                                            });
+                                          } else {
+                                            setState(() {
+                                              _selectedComponents.clear();
+                                              _selectedComponents
+                                                  .add(component);
+                                            });
+                                          }
+                                        },
+                                        child: ComponentWidget(
+                                          component: component,
+                                          height: component.allSlots.length *
+                                              rowHeight,
+                                          width:
+                                              _componentWidths[component.id] ??
                                                   160.0,
-                                              onWidthChanged:
-                                                  _handleComponentResize,
-                                              isSelected: _selectedComponents
-                                                  .contains(component),
-                                              widgetKey: _componentKeys[
-                                                      component.id] ??
+                                          onWidthChanged:
+                                              _handleComponentResize,
+                                          isSelected: _selectedComponents
+                                              .contains(component),
+                                          widgetKey:
+                                              _componentKeys[component.id] ??
                                                   GlobalKey(),
-                                              position: _componentPositions[
-                                                      component.id] ??
-                                                  Offset.zero,
-                                              onValueChanged:
-                                                  _handleValueChanged,
-                                              onSlotDragStarted:
-                                                  _handlePortDragStarted,
-                                              onSlotDragAccepted:
-                                                  _handlePortDragAccepted,
-                                            ),
-                                          ),
+                                          position: _componentPositions[
+                                                  component.id] ??
+                                              Offset.zero,
+                                          onValueChanged: _handleValueChanged,
+                                          onSlotDragStarted:
+                                              _handlePortDragStarted,
+                                          onSlotDragAccepted:
+                                              _handlePortDragAccepted,
                                         ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ),

@@ -5,6 +5,7 @@ import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/workgroup.dart';
+import '../niagara/home/utils.dart';
 import '../niagara/models/component_type.dart';
 import '../models/flowsheet.dart';
 import '../screens/actions.dart';
@@ -441,12 +442,11 @@ class AppTreeView extends ConsumerWidget {
                                                 showDeviceContextMenu(
                                                     context, device),
                                             child: _buildDraggable(
-                                              // Only one string for label & type
                                               device.description.isEmpty
                                                   ? "Device_${device.deviceId}"
                                                   : device.description,
                                               getDeviceIcon(device),
-                                              device, // HelvarDevice object
+                                              device,
                                               context,
                                             ),
                                           ),
@@ -498,23 +498,14 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.AND_GATE, // Label and Type
-                    Icons.add_link,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.AND_GATE))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.OR_GATE, // Label and Type
-                    Icons.call_split,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.OR_GATE))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.IS_GREATER_THAN, // Label and Type
-                    Icons.trending_up,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.IS_GREATER_THAN))),
           ],
         ),
 
@@ -529,42 +520,29 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.ADD, // Label and Type
-                    Icons.add,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.ADD))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.SUBTRACT, // Label and Type
-                    Icons.remove,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.SUBTRACT))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.MULTIPLY, // Label and Type
-                    Icons.close,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.MULTIPLY))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.DIVIDE, // Label and Type
-                    Icons
-                        .diamond, // Consider a more representative icon for divide
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.DIVIDE))),
             TreeNode(
-                content: _buildDraggable(
-                    "MODULO", // Label and Type - Not in provided ComponentType
-                    Icons.mode,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.MAX))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.POWER, // Label and Type
-                    Icons.star,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.MIN))),
+            TreeNode(
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.POWER))),
+            TreeNode(
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.ABS))),
           ],
         ),
 
@@ -579,17 +557,9 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable(
-                    "Button", // Label and Type - Not in provided ComponentType
-                    Icons.touch_app,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(ComponentType("Button"))),
             TreeNode(
-                content: _buildDraggable(
-                    "Text", // Label and Type - Not in provided ComponentType
-                    Icons.text_fields,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(ComponentType("Text"))),
           ],
         ),
 
@@ -604,17 +574,9 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable(
-                    "Ramp", // Label and Type - Not in provided ComponentType
-                    Icons.trending_up,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(ComponentType("Ramp"))),
             TreeNode(
-                content: _buildDraggable(
-                    "Toggle", // Label and Type - Not in provided ComponentType
-                    Icons.toggle_on,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(ComponentType("Toggle"))),
           ],
         ),
 
@@ -629,44 +591,87 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.BOOLEAN_POINT, // Label and Type
-                    Icons.toggle_off,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.BOOLEAN_POINT))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.BOOLEAN_WRITABLE, // Label and Type
-                    Icons.toggle_on,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.BOOLEAN_WRITABLE))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.STRING_POINT, // Label and Type
-                    Icons.text_fields,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.STRING_POINT))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.STRING_WRITABLE, // Label and Type
-                    Icons.edit_note,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.STRING_WRITABLE))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.NUMERIC_POINT, // Label and Type
-                    Icons.numbers,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    ComponentType(ComponentType.NUMERIC_POINT))),
             TreeNode(
-                content: _buildDraggable(
-                    ComponentType.NUMERIC_WRITABLE, // Label and Type
-                    Icons.edit,
-                    null, // device
-                    context)),
+                content: _buildDraggableComponentItem(
+                    const ComponentType(ComponentType.NUMERIC_WRITABLE))),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildDraggableComponentItem(ComponentType type) {
+    return Draggable<ComponentType>(
+      data: type,
+      feedback: Material(
+        elevation: 4.0,
+        child: Container(
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(4.0),
+            border: Border.all(color: Colors.indigo),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(getIconForComponentType(type), size: 24),
+              const SizedBox(height: 4.0),
+              Text(
+                getNameForComponentType(type),
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.3,
+        child: Container(
+          padding: const EdgeInsets.all(8.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: Column(
+            children: [
+              Icon(getIconForComponentType(type)),
+              const SizedBox(height: 4.0),
+              Text(getNameForComponentType(type),
+                  style: const TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(4.0),
+        ),
+        child: Column(
+          children: [
+            Icon(getIconForComponentType(type)),
+            const SizedBox(height: 4.0),
+            Text(getNameForComponentType(type),
+                style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -696,11 +701,7 @@ class AppTreeView extends ConsumerWidget {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon),
-              const SizedBox(width: 8.0),
-              Text(label) // 'label' is used for display
-            ],
+            children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
           ),
         ),
       ),
@@ -708,17 +709,11 @@ class AppTreeView extends ConsumerWidget {
         children: [
           Icon(icon, color: Colors.grey[600]),
           const SizedBox(width: 8.0),
-          Text(label,
-              style: TextStyle(
-                  color: Colors.grey[600])) // 'label' is used for display
+          Text(label, style: TextStyle(color: Colors.grey[600]))
         ],
       ),
       child: Row(
-        children: [
-          Icon(icon),
-          const SizedBox(width: 8.0),
-          Text(label) // 'label' is used for display
-        ],
+        children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
       ),
     );
   }
