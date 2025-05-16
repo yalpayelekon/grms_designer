@@ -619,6 +619,14 @@ class AppTreeView extends ConsumerWidget {
   }
 
   Widget _buildDraggableComponentItem(ComponentType type) {
+    final comp = Column(
+      children: [
+        Icon(getIconForComponentType(type)),
+        const SizedBox(height: 4.0),
+        Text(getNameForComponentType(type),
+            style: const TextStyle(fontSize: 12)),
+      ],
+    );
     return Draggable<ComponentType>(
       data: type,
       feedback: Material(
@@ -651,14 +659,7 @@ class AppTreeView extends ConsumerWidget {
             border: Border.all(color: Colors.grey),
             borderRadius: BorderRadius.circular(4.0),
           ),
-          child: Column(
-            children: [
-              Icon(getIconForComponentType(type)),
-              const SizedBox(height: 4.0),
-              Text(getNameForComponentType(type),
-                  style: const TextStyle(fontSize: 12)),
-            ],
-          ),
+          child: comp,
         ),
       ),
       child: Container(
@@ -667,14 +668,7 @@ class AppTreeView extends ConsumerWidget {
           border: Border.all(color: Colors.grey),
           borderRadius: BorderRadius.circular(4.0),
         ),
-        child: Column(
-          children: [
-            Icon(getIconForComponentType(type)),
-            const SizedBox(height: 4.0),
-            Text(getNameForComponentType(type),
-                style: const TextStyle(fontSize: 12)),
-          ],
-        ),
+        child: comp,
       ),
     );
   }
