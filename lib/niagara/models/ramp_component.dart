@@ -19,7 +19,7 @@ class RampComponent extends Component {
   RampComponent({
     required super.id,
   }) : super(
-          type: const ComponentType(RAMP),
+          type: ComponentType(RAMP),
         ) {
     _setupPorts();
     _startRamping();
@@ -30,7 +30,7 @@ class RampComponent extends Component {
       name: "Output",
       index: 0,
       isInput: false,
-      type: const PortType(PortType.NUMERIC),
+      type: PortType(PortType.NUMERIC),
       value: 0.0,
     ));
   }
@@ -47,7 +47,7 @@ class RampComponent extends Component {
     if (_running) return;
 
     _running = true;
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 2), (timer) {
       final random = Random();
       _stepAmount = random.nextDouble() * _stepRange;
       calculate();

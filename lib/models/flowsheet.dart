@@ -38,10 +38,7 @@ class Flowsheet {
         connections = connections ?? [],
         canvasOffset = canvasOffset ?? const Offset(0, 0);
 
-// Add these methods to the Flowsheet class
-
   void updateComponentPosition(String componentId, Offset position) {
-    // Store the component position in a map
     if (!componentPositions.containsKey(componentId)) {
       componentPositions[componentId] = position;
     } else {
@@ -51,7 +48,6 @@ class Flowsheet {
   }
 
   void updateComponentWidth(String componentId, double width) {
-    // Store the component width in a map
     if (!componentWidths.containsKey(componentId)) {
       componentWidths[componentId] = width;
     } else {
@@ -61,16 +57,13 @@ class Flowsheet {
   }
 
   void updatePortValue(String componentId, int slotIndex, dynamic value) {
-    // Find the component and update the port value
     final componentIndex =
         components.indexWhere((comp) => comp.id == componentId);
     if (componentIndex >= 0) {
       final component = components[componentIndex];
 
-      // Find the slot by index
       Slot? slot;
 
-      // Check properties
       for (var prop in component.properties) {
         if (prop.index == slotIndex) {
           slot = prop;
@@ -78,7 +71,6 @@ class Flowsheet {
         }
       }
 
-      // Check actions if not found in properties
       if (slot == null) {
         for (var action in component.actions) {
           if (action.index == slotIndex) {
@@ -88,7 +80,6 @@ class Flowsheet {
         }
       }
 
-      // Check topics if not found in actions
       if (slot == null) {
         for (var topic in component.topics) {
           if (topic.index == slotIndex) {
@@ -98,7 +89,6 @@ class Flowsheet {
         }
       }
 
-      // Update the value if the slot was found
       if (slot is Property) {
         slot.value = value;
       } else if (slot is ActionSlot) {
@@ -267,7 +257,6 @@ class Flowsheet {
   void removeComponent(String componentId) {
     components.removeWhere((component) => component.id == componentId);
 
-    // Also remove any connections to/from this component
     connections.removeWhere(
       (connection) =>
           connection.fromComponentId == componentId ||
@@ -313,12 +302,10 @@ class Flowsheet {
     modifiedAt = DateTime.now();
   }
 
-  // Helper method to create components based on their type
   static Component _componentFromJson(Map<String, dynamic> json) {
     final String componentType = json['type']['type'] as String;
     final String id = json['id'] as String;
 
-    // Create different component types based on the type string
     switch (componentType) {
       case ComponentType.AND_GATE:
       case ComponentType.OR_GATE:
@@ -367,7 +354,6 @@ class Flowsheet {
         );
 
       default:
-        // Default fallback - create a simple point component
         return PointComponent(
           id: id,
           type: const ComponentType(ComponentType.NUMERIC_POINT),
@@ -375,7 +361,6 @@ class Flowsheet {
     }
   }
 
-  // Helper method to convert component to JSON
   static Map<String, dynamic> _componentToJson(Component component) {
     final Map<String, dynamic> json = {
       'id': component.id,
@@ -434,7 +419,6 @@ class Flowsheet {
   factory Flowsheet.fromJson(Map<String, dynamic> json) {
     final flowsheet = Flowsheet.fromJsonSuper(json);
 
-    // Read componentPositions
     if (json['componentPositions'] != null) {
       (json['componentPositions'] as Map<String, dynamic>)
           .forEach((key, value) {
@@ -445,7 +429,6 @@ class Flowsheet {
       });
     }
 
-    // Read componentWidths
     if (json['componentWidths'] != null) {
       (json['componentWidths'] as Map<String, dynamic>).forEach((key, value) {
         flowsheet.componentWidths[key] = (value as num).toDouble();

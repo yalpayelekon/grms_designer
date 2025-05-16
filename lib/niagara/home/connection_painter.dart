@@ -235,7 +235,7 @@ class ConnectionPainter extends CustomPainter {
   void _drawArrowLine(Canvas canvas, Offset start, Offset end, Paint paint) {
     canvas.drawLine(start, end, paint);
 
-    const double arrowSize = 8.0;
+    final double arrowSize = 8.0;
     final double angle = atan2(end.dy - start.dy, end.dx - start.dx);
 
     final Path arrowPath = Path();
@@ -337,7 +337,7 @@ class ConnectionPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    const double bubbleRadius = 14.0;
+    final double bubbleRadius = 14.0;
     canvas.drawCircle(midpoint, bubbleRadius, backgroundPaint);
     canvas.drawCircle(midpoint, bubbleRadius, borderPaint);
 
@@ -384,7 +384,7 @@ class ConnectionPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    const double bubbleSize = 20.0;
+    final double bubbleSize = 20.0;
     final Rect bubbleRect = Rect.fromCenter(
       center: midpoint,
       width: bubbleSize,

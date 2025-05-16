@@ -10,7 +10,7 @@ class RectangleComponent extends Component {
   RectangleComponent({
     required super.id,
   }) : super(
-          type: const ComponentType(RECTANGLE),
+          type: ComponentType(RECTANGLE),
         ) {
     _setupPorts();
   }
@@ -20,7 +20,7 @@ class RectangleComponent extends Component {
       name: "Length",
       index: 0,
       isInput: true,
-      type: const PortType(PortType.NUMERIC),
+      type: PortType(PortType.NUMERIC),
       value: 0.0,
     ));
 
@@ -28,7 +28,7 @@ class RectangleComponent extends Component {
       name: "Width",
       index: 1,
       isInput: true,
-      type: const PortType(PortType.NUMERIC),
+      type: PortType(PortType.NUMERIC),
       value: 0.0,
     ));
 
@@ -36,7 +36,7 @@ class RectangleComponent extends Component {
       name: "Threshold",
       index: 2,
       isInput: true,
-      type: const PortType(PortType.NUMERIC),
+      type: PortType(PortType.NUMERIC),
       value: 1000.0,
     ));
 
@@ -44,7 +44,7 @@ class RectangleComponent extends Component {
     topics.add(Topic(
       name: "Detected",
       index: 3,
-      eventType: const PortType(PortType.NUMERIC),
+      eventType: PortType(PortType.NUMERIC),
     ));
   }
 

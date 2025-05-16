@@ -285,10 +285,10 @@ String getNameForComponentType(ComponentType type) {
 List<ComponentType> getCompatibleTypes(ComponentType currentType) {
   // Custom types
   if (currentType.type == RectangleComponent.RECTANGLE) {
-    return [const ComponentType(RectangleComponent.RECTANGLE)];
+    return [ComponentType(RectangleComponent.RECTANGLE)];
   }
   if (currentType.type == RampComponent.RAMP) {
-    return [const ComponentType(RampComponent.RAMP)];
+    return [ComponentType(RampComponent.RAMP)];
   }
 
   // Standard types

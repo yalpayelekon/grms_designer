@@ -365,8 +365,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                 IconButton(
                   icon: Icon(Icons.play_arrow,
                       size: 16, color: Colors.amber.shade800),
-                  constraints:
-                      const BoxConstraints.tightFor(width: 24, height: 24),
+                  constraints: BoxConstraints.tightFor(width: 24, height: 24),
                   padding: EdgeInsets.zero,
                   onPressed: () {
                     widget.onValueChanged(

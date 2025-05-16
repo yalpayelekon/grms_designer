@@ -350,6 +350,6 @@ class FlowManager {
     }
 
     return PointComponent(
-        id: id, type: const ComponentType(ComponentType.BOOLEAN_WRITABLE));
+        id: id, type: ComponentType(ComponentType.BOOLEAN_WRITABLE));
   }
 }

@@ -4,8 +4,13 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/models/flowsheet.dart';
 import 'package:uuid/uuid.dart';
 
+import '../niagara/home/command.dart';
+import '../niagara/home/handlers.dart';
+import '../niagara/home/paste_special_dialog.dart';
+import '../niagara/home/utils.dart';
 import '../niagara/models/command_history.dart';
 import '../niagara/home/component_widget.dart';
 import '../niagara/home/connection_painter.dart';
@@ -16,16 +21,19 @@ import '../niagara/home/selection_box_painter.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
+import '../niagara/models/point_components.dart';
 import '../niagara/models/port.dart';
 import '../niagara/models/port_type.dart';
+import '../niagara/models/ramp_component.dart';
+import '../niagara/models/rectangle.dart';
 import '../providers/flowsheet_provider.dart';
 
 class WiresheetFlowEditor extends ConsumerStatefulWidget {
-  final String flowsheetId;
+  final Flowsheet flowsheet;
 
   const WiresheetFlowEditor({
     super.key,
-    required this.flowsheetId,
+    required this.flowsheet,
   });
 
   @override
@@ -38,6 +46,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   final Map<String, Offset> _componentPositions = {};
   final Map<String, GlobalKey> _componentKeys = {};
+  late FlowHandlers _flowHandlers;
   Offset? _selectionBoxStart;
   Offset? _selectionBoxEnd;
   bool _isDraggingSelectionBox = false;
@@ -59,65 +68,31 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   final List<Connection> _clipboardConnections = [];
   final Set<Component> _selectedComponents = {};
 
-  int? selectedItemIndex;
-  bool isPanelExpanded = false;
-  double scale = 1.0;
-  Offset viewportOffset = const Offset(0, 0);
-  String? selectedSourceItemId;
-  String? selectedSourcePortId;
-  bool isDraggingLink = false;
-  Offset? linkDragEndPoint;
-  String? hoveredLinkId;
-  String? selectedLinkId;
-  Offset? _lastTapPosition;
-  static const double rowHeight = 22.0;
-  static const double headerHeight = 28.0;
-  final Map<String, Map<String, dynamic>> _portValues = {};
-  final Set<String> _evaluatingLinks = {};
-
   @override
   void initState() {
     super.initState();
     _transformationController.value = Matrix4.identity();
-    _initializeData();
-  }
 
-  void _initializeData() {
-    final flowsheet = ref.read(flowsheetsProvider).firstWhere(
-          (sheet) => sheet.id == widget.flowsheetId,
-          orElse: () => throw Exception('Flowsheet not found'),
-        );
+    _flowHandlers = FlowHandlers(
+      flowManager: _flowManager,
+      commandHistory: _commandHistory,
+      componentPositions: _componentPositions,
+      componentKeys: _componentKeys,
+      componentWidths: _componentWidths,
+      setState: setState,
+      updateCanvasSize: _updateCanvasSize,
+      selectedComponents: _selectedComponents,
+      clipboardComponents: _clipboardComponents,
+      clipboardPositions: _clipboardPositions,
+      clipboardConnections: _clipboardConnections,
+      setClipboardComponentPosition: (position) {
+        setState(() {
+          _clipboardComponentPosition = position;
+        });
+      },
+    );
 
-    // Initialize FlowManager with flowsheet components
-    for (final component in flowsheet.components) {
-      _flowManager.addComponent(component);
-
-      // Setup positions based on flowsheet data
-      final position = flowsheet.componentPositions[component.id] ??
-          Offset(_canvasSize.width / 2, _canvasSize.height / 2);
-      _componentPositions[component.id] = position;
-      _componentKeys[component.id] = GlobalKey();
-      _componentWidths[component.id] = 160.0; // Default width
-    }
-
-    // Initialize connections
-    for (final connection in flowsheet.connections) {
-      _flowManager.createConnection(
-        connection.fromComponentId,
-        connection.fromPortIndex,
-        connection.toComponentId,
-        connection.toPortIndex,
-      );
-    }
-
-    _flowManager.recalculateAll();
-    _updateCanvasSize();
-    _commandHistory.clear();
-
-    // Set active flowsheet in provider
-    ref
-        .read(flowsheetsProvider.notifier)
-        .setActiveFlowsheet(widget.flowsheetId);
+    _initializeComponents();
   }
 
   void _updateCanvasSize() {
@@ -191,23 +166,170 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     }
 
     if (needsUpdate) {
-      // Update local state
       setState(() {
         _canvasSize = newCanvasSize;
         _canvasOffset = newCanvasOffset;
       });
+    }
+  }
 
-      // Update flowsheet state in provider
-      final flowsheet = ref.read(activeFlowsheetProvider);
-      if (flowsheet != null) {
-        ref
-            .read(flowsheetsProvider.notifier)
-            .updateCanvasSize(widget.flowsheetId, newCanvasSize);
-        ref
-            .read(flowsheetsProvider.notifier)
-            .updateCanvasOffset(widget.flowsheetId, newCanvasOffset);
+  void _initializeComponents() {
+    final numericWritable = PointComponent(
+      id: 'Numeric Writable',
+      type: const ComponentType(ComponentType.NUMERIC_WRITABLE),
+    );
+    _flowManager.addComponent(numericWritable);
+    _componentPositions[numericWritable.id] = const Offset(500, 250);
+    _componentKeys[numericWritable.id] = GlobalKey();
+
+    final numericPoint = PointComponent(
+      id: 'Numeric Point',
+      type: const ComponentType(ComponentType.NUMERIC_POINT),
+    );
+    _flowManager.addComponent(numericPoint);
+    _componentPositions[numericPoint.id] = const Offset(900, 250);
+    _componentKeys[numericPoint.id] = GlobalKey();
+
+    _flowManager.recalculateAll();
+    _updateCanvasSize();
+    _commandHistory.clear();
+  }
+
+  void _handleComponentResize(String componentId, double newWidth) {
+    _flowHandlers.handleComponentResize(componentId, newWidth);
+  }
+
+  void _addNewComponent(ComponentType type, {Offset? clickPosition}) {
+    String baseName = getNameForComponentType(type);
+    int counter = 1;
+    String newName = '$baseName $counter';
+
+    while (_flowManager.components.any((comp) => comp.id == newName)) {
+      counter++;
+      newName = '$baseName $counter';
+    }
+
+    Component newComponent =
+        _flowManager.createComponentByType(newName, type.type);
+
+    Offset newPosition;
+    if (clickPosition != null) {
+      newPosition = clickPosition;
+    } else {
+      final RenderBox? viewerChildRenderBox =
+          _interactiveViewerChildKey.currentContext?.findRenderObject()
+              as RenderBox?;
+
+      newPosition = Offset(_canvasSize.width / 2, _canvasSize.height / 2);
+
+      if (viewerChildRenderBox != null) {
+        final viewportSize = viewerChildRenderBox.size;
+        final viewportCenter =
+            Offset(viewportSize.width / 2, viewportSize.height / 2);
+
+        final matrix = _transformationController.value;
+        final inverseMatrix = Matrix4.inverted(matrix);
+        final transformedCenter =
+            MatrixUtils.transformPoint(inverseMatrix, viewportCenter);
+
+        final random = Random();
+        final randomOffset = Offset(
+          (random.nextDouble() * 200) - 100,
+          (random.nextDouble() * 200) - 100,
+        );
+
+        newPosition = transformedCenter + randomOffset;
       }
     }
+
+    final newKey = GlobalKey();
+
+    Map<String, dynamic> state = {
+      'position': newPosition,
+      'key': newKey,
+      'positions': _componentPositions,
+      'keys': _componentKeys,
+    };
+
+    setState(() {
+      final command = AddComponentCommand(_flowManager, newComponent, state);
+      _commandHistory.execute(command);
+      _componentWidths[newComponent.id] = 160.0;
+      _componentPositions[newComponent.id] = newPosition;
+      _componentKeys[newComponent.id] = newKey;
+
+      _updateCanvasSize();
+    });
+  }
+
+  void _handleValueChanged(
+      String componentId, int slotIndex, dynamic newValue) {
+    _flowHandlers.handleValueChanged(componentId, slotIndex, newValue);
+  }
+
+  Offset? getPosition(Offset globalPosition) {
+    final RenderBox? viewerChildRenderBox =
+        _interactiveViewerChildKey.currentContext?.findRenderObject()
+            as RenderBox?;
+
+    if (viewerChildRenderBox != null) {
+      final Offset localPosition =
+          viewerChildRenderBox.globalToLocal(globalPosition);
+
+      final matrix = _transformationController.value;
+      final inverseMatrix = Matrix4.inverted(matrix);
+      final canvasPosition =
+          MatrixUtils.transformPoint(inverseMatrix, localPosition);
+      return canvasPosition;
+    }
+    return null;
+  }
+
+  void _handlePortDragStarted(SlotDragInfo slotInfo) {
+    setState(() {
+      _currentDraggedPort = slotInfo;
+    });
+  }
+
+  void _handlePortDragAccepted(SlotDragInfo targetSlotInfo) {
+    if (_currentDraggedPort != null) {
+      Component? sourceComponent =
+          _flowManager.findComponentById(_currentDraggedPort!.componentId);
+      Component? targetComponent =
+          _flowManager.findComponentById(targetSlotInfo.componentId);
+
+      if (sourceComponent != null && targetComponent != null) {
+        if (_flowManager.canCreateConnection(
+            _currentDraggedPort!.componentId,
+            _currentDraggedPort!.slotIndex,
+            targetSlotInfo.componentId,
+            targetSlotInfo.slotIndex)) {
+          setState(() {
+            final command = CreateConnectionCommand(
+              _flowManager,
+              _currentDraggedPort!.componentId,
+              _currentDraggedPort!.slotIndex,
+              targetSlotInfo.componentId,
+              targetSlotInfo.slotIndex,
+            );
+            _commandHistory.execute(command);
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Cannot connect these slots - type mismatch or invalid connection'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
+
+    setState(() {
+      _currentDraggedPort = null;
+      _tempLineEndPoint = null;
+    });
   }
 
   @override
@@ -236,528 +358,795 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
               return null;
             },
           ),
-          // Add more actions here...
+          SelectAllIntent: CallbackAction<SelectAllIntent>(
+            onInvoke: (SelectAllIntent intent) {
+              setState(() {
+                _selectedComponents.clear();
+                _selectedComponents.addAll(_flowManager.components);
+              });
+              return null;
+            },
+          ),
+          DeleteIntent: CallbackAction<DeleteIntent>(
+            onInvoke: (DeleteIntent intent) {
+              setState(() {
+                if (_selectedComponents.isNotEmpty) {
+                  for (var component in _selectedComponents.toList()) {
+                    _handleDeleteComponent(component);
+                  }
+                  _selectedComponents.clear();
+                }
+              });
+              return null;
+            },
+          ),
+          CopyIntent: CallbackAction<CopyIntent>(
+            onInvoke: (CopyIntent intent) {
+              if (_selectedComponents.length == 1) {
+                _handleCopyComponent(_selectedComponents.first);
+              } else if (_selectedComponents.isNotEmpty) {
+                _handleCopyMultipleComponents();
+              }
+              return null;
+            },
+          ),
+          MoveDownIntent: CallbackAction<MoveDownIntent>(
+            onInvoke: (MoveDownIntent intent) {
+              if (_selectedComponents.isNotEmpty) {
+                for (var component in _selectedComponents) {
+                  _handleMoveComponentDown(component);
+                }
+              }
+              return null;
+            },
+          ),
+          MoveLeftIntent: CallbackAction<MoveLeftIntent>(
+            onInvoke: (MoveLeftIntent intent) {
+              if (_selectedComponents.isNotEmpty) {
+                for (var component in _selectedComponents) {
+                  _handleMoveComponentLeft(component);
+                }
+              }
+              return null;
+            },
+          ),
+          MoveRightIntent: CallbackAction<MoveRightIntent>(
+            onInvoke: (MoveRightIntent intent) {
+              if (_selectedComponents.isNotEmpty) {
+                for (var component in _selectedComponents) {
+                  _handleMoveComponentRight(component);
+                }
+              }
+              return null;
+            },
+          ),
+          MoveUpIntent: CallbackAction<MoveUpIntent>(
+            onInvoke: (MoveUpIntent intent) {
+              if (_selectedComponents.isNotEmpty) {
+                for (var component in _selectedComponents) {
+                  _handleMoveComponentUp(component);
+                }
+              }
+              return null;
+            },
+          ),
+          PasteIntent: CallbackAction<PasteIntent>(
+            onInvoke: (PasteIntent intent) {
+              if (_clipboardComponents.isNotEmpty) {
+                if (_clipboardComponentPosition != null) {
+                  const double offsetAmount = 30.0;
+                  final Offset pastePosition = _clipboardComponentPosition! +
+                      const Offset(offsetAmount, offsetAmount);
+
+                  _handlePasteComponent(pastePosition);
+                } else {
+                  final RenderBox? viewerChildRenderBox =
+                      _interactiveViewerChildKey.currentContext
+                          ?.findRenderObject() as RenderBox?;
+
+                  if (viewerChildRenderBox != null) {
+                    final viewportSize = viewerChildRenderBox.size;
+                    final viewportCenter =
+                        Offset(viewportSize.width / 2, viewportSize.height / 2);
+
+                    final matrix = _transformationController.value;
+                    final inverseMatrix = Matrix4.inverted(matrix);
+                    final canvasPosition = MatrixUtils.transformPoint(
+                        inverseMatrix, viewportCenter);
+
+                    _handlePasteComponent(canvasPosition);
+                  }
+                }
+              }
+              return null;
+            },
+          ),
         },
-        child: Scaffold(
-          body: Stack(
-            children: [
-              Listener(
-                onPointerMove: _handlePointerMove,
-                onPointerDown: _handlePointerDown,
-                child: InteractiveViewer(
-                  constrained: false,
-                  boundaryMargin: const EdgeInsets.all(double.infinity),
-                  minScale: 0.5,
-                  maxScale: 2.0,
-                  scaleEnabled: true,
-                  transformationController: _transformationController,
-                  onInteractionEnd: (ScaleEndDetails details) {
-                    setState(() {});
-                  },
-                  child: Stack(
-                    children: [
-                      DragTarget<Map<String, dynamic>>(
-                        onAcceptWithDetails: (details) {
-                          _handleDragAccepted(details);
-                        },
-                        builder: (context, candidateData, rejectedData) {
-                          return Stack(
-                            children: [
-                              Container(
-                                width: _canvasSize.width,
-                                height: _canvasSize.height,
-                                color: Colors.grey[50],
-                                child: Center(
-                                  child: Text(
-                                    _flowManager.components.isEmpty
-                                        ? 'Drag and drop components or double-click to add'
-                                        : '',
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(
-                                width: _canvasSize.width,
-                                height: _canvasSize.height,
-                                child: CustomPaint(
-                                  painter: GridPainter(),
-                                  child: Container(),
-                                ),
-                              ),
-                              if (_flowManager.connections.isNotEmpty)
-                                CustomPaint(
-                                  painter: ConnectionPainter(
-                                    flowManager: _flowManager,
-                                    componentPositions: _componentPositions,
-                                    componentKeys: _componentKeys,
-                                    componentWidths: _componentWidths,
-                                    tempLineStartInfo: _currentDraggedPort,
-                                    tempLineEndPoint: _tempLineEndPoint,
-                                  ),
-                                  size: Size(
-                                    _canvasSize.width,
-                                    _canvasSize.height,
-                                  ),
-                                ),
-                              if (_isDraggingSelectionBox &&
-                                  _selectionBoxStart != null &&
-                                  _selectionBoxEnd != null)
-                                CustomPaint(
-                                  painter: SelectionBoxPainter(
-                                    start: _selectionBoxStart,
-                                    end: _selectionBoxEnd,
-                                  ),
-                                  size: _canvasSize,
-                                ),
-                              ..._flowManager.components.map(
-                                (component) {
-                                  return Positioned(
-                                    left:
-                                        _componentPositions[component.id]?.dx ??
-                                            0,
-                                    top:
-                                        _componentPositions[component.id]?.dy ??
-                                            0,
-                                    child: _buildDraggableComponent(component),
-                                  );
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
+        child: Focus(
+          autofocus: true,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Visual Flow Editor'),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Center(
+                    child: Text(
+                      'Canvas: ${_canvasSize.width.toInt()} × ${_canvasSize.height.toInt()}',
+                      style: const TextStyle(fontSize: 14),
+                    ),
                   ),
                 ),
-              ),
-              if (selectedItemIndex != null && isPanelExpanded)
-                _buildPropertiesPanel(),
-              if (selectedItemIndex != null)
-                Positioned(
-                  right: isPanelExpanded ? 250 : 0,
-                  top: 10,
+                IconButton(
+                  icon: const Icon(Icons.undo),
+                  tooltip: _commandHistory.canUndo
+                      ? 'Undo: ${_commandHistory.lastUndoDescription}'
+                      : 'Undo',
+                  onPressed: _commandHistory.canUndo
+                      ? () {
+                          setState(() {
+                            _commandHistory.undo();
+                          });
+                        }
+                      : null, // Disable button if cannot undo
+                ),
+                IconButton(
+                  icon: const Icon(Icons.redo),
+                  tooltip: _commandHistory.canRedo
+                      ? 'Redo: ${_commandHistory.lastRedoDescription}'
+                      : 'Redo',
+                  onPressed: _commandHistory.canRedo
+                      ? () {
+                          setState(() {
+                            _commandHistory.redo();
+                          });
+                        }
+                      : null, // Disable button if cannot redo
+                ),
+              ],
+            ),
+            body: ClipRect(
+              child: InteractiveViewer(
+                transformationController: _transformationController,
+                boundaryMargin: const EdgeInsets.all(1000),
+                minScale: 0.1,
+                constrained: false,
+                maxScale: 3.0,
+                panEnabled: true,
+                scaleEnabled: true,
+                child: CustomPaint(
+                  key: _interactiveViewerChildKey,
+                  foregroundPainter: ConnectionPainter(
+                    flowManager: _flowManager,
+                    componentPositions: _componentPositions,
+                    componentKeys: _componentKeys,
+                    componentWidths: _componentWidths,
+                    tempLineStartInfo: _currentDraggedPort,
+                    tempLineEndPoint: _tempLineEndPoint,
+                  ),
                   child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isPanelExpanded = !isPanelExpanded;
-                      });
+                    onTapDown: (details) {
+                      Offset? canvasPosition =
+                          getPosition(details.globalPosition);
+                      if (canvasPosition != null) {
+                        //print("Canvas position onTapDown: $canvasPosition");
+                        setState(() {
+                          _selectionBoxStart = canvasPosition;
+                          _isDraggingSelectionBox = false;
+                          _selectedComponents.clear();
+                        });
+                      }
+                    },
+                    onPanStart: (details) {
+                      Offset? canvasPosition =
+                          getPosition(details.globalPosition);
+                      if (canvasPosition != null) {
+                        print("Canvas position onPanStart: $canvasPosition");
+                        bool isClickOnComponent = false;
+
+                        for (final componentId in _componentPositions.keys) {
+                          final componentPos =
+                              _componentPositions[componentId]!;
+                          const double componentWidth = 180.0;
+                          const double componentHeight = 150.0;
+
+                          final componentRect = Rect.fromLTWH(
+                            componentPos.dx,
+                            componentPos.dy,
+                            componentWidth,
+                            componentHeight,
+                          );
+
+                          if (componentRect.contains(canvasPosition)) {
+                            isClickOnComponent = true;
+                            break;
+                          }
+                        }
+
+                        if (!isClickOnComponent) {
+                          setState(() {
+                            _isDraggingSelectionBox = true;
+                            _selectionBoxStart = canvasPosition;
+                            _selectionBoxEnd = canvasPosition;
+                          });
+                        }
+                      }
+                    },
+                    onPanUpdate: (details) {
+                      if (_isDraggingSelectionBox) {
+                        Offset? canvasPosition =
+                            getPosition(details.globalPosition);
+                        if (canvasPosition != null) {
+                          setState(() {
+                            _selectionBoxEnd = canvasPosition;
+                          });
+                        }
+                      }
+                    },
+                    onPanEnd: (details) {
+                      if (_isDraggingSelectionBox &&
+                          _selectionBoxStart != null &&
+                          _selectionBoxEnd != null) {
+                        final selectionRect = Rect.fromPoints(
+                            _selectionBoxStart!, _selectionBoxEnd!);
+
+                        setState(() {
+                          if (!HardwareKeyboard.instance.isControlPressed) {
+                            _selectedComponents.clear();
+                          }
+
+                          for (final component in _flowManager.components) {
+                            final componentPos =
+                                _componentPositions[component.id];
+                            if (componentPos != null) {
+                              const double componentWidth = 180.0;
+                              const double componentHeight = 150.0;
+
+                              final componentRect = Rect.fromLTWH(
+                                componentPos.dx,
+                                componentPos.dy,
+                                componentWidth,
+                                componentHeight,
+                              );
+
+                              if (selectionRect.overlaps(componentRect)) {
+                                _selectedComponents.add(component);
+                              }
+                            }
+                          }
+
+                          _isDraggingSelectionBox = false;
+                          _selectionBoxStart = null;
+                          _selectionBoxEnd = null;
+                        });
+                      }
+                    },
+                    onDoubleTapDown: (TapDownDetails details) {
+                      Offset? canvasPosition =
+                          getPosition(details.globalPosition);
+                      print(
+                          "Canvas position onSecondaryTapDown: $canvasPosition");
+                      if (canvasPosition != null) {
+                        bool isClickOnComponent = false;
+
+                        for (final componentId in _componentPositions.keys) {
+                          final componentPos =
+                              _componentPositions[componentId]!;
+
+                          const double componentWidth = 180.0;
+                          const double componentHeight = 150.0;
+
+                          final componentRect = Rect.fromLTWH(
+                            componentPos.dx,
+                            componentPos.dy,
+                            componentWidth,
+                            componentHeight,
+                          );
+
+                          if (componentRect.contains(canvasPosition)) {
+                            isClickOnComponent = true;
+                            break;
+                          }
+                        }
+
+                        if (!isClickOnComponent) {
+                          _showCanvasContextMenu(
+                              context, details.globalPosition);
+                        }
+                      }
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(8.0),
-                          bottomLeft: Radius.circular(8.0),
-                        ),
-                      ),
-                      child: Icon(
-                        isPanelExpanded
-                            ? Icons.arrow_forward
-                            : Icons.arrow_back,
-                        color: Colors.white,
+                      width: _canvasSize.width,
+                      height: _canvasSize.height,
+                      color: Colors.grey[50],
+                      child: Stack(
+                        children: [
+                          DragTarget<Object>(
+                            onAcceptWithDetails: (details) {
+                              final data = details.data;
+                              final globalPosition = details.offset;
+                              final RenderBox box =
+                                  context.findRenderObject() as RenderBox;
+                              final localPosition =
+                                  box.globalToLocal(globalPosition);
+                              final componentData = data as Map;
+                              print(details);
+                              _addNewComponent(
+                                  ComponentType(componentData["componentType"]),
+                                  clickPosition: localPosition);
+                            },
+                            builder: (context, candidateData, rejectedData) {
+                              return Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  CustomPaint(
+                                    painter: GridPainter(),
+                                    size: _canvasSize,
+                                  ),
+                                  if (_isDraggingSelectionBox &&
+                                      _selectionBoxStart != null &&
+                                      _selectionBoxEnd != null)
+                                    CustomPaint(
+                                      painter: SelectionBoxPainter(
+                                        start: _selectionBoxStart,
+                                        end: _selectionBoxEnd,
+                                      ),
+                                      size: _canvasSize,
+                                    ),
+                                  if (_flowManager.components.isEmpty)
+                                    const Center(
+                                      child: Text(
+                                        'Add components to the canvas',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ..._flowManager.components.map(
+                                    (component) {
+                                      return Positioned(
+                                        left: _componentPositions[component.id]
+                                                ?.dx ??
+                                            0,
+                                        top: _componentPositions[component.id]
+                                                ?.dy ??
+                                            0,
+                                        child: Draggable<String>(
+                                          data: component.id,
+                                          feedback: Material(
+                                            elevation: 5.0,
+                                            color: Colors.transparent,
+                                            child: ComponentWidget(
+                                              component: component,
+                                              height:
+                                                  component.allSlots.length *
+                                                      rowHeight,
+                                              isSelected: _selectedComponents
+                                                  .contains(component),
+                                              widgetKey: _componentKeys[
+                                                      component.id] ??
+                                                  GlobalKey(),
+                                              position: _componentPositions[
+                                                      component.id] ??
+                                                  Offset.zero,
+                                              width: _componentWidths[
+                                                      component.id] ??
+                                                  160.0,
+                                              onValueChanged:
+                                                  _handleValueChanged,
+                                              onSlotDragStarted:
+                                                  _handlePortDragStarted,
+                                              onSlotDragAccepted:
+                                                  _handlePortDragAccepted,
+                                              onWidthChanged:
+                                                  _handleComponentResize,
+                                            ),
+                                          ),
+                                          childWhenDragging: Opacity(
+                                            opacity: 0.3,
+                                            child: ComponentWidget(
+                                              component: component,
+                                              height:
+                                                  component.allSlots.length *
+                                                      rowHeight,
+                                              isSelected: _selectedComponents
+                                                  .contains(component),
+                                              widgetKey: GlobalKey(),
+                                              position: _componentPositions[
+                                                      component.id] ??
+                                                  Offset.zero,
+                                              width: _componentWidths[
+                                                      component.id] ??
+                                                  160.0,
+                                              onValueChanged:
+                                                  _handleValueChanged,
+                                              onSlotDragStarted:
+                                                  _handlePortDragStarted,
+                                              onSlotDragAccepted:
+                                                  _handlePortDragAccepted,
+                                              onWidthChanged:
+                                                  _handleComponentResize,
+                                            ),
+                                          ),
+                                          onDragStarted: () {
+                                            _dragStartPosition =
+                                                _componentPositions[
+                                                    component.id];
+                                          },
+                                          onDragEnd: (details) {
+                                            final RenderBox?
+                                                viewerChildRenderBox =
+                                                _interactiveViewerChildKey
+                                                        .currentContext
+                                                        ?.findRenderObject()
+                                                    as RenderBox?;
+
+                                            if (viewerChildRenderBox != null) {
+                                              final Offset localOffset =
+                                                  viewerChildRenderBox
+                                                      .globalToLocal(
+                                                          details.offset);
+
+                                              if (_dragStartPosition != null &&
+                                                  _dragStartPosition !=
+                                                      localOffset) {
+                                                setState(() {
+                                                  final offset = localOffset -
+                                                      _dragStartPosition!;
+
+                                                  if (_selectedComponents
+                                                          .contains(
+                                                              component) &&
+                                                      _selectedComponents
+                                                              .length >
+                                                          1) {
+                                                    for (var selectedComponent
+                                                        in _selectedComponents) {
+                                                      final currentPos =
+                                                          _componentPositions[
+                                                              selectedComponent
+                                                                  .id];
+                                                      if (currentPos != null) {
+                                                        final newPos =
+                                                            currentPos + offset;
+                                                        final command =
+                                                            MoveComponentCommand(
+                                                          selectedComponent.id,
+                                                          newPos,
+                                                          currentPos,
+                                                          _componentPositions,
+                                                        );
+                                                        _commandHistory
+                                                            .execute(command);
+                                                      }
+                                                    }
+                                                  } else {
+                                                    final command =
+                                                        MoveComponentCommand(
+                                                      component.id,
+                                                      localOffset,
+                                                      _dragStartPosition!,
+                                                      _componentPositions,
+                                                    );
+                                                    _commandHistory
+                                                        .execute(command);
+
+                                                    _selectedComponents.clear();
+                                                    _selectedComponents
+                                                        .add(component);
+                                                  }
+
+                                                  _dragStartPosition = null;
+                                                  _updateCanvasSize();
+                                                });
+                                              }
+                                            }
+                                          },
+                                          child: GestureDetector(
+                                            onSecondaryTapDown: (details) {
+                                              _showContextMenu(
+                                                  context,
+                                                  details.globalPosition,
+                                                  component);
+                                            },
+                                            onTap: () {
+                                              if (HardwareKeyboard
+                                                  .instance.isControlPressed) {
+                                                setState(() {
+                                                  if (_selectedComponents
+                                                      .contains(component)) {
+                                                    _selectedComponents
+                                                        .remove(component);
+                                                  } else {
+                                                    _selectedComponents
+                                                        .add(component);
+                                                  }
+                                                });
+                                              } else {
+                                                setState(() {
+                                                  _selectedComponents.clear();
+                                                  _selectedComponents
+                                                      .add(component);
+                                                });
+                                              }
+                                            },
+                                            child: ComponentWidget(
+                                              component: component,
+                                              height:
+                                                  component.allSlots.length *
+                                                      rowHeight,
+                                              width: _componentWidths[
+                                                      component.id] ??
+                                                  160.0,
+                                              onWidthChanged:
+                                                  _handleComponentResize,
+                                              isSelected: _selectedComponents
+                                                  .contains(component),
+                                              widgetKey: _componentKeys[
+                                                      component.id] ??
+                                                  GlobalKey(),
+                                              position: _componentPositions[
+                                                      component.id] ??
+                                                  Offset.zero,
+                                              onValueChanged:
+                                                  _handleValueChanged,
+                                              onSlotDragStarted:
+                                                  _handlePortDragStarted,
+                                              onSlotDragAccepted:
+                                                  _handlePortDragAccepted,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          floatingActionButton: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              FloatingActionButton(
-                mini: true,
-                onPressed: () {
-                  setState(() {
-                    _transformationController.value = Matrix4.identity();
-                  });
-                },
-                tooltip: 'Reset View',
-                child: const Icon(Icons.center_focus_strong),
               ),
-            ],
+            ),
+            floatingActionButton: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FloatingActionButton(
+                  mini: true,
+                  onPressed: () {
+                    setState(() {
+                      _transformationController.value = Matrix4.identity();
+                    });
+                  },
+                  tooltip: 'Reset View',
+                  child: const Icon(Icons.center_focus_strong),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDraggableComponent(Component component) {
-    final isSelected = _selectedComponents.contains(component);
-    final height = component.allSlots.length * rowHeight;
-
-    return Draggable<String>(
-      data: component.id,
-      feedback: Material(
-        elevation: 5.0,
-        color: Colors.transparent,
-        child: ComponentWidget(
-          component: component,
-          height: height,
-          isSelected: isSelected,
-          widgetKey: _componentKeys[component.id] ?? GlobalKey(),
-          position: _componentPositions[component.id] ?? Offset.zero,
-          width: _componentWidths[component.id] ?? 160.0,
-          onValueChanged: _handleValueChanged,
-          onSlotDragStarted: _handlePortDragStarted,
-          onSlotDragAccepted: _handlePortDragAccepted,
-          onWidthChanged: _handleComponentWidthChanged,
-        ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: ComponentWidget(
-          component: component,
-          height: height,
-          isSelected: isSelected,
-          widgetKey: GlobalKey(),
-          position: _componentPositions[component.id] ?? Offset.zero,
-          width: _componentWidths[component.id] ?? 160.0,
-          onValueChanged: _handleValueChanged,
-          onSlotDragStarted: _handlePortDragStarted,
-          onSlotDragAccepted: _handlePortDragAccepted,
-          onWidthChanged: _handleComponentWidthChanged,
-        ),
-      ),
-      onDragStarted: () {
-        _dragStartPosition = _componentPositions[component.id];
-      },
-      onDragEnd: (details) {
-        _handleComponentDragEnd(details, component);
-      },
-      child: GestureDetector(
-        onSecondaryTapDown: (details) {
-          _showContextMenu(context, details.globalPosition, component);
-        },
-        onTap: () {
-          setState(() {
-            if (HardwareKeyboard.instance.isControlPressed) {
-              if (_selectedComponents.contains(component)) {
-                _selectedComponents.remove(component);
-              } else {
-                _selectedComponents.add(component);
-              }
-            } else {
-              _selectedComponents.clear();
-              _selectedComponents.add(component);
-
-              // Set selectedItemIndex for properties panel
-              selectedItemIndex =
-                  _flowManager.components.toList().indexOf(component);
-              isPanelExpanded = true;
-            }
-          });
-        },
-        child: ComponentWidget(
-          component: component,
-          height: height,
-          width: _componentWidths[component.id] ?? 160.0,
-          onWidthChanged: _handleComponentWidthChanged,
-          isSelected: isSelected,
-          widgetKey: _componentKeys[component.id] ?? GlobalKey(),
-          position: _componentPositions[component.id] ?? Offset.zero,
-          onValueChanged: _handleValueChanged,
-          onSlotDragStarted: _handlePortDragStarted,
-          onSlotDragAccepted: _handlePortDragAccepted,
-        ),
-      ),
-    );
-  }
-
-  void _handleDragAccepted(DragTargetDetails<Map<String, dynamic>> details) {
-    final data = details.data;
-    final globalPosition = details.offset;
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final localPosition = box.globalToLocal(globalPosition);
-
-    final matrix = _transformationController.value;
-    final inverseMatrix = Matrix4.inverted(matrix);
-    final canvasPosition =
-        MatrixUtils.transformPoint(inverseMatrix, localPosition);
-
-    Component? newComponent;
-
-    // Handle device data if present
-    if (data["deviceData"] != null) {
-      // Create device component
-      final deviceData = data["deviceData"] as Map<String, dynamic>;
-      final id = const Uuid().v4();
-      final deviceId = deviceData["deviceId"] as int;
-      final deviceAddress = deviceData["deviceAddress"] as String;
-      final deviceType = deviceData["deviceType"] as String;
-      final description = deviceData["description"] as String;
-
-      // Create component based on device type
-      newComponent = _createComponentForDevice(
-          id, deviceId, deviceAddress, deviceType, description);
-    }
-    // Handle regular component types
-    else if (data["componentType"] != null) {
-      final componentType = data["componentType"] as String;
-      final label = data["label"] as String;
-      final id = '$label ${DateTime.now().millisecondsSinceEpoch}';
-
-      newComponent = _flowManager.createComponentByType(id, componentType);
-    }
-
-    if (newComponent != null) {
-      _addNewComponent(newComponent, canvasPosition);
-    }
-  }
-
-  Component _createComponentForDevice(String id, int deviceId,
-      String deviceAddress, String deviceType, String description) {
-    // Here you would implement the logic to create a component based on device type
-    // This is a simplified example - you'll need to adapt to your specific needs
-    const componentType = ComponentType.HELVAR_DEVICE;
-
-    final component = _flowManager.createComponentByType(id, componentType);
-    component.properties.first.value = description;
-
-    // You might need to store device-specific info in properties
-    component.properties.add(Property(
-      name: "DeviceId",
-      index: component.properties.length,
-      isInput: false,
-      type: const PortType(PortType.NUMERIC),
-      value: deviceId,
-    ));
-
-    component.properties.add(Property(
-      name: "Address",
-      index: component.properties.length,
-      isInput: false,
-      type: const PortType(PortType.STRING),
-      value: deviceAddress,
-    ));
-
-    return component;
-  }
-
-  void _addNewComponent(Component component, Offset position) {
-    setState(() {
-      _flowManager.addComponent(component);
-      _componentPositions[component.id] = position;
-      _componentKeys[component.id] = GlobalKey();
-      _componentWidths[component.id] = 160.0; // Default width
-
-      ref
-          .read(flowsheetsProvider.notifier)
-          .addFlowsheetComponent(widget.flowsheetId, component);
-
-      _selectedComponents.clear();
-      _selectedComponents.add(component);
-      selectedItemIndex = _flowManager.components.length - 1;
-      isPanelExpanded = true;
-
-      _updateCanvasSize();
-    });
-  }
-
-  void _handleComponentDragEnd(DraggableDetails details, Component component) {
-    final RenderBox? viewerChildRenderBox =
-        _interactiveViewerChildKey.currentContext?.findRenderObject()
-            as RenderBox?;
-
-    if (viewerChildRenderBox != null && _dragStartPosition != null) {
-      final Offset localOffset =
-          viewerChildRenderBox.globalToLocal(details.offset);
-
-      if (_dragStartPosition != localOffset) {
-        setState(() {
-          final offset = localOffset - _dragStartPosition!;
-
-          if (_selectedComponents.contains(component) &&
-              _selectedComponents.length > 1) {
-            for (var selectedComponent in _selectedComponents) {
-              final currentPos = _componentPositions[selectedComponent.id];
-              if (currentPos != null) {
-                final newPos = currentPos + offset;
-                _componentPositions[selectedComponent.id] = newPos;
-
-                ref.read(flowsheetsProvider.notifier).updateComponentPosition(
-                    widget.flowsheetId, selectedComponent.id, newPos);
-              }
-            }
-          } else {
-            _componentPositions[component.id] = localOffset;
-
-            ref.read(flowsheetsProvider.notifier).updateComponentPosition(
-                widget.flowsheetId, component.id, localOffset);
-          }
-
-          _dragStartPosition = null;
-          _updateCanvasSize();
-        });
-      }
-    }
-  }
-
-  void _handleComponentWidthChanged(String componentId, double newWidth) {
-    setState(() {
-      _componentWidths[componentId] = newWidth;
-
-      // Update width in flowsheet
-      ref
-          .read(flowsheetsProvider.notifier)
-          .updateComponentWidth(widget.flowsheetId, componentId, newWidth);
-    });
-  }
-
-  void _handleValueChanged(
-      String componentId, int slotIndex, dynamic newValue) {
-    Component? component = _flowManager.findComponentById(componentId);
-    if (component != null) {
-      Slot? slot = component.getSlotByIndex(slotIndex);
-
-      if (slot != null) {
-        dynamic oldValue;
-        if (slot is Property) {
-          oldValue = slot.value;
-        } else if (slot is ActionSlot) {
-          oldValue = slot.parameter;
-        }
-
-        if (oldValue != newValue) {
-          setState(() {
-            _flowManager.updatePortValue(componentId, slotIndex, newValue);
-
-            // Update port value in flowsheet
-            ref.read(flowsheetsProvider.notifier).updatePortValue(
-                widget.flowsheetId, componentId, slotIndex, newValue);
-          });
-        }
-      }
-    }
-  }
-
-  void _handlePortDragStarted(SlotDragInfo slotInfo) {
-    setState(() {
-      _currentDraggedPort = slotInfo;
-    });
-  }
-
-  void _handlePortDragAccepted(SlotDragInfo targetSlotInfo) {
-    if (_currentDraggedPort != null) {
-      Component? sourceComponent =
-          _flowManager.findComponentById(_currentDraggedPort!.componentId);
-      Component? targetComponent =
-          _flowManager.findComponentById(targetSlotInfo.componentId);
-
-      if (sourceComponent != null && targetComponent != null) {
-        if (_flowManager.canCreateConnection(
-            _currentDraggedPort!.componentId,
-            _currentDraggedPort!.slotIndex,
-            targetSlotInfo.componentId,
-            targetSlotInfo.slotIndex)) {
-          setState(() {
-            _flowManager.createConnection(
-              _currentDraggedPort!.componentId,
-              _currentDraggedPort!.slotIndex,
-              targetSlotInfo.componentId,
-              targetSlotInfo.slotIndex,
-            );
-
-            // Add connection to flowsheet
-            ref.read(flowsheetsProvider.notifier).addConnection(
-                widget.flowsheetId,
-                Connection(
-                  fromComponentId: _currentDraggedPort!.componentId,
-                  fromPortIndex: _currentDraggedPort!.slotIndex,
-                  toComponentId: targetSlotInfo.componentId,
-                  toPortIndex: targetSlotInfo.slotIndex,
-                ));
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Cannot connect these slots - type mismatch or invalid connection'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    }
-
-    setState(() {
-      _currentDraggedPort = null;
-      _tempLineEndPoint = null;
-    });
-  }
-
-  void _handlePointerMove(PointerMoveEvent event) {
-    if (_currentDraggedPort != null) {
-      setState(() {
-        final RenderBox box = context.findRenderObject() as RenderBox;
-        _tempLineEndPoint = box.globalToLocal(event.position);
-      });
-    }
-  }
-
-  void _handlePointerDown(PointerDownEvent event) {
-    // Handle selection box start and component selection logic
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final localPosition = box.globalToLocal(event.position);
-
-    final matrix = _transformationController.value;
-    final inverseMatrix = Matrix4.inverted(matrix);
-    final canvasPosition =
-        MatrixUtils.transformPoint(inverseMatrix, localPosition);
-
-    // Check if we clicked on a component
-    bool clickedOnComponent = false;
-    for (final componentId in _componentPositions.keys) {
-      final pos = _componentPositions[componentId]!;
-      final width = _componentWidths[componentId] ?? 160.0;
-      final component = _flowManager.findComponentById(componentId);
-      if (component == null) continue;
-
-      final height =
-          component.allSlots.length * rowHeight + 40; // Approximate height
-
-      final rect = Rect.fromLTWH(pos.dx, pos.dy, width, height);
-      if (rect.contains(canvasPosition)) {
-        clickedOnComponent = true;
-        break;
-      }
-    }
-
-    if (!clickedOnComponent) {
-      // Start selection box
-      setState(() {
-        _selectionBoxStart = canvasPosition;
-        _isDraggingSelectionBox = false;
-
-        // Clear selection unless Ctrl is pressed
-        if (!HardwareKeyboard.instance.isControlPressed) {
-          _selectedComponents.clear();
-          selectedItemIndex = null;
-          isPanelExpanded = false;
-        }
-      });
-
-      if (event.kind == PointerDeviceKind.touch ||
-          event.buttons == kSecondaryMouseButton) {
-        _lastTapPosition = event.position;
-      }
-    }
-  }
-
-  void _showContextMenu(
-      BuildContext context, Offset position, Component component) {
-    _lastTapPosition ??= position;
+  void _showCanvasContextMenu(BuildContext context, Offset globalPosition) {
+    Offset canvasPosition = getPosition(globalPosition)!;
 
     final RenderBox overlay =
-        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+        Overlay.of(context).context.findRenderObject() as RenderBox;
 
     showMenu(
       context: context,
       position: RelativeRect.fromRect(
-        Rect.fromLTWH(_lastTapPosition!.dx, _lastTapPosition!.dy, 1, 1),
+        Rect.fromPoints(globalPosition, globalPosition),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        PopupMenuItem(
+          value: 'add-component',
+          child: Row(
+            children: [
+              Icon(Icons.paste_outlined,
+                  size: 18,
+                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                'Paste Special',
+                style: TextStyle(
+                    color:
+                        _clipboardComponents.isNotEmpty ? null : Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'select-all',
+          child: Row(
+            children: [
+              Icon(Icons.select_all, size: 18),
+              SizedBox(width: 8),
+              Text('Select All'),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == null) return;
+
+      switch (value) {
+        case 'add-component':
+          _showAddComponentDialogAtPosition(canvasPosition);
+          break;
+        case 'paste':
+          _handlePasteComponent(canvasPosition);
+          break;
+        case 'paste-special':
+          _showPasteSpecialDialog(canvasPosition);
+          break;
+        case 'select-all':
+          setState(() {
+            _selectedComponents.clear();
+            _selectedComponents.addAll(_flowManager.components);
+          });
+          break;
+      }
+    });
+  }
+
+  void _showPasteSpecialDialog(Offset pastePosition) {
+    if (_clipboardComponents.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return PasteSpecialDialog(
+          onPasteConfirmed: (numberOfCopies, keepAllLinks, keepAllRelations) {
+            _flowHandlers.handlePasteSpecialComponent(
+                pastePosition, numberOfCopies, keepAllLinks);
+          },
+        );
+      },
+    );
+  }
+
+  void _handlePasteComponent(Offset position) {
+    _flowHandlers.handlePasteComponent(position);
+  }
+
+  void _showAddComponentDialogAtPosition(Offset position) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add Component'),
+          content: SizedBox(
+            width: 300,
+            height: 400,
+            child: ListView(
+              children: [
+                _buildComponentCategorySection(
+                    'Custom Components',
+                    [
+                      RectangleComponent.RECTANGLE,
+                      RampComponent.RAMP,
+                    ],
+                    position),
+                _buildComponentCategorySection(
+                    'Logic Gates',
+                    [
+                      ComponentType.AND_GATE,
+                      ComponentType.OR_GATE,
+                      ComponentType.XOR_GATE,
+                      ComponentType.NOT_GATE,
+                    ],
+                    position),
+                _buildComponentCategorySection(
+                    'Math Operations',
+                    [
+                      ComponentType.ADD,
+                      ComponentType.SUBTRACT,
+                      ComponentType.MULTIPLY,
+                      ComponentType.DIVIDE,
+                      ComponentType.MAX,
+                      ComponentType.MIN,
+                      ComponentType.POWER,
+                      ComponentType.ABS,
+                    ],
+                    position),
+                _buildComponentCategorySection(
+                    'Comparisons',
+                    [
+                      ComponentType.IS_GREATER_THAN,
+                      ComponentType.IS_LESS_THAN,
+                      ComponentType.IS_EQUAL,
+                    ],
+                    position),
+                _buildComponentCategorySection(
+                    'Writable Points',
+                    [
+                      ComponentType.BOOLEAN_WRITABLE,
+                      ComponentType.NUMERIC_WRITABLE,
+                      ComponentType.STRING_WRITABLE,
+                    ],
+                    position),
+                _buildComponentCategorySection(
+                    'Read-Only Points',
+                    [
+                      ComponentType.BOOLEAN_POINT,
+                      ComponentType.NUMERIC_POINT,
+                      ComponentType.STRING_POINT,
+                    ],
+                    position),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildComponentCategorySection(
+      String title, List<String> typeStrings, Offset position) {
+    List<ComponentType> types =
+        typeStrings.map((t) => ComponentType(t)).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 12.0, bottom: 6.0),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        const Divider(),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: types.map((type) {
+            return InkWell(
+              onTap: () {
+                _addNewComponent(type, clickPosition: position);
+                Navigator.pop(context);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: Column(
+                  children: [
+                    Icon(getIconForComponentType(type)),
+                    const SizedBox(height: 4.0),
+                    Text(getNameForComponentType(type)),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  void _showContextMenu(
+      BuildContext context, Offset position, Component component) {
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromPoints(position, position),
         Offset.zero & overlay.size,
       ),
       items: [
@@ -797,639 +1186,51 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       switch (value) {
         case 'copy':
-          _copyComponent(component);
+          if (_selectedComponents.length == 1) {
+            _handleCopyComponent(_selectedComponents.first);
+          } else if (_selectedComponents.isNotEmpty) {
+            _handleCopyMultipleComponents();
+          }
           break;
         case 'edit':
-          _editComponent(context, component);
+          _handleEditComponent(context, component);
           break;
         case 'delete':
-          _deleteComponent(component);
+          _handleDeleteComponent(component);
           break;
       }
     });
   }
 
-  void _copyComponent(Component component) {
-    _clipboardComponents.clear();
-    _clipboardPositions.clear();
-    _clipboardConnections.clear();
-
-    _clipboardComponents.add(component);
-    _clipboardPositions.add(_componentPositions[component.id] ?? Offset.zero);
-
-    setState(() {
-      _clipboardComponentPosition = _componentPositions[component.id];
-    });
+  void _handleEditComponent(BuildContext context, Component component) {
+    _flowHandlers.handleEditComponent(context, component);
   }
 
-  void _editComponent(BuildContext context, Component component) {
-    TextEditingController nameController =
-        TextEditingController(text: component.id);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Component'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Component Name'),
-                autofocus: true,
-              ),
-              const SizedBox(height: 16),
-              // Here you would add fields for editing component properties
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              String newName = nameController.text.trim();
-              if (newName.isNotEmpty && newName != component.id) {
-                setState(() {
-                  // Store current position and properties
-                  final position = _componentPositions[component.id];
-                  final width = _componentWidths[component.id];
-
-                  // Update component ID in FlowManager
-                  component.id = newName;
-
-                  // Update positions and widths maps
-                  if (position != null) {
-                    _componentPositions.remove(component.id);
-                    _componentPositions[newName] = position;
-                  }
-
-                  if (width != null) {
-                    _componentWidths.remove(component.id);
-                    _componentWidths[newName] = width;
-                  }
-
-                  // Update component in flowsheet provider
-                  ref
-                      .read(flowsheetsProvider.notifier)
-                      .updateFlowsheetComponent(
-                        widget.flowsheetId,
-                        component.id,
-                        component,
-                      );
-                });
-              }
-
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
+  void _handleDeleteComponent(Component component) {
+    _flowHandlers.handleDeleteComponent(component);
   }
 
-  void _deleteComponent(Component component) {
-    // Get connections that involve this component
-    final affectedConnections = _flowManager.connections
-        .where((connection) =>
-            connection.fromComponentId == component.id ||
-            connection.toComponentId == component.id)
-        .toList();
-
-    setState(() {
-      // Remove component from FlowManager
-      _flowManager.removeComponent(component.id);
-
-      // Remove from positions and keys
-      _componentPositions.remove(component.id);
-      _componentKeys.remove(component.id);
-      _componentWidths.remove(component.id);
-
-      // Remove from selection
-      _selectedComponents.remove(component);
-      if (selectedItemIndex != null &&
-          selectedItemIndex! < _flowManager.components.length &&
-          _flowManager.components.toList()[selectedItemIndex!].id ==
-              component.id) {
-        selectedItemIndex = null;
-        isPanelExpanded = false;
-      }
-
-      // Remove component from flowsheet provider
-      ref.read(flowsheetsProvider.notifier).removeFlowsheetComponent(
-            widget.flowsheetId,
-            component.id,
-          );
-
-      _updateCanvasSize();
-    });
+  void _handleCopyComponent(Component component) {
+    _flowHandlers.handleCopyComponent(component);
   }
 
-  Widget _buildPropertiesPanel() {
-    if (selectedItemIndex == null ||
-        selectedItemIndex! >= _flowManager.components.length) {
-      return const SizedBox();
-    }
-
-    final component = _flowManager.components.toList()[selectedItemIndex!];
-
-    return Positioned(
-      right: 0,
-      top: 0,
-      bottom: 0,
-      width: 250,
-      child: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Properties',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const Divider(),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'ID',
-                border: OutlineInputBorder(),
-              ),
-              controller: TextEditingController(text: component.id),
-              onChanged: (value) {
-                if (value.isNotEmpty && value != component.id) {
-                  setState(() {
-                    // Store current position and properties
-                    final position = _componentPositions[component.id];
-                    final width = _componentWidths[component.id];
-
-                    // Update component ID
-                    String oldId = component.id;
-                    component.id = value;
-
-                    // Update positions and widths maps
-                    if (position != null) {
-                      _componentPositions.remove(oldId);
-                      _componentPositions[value] = position;
-                    }
-
-                    if (width != null) {
-                      _componentWidths.remove(oldId);
-                      _componentWidths[value] = width;
-                    }
-
-                    // Update component in flowsheet provider
-                    ref
-                        .read(flowsheetsProvider.notifier)
-                        .updateFlowsheetComponent(
-                          widget.flowsheetId,
-                          oldId,
-                          component,
-                        );
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Position',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'X',
-                      border: OutlineInputBorder(),
-                    ),
-                    controller: TextEditingController(
-                      text: _componentPositions[component.id]
-                              ?.dx
-                              .toStringAsFixed(0) ??
-                          '0',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      final x = double.tryParse(value);
-                      if (x != null) {
-                        setState(() {
-                          final currentPos = _componentPositions[component.id];
-                          if (currentPos != null) {
-                            _componentPositions[component.id] =
-                                Offset(x, currentPos.dy);
-
-                            // Update position in flowsheet
-                            ref
-                                .read(flowsheetsProvider.notifier)
-                                .updateComponentPosition(
-                                  widget.flowsheetId,
-                                  component.id,
-                                  Offset(x, currentPos.dy),
-                                );
-                          }
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Y',
-                      border: OutlineInputBorder(),
-                    ),
-                    controller: TextEditingController(
-                      text: _componentPositions[component.id]
-                              ?.dy
-                              .toStringAsFixed(0) ??
-                          '0',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      final y = double.tryParse(value);
-                      if (y != null) {
-                        setState(() {
-                          final currentPos = _componentPositions[component.id];
-                          if (currentPos != null) {
-                            _componentPositions[component.id] =
-                                Offset(currentPos.dx, y);
-
-                            ref
-                                .read(flowsheetsProvider.notifier)
-                                .updateComponentPosition(
-                                  widget.flowsheetId,
-                                  component.id,
-                                  Offset(currentPos.dx, y),
-                                );
-                          }
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _buildPropertiesList(component),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.delete),
-              label: const Text('Delete Component'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(40),
-              ),
-              onPressed: () {
-                _deleteComponent(component);
-              },
-            ),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              icon: const Icon(Icons.close),
-              label: const Text('Close Panel'),
-              onPressed: () {
-                setState(() {
-                  isPanelExpanded = false;
-                });
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+  void _handleCopyMultipleComponents() {
+    _flowHandlers.handleCopyMultipleComponents();
   }
 
-  Widget _buildPropertiesList(Component component) {
-    return ListView(
-      children: [
-        if (component.properties.isNotEmpty) ...[
-          Text(
-            'Properties',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          ...component.properties.map((property) {
-            return _buildPropertyEditor(component, property);
-          }),
-        ],
-        if (component.actions.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Actions',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          ...component.actions.map((action) {
-            return ListTile(
-              title: Text(action.name),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  _handleValueChanged(component.id, action.index, null);
-                },
-                child: const Text('Execute'),
-              ),
-            );
-          }),
-        ],
-        if (component.topics.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Topics',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          ...component.topics.map((topic) {
-            return ListTile(
-              title: Text(topic.name),
-              subtitle: Text(
-                topic.lastEvent != null
-                    ? 'Last event: ${_formatEventValue(topic.lastEvent)}'
-                    : 'No events',
-              ),
-            );
-          }),
-        ],
-      ],
-    );
+  void _handleMoveComponentDown(Component component) {
+    _flowHandlers.handleMoveComponentDown(component);
   }
 
-  String _formatEventValue(dynamic value) {
-    if (value == null) return "null";
-    if (value is bool) return value ? "true" : "false";
-    if (value is num) return value.toString();
-    if (value is String) return '"$value"';
-    return value.toString();
+  void _handleMoveComponentUp(Component component) {
+    _flowHandlers.handleMoveComponentUp(component);
   }
 
-  Widget _buildPropertyEditor(Component component, Property property) {
-    // Skip input properties that have a connection
-    if (property.isInput &&
-        component.inputConnections.containsKey(property.index)) {
-      return ListTile(
-        title: Text(property.name),
-        subtitle: const Text('Connected from another component'),
-        leading: const Icon(Icons.link),
-      );
-    }
-
-    switch (property.type.type) {
-      case PortType.BOOLEAN:
-        return SwitchListTile(
-          title: Text(property.name),
-          value: property.value as bool? ?? false,
-          onChanged: property.isInput
-              ? null
-              : (value) {
-                  _handleValueChanged(component.id, property.index, value);
-                },
-        );
-
-      case PortType.NUMERIC:
-        return ListTile(
-          title: Text(property.name),
-          subtitle: TextField(
-            controller: TextEditingController(
-              text: (property.value as num?)?.toString() ?? '0',
-            ),
-            enabled: !property.isInput,
-            keyboardType: TextInputType.number,
-            onChanged: (value) {
-              final numValue = num.tryParse(value);
-              if (numValue != null) {
-                _handleValueChanged(component.id, property.index, numValue);
-              }
-            },
-          ),
-        );
-
-      case PortType.STRING:
-        return ListTile(
-          title: Text(property.name),
-          subtitle: TextField(
-            controller: TextEditingController(
-              text: (property.value as String?) ?? '',
-            ),
-            enabled: !property.isInput,
-            onChanged: (value) {
-              _handleValueChanged(component.id, property.index, value);
-            },
-          ),
-        );
-
-      default: // For ANY type or others
-        return ListTile(
-          title: Text(property.name),
-          subtitle: Text(
-            property.value?.toString() ?? 'null',
-            style: TextStyle(
-              color: Colors.grey[600],
-            ),
-          ),
-        );
-    }
+  void _handleMoveComponentLeft(Component component) {
+    _flowHandlers.handleMoveComponentLeft(component);
   }
 
-  void _showAddComponentDialog(Offset position) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Component'),
-        content: SizedBox(
-          width: 300,
-          height: 400,
-          child: ListView(
-            children: [
-              _buildComponentCategorySection(
-                'Logic Gates',
-                [
-                  ComponentType.AND_GATE,
-                  ComponentType.OR_GATE,
-                  ComponentType.XOR_GATE,
-                  ComponentType.NOT_GATE,
-                ],
-                position,
-              ),
-              _buildComponentCategorySection(
-                'Math Operations',
-                [
-                  ComponentType.ADD,
-                  ComponentType.SUBTRACT,
-                  ComponentType.MULTIPLY,
-                  ComponentType.DIVIDE,
-                ],
-                position,
-              ),
-              _buildComponentCategorySection(
-                'Comparison',
-                [
-                  ComponentType.IS_GREATER_THAN,
-                  ComponentType.IS_LESS_THAN,
-                  ComponentType.IS_EQUAL,
-                ],
-                position,
-              ),
-              _buildComponentCategorySection(
-                'Points',
-                [
-                  ComponentType.BOOLEAN_POINT,
-                  ComponentType.NUMERIC_POINT,
-                  ComponentType.STRING_POINT,
-                  ComponentType.BOOLEAN_WRITABLE,
-                  ComponentType.NUMERIC_WRITABLE,
-                  ComponentType.STRING_WRITABLE,
-                ],
-                position,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildComponentCategorySection(
-      String title, List<String> componentTypes, Offset position) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 12.0, bottom: 6.0),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
-        const Divider(),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children: componentTypes.map((type) {
-            return InkWell(
-              onTap: () {
-                _createComponentByType(type, position);
-                Navigator.pop(context);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4.0),
-                ),
-                child: Column(
-                  children: [
-                    Icon(_getIconForComponentType(type)),
-                    const SizedBox(height: 4.0),
-                    Text(_getNameForComponentType(type)),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  void _createComponentByType(String typeStr, Offset position) {
-    final id =
-        '${_getNameForComponentType(typeStr)} ${DateTime.now().millisecondsSinceEpoch}';
-    final component = _flowManager.createComponentByType(id, typeStr);
-    _addNewComponent(component, position);
-  }
-
-  IconData _getIconForComponentType(String type) {
-    switch (type) {
-      case ComponentType.AND_GATE:
-        return Icons.call_merge;
-      case ComponentType.OR_GATE:
-        return Icons.call_split;
-      case ComponentType.XOR_GATE:
-        return Icons.shuffle;
-      case ComponentType.NOT_GATE:
-        return Icons.block;
-      case ComponentType.ADD:
-        return Icons.add;
-      case ComponentType.SUBTRACT:
-        return Icons.remove;
-      case ComponentType.MULTIPLY:
-        return Icons.close;
-      case ComponentType.DIVIDE:
-        return Icons.expand;
-      case ComponentType.IS_GREATER_THAN:
-        return Icons.navigate_next;
-      case ComponentType.IS_LESS_THAN:
-        return Icons.navigate_before;
-      case ComponentType.IS_EQUAL:
-        return Icons.drag_handle;
-      case ComponentType.BOOLEAN_POINT:
-        return Icons.toggle_off;
-      case ComponentType.NUMERIC_POINT:
-        return Icons.format_list_numbered;
-      case ComponentType.STRING_POINT:
-        return Icons.text_snippet;
-      case ComponentType.BOOLEAN_WRITABLE:
-        return Icons.toggle_on;
-      case ComponentType.NUMERIC_WRITABLE:
-        return Icons.numbers;
-      case ComponentType.STRING_WRITABLE:
-        return Icons.edit_note;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  String _getNameForComponentType(String type) {
-    switch (type) {
-      case ComponentType.AND_GATE:
-        return 'AND Gate';
-      case ComponentType.OR_GATE:
-        return 'OR Gate';
-      case ComponentType.XOR_GATE:
-        return 'XOR Gate';
-      case ComponentType.NOT_GATE:
-        return 'NOT Gate';
-      case ComponentType.ADD:
-        return 'Add';
-      case ComponentType.SUBTRACT:
-        return 'Subtract';
-      case ComponentType.MULTIPLY:
-        return 'Multiply';
-      case ComponentType.DIVIDE:
-        return 'Divide';
-      case ComponentType.IS_GREATER_THAN:
-        return 'Greater Than';
-      case ComponentType.IS_LESS_THAN:
-        return 'Less Than';
-      case ComponentType.IS_EQUAL:
-        return 'Equals';
-      case ComponentType.BOOLEAN_POINT:
-        return 'Boolean Point';
-      case ComponentType.NUMERIC_POINT:
-        return 'Numeric Point';
-      case ComponentType.STRING_POINT:
-        return 'String Point';
-      case ComponentType.BOOLEAN_WRITABLE:
-        return 'Boolean Writable';
-      case ComponentType.NUMERIC_WRITABLE:
-        return 'Numeric Writable';
-      case ComponentType.STRING_WRITABLE:
-        return 'String Writable';
-      default:
-        return 'Unknown Component';
-    }
+  void _handleMoveComponentRight(Component component) {
+    _flowHandlers.handleMoveComponentRight(component);
   }
 }

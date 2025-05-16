@@ -44,7 +44,7 @@ class FlowScreen extends ConsumerWidget {
         ],
       ),
       body: WiresheetFlowEditor(
-        flowsheetId: flowsheetId,
+        flowsheet: flowsheet,
       ),
     );
   }

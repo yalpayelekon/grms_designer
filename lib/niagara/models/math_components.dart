@@ -25,17 +25,17 @@ class MathComponent extends Component {
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         properties.add(Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         properties.add(Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         break;
 
       case ComponentType.POWER:
@@ -43,17 +43,17 @@ class MathComponent extends Component {
             name: "Base",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         properties.add(Property.withDefaultValue(
             name: "Exponent",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         properties.add(Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         break;
 
       case ComponentType.ABS:
@@ -61,12 +61,12 @@ class MathComponent extends Component {
             name: "Input",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         properties.add(Property.withDefaultValue(
             name: "Output",
             index: 1,
             isInput: false,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         break;
     }
   }

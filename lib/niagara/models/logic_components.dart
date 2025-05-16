@@ -21,17 +21,17 @@ class LogicComponent extends Component {
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         properties.add(Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         properties.add(Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         break;
 
       case ComponentType.NOT_GATE:
@@ -39,12 +39,12 @@ class LogicComponent extends Component {
             name: "Input",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         properties.add(Property.withDefaultValue(
             name: "Output",
             index: 1,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         break;
 
       case ComponentType.IS_GREATER_THAN:
@@ -53,17 +53,17 @@ class LogicComponent extends Component {
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         properties.add(Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         properties.add(Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         break;
 
       case ComponentType.IS_EQUAL:
@@ -71,17 +71,17 @@ class LogicComponent extends Component {
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.ANY)));
+            type: PortType(PortType.ANY)));
         properties.add(Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.ANY)));
+            type: PortType(PortType.ANY)));
         properties.add(Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         break;
     }
   }

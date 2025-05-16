@@ -19,31 +19,31 @@ class PointComponent extends Component {
             name: "Output",
             index: 0,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
 
         properties.add(Property.withDefaultValue(
             name: "In1",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
 
         properties.add(Property.withDefaultValue(
             name: "In2",
             index: 2,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
 
         properties.add(Property.withDefaultValue(
             name: "In3",
             index: 3,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
 
         properties.add(Property.withDefaultValue(
             name: "In4",
             index: 4,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         break;
 
       case ComponentType.NUMERIC_WRITABLE:
@@ -51,31 +51,31 @@ class PointComponent extends Component {
             name: "Output",
             index: 0,
             isInput: false,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
 
         properties.add(Property.withDefaultValue(
             name: "In1",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
 
         properties.add(Property.withDefaultValue(
             name: "In2",
             index: 2,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
 
         properties.add(Property.withDefaultValue(
             name: "In3",
             index: 3,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
 
         properties.add(Property.withDefaultValue(
             name: "In4",
             index: 4,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         break;
 
       case ComponentType.STRING_WRITABLE:
@@ -83,31 +83,31 @@ class PointComponent extends Component {
             name: "Output",
             index: 0,
             isInput: false,
-            type: const PortType(PortType.STRING)));
+            type: PortType(PortType.STRING)));
 
         properties.add(Property.withDefaultValue(
             name: "In1",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.STRING)));
+            type: PortType(PortType.STRING)));
 
         properties.add(Property.withDefaultValue(
             name: "In2",
             index: 2,
             isInput: true,
-            type: const PortType(PortType.STRING)));
+            type: PortType(PortType.STRING)));
 
         properties.add(Property.withDefaultValue(
             name: "In3",
             index: 3,
             isInput: true,
-            type: const PortType(PortType.STRING)));
+            type: PortType(PortType.STRING)));
 
         properties.add(Property.withDefaultValue(
             name: "In4",
             index: 4,
             isInput: true,
-            type: const PortType(PortType.STRING)));
+            type: PortType(PortType.STRING)));
         break;
 
       case ComponentType.BOOLEAN_POINT:
@@ -115,7 +115,7 @@ class PointComponent extends Component {
             name: "Input",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
+            type: PortType(PortType.BOOLEAN)));
         break;
 
       case ComponentType.NUMERIC_POINT:
@@ -123,7 +123,7 @@ class PointComponent extends Component {
             name: "Input",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
+            type: PortType(PortType.NUMERIC)));
         break;
 
       case ComponentType.STRING_POINT:
@@ -131,7 +131,7 @@ class PointComponent extends Component {
             name: "Input",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.STRING)));
+            type: PortType(PortType.STRING)));
         break;
     }
   }
