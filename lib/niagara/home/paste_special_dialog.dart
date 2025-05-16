@@ -20,11 +20,11 @@ class _PasteSpecialDialogState extends State<PasteSpecialDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Row(
+      title: const Row(
         children: [
-          const Icon(Icons.copy, size: 20),
-          const SizedBox(width: 8),
-          const Text('Paste Special'),
+          Icon(Icons.copy, size: 20),
+          SizedBox(width: 8),
+          Text('Paste Special'),
         ],
       ),
       content: Column(

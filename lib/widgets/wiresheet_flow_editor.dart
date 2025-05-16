@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/flowsheet.dart';
+import 'package:grms_designer/providers/flowsheet_provider.dart';
 
 import '../niagara/home/command.dart';
 import '../niagara/home/handlers.dart';
@@ -45,7 +46,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   Offset? _selectionBoxStart;
   Offset? _selectionBoxEnd;
   bool _isDraggingSelectionBox = false;
-
+  bool isPanelExpanded = false;
   SlotDragInfo? _currentDraggedPort;
   Offset? _tempLineEndPoint;
   Offset? _dragStartPosition;
@@ -193,6 +194,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   void _handleComponentResize(String componentId, double newWidth) {
     _flowHandlers.handleComponentResize(componentId, newWidth);
+    final comp = _flowManager.findComponentById(componentId);
+    ref.read(flowsheetsProvider.notifier).updateFlowsheetComponent(
+          widget.flowsheet.id,
+          componentId,
+          comp!,
+        );
+    _updateCanvasSize();
   }
 
   void _addNewComponent(ComponentType type, {Offset? clickPosition}) {
@@ -253,7 +261,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       _componentWidths[newComponent.id] = 160.0;
       _componentPositions[newComponent.id] = newPosition;
       _componentKeys[newComponent.id] = newKey;
-
+      ref.read(flowsheetsProvider.notifier).addFlowsheetComponent(
+            widget.flowsheet.id,
+            newComponent,
+          );
       _updateCanvasSize();
     });
   }
@@ -261,6 +272,12 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   void _handleValueChanged(
       String componentId, int slotIndex, dynamic newValue) {
     _flowHandlers.handleValueChanged(componentId, slotIndex, newValue);
+    final comp = _flowManager.findComponentById(componentId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(flowsheetsProvider.notifier)
+          .updateFlowsheetComponent(widget.flowsheet.id, componentId, comp!);
+    });
   }
 
   Offset? getPosition(Offset globalPosition) {
@@ -818,6 +835,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                               }
 
                                               _dragStartPosition = null;
+
+                                              WidgetsBinding.instance
+                                                  .addPostFrameCallback((_) {
+                                                ref
+                                                    .read(flowsheetsProvider
+                                                        .notifier)
+                                                    .updateFlowsheetComponent(
+                                                        widget.flowsheet.id,
+                                                        component.id,
+                                                        component);
+                                              });
                                               _updateCanvasSize();
                                             });
                                           }

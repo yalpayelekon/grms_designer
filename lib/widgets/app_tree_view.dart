@@ -499,13 +499,13 @@ class AppTreeView extends ConsumerWidget {
           children: [
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.AND_GATE))),
+                    const ComponentType(ComponentType.AND_GATE))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.OR_GATE))),
+                    const ComponentType(ComponentType.OR_GATE))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.IS_GREATER_THAN))),
+                    const ComponentType(ComponentType.IS_GREATER_THAN))),
           ],
         ),
 
@@ -521,28 +521,28 @@ class AppTreeView extends ConsumerWidget {
           children: [
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.ADD))),
+                    const ComponentType(ComponentType.ADD))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.SUBTRACT))),
+                    const ComponentType(ComponentType.SUBTRACT))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.MULTIPLY))),
+                    const ComponentType(ComponentType.MULTIPLY))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.DIVIDE))),
+                    const ComponentType(ComponentType.DIVIDE))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.MAX))),
+                    const ComponentType(ComponentType.MAX))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.MIN))),
+                    const ComponentType(ComponentType.MIN))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.POWER))),
+                    const ComponentType(ComponentType.POWER))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.ABS))),
+                    const ComponentType(ComponentType.ABS))),
           ],
         ),
 
@@ -557,9 +557,11 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggableComponentItem(ComponentType("Button"))),
+                content: _buildDraggableComponentItem(
+                    const ComponentType("Button"))),
             TreeNode(
-                content: _buildDraggableComponentItem(ComponentType("Text"))),
+                content:
+                    _buildDraggableComponentItem(const ComponentType("Text"))),
           ],
         ),
 
@@ -574,9 +576,11 @@ class AppTreeView extends ConsumerWidget {
           ),
           children: [
             TreeNode(
-                content: _buildDraggableComponentItem(ComponentType("Ramp"))),
+                content:
+                    _buildDraggableComponentItem(const ComponentType("Ramp"))),
             TreeNode(
-                content: _buildDraggableComponentItem(ComponentType("Toggle"))),
+                content: _buildDraggableComponentItem(
+                    const ComponentType("Toggle"))),
           ],
         ),
 
@@ -592,19 +596,19 @@ class AppTreeView extends ConsumerWidget {
           children: [
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.BOOLEAN_POINT))),
+                    const ComponentType(ComponentType.BOOLEAN_POINT))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.BOOLEAN_WRITABLE))),
+                    const ComponentType(ComponentType.BOOLEAN_WRITABLE))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.STRING_POINT))),
+                    const ComponentType(ComponentType.STRING_POINT))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.STRING_WRITABLE))),
+                    const ComponentType(ComponentType.STRING_WRITABLE))),
             TreeNode(
                 content: _buildDraggableComponentItem(
-                    ComponentType(ComponentType.NUMERIC_POINT))),
+                    const ComponentType(ComponentType.NUMERIC_POINT))),
             TreeNode(
                 content: _buildDraggableComponentItem(
                     const ComponentType(ComponentType.NUMERIC_WRITABLE))),
