@@ -6,6 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/flowsheet.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 
+import '../models/helvar_models/device_action.dart';
+import '../models/helvar_models/emergency_device.dart';
+import '../models/helvar_models/helvar_device.dart';
+import '../models/helvar_models/input_device.dart';
+import '../models/helvar_models/output_device.dart';
 import '../niagara/home/command.dart';
 import '../niagara/home/handlers.dart';
 import '../niagara/home/paste_special_dialog.dart';
@@ -20,7 +25,10 @@ import '../niagara/home/selection_box_painter.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
+import '../niagara/models/helvar_device_component.dart';
 import '../niagara/models/point_components.dart';
+import '../niagara/models/port.dart';
+import '../niagara/models/port_type.dart';
 import '../niagara/models/ramp_component.dart';
 import '../niagara/models/rectangle.dart';
 
@@ -668,13 +676,19 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         }
                       }
                     },
-                    child: DragTarget<ComponentType>(
+                    child: DragTarget<Object>(
                       onAcceptWithDetails:
-                          (DragTargetDetails<ComponentType> details) {
+                          (DragTargetDetails<dynamic> details) {
                         Offset? canvasPosition = getPosition(details.offset);
                         if (canvasPosition != null) {
-                          _addNewComponent(details.data,
-                              clickPosition: canvasPosition);
+                          if (details.data is ComponentType) {
+                            _addNewComponent(details.data,
+                                clickPosition: canvasPosition);
+                          } else if (details.data is Map<String, dynamic>) {
+                            Map<String, dynamic> deviceData = details.data;
+                            _addNewDeviceComponent(deviceData,
+                                clickPosition: canvasPosition);
+                          }
                         }
                       },
                       builder: (context, candidateData, rejectedData) {
@@ -1236,5 +1250,102 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   void _handleMoveComponentRight(Component component) {
     _flowHandlers.handleMoveComponentRight(component);
+  }
+
+  void _addNewDeviceComponent(Map<String, dynamic> deviceData,
+      {Offset? clickPosition}) {
+    // Extract device info
+    HelvarDevice? device = deviceData["device"] as HelvarDevice?;
+
+    if (device == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid device data')),
+      );
+      return;
+    }
+
+    String deviceName = device.description.isEmpty
+        ? "Device_${device.deviceId}"
+        : device.description;
+
+    int counter = 1;
+    String componentId = deviceName;
+    while (_flowManager.components.any((comp) => comp.id == componentId)) {
+      counter++;
+      componentId = "${deviceName}_$counter";
+    }
+
+    Component newComponent = _createComponentFromDevice(componentId, device);
+
+    Offset newPosition;
+    if (clickPosition != null) {
+      newPosition = clickPosition;
+    } else {
+      final RenderBox? viewerChildRenderBox =
+          _interactiveViewerChildKey.currentContext?.findRenderObject()
+              as RenderBox?;
+
+      newPosition = Offset(_canvasSize.width / 2, _canvasSize.height / 2);
+
+      if (viewerChildRenderBox != null) {
+        final viewportSize = viewerChildRenderBox.size;
+        final viewportCenter =
+            Offset(viewportSize.width / 2, viewportSize.height / 2);
+        final matrix = _transformationController.value;
+        final inverseMatrix = Matrix4.inverted(matrix);
+        final transformedCenter =
+            MatrixUtils.transformPoint(inverseMatrix, viewportCenter);
+
+        newPosition = transformedCenter;
+      }
+    }
+
+    final newKey = GlobalKey();
+
+    Map<String, dynamic> state = {
+      'position': newPosition,
+      'key': newKey,
+      'positions': _componentPositions,
+      'keys': _componentKeys,
+    };
+
+    setState(() {
+      final command = AddComponentCommand(_flowManager, newComponent, state);
+      _commandHistory.execute(command);
+      _componentWidths[newComponent.id] = 180.0;
+      _componentPositions[newComponent.id] = newPosition;
+      _componentKeys[newComponent.id] = newKey;
+      ref.read(flowsheetsProvider.notifier).addFlowsheetComponent(
+            widget.flowsheet.id,
+            newComponent,
+          );
+      _updateCanvasSize();
+    });
+  }
+
+  Component _createComponentFromDevice(String id, HelvarDevice device) {
+    return HelvarDeviceComponent(
+      id: id,
+      deviceId: device.deviceId,
+      deviceAddress: device.address,
+      deviceType: device.helvarType,
+      description: device.description.isEmpty
+          ? "Device_${device.deviceId}"
+          : device.description,
+      type: ComponentType(getHelvarComponentType(device.helvarType)),
+    );
+  }
+
+  String getHelvarComponentType(String helvarType) {
+    switch (helvarType) {
+      case 'output':
+        return ComponentType.HELVAR_OUTPUT;
+      case 'input':
+        return ComponentType.HELVAR_INPUT;
+      case 'emergency':
+        return ComponentType.HELVAR_EMERGENCY;
+      default:
+        return ComponentType.HELVAR_DEVICE;
+    }
   }
 }

@@ -2,7 +2,7 @@
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/utils/logger.dart';
 
-import '../emergency_device.dart';
+import 'emergency_device.dart';
 import 'device_action.dart';
 import 'input_device.dart';
 import 'output_device.dart';

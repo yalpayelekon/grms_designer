@@ -6,7 +6,7 @@ import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/input_device.dart';
 import '../models/helvar_models/output_device.dart';
-import '../models/emergency_device.dart';
+import '../models/helvar_models/emergency_device.dart';
 import '../protocol/device_types.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';

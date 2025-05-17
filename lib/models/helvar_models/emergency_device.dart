@@ -1,6 +1,6 @@
-import '../utils/logger.dart';
-import 'helvar_models/device_action.dart';
-import 'helvar_models/helvar_device.dart';
+import '../../utils/logger.dart';
+import 'device_action.dart';
+import 'helvar_device.dart';
 
 class HelvarDriverEmergencyDevice extends HelvarDevice {
   String missing;

@@ -1,6 +1,9 @@
+import 'package:grms_designer/models/helvar_models/helvar_device.dart';
+
 import '../models/component.dart';
 import '../models/connection.dart';
 import '../models/component_type.dart';
+import '../models/helvar_device_component.dart';
 import '../models/logic_components.dart';
 import '../models/math_components.dart';
 import '../models/point_components.dart';
@@ -347,6 +350,28 @@ class FlowManager {
       return MathComponent(id: id, type: type);
     } else if (type.isPoint) {
       return PointComponent(id: id, type: type);
+    } else if (typeStr == ComponentType.HELVAR_DEVICE ||
+        typeStr == ComponentType.HELVAR_INPUT ||
+        typeStr == ComponentType.HELVAR_OUTPUT ||
+        typeStr == ComponentType.HELVAR_EMERGENCY) {
+      // For device components when creating from type (not from an actual device)
+      // we'll use a default configuration which can be edited later
+      String deviceType = "unknown";
+      if (typeStr == ComponentType.HELVAR_INPUT)
+        deviceType = "input";
+      else if (typeStr == ComponentType.HELVAR_OUTPUT)
+        deviceType = "output";
+      else if (typeStr == ComponentType.HELVAR_EMERGENCY)
+        deviceType = "emergency";
+
+      return HelvarDeviceComponent(
+        id: id,
+        deviceId: 0, // Default ID
+        deviceAddress: "", // Empty address
+        deviceType: deviceType,
+        description: id,
+        type: type,
+      );
     }
 
     return PointComponent(
