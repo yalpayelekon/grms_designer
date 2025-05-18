@@ -1,5 +1,3 @@
-import 'package:grms_designer/models/helvar_models/helvar_device.dart';
-
 import '../models/component.dart';
 import '../models/connection.dart';
 import '../models/component_type.dart';
@@ -357,12 +355,13 @@ class FlowManager {
       // For device components when creating from type (not from an actual device)
       // we'll use a default configuration which can be edited later
       String deviceType = "unknown";
-      if (typeStr == ComponentType.HELVAR_INPUT)
+      if (typeStr == ComponentType.HELVAR_INPUT) {
         deviceType = "input";
-      else if (typeStr == ComponentType.HELVAR_OUTPUT)
+      } else if (typeStr == ComponentType.HELVAR_OUTPUT) {
         deviceType = "output";
-      else if (typeStr == ComponentType.HELVAR_EMERGENCY)
+      } else if (typeStr == ComponentType.HELVAR_EMERGENCY) {
         deviceType = "emergency";
+      }
 
       return HelvarDeviceComponent(
         id: id,

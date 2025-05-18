@@ -12,7 +12,6 @@ import '../providers/flowsheet_provider.dart';
 import '../screens/actions.dart';
 import '../screens/dialogs/device_context_menu.dart';
 import '../screens/dialogs/flowsheet_actions.dart';
-import '../screens/dialogs/wiresheet_actions.dart';
 import '../utils/general_ui.dart';
 
 class AppTreeView extends ConsumerWidget {

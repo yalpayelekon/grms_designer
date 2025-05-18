@@ -12,6 +12,8 @@ class PersistenceHelper {
   final FlowManager flowManager;
   final Map<String, Offset> componentPositions;
   final Map<String, double> componentWidths;
+  final Function()
+      getMountedStatus; // Function to check if the widget is still mounted
 
   PersistenceHelper({
     required this.flowsheet,
@@ -19,104 +21,144 @@ class PersistenceHelper {
     required this.flowManager,
     required this.componentPositions,
     required this.componentWidths,
+    required this.getMountedStatus, // Add this parameter
   });
 
   Future<void> saveFullState() async {
-    final updatedFlowsheet = flowsheet.copy();
-    updatedFlowsheet.components = flowManager.components;
+    if (!getMountedStatus()) return;
 
-    final List<Connection> connections = [];
-    for (final component in flowManager.components) {
-      for (final entry in component.inputConnections.entries) {
-        connections.add(Connection(
-          fromComponentId: entry.value.componentId,
-          fromPortIndex: entry.value.portIndex,
-          toComponentId: component.id,
-          toPortIndex: entry.key,
-        ));
+    try {
+      final updatedFlowsheet = flowsheet.copy();
+      updatedFlowsheet.components = flowManager.components;
+
+      final List<Connection> connections = [];
+      for (final component in flowManager.components) {
+        for (final entry in component.inputConnections.entries) {
+          connections.add(Connection(
+            fromComponentId: entry.value.componentId,
+            fromPortIndex: entry.value.portIndex,
+            toComponentId: component.id,
+            toPortIndex: entry.key,
+          ));
+        }
       }
-    }
-    updatedFlowsheet.connections = connections;
+      updatedFlowsheet.connections = connections;
 
-    for (final entry in componentPositions.entries) {
-      updatedFlowsheet.updateComponentPosition(entry.key, entry.value);
-    }
+      for (final entry in componentPositions.entries) {
+        updatedFlowsheet.updateComponentPosition(entry.key, entry.value);
+      }
 
-    for (final entry in componentWidths.entries) {
-      updatedFlowsheet.updateComponentWidth(entry.key, entry.value);
-    }
+      for (final entry in componentWidths.entries) {
+        updatedFlowsheet.updateComponentWidth(entry.key, entry.value);
+      }
 
-    await ref.read(flowsheetsProvider.notifier).updateFlowsheet(
-          updatedFlowsheet.id,
-          updatedFlowsheet,
-        );
+      if (getMountedStatus()) {
+        final storageService = ref.read(flowsheetStorageServiceProvider);
+        await storageService.saveFlowsheet(updatedFlowsheet);
+      }
+    } catch (e) {
+      print('Error saving flowsheet state: $e');
+    }
+  }
+
+  Future<void> _safeOperation(Future<void> Function() operation) async {
+    if (!getMountedStatus()) return;
+    try {
+      await operation();
+    } catch (e) {
+      print('Error during persistence operation: $e');
+    }
   }
 
   Future<void> saveComponentPosition(
       String componentId, Offset position) async {
-    await ref.read(flowsheetsProvider.notifier).updateComponentPosition(
-          flowsheet.id,
-          componentId,
-          position,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).updateComponentPosition(
+            flowsheet.id,
+            componentId,
+            position,
+          );
+    });
   }
 
   Future<void> saveComponentWidth(String componentId, double width) async {
-    await ref.read(flowsheetsProvider.notifier).updateComponentWidth(
-          flowsheet.id,
-          componentId,
-          width,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).updateComponentWidth(
+            flowsheet.id,
+            componentId,
+            width,
+          );
+    });
   }
 
   Future<void> saveAddComponent(Component component) async {
-    await ref.read(flowsheetsProvider.notifier).addFlowsheetComponent(
-          flowsheet.id,
-          component,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).addFlowsheetComponent(
+            flowsheet.id,
+            component,
+          );
+    });
   }
 
   Future<void> saveUpdateComponent(
       String componentId, Component component) async {
-    await ref.read(flowsheetsProvider.notifier).updateFlowsheetComponent(
-          flowsheet.id,
-          componentId,
-          component,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).updateFlowsheetComponent(
+            flowsheet.id,
+            componentId,
+            component,
+          );
+    });
   }
 
   Future<void> saveRemoveComponent(String componentId) async {
-    await ref.read(flowsheetsProvider.notifier).removeFlowsheetComponent(
-          flowsheet.id,
-          componentId,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).removeFlowsheetComponent(
+            flowsheet.id,
+            componentId,
+          );
+    });
   }
 
   Future<void> saveAddConnection(Connection connection) async {
-    await ref.read(flowsheetsProvider.notifier).addConnection(
-          flowsheet.id,
-          connection,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).addConnection(
+            flowsheet.id,
+            connection,
+          );
+    });
   }
 
   Future<void> saveRemoveConnection(String fromComponentId, int fromPortIndex,
       String toComponentId, int toPortIndex) async {
-    await ref.read(flowsheetsProvider.notifier).removeConnection(
-          flowsheet.id,
-          fromComponentId,
-          fromPortIndex,
-          toComponentId,
-          toPortIndex,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).removeConnection(
+            flowsheet.id,
+            fromComponentId,
+            fromPortIndex,
+            toComponentId,
+            toPortIndex,
+          );
+    });
   }
 
   Future<void> savePortValue(
       String componentId, int slotIndex, dynamic value) async {
-    await ref.read(flowsheetsProvider.notifier).updatePortValue(
-          flowsheet.id,
-          componentId,
-          slotIndex,
-          value,
-        );
+    await _safeOperation(() async {
+      if (!getMountedStatus()) return;
+      await ref.read(flowsheetsProvider.notifier).updatePortValue(
+            flowsheet.id,
+            componentId,
+            slotIndex,
+            value,
+          );
+    });
   }
 }

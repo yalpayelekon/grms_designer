@@ -104,6 +104,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       flowManager: _flowManager,
       componentPositions: _componentPositions,
       componentWidths: _componentWidths,
+      getMountedStatus: () => mounted,
     );
 
     _initializeComponents();
