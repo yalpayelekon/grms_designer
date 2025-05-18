@@ -1013,20 +1013,52 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         Offset.zero & overlay.size,
       ),
       items: [
+        // Direct paste option
         PopupMenuItem(
-          value: 'add-component',
+          value: 'paste',
+          enabled: _clipboardComponents.isNotEmpty,
           child: Row(
             children: [
-              Icon(Icons.paste_outlined,
+              Icon(Icons.content_paste,
                   size: 18,
                   color: _clipboardComponents.isNotEmpty ? null : Colors.grey),
               const SizedBox(width: 8),
               Text(
-                'Paste Special',
+                'Paste',
                 style: TextStyle(
                     color:
                         _clipboardComponents.isNotEmpty ? null : Colors.grey),
               ),
+            ],
+          ),
+        ),
+        // Paste special option (multiple copies)
+        PopupMenuItem(
+          value: 'paste-special',
+          enabled: _clipboardComponents.isNotEmpty,
+          child: Row(
+            children: [
+              Icon(Icons.copy_all,
+                  size: 18,
+                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                'Paste Special...',
+                style: TextStyle(
+                    color:
+                        _clipboardComponents.isNotEmpty ? null : Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        // Add new component option
+        const PopupMenuItem(
+          value: 'add-component',
+          child: Row(
+            children: [
+              Icon(Icons.add_box, size: 18),
+              SizedBox(width: 8),
+              Text('Add New Component...'),
             ],
           ),
         ),
@@ -1067,14 +1099,70 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   void _showPasteSpecialDialog(Offset pastePosition) {
     if (_clipboardComponents.isEmpty) return;
 
+    TextEditingController copiesController = TextEditingController(text: '1');
+    bool keepConnections = true;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return PasteSpecialDialog(
-          onPasteConfirmed: (numberOfCopies, keepAllLinks, keepAllRelations) {
-            _flowHandlers.handlePasteSpecialComponent(
-                pastePosition, numberOfCopies, keepAllLinks);
-          },
+        return AlertDialog(
+          title: const Text('Paste Special'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Text('Number of copies:'),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 50,
+                    child: TextField(
+                      controller: copiesController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              StatefulBuilder(
+                builder: (context, setState) {
+                  return CheckboxListTile(
+                    title: const Text('Keep connections between copies'),
+                    value: keepConnections,
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (value) {
+                      setState(() {
+                        keepConnections = value ?? true;
+                      });
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                int copies = int.tryParse(copiesController.text) ?? 1;
+                copies = copies.clamp(1, 20); // Limit to reasonable number
+
+                _flowHandlers.handlePasteSpecialComponent(
+                    pastePosition, copies, keepConnections);
+              },
+              child: const Text('Paste'),
+            ),
+          ],
         );
       },
     );
