@@ -230,6 +230,40 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
       await _storageService.saveFlowsheet(updatedState[index]);
     }
   }
+
+  Future<void> updateFlowsheet(
+      String flowsheetId, Flowsheet updatedFlowsheet) async {
+    final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
+
+    if (index >= 0) {
+      final updatedState = List<Flowsheet>.from(state);
+      updatedState[index] = updatedFlowsheet;
+      state = updatedState;
+      await _storageService.saveFlowsheet(updatedFlowsheet);
+    }
+  }
+
+  Future<void> saveFlowsheet(String flowsheetId) async {
+    final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
+
+    if (index >= 0) {
+      await _storageService.saveFlowsheet(state[index]);
+    }
+  }
+
+  Future<void> saveActiveFlowsheet() async {
+    if (_activeFlowsheetId != null) {
+      final flowsheet = activeFlowsheet;
+      if (flowsheet != null) {
+        await _storageService.saveFlowsheet(flowsheet);
+      }
+    }
+  }
+
+  static Future<void> saveFlowsheetFromProvider(
+      WidgetRef ref, String flowsheetId) async {
+    await ref.read(flowsheetsProvider.notifier).saveFlowsheet(flowsheetId);
+  }
 }
 
 final flowsheetStorageServiceProvider =

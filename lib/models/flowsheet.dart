@@ -21,6 +21,8 @@ class Flowsheet {
   List<Connection> connections;
   final Map<String, Offset> componentPositions = {};
   final Map<String, double> componentWidths = {};
+  final Map<String, Map<String, dynamic>> componentProperties = {};
+  final Map<String, dynamic> canvasProperties = {};
 
   Flowsheet({
     required this.id,

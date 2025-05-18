@@ -8,8 +8,10 @@ import '../models/helvar_models/workgroup.dart';
 import '../niagara/home/utils.dart';
 import '../niagara/models/component_type.dart';
 import '../models/flowsheet.dart';
+import '../providers/flowsheet_provider.dart';
 import '../screens/actions.dart';
 import '../screens/dialogs/device_context_menu.dart';
+import '../screens/dialogs/flowsheet_actions.dart';
 import '../screens/dialogs/wiresheet_actions.dart';
 import '../utils/general_ui.dart';
 
@@ -174,7 +176,7 @@ class AppTreeView extends ConsumerWidget {
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                "Wiresheets",
+                                "Flowsheets", // Updated to use "Flowsheets" for consistency
                                 style: TextStyle(
                                   fontWeight: openWiresheet &&
                                           selectedWiresheetId == null
@@ -190,8 +192,9 @@ class AppTreeView extends ConsumerWidget {
                           ),
                           IconButton(
                             icon: const Icon(Icons.add, size: 18),
-                            tooltip: 'Create New Wiresheet',
-                            onPressed: () => createNewWiresheet(context, ref),
+                            tooltip: 'Create New Flowsheet',
+                            onPressed: () => createNewFlowsheet(context,
+                                ref), // Updated to use flowsheet function
                           ),
                         ],
                       ),
@@ -199,6 +202,15 @@ class AppTreeView extends ConsumerWidget {
                         ...wiresheets.map((wiresheet) => TreeNode(
                               content: GestureDetector(
                                 onDoubleTap: () {
+                                  if (ref
+                                          .read(flowsheetsProvider.notifier)
+                                          .activeFlowsheetId !=
+                                      null) {
+                                    ref
+                                        .read(flowsheetsProvider.notifier)
+                                        .saveActiveFlowsheet();
+                                  }
+
                                   setActiveNode('wiresheet',
                                       additionalData: wiresheet.id);
                                 },
@@ -224,10 +236,10 @@ class AppTreeView extends ConsumerWidget {
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete, size: 18),
-                                      tooltip: 'Delete Wiresheet',
+                                      tooltip: 'Delete Flowsheet',
                                       onPressed: () async {
                                         final result =
-                                            await confirmDeleteWiresheet(
+                                            await confirmDeleteFlowsheet(
                                                 context,
                                                 wiresheet.id,
                                                 wiresheet.name,
@@ -243,7 +255,7 @@ class AppTreeView extends ConsumerWidget {
                                               .showSnackBar(
                                             const SnackBar(
                                                 content:
-                                                    Text('Wiresheet deleted')),
+                                                    Text('Flowsheet deleted')),
                                           );
                                         }
                                       },
