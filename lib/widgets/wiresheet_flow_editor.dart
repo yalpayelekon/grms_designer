@@ -210,21 +210,31 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _initializeComponents() {
-    final numericWritable = PointComponent(
-      id: 'Numeric Writable',
-      type: const ComponentType(ComponentType.NUMERIC_WRITABLE),
-    );
-    _flowManager.addComponent(numericWritable);
-    _componentPositions[numericWritable.id] = const Offset(500, 250);
-    _componentKeys[numericWritable.id] = GlobalKey();
+    for (var component in widget.flowsheet.components) {
+      _flowManager.addComponent(component);
 
-    final numericPoint = PointComponent(
-      id: 'Numeric Point',
-      type: const ComponentType(ComponentType.NUMERIC_POINT),
-    );
-    _flowManager.addComponent(numericPoint);
-    _componentPositions[numericPoint.id] = const Offset(900, 250);
-    _componentKeys[numericPoint.id] = GlobalKey();
+      if (widget.flowsheet.componentPositions.containsKey(component.id)) {
+        _componentPositions[component.id] =
+            widget.flowsheet.componentPositions[component.id]!;
+      }
+
+      if (widget.flowsheet.componentWidths.containsKey(component.id)) {
+        _componentWidths[component.id] =
+            widget.flowsheet.componentWidths[component.id]!;
+      } else {
+        _componentWidths[component.id] = 160.0; // Default width
+      }
+
+      _componentKeys[component.id] = GlobalKey();
+    }
+
+    for (var connection in widget.flowsheet.connections) {
+      _flowManager.createConnection(
+          connection.fromComponentId,
+          connection.fromPortIndex,
+          connection.toComponentId,
+          connection.toPortIndex);
+    }
 
     _flowManager.recalculateAll();
     _updateCanvasSize();
