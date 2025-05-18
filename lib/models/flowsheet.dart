@@ -9,6 +9,7 @@ import '../niagara/models/point_components.dart';
 import '../niagara/models/port.dart';
 import '../niagara/models/rectangle.dart';
 import '../niagara/models/ramp_component.dart';
+import '../utils/helpers.dart';
 
 class Flowsheet {
   String id;
@@ -497,15 +498,65 @@ class Flowsheet {
   }
 
   Flowsheet copy() {
-    return Flowsheet(
+    Map<String, String> oldToNewIdMap = {};
+    List<Component> componentCopies = [];
+
+    for (var component in components) {
+      final String oldId = component.id;
+      final String newId = "${component.id}_copy";
+      oldToNewIdMap[oldId] = newId;
+
+      Component componentCopy = deepCopyComponent(component, newId);
+      componentCopies.add(componentCopy);
+    }
+
+    List<Connection> connectionCopies = [];
+    for (var connection in connections) {
+      if (oldToNewIdMap.containsKey(connection.fromComponentId) &&
+          oldToNewIdMap.containsKey(connection.toComponentId)) {
+        connectionCopies.add(Connection(
+          fromComponentId: oldToNewIdMap[connection.fromComponentId]!,
+          fromPortIndex: connection.fromPortIndex,
+          toComponentId: oldToNewIdMap[connection.toComponentId]!,
+          toPortIndex: connection.toPortIndex,
+        ));
+      }
+    }
+
+    Map<String, Offset> positionCopies = {};
+    Map<String, double> widthCopies = {};
+
+    componentPositions.forEach((oldId, position) {
+      if (oldToNewIdMap.containsKey(oldId)) {
+        positionCopies[oldToNewIdMap[oldId]!] = position;
+      }
+    });
+
+    componentWidths.forEach((oldId, width) {
+      if (oldToNewIdMap.containsKey(oldId)) {
+        widthCopies[oldToNewIdMap[oldId]!] = width;
+      }
+    });
+
+    Flowsheet flowsheetCopy = Flowsheet(
       id: id,
       name: name,
       createdAt: createdAt,
       modifiedAt: modifiedAt,
-      components: List.from(components),
-      connections: List.from(connections),
+      components: componentCopies,
+      connections: connectionCopies,
       canvasSize: canvasSize,
       canvasOffset: canvasOffset,
     );
+
+    positionCopies.forEach((id, position) {
+      flowsheetCopy.componentPositions[id] = position;
+    });
+
+    widthCopies.forEach((id, width) {
+      flowsheetCopy.componentWidths[id] = width;
+    });
+
+    return flowsheetCopy;
   }
 }

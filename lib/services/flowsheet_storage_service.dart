@@ -1,7 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 import 'package:uuid/uuid.dart';
 import '../models/flowsheet.dart';
+import '../niagara/models/component.dart';
+import '../niagara/models/connection.dart';
+import '../utils/helpers.dart';
 import '../utils/logger.dart';
 import 'app_directory_service.dart';
 
@@ -149,14 +153,65 @@ class FlowsheetStorageService {
 
     if (original != null) {
       final newId = const Uuid().v4();
+
+      final Map<String, String> oldToNewIdMap = {};
+      final List<Component> newComponents = [];
+
+      for (var originalComponent in original.components) {
+        final String oldId = originalComponent.id;
+        final String newComponentId = "${originalComponent.id}_copy";
+        oldToNewIdMap[oldId] = newComponentId;
+
+        Component newComponent =
+            deepCopyComponent(originalComponent, newComponentId);
+        newComponents.add(newComponent);
+      }
+
+      final List<Connection> newConnections = [];
+      for (var originalConnection in original.connections) {
+        if (oldToNewIdMap.containsKey(originalConnection.fromComponentId) &&
+            oldToNewIdMap.containsKey(originalConnection.toComponentId)) {
+          newConnections.add(Connection(
+            fromComponentId: oldToNewIdMap[originalConnection.fromComponentId]!,
+            fromPortIndex: originalConnection.fromPortIndex,
+            toComponentId: oldToNewIdMap[originalConnection.toComponentId]!,
+            toPortIndex: originalConnection.toPortIndex,
+          ));
+        }
+      }
+
+      final Map<String, Offset> newComponentPositions = {};
+      final Map<String, double> newComponentWidths = {};
+
+      original.componentPositions.forEach((oldId, position) {
+        if (oldToNewIdMap.containsKey(oldId)) {
+          newComponentPositions[oldToNewIdMap[oldId]!] = position;
+        }
+      });
+
+      original.componentWidths.forEach((oldId, width) {
+        if (oldToNewIdMap.containsKey(oldId)) {
+          newComponentWidths[oldToNewIdMap[oldId]!] = width;
+        }
+      });
+
       final duplicate = Flowsheet(
         id: newId,
         name: newName,
-        components: [...original.components],
-        connections: [...original.connections],
+        components: newComponents,
+        connections: newConnections,
         canvasSize: original.canvasSize,
         canvasOffset: original.canvasOffset,
       );
+
+      // Add the new positions and widths
+      newComponentPositions.forEach((id, position) {
+        duplicate.updateComponentPosition(id, position);
+      });
+
+      newComponentWidths.forEach((id, width) {
+        duplicate.updateComponentWidth(id, width);
+      });
 
       await saveFlowsheet(duplicate);
       return duplicate;
