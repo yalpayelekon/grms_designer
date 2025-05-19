@@ -1,7 +1,6 @@
 class HelvarNetCommands {
   static int version = 2;
 
-  // Query commands
   static String queryDeviceType(String address) {
     return '>V:$version,C:104,@$address#';
   }

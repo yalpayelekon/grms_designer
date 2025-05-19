@@ -54,8 +54,6 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
     }
   }
 
-  // Add these methods to the FlowsheetsNotifier class
-
   Future<void> updateComponentPosition(
       String flowsheetId, String componentId, Offset position) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);

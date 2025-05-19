@@ -1,6 +1,5 @@
 import 'port_type.dart';
 
-// Base Slot interface
 abstract class Slot {
   final String name;
   final int index;
@@ -11,7 +10,6 @@ abstract class Slot {
   });
 }
 
-// Property slot (formerly Port)
 class Property extends Slot {
   final bool isInput;
   final PortType type;
@@ -81,13 +79,11 @@ class ActionSlot extends Slot {
   });
 
   dynamic execute({dynamic parameter}) {
-    // Base implementation - should be overridden
     this.parameter = parameter;
     return returnValue;
   }
 }
 
-// Topic slot
 class Topic extends Slot {
   final PortType eventType;
   dynamic lastEvent;

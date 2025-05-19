@@ -23,7 +23,6 @@ class FlowScreen extends ConsumerWidget {
       orElse: () => throw Exception('Flowsheet not found'),
     );
 
-    // Set active flowsheet in provider
     ref.read(flowsheetsProvider.notifier).setActiveFlowsheet(flowsheetId);
 
     return Scaffold(

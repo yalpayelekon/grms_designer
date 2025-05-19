@@ -1013,7 +1013,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         Offset.zero & overlay.size,
       ),
       items: [
-        // Direct paste option
         PopupMenuItem(
           value: 'paste',
           enabled: _clipboardComponents.isNotEmpty,
@@ -1032,7 +1031,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ],
           ),
         ),
-        // Paste special option (multiple copies)
         PopupMenuItem(
           value: 'paste-special',
           enabled: _clipboardComponents.isNotEmpty,
@@ -1051,7 +1049,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ],
           ),
         ),
-        // Add new component option
         const PopupMenuItem(
           value: 'add-component',
           child: Row(

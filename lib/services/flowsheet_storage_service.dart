@@ -86,7 +86,6 @@ class FlowsheetStorageService {
 
   Future<List<Flowsheet>> listFlowsheets() async {
     try {
-      // Ensure directory exists
       await _createFlowsheetsDirectory();
 
       final entities = await _directoryService.listFiles(flowsheetsDir);
@@ -104,7 +103,6 @@ class FlowsheetStorageService {
         }
       }
 
-      // Sort by modified date, newest first
       flowsheets.sort((a, b) => b.modifiedAt.compareTo(a.modifiedAt));
 
       return flowsheets;
@@ -204,7 +202,6 @@ class FlowsheetStorageService {
         canvasOffset: original.canvasOffset,
       );
 
-      // Add the new positions and widths
       newComponentPositions.forEach((id, position) {
         duplicate.updateComponentPosition(id, position);
       });
@@ -229,7 +226,6 @@ class FlowsheetStorageService {
       final jsonString = jsonEncode(flowsheet.toJson());
       await file.writeAsString(jsonString);
 
-      // Copy to exports directory
       final fileName = filePath.split(Platform.pathSeparator).last;
       await file.copy(await _directoryService.getFilePath(
           AppDirectoryService.exportsDir, fileName));
@@ -250,7 +246,6 @@ class FlowsheetStorageService {
       final json = jsonDecode(jsonString);
       final newId = const Uuid().v4();
 
-      // Create a new Flowsheet but preserve components, connections
       final flowsheet = Flowsheet.fromJson(json);
       final importedFlowsheet = Flowsheet(
         id: newId,

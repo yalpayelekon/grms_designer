@@ -68,7 +68,6 @@ Future<bool> confirmDeleteFlowsheet(BuildContext context, String flowsheetId,
   );
 
   if (result == true) {
-    // Delete the flowsheet using the provider
     final success = await ref
         .read(flowsheetsProvider.notifier)
         .deleteFlowsheet(flowsheetId);

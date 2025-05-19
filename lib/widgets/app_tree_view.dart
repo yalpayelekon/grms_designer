@@ -498,7 +498,6 @@ class AppTreeView extends ConsumerWidget {
         ),
       ),
       children: [
-// Logic section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -519,8 +518,6 @@ class AppTreeView extends ConsumerWidget {
                     const ComponentType(ComponentType.IS_GREATER_THAN))),
           ],
         ),
-
-        // Math section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -556,8 +553,6 @@ class AppTreeView extends ConsumerWidget {
                     const ComponentType(ComponentType.ABS))),
           ],
         ),
-
-        // UI section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -575,8 +570,6 @@ class AppTreeView extends ConsumerWidget {
                     _buildDraggableComponentItem(const ComponentType("Text"))),
           ],
         ),
-
-        // Util section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
@@ -594,8 +587,6 @@ class AppTreeView extends ConsumerWidget {
                     const ComponentType("Toggle"))),
           ],
         ),
-
-        // Points section
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),

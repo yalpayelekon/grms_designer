@@ -91,7 +91,7 @@ void showDeviceContextMenu(BuildContext context, HelvarDevice device) {
         showDeviceModifyProportionDialog(context, device);
         break;
       case DeviceAction.emergencyFunctionTest:
-        // Add implementation for emergency function test
+        // TODO: Add implementation for emergency function test
         break;
       case DeviceAction.emergencyDurationTest:
         // Add implementation for emergency duration test
