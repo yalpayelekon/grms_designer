@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
-
+import '../models/helvar_models/input_device.dart';
+import '../utils/device_icons.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
@@ -460,20 +461,8 @@ class AppTreeView extends ConsumerWidget {
                                   ),
                                   children: subnetDevices
                                       .map(
-                                        (device) => TreeNode(
-                                          content: GestureDetector(
-                                            onSecondaryTap: () =>
-                                                showDeviceContextMenu(
-                                                    context, device),
-                                            child: _buildDraggable(
-                                              device.description.isEmpty
-                                                  ? "Device_${device.deviceId}"
-                                                  : device.description,
-                                              device,
-                                              context,
-                                            ),
-                                          ),
-                                        ),
+                                        (device) => _buildDeviceTreeNode(
+                                            device, context),
                                       )
                                       .toList(),
                                 );
@@ -490,6 +479,72 @@ class AppTreeView extends ConsumerWidget {
           ]),
         ],
       ),
+    );
+  }
+
+  TreeNode _buildDeviceTreeNode(HelvarDevice device, BuildContext context) {
+    final deviceName = device.description.isEmpty
+        ? "Device_${device.deviceId}"
+        : device.description;
+
+    final List<TreeNode> deviceChildren = [];
+
+    if (device is HelvarDriverInputDevice &&
+        device.isButtonDevice &&
+        device.buttonPoints.isNotEmpty) {
+      deviceChildren.add(TreeNode(
+        content: const Row(
+          children: [
+            Icon(Icons.add_circle_outline, size: 18),
+            SizedBox(width: 4),
+            Text("Points"),
+          ],
+        ),
+        children: device.buttonPoints
+            .map((point) => TreeNode(
+                  content: Row(
+                    children: [
+                      Icon(
+                        point.function.contains('Status') ||
+                                point.name.contains('Missing')
+                            ? Icons.info_outline
+                            : point.function.contains('IR')
+                                ? Icons.settings_remote
+                                : Icons.touch_app,
+                        size: 16,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(point.name.split('_').last),
+                    ],
+                  ),
+                ))
+            .toList(),
+      ));
+    }
+
+    if (device.helvarType == 'input' || device.emergency) {
+      deviceChildren.add(TreeNode(
+        content: const Row(
+          children: [
+            Icon(Icons.warning_amber, size: 18),
+            SizedBox(width: 4),
+            Text("Alarm Source Info"),
+          ],
+        ),
+      ));
+    }
+
+    return TreeNode(
+      content: GestureDetector(
+        onSecondaryTap: () => showDeviceContextMenu(context, device),
+        child: _buildDraggable(
+          deviceName,
+          device,
+          context,
+        ),
+      ),
+      children: deviceChildren.isEmpty ? null : deviceChildren,
     );
   }
 

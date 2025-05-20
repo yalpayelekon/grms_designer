@@ -6,6 +6,7 @@ import '../../models/helvar_models/input_device.dart';
 import '../../models/helvar_models/output_device.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
+import '../../utils/device_icons.dart';
 import '../../utils/file_dialog_helper.dart';
 import '../../services/discovery_service.dart';
 import '../../utils/general_ui.dart';
@@ -196,40 +197,83 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                 title: Text('Subnet $subnet (${subnetDevices.length} devices)'),
                 initiallyExpanded: index == 0,
                 children: subnetDevices
-                    .map((device) => _buildDeviceCard(device))
+                    .map((device) => _buildDeviceExpansionTile(device))
                     .toList(),
               );
             },
           );
   }
 
-  Widget _buildDeviceCard(HelvarDevice device) {
-    IconData deviceIcon;
-    switch (device.helvarType) {
-      case 'input':
-        deviceIcon = device.isButtonDevice
-            ? Icons.touch_app
-            : (device.isMultisensor ? Icons.sensors : Icons.input);
-        break;
-      case 'emergency':
-        deviceIcon = Icons.emergency;
-        break;
-      case 'output':
-      default:
-        deviceIcon = Icons.light;
-        break;
+  Widget _buildDeviceExpansionTile(HelvarDevice device) {
+    final deviceName = device.description.isEmpty
+        ? 'Device ${device.deviceId}'
+        : device.description;
+
+    final List<Widget> subItems = [];
+
+    subItems.add(ListTile(
+      leading: const Icon(Icons.warning_amber, size: 20),
+      title: const Text('Alarm Source Info'),
+      contentPadding: const EdgeInsets.only(left: 56),
+      dense: true,
+      onTap: () => _showDeviceAlarmInfo(device),
+    ));
+
+    if (device is HelvarDriverInputDevice &&
+        device.isButtonDevice &&
+        device.buttonPoints.isNotEmpty) {
+      subItems.add(ExpansionTile(
+        title: const Text('Points'),
+        leading: const Icon(Icons.add_circle_outline),
+        childrenPadding: const EdgeInsets.only(left: 20),
+        tilePadding: const EdgeInsets.only(left: 40),
+        children: device.buttonPoints
+            .map((point) => ListTile(
+                  leading: Icon(
+                    point.function.contains('Status') ||
+                            point.name.contains('Missing')
+                        ? Icons.info_outline
+                        : point.function.contains('IR')
+                            ? Icons.settings_remote
+                            : Icons.touch_app,
+                    size: 20,
+                    color: Colors.green,
+                  ),
+                  title: Text(point.name),
+                  subtitle: Text(point.function),
+                  contentPadding: const EdgeInsets.only(left: 16),
+                  dense: true,
+                ))
+            .toList(),
+      ));
     }
 
+    // Add sensor info for multisensors
+    if (device.isMultisensor) {
+      subItems.add(ExpansionTile(
+        title: const Text('Sensor Data'),
+        leading: const Icon(Icons.sensors),
+        childrenPadding: const EdgeInsets.only(left: 20),
+        tilePadding: const EdgeInsets.only(left: 40),
+        children: device.sensorInfo.entries
+            .map((entry) => ListTile(
+                  title: Text('${entry.key}: ${entry.value}'),
+                  dense: true,
+                ))
+            .toList(),
+      ));
+    }
+
+    // Create the main device expansion tile
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ListTile(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ExpansionTile(
         leading: CircleAvatar(
-          child: Icon(deviceIcon),
+          backgroundImage: AssetImage(getDeviceIconAsset(device)),
+          backgroundColor: Colors.transparent,
         ),
         title: Text(
-          device.description.isEmpty
-              ? 'Device ${device.deviceId}'
-              : device.description,
+          deviceName,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
@@ -237,13 +281,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           children: [
             Text('Address: ${device.address}'),
             Text('Type: ${device.props}'),
-            if (device.deviceStateCode != null) Text('State: ${device.state}'),
-            if (device.helvarType == 'output' &&
-                device is HelvarDriverOutputDevice)
-              Text('Level: ${device.level}%'),
           ],
         ),
-        isThreeLine: true,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -259,7 +298,39 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             ),
           ],
         ),
-        onTap: () => _showDeviceDetails(device),
+        onExpansionChanged: (expanded) {
+          if (expanded) {
+            _showDeviceDetails(device);
+          }
+        },
+        children: subItems,
+      ),
+    );
+  }
+
+  void _showDeviceAlarmInfo(HelvarDevice device) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Alarm Info: ${device.description}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('State: ${device.state}'),
+            if (device.deviceStateCode != null)
+              Text(
+                  'State Code: 0x${device.deviceStateCode!.toRadixString(16)}'),
+            const SizedBox(height: 8),
+            const Text('No active alarms'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
