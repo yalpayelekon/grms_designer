@@ -9,7 +9,6 @@ import 'package:grms_designer/providers/flowsheet_provider.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../niagara/home/command.dart';
 import '../niagara/home/handlers.dart';
-import '../niagara/home/paste_special_dialog.dart';
 import '../niagara/home/utils.dart';
 import '../niagara/models/command_history.dart';
 import '../niagara/home/component_widget.dart';
@@ -22,7 +21,6 @@ import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
 import '../niagara/models/helvar_device_component.dart';
-import '../niagara/models/point_components.dart';
 import '../niagara/models/ramp_component.dart';
 import '../niagara/models/rectangle.dart';
 import '../utils/persistent_helper.dart';
@@ -398,10 +396,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
         await _persistenceHelper.saveFullState();
-        return true;
       },
       child: Shortcuts(
         shortcuts: getShortcuts(),

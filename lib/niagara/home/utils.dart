@@ -6,10 +6,9 @@ import '../models/port_type.dart';
 import '../models/ramp_component.dart';
 import '../models/rectangle.dart';
 
-const double rowHeight = 36.0;
+const double rowHeight = 22.0;
 
 String getComponentSymbol(Component component) {
-  // Custom components
   if (component.type.type == RectangleComponent.RECTANGLE) {
     return 'R';
   }
@@ -17,7 +16,6 @@ String getComponentSymbol(Component component) {
     return '⏱️';
   }
 
-  // Standard components
   switch (component.type.type) {
     case ComponentType.AND_GATE:
       return 'AND';

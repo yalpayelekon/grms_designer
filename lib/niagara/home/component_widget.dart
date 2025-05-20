@@ -42,8 +42,8 @@ class ComponentWidget extends StatefulWidget {
 }
 
 class _ComponentWidgetState extends State<ComponentWidget> {
-  static const double itemExternalPadding = 8.0;
-  static const double itemTitleSectionHeight = 28.0;
+  static const double itemExternalPadding = 4.0;
+  static const double itemTitleSectionHeight = 22.0;
 
   @override
   Widget build(BuildContext context) {
@@ -52,17 +52,17 @@ class _ComponentWidgetState extends State<ComponentWidget> {
       padding: const EdgeInsets.all(itemExternalPadding),
       decoration: BoxDecoration(
         color: getComponentColor(widget.component),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 5,
-            offset: const Offset(2, 3),
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 3,
+            offset: const Offset(1, 2),
           ),
         ],
         border: Border.all(
           color: widget.isSelected ? Colors.indigo : Colors.transparent,
-          width: widget.isSelected ? 2.0 : 0.3,
+          width: widget.isSelected ? 1.5 : 0.3,
         ),
       ),
       child: Column(
@@ -70,7 +70,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTitleSection(),
-          const SizedBox(height: 2),
+          const SizedBox(height: 1),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -79,7 +79,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black.withOpacity(0.25)),
                   color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(3),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -118,7 +118,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             child: Text(
               widget.component.id,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
@@ -127,17 +127,17 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            margin: const EdgeInsets.only(left: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+            margin: const EdgeInsets.only(left: 3),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.black45, width: 1),
+              borderRadius: BorderRadius.circular(3),
+              border: Border.all(color: Colors.black45, width: 0.5),
             ),
             child: Text(
               getComponentSymbol(widget.component),
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 9,
                 fontWeight: FontWeight.bold,
                 color: getComponentTextColor(widget.component),
               ),
@@ -152,23 +152,23 @@ class _ComponentWidgetState extends State<ComponentWidget> {
     return GestureDetector(
       onHorizontalDragUpdate: (details) {
         double newWidth = widget.width + details.delta.dx;
-        if (newWidth >= 100.0) {
+        if (newWidth >= 80.0) {
           widget.onWidthChanged(widget.component.id, newWidth);
         }
       },
       child: MouseRegion(
         cursor: SystemMouseCursors.resizeLeftRight,
         child: Container(
-          width: 8.0,
+          width: 6.0,
           height: widget.height,
           color: Colors.transparent,
           child: Center(
             child: Container(
-              width: 3.0,
-              height: 20.0,
+              width: 2.0,
+              height: 16.0,
               decoration: BoxDecoration(
                 color: Colors.grey.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(1.5),
+                borderRadius: BorderRadius.circular(1.0),
               ),
             ),
           ),
@@ -181,12 +181,12 @@ class _ComponentWidgetState extends State<ComponentWidget> {
     return [
       Container(
         color: Colors.grey.shade200,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
         child: Text(
           title,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 11,
+            fontSize: 9,
             color: Colors.grey.shade800,
           ),
         ),
@@ -207,7 +207,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
         return LongPressDraggable<SlotDragInfo>(
           data: SlotDragInfo(widget.component.id, property.index),
           feedback: Material(
-            elevation: 4.0,
+            elevation: 3.0,
             color: Colors.transparent,
             child: Container(
               height: rowHeight,
@@ -217,13 +217,13 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   color: Colors.indigo,
                   width: 1.0,
                 ),
-                borderRadius: BorderRadius.circular(3.0),
+                borderRadius: BorderRadius.circular(2.0),
               ),
               child: Center(
                 child: Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     color: Colors.indigo,
                     fontWeight: FontWeight.bold,
                   ),
@@ -238,7 +238,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           child: Container(
             height: rowHeight,
             alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
               color: (candidateData.isNotEmpty)
                   ? Colors.lightBlue.withOpacity(0.3)
@@ -246,7 +246,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               border: Border(
                 bottom: BorderSide(
                   color: Colors.black.withOpacity(0.15),
-                  width: 1.0,
+                  width: 0.5,
                 ),
               ),
             ),
@@ -258,18 +258,18 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   children: [
                     Icon(
                       isInput ? Icons.arrow_back : Icons.arrow_forward,
-                      size: 14,
+                      size: 12,
                       color: Colors.indigo.withOpacity(0.6),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 3),
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 9,
                         color: Colors.black.withOpacity(0.8),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 3),
                     buildTypeIndicator(property.type),
                   ],
                 ),
@@ -294,7 +294,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
         return LongPressDraggable<SlotDragInfo>(
           data: SlotDragInfo(widget.component.id, action.index),
           feedback: Material(
-            elevation: 4.0,
+            elevation: 3.0,
             color: Colors.transparent,
             child: Container(
               height: rowHeight,
@@ -304,13 +304,13 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   color: Colors.amber.shade800,
                   width: 1.0,
                 ),
-                borderRadius: BorderRadius.circular(3.0),
+                borderRadius: BorderRadius.circular(2.0),
               ),
               child: Center(
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     color: Colors.amber.shade800,
                     fontWeight: FontWeight.bold,
                   ),
@@ -325,7 +325,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           child: Container(
             height: rowHeight,
             alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
               color: (candidateData.isNotEmpty)
                   ? Colors.amber.withOpacity(0.2)
@@ -333,7 +333,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               border: Border(
                 bottom: BorderSide(
                   color: Colors.black.withOpacity(0.15),
-                  width: 1.0,
+                  width: 0.5,
                 ),
               ),
             ),
@@ -345,28 +345,28 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   children: [
                     Icon(
                       Icons.flash_on,
-                      size: 14,
+                      size: 12,
                       color: Colors.amber.shade800,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 3),
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 9,
                         color: Colors.black.withOpacity(0.8),
                       ),
                     ),
                     if (action.parameterType != null) ...[
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       buildTypeIndicator(action.parameterType!),
                     ],
                   ],
                 ),
                 IconButton(
                   icon: Icon(Icons.play_arrow,
-                      size: 16, color: Colors.amber.shade800),
+                      size: 12, color: Colors.amber.shade800),
                   constraints:
-                      const BoxConstraints.tightFor(width: 24, height: 24),
+                      const BoxConstraints.tightFor(width: 20, height: 20),
                   padding: EdgeInsets.zero,
                   onPressed: () {
                     widget.onValueChanged(
@@ -393,7 +393,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
         return LongPressDraggable<SlotDragInfo>(
           data: SlotDragInfo(widget.component.id, topic.index),
           feedback: Material(
-            elevation: 4.0,
+            elevation: 3.0,
             color: Colors.transparent,
             child: Container(
               height: rowHeight,
@@ -403,13 +403,13 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   color: Colors.green.shade800,
                   width: 1.0,
                 ),
-                borderRadius: BorderRadius.circular(3.0),
+                borderRadius: BorderRadius.circular(2.0),
               ),
               child: Center(
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     color: Colors.green.shade800,
                     fontWeight: FontWeight.bold,
                   ),
@@ -424,7 +424,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           child: Container(
             height: rowHeight,
             alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
               color: (candidateData.isNotEmpty)
                   ? Colors.green.withOpacity(0.2)
@@ -432,7 +432,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               border: Border(
                 bottom: BorderSide(
                   color: Colors.black.withOpacity(0.15),
-                  width: 1.0,
+                  width: 0.5,
                 ),
               ),
             ),
@@ -444,28 +444,28 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   children: [
                     Icon(
                       Icons.volume_up,
-                      size: 14,
+                      size: 12,
                       color: Colors.green.shade800,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 3),
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 9,
                         color: Colors.black.withOpacity(0.8),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 3),
                     buildTypeIndicator(topic.eventType),
                   ],
                 ),
                 if (topic.lastEvent != null)
                   Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
+                    padding: const EdgeInsets.only(right: 6.0),
                     child: Text(
                       _formatEventValue(topic.lastEvent),
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 8,
                         color: Colors.green.shade800,
                         fontWeight: FontWeight.bold,
                       ),
@@ -484,7 +484,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
     if (value is bool) return value ? "T" : "F";
     if (value is num) return value.toStringAsFixed(1);
     if (value is String) {
-      return '"${value.length > 5 ? '${value.substring(0, 5)}...' : value}"';
+      return '"${value.length > 4 ? '${value.substring(0, 4)}...' : value}"';
     }
     return value.toString();
   }
@@ -507,10 +507,10 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 36,
-                height: 18,
+                width: 28,
+                height: 14,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(7),
                   color:
                       property.value as bool ? Colors.green : Colors.red[300],
                   border: Border.all(
@@ -524,8 +524,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                       ? Alignment.centerRight
                       : Alignment.centerLeft,
                   child: Container(
-                    width: 18,
-                    height: 18,
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white,
@@ -537,11 +537,11 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   ),
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 3),
               Text(
                 property.value as bool ? 'T' : 'F',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 8,
                   fontWeight: FontWeight.bold,
                   color: property.value as bool
                       ? Colors.green[800]
@@ -554,11 +554,11 @@ class _ComponentWidgetState extends State<ComponentWidget> {
 
       case PortType.NUMERIC:
         return Padding(
-          padding: const EdgeInsets.only(right: 8.0),
+          padding: const EdgeInsets.only(right: 6.0),
           child: Text(
-            (property.value as num).toStringAsFixed(2),
+            (property.value as num).toStringAsFixed(1),
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 9,
               fontWeight: FontWeight.bold,
               color: Colors.teal[800],
             ),
@@ -567,14 +567,14 @@ class _ComponentWidgetState extends State<ComponentWidget> {
 
       case PortType.STRING:
         return Container(
-          width: 60,
-          padding: const EdgeInsets.only(right: 8.0),
+          width: 50,
+          padding: const EdgeInsets.only(right: 6.0),
           child: Tooltip(
             message: property.value as String,
             child: Text(
-              '"${(property.value as String).length > 6 ? '${(property.value as String).substring(0, 6)}...' : property.value as String}"',
+              '"${(property.value as String).length > 4 ? '${(property.value as String).substring(0, 4)}...' : property.value as String}"',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 9,
                 fontWeight: FontWeight.bold,
                 color: Colors.orange[800],
               ),
@@ -590,23 +590,23 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           return Text(
             property.value as bool ? 'true' : 'false',
             style: TextStyle(
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.bold,
                 color: Colors.purple[800]),
           );
         } else if (property.value is num) {
           return Text(
-            (property.value as num).toStringAsFixed(2),
+            (property.value as num).toStringAsFixed(1),
             style: TextStyle(
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.bold,
                 color: Colors.purple[800]),
           );
         } else if (property.value is String) {
           return Text(
-            '"${(property.value as String).length > 8 ? '${(property.value as String).substring(0, 8)}...' : property.value as String}"',
+            '"${(property.value as String).length > 6 ? '${(property.value as String).substring(0, 6)}...' : property.value as String}"',
             style: TextStyle(
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.bold,
                 color: Colors.purple[800]),
           );
@@ -614,7 +614,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           return Text(
             "null",
             style: TextStyle(
-                fontSize: 10,
+                fontSize: 8,
                 fontWeight: FontWeight.bold,
                 color: Colors.purple[800]),
           );
