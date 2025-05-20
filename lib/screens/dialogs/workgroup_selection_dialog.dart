@@ -12,6 +12,7 @@ class WorkgroupSelectionDialog extends StatefulWidget {
 
 class WorkgroupSelectionDialogState extends State<WorkgroupSelectionDialog> {
   String? selectedWorkgroup;
+  final String addAllOption = '__ADD_ALL__';
 
   @override
   void initState() {
@@ -23,11 +24,13 @@ class WorkgroupSelectionDialogState extends State<WorkgroupSelectionDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> allOptions = [...widget.workgroups, addAllOption];
+
     return AlertDialog(
-      title: const Text('Workgroups Discovered'),
+      title: const Text('Select Workgroup'),
       content: DropdownButton<String>(
         isExpanded: true,
-        value: selectedWorkgroup,
+        value: selectedWorkgroup ?? addAllOption,
         onChanged: (String? newValue) {
           if (newValue != null) {
             setState(() {
@@ -35,13 +38,18 @@ class WorkgroupSelectionDialogState extends State<WorkgroupSelectionDialog> {
             });
           }
         },
-        items:
-            widget.workgroups.map<DropdownMenuItem<String>>((String workgroup) {
-              return DropdownMenuItem<String>(
-                value: workgroup,
-                child: Text(workgroup),
-              );
-            }).toList(),
+        items: allOptions.map<DropdownMenuItem<String>>((String option) {
+          return DropdownMenuItem<String>(
+            value: option,
+            child: Text(
+              option == addAllOption ? 'Add All' : option,
+              style: option == addAllOption
+                  ? const TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.blue)
+                  : null,
+            ),
+          );
+        }).toList(),
       ),
       actions: <Widget>[
         TextButton(

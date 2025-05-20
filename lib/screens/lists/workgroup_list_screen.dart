@@ -95,7 +95,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     }
   }
 
-  Future<String?> _selectWorkgroup(List<String> workgroupNames) async {
+  Future<dynamic> _selectWorkgroup(List<String> workgroupNames) async {
     if (workgroupNames.isEmpty) {
       if (!mounted) return null;
 
@@ -122,7 +122,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
     if (!mounted) return null;
 
-    return showDialog<String>(
+    return showDialog<dynamic>(
       context: context,
       builder: (BuildContext context) {
         return WorkgroupSelectionDialog(workgroups: workgroupNames);
@@ -206,7 +206,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
       ref.read(workgroupsProvider.notifier).addWorkgroup(workgroup);
 
       if (mounted) {
-        showSnackBarMsg(context,
+        logInfo(
             'Added workgroup: $workgroupName with ${helvarRouters.length} routers');
       }
     }
@@ -232,11 +232,21 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         .toSet()
         .toList();
 
-    final selectedWorkgroup = await _selectWorkgroup(workgroupNames);
-    if (selectedWorkgroup == null) return;
+    final selectedResult = await _selectWorkgroup(workgroupNames);
+    if (selectedResult == null) return;
 
-    _createWorkgroup(
-        selectedWorkgroup, interfaceResult.name, discoveredRouters);
+    if (selectedResult == '__ADD_ALL__') {
+      for (String workgroupName in workgroupNames) {
+        _createWorkgroup(
+            workgroupName, interfaceResult.name, discoveredRouters);
+      }
+
+      if (mounted) {
+        logInfo('Added all ${workgroupNames.length} workgroups');
+      }
+    } else {
+      _createWorkgroup(selectedResult, interfaceResult.name, discoveredRouters);
+    }
   }
 
   @override

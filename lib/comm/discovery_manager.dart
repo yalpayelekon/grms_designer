@@ -36,7 +36,8 @@ class DiscoveryManager {
         }
       });
     } catch (e) {
-      logError('Error starting discovery: $e');
+      logError(
+          'Error starting discovery: $e. Check Anydesk or other programs that might be using the port');
       rethrow;
     }
   }
