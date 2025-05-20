@@ -4,7 +4,6 @@ import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/router_connection_provider.dart';
 import '../../providers/workgroups_provider.dart';
-import '../../services/discovery_service.dart';
 import '../../utils/general_ui.dart';
 import '../details/group_detail_screen.dart';
 

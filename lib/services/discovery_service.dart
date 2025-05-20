@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
@@ -12,7 +11,6 @@ import '../protocol/device_types.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
 import '../comm/router_command_service.dart';
-import '../providers/router_connection_provider.dart';
 import '../utils/logger.dart';
 
 class DiscoveryService {
