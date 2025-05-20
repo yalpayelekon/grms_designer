@@ -42,9 +42,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   String? selectedWiresheetId;
   Workgroup? selectedWorkgroup;
   HelvarGroup? selectedGroup;
+  HelvarRouter? selectedRouter;
   bool showingProject = true;
   bool showingGroups = false;
   bool showingGroupDetail = false;
+  bool showingRouterDetail = false;
   bool showingProjectSettings = false;
   double _leftPanelWidth = 500;
   bool _isDragging = false;
@@ -156,6 +158,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMainContent() {
+    if (showingRouterDetail &&
+        selectedRouter != null &&
+        selectedWorkgroup != null) {
+      return RouterDetailScreen(
+        workgroup: selectedWorkgroup!,
+        router: selectedRouter!,
+      );
+    }
     if (showingGroups) {
       return GroupsListScreen(
         workgroup: selectedWorkgroup!,
@@ -487,17 +497,26 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           showingProjectSettings = true;
           break;
         case 'router':
-          final workgroup = additionalData['workgroup'] as Workgroup;
-          final router = additionalData['router'] as HelvarRouter;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RouterDetailScreen(
-                workgroup: workgroup,
-                router: router,
-              ),
-            ),
-          );
+          setState(() {
+            openWorkGroup = false;
+            openWiresheet = false;
+            openSettings = false;
+            showingImages = false;
+            showingProject = false;
+            showingGroups = false;
+            showingGroupDetail = false;
+            showingProjectSettings = false;
+            showingRouterDetail = true;
+
+            if (additionalData is Map<String, dynamic>) {
+              if (additionalData['workgroup'] is Workgroup) {
+                selectedWorkgroup = additionalData['workgroup'];
+              }
+              if (additionalData['router'] is HelvarRouter) {
+                selectedRouter = additionalData['router'];
+              }
+            }
+          });
           break;
         default:
           showingProject = true;
