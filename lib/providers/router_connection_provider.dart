@@ -10,13 +10,7 @@ import 'project_settings_provider.dart';
 
 final routerConnectionManagerProvider =
     Provider<RouterConnectionManager>((ref) {
-  final manager = RouterConnectionManager();
-
-  ref.onDispose(() {
-    manager.dispose();
-  });
-
-  return manager;
+  return RouterConnectionManager();
 });
 
 final routerCommandServiceProvider = Provider<RouterCommandService>((ref) {

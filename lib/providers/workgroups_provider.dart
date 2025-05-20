@@ -54,8 +54,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
 
   Future<RouterConnection?> getRouterConnection(
       String workgroupId, String routerAddress) async {
-    final connectionManager = RouterConnectionManager();
-
     try {
       final workgroup = state.firstWhere((wg) => wg.id == workgroupId);
       final router =
@@ -65,6 +63,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         return null;
       }
 
+      final connectionManager = RouterConnectionManager();
       return await connectionManager.getConnection(router.ipAddress);
     } catch (e) {
       logError('Error getting router connection: $e');

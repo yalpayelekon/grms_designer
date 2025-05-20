@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/providers/project_settings_provider.dart';
 import 'package:grms_designer/utils/general_ui.dart';
 
+import '../comm/models/command_models.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_router.dart';
@@ -33,7 +34,7 @@ String getWorkgroupIdForDevice(BuildContext context, HelvarDevice device) {
 void performRecallScene(
     BuildContext context, HelvarGroup group, int sceneNumber) {
   final container = ProviderScope.containerOf(context);
-  final connectionManager = container.read(routerConnectionManagerProvider);
+  final commandService = container.read(routerCommandServiceProvider);
 
   final workgroups = container.read(workgroupsProvider);
   Workgroup? workgroup;
@@ -68,27 +69,24 @@ void performRecallScene(
 
   final command = HelvarNetCommands.recallSceneGroup(
     groupId,
-    1, // Block ID (default to 1)
+    1,
     sceneNumber,
-    fadeTime: 700, // Default fade time in 0.1 seconds
+    fadeTime: 700,
   );
 
-  connectionManager
-      .getConnection(
+  commandService
+      .sendCommand(
     routerIpAddress,
+    command,
+    priority: CommandPriority.normal,
   )
-      .then((connection) {
-    if (connection.isConnected) {
-      connection.sendCommand(command).then((success) {
-        if (success) {
-          showSnackBarMsg(context,
-              'Recalled scene $sceneNumber for group ${group.groupId}');
-        } else {
-          showSnackBarMsg(context, 'Failed to send command to group');
-        }
-      });
+      .then((result) {
+    if (result.success) {
+      showSnackBarMsg(
+          context, 'Recalled scene $sceneNumber for group ${group.groupId}');
     } else {
-      showSnackBarMsg(context, 'Failed to establish connection to router');
+      showSnackBarMsg(
+          context, 'Failed to send command to group: ${result.errorMessage}');
     }
   }).catchError((error) {
     showSnackBarMsg(context, 'Connection error: $error');

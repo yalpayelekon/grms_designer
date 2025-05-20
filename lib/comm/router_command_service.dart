@@ -42,6 +42,42 @@ class RouterCommandService {
     }
   }
 
+  Future<bool> ensureConnection(String routerIp) async {
+    try {
+      final connectionManager = RouterConnectionManager();
+      await connectionManager.getConnection(routerIp);
+      return true;
+    } catch (e) {
+      logError('Error ensuring connection to $routerIp: $e');
+      return false;
+    }
+  }
+
+  Future<String?> executeCommand(String routerIp, String command) async {
+    try {
+      final result = await sendCommand(
+        routerIp,
+        command,
+        priority: CommandPriority.high,
+      );
+
+      if (result.success) {
+        return result.response;
+      } else {
+        logError('Command execution failed: ${result.errorMessage}');
+        return null;
+      }
+    } catch (e) {
+      logError('Error executing command: $e');
+      return null;
+    }
+  }
+
+  bool isRouterConnected(String routerIp) {
+    final connectionManager = RouterConnectionManager();
+    return connectionManager.hasConnection(routerIp);
+  }
+
   void configureFromSettings(ProjectSettings settings) {
     _maxConcurrentCommandsPerRouter = settings.maxConcurrentCommandsPerRouter;
     _maxRetries = settings.maxCommandRetries;

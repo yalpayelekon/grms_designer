@@ -75,20 +75,15 @@ class DiscoveryService {
 
   Future<HelvarRouter?> discoverRouterWithPersistentConnection(
       String routerIpAddress) async {
-    final connectionManager = RouterConnectionManager();
+    final commandService = RouterCommandService();
 
     try {
-      final router = await discoverRouter(routerIpAddress);
-
-      if (router == null) {
+      bool connected = await commandService.ensureConnection(routerIpAddress);
+      if (!connected) {
         return null;
       }
 
-      await connectionManager.getConnection(
-        routerIpAddress,
-      );
-
-      return router;
+      return await discoverRouter(routerIpAddress);
     } catch (e) {
       logError('Error discovering router with persistent connection: $e');
       return null;
@@ -96,11 +91,9 @@ class DiscoveryService {
   }
 
   Future<HelvarRouter?> discoverRouter(String routerIpAddress) async {
-    Socket? socket;
+    final commandService = RouterCommandService();
 
     try {
-      socket = await Socket.connect(routerIpAddress, defaultTcpPort);
-      final broadcastStream = socket.asBroadcastStream();
       final ipParts = routerIpAddress.split('.');
       if (ipParts.length != 4) {
         logDebug('Invalid router IP address format: $routerIpAddress');
@@ -121,62 +114,64 @@ class DiscoveryService {
         clusterMemberId: clusterMemberId,
       );
 
-      final typeResponse = await _sendCommand(
-          socket,
-          HelvarNetCommands.queryDeviceType("$clusterId.$clusterMemberId"),
-          broadcastStream);
-      final typeValue = extractResponseValue(typeResponse);
-      if (typeValue != null) {
-        final typeCode = int.tryParse(typeValue) ?? 0;
-        router.deviceTypeCode = typeCode;
-        router.deviceType = getDeviceTypeDescription(typeCode);
+      final typeResponse = await commandService.executeCommand(routerIpAddress,
+          HelvarNetCommands.queryDeviceType("$clusterId.$clusterMemberId"));
+
+      if (typeResponse != null) {
+        final typeValue = extractResponseValue(typeResponse);
+        if (typeValue != null) {
+          final typeCode = int.tryParse(typeValue) ?? 0;
+          router.deviceTypeCode = typeCode;
+          router.deviceType = getDeviceTypeDescription(typeCode);
+        }
       } else {
         logDebug('Failed to get router type: $typeResponse');
       }
 
-      final descResponse = await _sendCommand(
-          socket,
+      final descResponse = await commandService.executeCommand(
+          routerIpAddress,
           HelvarNetCommands.queryDescriptionDevice(
-              "$clusterId.$clusterMemberId"),
-          broadcastStream);
-      final descValue = extractResponseValue(descResponse);
-      if (descValue != null) {
-        router.description = descValue;
-      } else {
-        logDebug('Failed to get router description: $descResponse');
+              "$clusterId.$clusterMemberId"));
+      if (descResponse != null) {
+        final descValue = extractResponseValue(descResponse);
+        if (descValue != null) {
+          router.description = descValue;
+        } else {
+          logDebug('Failed to get router description: $descResponse');
+        }
       }
 
-      final stateResponse = await _sendCommand(
-          socket,
-          HelvarNetCommands.queryDeviceState("$clusterId.$clusterMemberId"),
-          broadcastStream);
-      final stateValue = extractResponseValue(stateResponse);
-      if (stateValue != null) {
-        final stateCode = int.tryParse(stateValue) ?? 0;
-        router.deviceStateCode = stateCode;
-        router.deviceState = getStateFlagsDescription(stateCode);
-      } else {
-        logDebug('Failed to get router state: $stateResponse');
+      final stateResponse = await commandService.executeCommand(routerIpAddress,
+          HelvarNetCommands.queryDeviceState("$clusterId.$clusterMemberId"));
+      if (stateResponse != null) {
+        final stateValue = extractResponseValue(stateResponse);
+        if (stateValue != null) {
+          final stateCode = int.tryParse(stateValue) ?? 0;
+          router.deviceStateCode = stateCode;
+          router.deviceState = getStateFlagsDescription(stateCode);
+        } else {
+          logDebug('Failed to get router state: $stateResponse');
+        }
       }
-
-      final typesAndAddressesResponse = await _sendCommand(
-          socket,
-          HelvarNetCommands.queryDeviceTypesAndAddresses(routerAddress),
-          broadcastStream);
-      final addressesValue = extractResponseValue(typesAndAddressesResponse);
-      if (addressesValue != null) {
-        router.deviceAddresses = addressesValue.split(',');
-      } else {
-        logDebug(
-            'Failed to get device types and addresses: $typesAndAddressesResponse');
+      final typesAndAddressesResponse = await commandService.executeCommand(
+          routerIpAddress,
+          HelvarNetCommands.queryDeviceTypesAndAddresses(routerAddress));
+      if (typesAndAddressesResponse != null) {
+        final addressesValue = extractResponseValue(typesAndAddressesResponse);
+        if (addressesValue != null) {
+          router.deviceAddresses = addressesValue.split(',');
+        } else {
+          logDebug(
+              'Failed to get device types and addresses: $typesAndAddressesResponse');
+        }
       }
 
       for (int subnet = 1; subnet <= 4; subnet++) {
-        final devicesResponse = await _sendCommand(
-            socket,
+        final devicesResponse = await commandService.executeCommand(
+            routerIpAddress,
             HelvarNetCommands.queryDeviceTypesAndAddresses(
-                '$clusterId.$clusterMemberId.$subnet'),
-            broadcastStream);
+                '$clusterId.$clusterMemberId.$subnet'));
+        if (devicesResponse == null) continue;
         final devicesValue = extractResponseValue(devicesResponse);
 
         if (devicesValue == null || devicesValue.isEmpty) {
@@ -196,23 +191,22 @@ class DiscoveryService {
           }
 
           final deviceAddress = '$clusterId.$clusterMemberId.$subnet.$deviceId';
-          final descriptionCmd =
-              HelvarNetCommands.queryDescriptionDevice(deviceAddress);
-          final descResponse =
-              await _sendCommand(socket, descriptionCmd, broadcastStream);
-          final description =
-              extractResponseValue(descResponse) ?? 'Device $deviceId';
+          final descResponse = await commandService.executeCommand(
+              routerIpAddress,
+              HelvarNetCommands.queryDescriptionDevice(deviceAddress));
+          final description = descResponse != null
+              ? extractResponseValue(descResponse)
+              : 'Device $deviceId';
 
-          final deviceStateResponse = await _sendCommand(
-              socket,
-              HelvarNetCommands.queryDeviceState(deviceAddress),
-              broadcastStream);
+          final deviceStateResponse = await commandService.executeCommand(
+              routerIpAddress,
+              HelvarNetCommands.queryDeviceState(deviceAddress));
           int? deviceStateCode;
           String deviceState = '';
 
-          final deviceStateValue = extractResponseValue(deviceStateResponse);
-          if (deviceStateValue != null) {
-            deviceStateCode = int.tryParse(deviceStateValue) ?? 0;
+          if (deviceStateResponse != null) {
+            final deviceStateValue = extractResponseValue(deviceStateResponse);
+            deviceStateCode = int.tryParse(deviceStateValue!) ?? 0;
             deviceState = getStateFlagsDescription(deviceStateCode);
             logInfo('  State: $deviceStateCode ($deviceState)');
           }
@@ -220,13 +214,12 @@ class DiscoveryService {
           int? loadLevel;
           if (typeCode == 1 || typeCode == 1025 || typeCode == 1537) {
             try {
-              final levelResponse = await _sendCommand(
-                  socket,
-                  HelvarNetCommands.queryLoadLevel(deviceAddress),
-                  broadcastStream);
-              final levelValue = extractResponseValue(levelResponse);
-              if (levelValue != null) {
-                loadLevel = int.tryParse(levelValue) ?? 0;
+              final levelResponse = await commandService.executeCommand(
+                  routerIpAddress,
+                  HelvarNetCommands.queryLoadLevel(deviceAddress));
+              if (levelResponse != null) {
+                final levelValue = extractResponseValue(levelResponse);
+                loadLevel = int.tryParse(levelValue!) ?? 0;
               }
             } catch (e) {
               logError('Error getting load level: $e');
@@ -244,7 +237,7 @@ class DiscoveryService {
               deviceId: deviceId,
               address: deviceAddress,
               state: deviceState,
-              description: description,
+              description: description!,
               props: deviceTypeString,
               hexId: '0x${typeCode.toRadixString(16)}',
               helvarType: 'input',
@@ -258,7 +251,7 @@ class DiscoveryService {
               deviceId: deviceId,
               address: deviceAddress,
               state: deviceState,
-              description: description,
+              description: description!,
               props: deviceTypeString,
               hexId: '0x${typeCode.toRadixString(16)}',
               helvarType: 'input',
@@ -277,7 +270,7 @@ class DiscoveryService {
               deviceId: deviceId,
               address: deviceAddress,
               state: deviceState,
-              description: description,
+              description: description!,
               props: deviceTypeString,
               hexId: '0x${typeCode.toRadixString(16)}',
               helvarType: 'emergency',
@@ -290,7 +283,7 @@ class DiscoveryService {
               deviceId: deviceId,
               address: deviceAddress,
               state: deviceState,
-              description: description,
+              description: description!,
               props: deviceTypeString,
               hexId: '0x${typeCode.toRadixString(16)}',
               helvarType: 'output',
@@ -315,8 +308,6 @@ class DiscoveryService {
     } catch (e) {
       logError('Error discovering router: $e');
       return null;
-    } finally {
-      socket?.destroy();
     }
   }
 

@@ -192,7 +192,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       return const ProjectFilesScreen(
           directoryName: AppDirectoryService.imagesDir);
     }
-
     if (openWiresheet) {
       if (selectedWiresheetId == null) {
         return const FlowsheetListScreen();
@@ -202,11 +201,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
+    if (showingProject) {
+      return _buildConnectionMonitor();
+    }
+
     return const FlowsheetListScreen();
   }
 
   Widget _buildConnectionMonitor() {
-    Card(
+    return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -255,7 +258,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
-    return FlowScreen(flowsheetId: selectedWiresheetId!);
   }
 
   Future<void> _connectToExistingRouters(BuildContext context) async {
