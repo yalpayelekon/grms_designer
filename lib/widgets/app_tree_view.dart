@@ -470,7 +470,6 @@ class AppTreeView extends ConsumerWidget {
                                               device.description.isEmpty
                                                   ? "Device_${device.deviceId}"
                                                   : device.description,
-                                              getDeviceIcon(device),
                                               device,
                                               context,
                                             ),
@@ -690,11 +689,10 @@ class AppTreeView extends ConsumerWidget {
   }
 
   Widget _buildDraggable(
-      String label, IconData icon, HelvarDevice? device, BuildContext context) {
+      String label, HelvarDevice? device, BuildContext context) {
     return Draggable<Map<String, dynamic>>(
       data: {
         "componentType": label,
-        "icon": icon,
         "device": device,
         "deviceData": device != null
             ? {
@@ -715,19 +713,27 @@ class AppTreeView extends ConsumerWidget {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
+            children: [
+              getDeviceIconWidget(device),
+              const SizedBox(width: 8.0),
+              Text(label)
+            ],
           ),
         ),
       ),
       childWhenDragging: Row(
         children: [
-          Icon(icon, color: Colors.grey[600]),
+          getDeviceIconWidget(device, size: 20.0),
           const SizedBox(width: 8.0),
           Text(label, style: TextStyle(color: Colors.grey[600]))
         ],
       ),
       child: Row(
-        children: [Icon(icon), const SizedBox(width: 8.0), Text(label)],
+        children: [
+          getDeviceIconWidget(device),
+          const SizedBox(width: 8.0),
+          Text(label)
+        ],
       ),
     );
   }
