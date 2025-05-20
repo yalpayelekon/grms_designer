@@ -381,8 +381,7 @@ class AppTreeView extends ConsumerWidget {
                                     },
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.layers,
-                                            color: Colors.green),
+                                        const Icon(Icons.group),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Text(
