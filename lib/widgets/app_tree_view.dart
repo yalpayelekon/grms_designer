@@ -4,6 +4,7 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 
 import '../models/helvar_models/helvar_group.dart';
+import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../niagara/home/utils.dart';
 import '../niagara/models/component_type.dart';
@@ -27,6 +28,7 @@ class AppTreeView extends ConsumerWidget {
   final String? selectedWiresheetId;
   final Workgroup? selectedWorkgroup;
   final HelvarGroup? selectedGroup;
+  final HelvarRouter? selectedRouter;
   final Function(String, {dynamic additionalData}) setActiveNode;
 
   const AppTreeView({
@@ -39,6 +41,7 @@ class AppTreeView extends ConsumerWidget {
     required this.openWiresheet,
     required this.showingImages,
     required this.showingGroups,
+    this.selectedRouter,
     required this.currentFileDirectory,
     required this.selectedWiresheetId,
     required this.selectedWorkgroup,
@@ -317,7 +320,8 @@ class AppTreeView extends ConsumerWidget {
                                       : FontWeight.normal,
                                   color: selectedWorkgroup == workgroup &&
                                           !showingGroups &&
-                                          selectedGroup == null
+                                          selectedGroup == null &&
+                                          selectedRouter == null
                                       ? Colors.blue
                                       : null,
                                 ),
@@ -426,7 +430,17 @@ class AppTreeView extends ConsumerWidget {
                                   const Icon(Icons.router),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
-                                    child: Text(router.description),
+                                    child: Text(
+                                      router.description,
+                                      style: TextStyle(
+                                        fontWeight: selectedRouter == router
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: selectedRouter == router
+                                            ? Colors.blue
+                                            : null,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),

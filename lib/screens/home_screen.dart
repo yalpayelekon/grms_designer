@@ -122,6 +122,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 selectedWiresheetId: selectedWiresheetId,
                 selectedWorkgroup: selectedWorkgroup,
                 selectedGroup: selectedGroup,
+                selectedRouter: selectedRouter,
                 setActiveNode: _setActiveNode,
               ),
             ),
