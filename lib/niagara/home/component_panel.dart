@@ -1,5 +1,6 @@
 // lib/home/component_panel.dart
 import 'package:flutter/material.dart';
+import '../../utils/general_ui.dart';
 import '../models/component_type.dart';
 import '../models/rectangle.dart';
 import '../models/ramp_component.dart';

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/general_ui.dart';
 import '../models/component.dart';
 import '../models/port.dart';
 import '../models/port_type.dart';

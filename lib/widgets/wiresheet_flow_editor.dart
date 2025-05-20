@@ -23,6 +23,7 @@ import '../niagara/models/connection.dart';
 import '../niagara/models/helvar_device_component.dart';
 import '../niagara/models/ramp_component.dart';
 import '../niagara/models/rectangle.dart';
+import '../utils/general_ui.dart';
 import '../utils/persistent_helper.dart';
 
 class WiresheetFlowEditor extends ConsumerStatefulWidget {
