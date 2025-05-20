@@ -62,8 +62,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     final wiresheets = ref.watch(flowsheetsProvider);
     final projectName = ref.watch(projectNameProvider);
     connectionStream = ref.watch(routerConnectionStatusStreamProvider);
-    connectionStatuses = ref.watch(routerConnectionStatusesProvider);
-    connectionStats = ref.watch(connectionStatsProvider);
+    final connectionStatusAsync =
+        ref.watch(routerConnectionStatusStreamProvider);
 
     return Scaffold(
       appBar: AppBar(

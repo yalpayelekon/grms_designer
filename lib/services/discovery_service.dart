@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
@@ -10,11 +11,15 @@ import '../models/helvar_models/emergency_device.dart';
 import '../protocol/device_types.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
-import '../comm/router_connection_manager.dart';
 import '../comm/router_command_service.dart';
+import '../providers/router_connection_provider.dart';
 import '../utils/logger.dart';
 
 class DiscoveryService {
+  final RouterCommandService commandService;
+
+  DiscoveryService(this.commandService);
+
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
     final points = <ButtonPoint>[];
     points.add(ButtonPoint(
@@ -75,8 +80,6 @@ class DiscoveryService {
 
   Future<HelvarRouter?> discoverRouterWithPersistentConnection(
       String routerIpAddress) async {
-    final commandService = RouterCommandService();
-
     try {
       bool connected = await commandService.ensureConnection(routerIpAddress);
       if (!connected) {
@@ -91,8 +94,6 @@ class DiscoveryService {
   }
 
   Future<HelvarRouter?> discoverRouter(String routerIpAddress) async {
-    final commandService = RouterCommandService();
-
     try {
       final ipParts = routerIpAddress.split('.');
       if (ipParts.length != 4) {
@@ -414,8 +415,6 @@ class DiscoveryService {
   Future<String?> sendPersistentCommand(
       String routerIp, String routerId, String command,
       {Duration? timeout}) async {
-    final commandService = RouterCommandService();
-
     try {
       final result = await commandService.sendCommand(
         routerIp,

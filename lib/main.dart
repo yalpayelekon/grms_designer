@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/home_screen.dart';
-import 'providers/service_configuration_provider.dart';
 
 import 'providers/settings_provider.dart';
 import 'services/app_initialization.dart';
@@ -47,7 +46,6 @@ class HelvarNetApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    ref.watch(serviceConfigurationProvider);
 
     return MaterialApp(
       title: 'HelvarNet Manager',

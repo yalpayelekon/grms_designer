@@ -8,11 +8,9 @@ import 'router_connection.dart';
 import 'router_connection_manager.dart';
 
 class RouterCommandService {
-  static final RouterCommandService _instance =
-      RouterCommandService._internal();
-  factory RouterCommandService() => _instance;
+  final RouterConnectionManager _connectionManager;
+  RouterCommandService(this._connectionManager);
 
-  final RouterConnectionManager _connectionManager = RouterConnectionManager();
   final Map<String, List<QueuedCommand>> _commandQueues = {};
   final List<QueuedCommand> _commandHistory = [];
   int _maxHistorySize = 100;
@@ -22,7 +20,6 @@ class RouterCommandService {
   Duration _commandTimeout = const Duration(seconds: 10);
   final Map<String, bool> _executingQueues = {};
 
-  RouterCommandService._internal();
   Stream<QueuedCommand> get commandStatusStream =>
       _commandStatusController.stream;
   List<QueuedCommand> get commandHistory => List.unmodifiable(_commandHistory);

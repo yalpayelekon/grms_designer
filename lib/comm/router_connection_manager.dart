@@ -8,11 +8,6 @@ import 'router_connection.dart';
 import 'models/router_connection_status.dart';
 
 class RouterConnectionManager {
-  static final RouterConnectionManager _instance =
-      RouterConnectionManager._internal();
-  factory RouterConnectionManager() => _instance;
-  RouterConnectionManager._internal();
-
   final Map<String, RouterConnection> connections = {};
 
   final connectionstatusController =

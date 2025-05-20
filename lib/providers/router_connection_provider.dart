@@ -6,32 +6,30 @@ import '../comm/router_command_service.dart';
 import '../comm/router_connection.dart';
 import '../comm/router_connection_manager.dart';
 import '../comm/models/router_connection_status.dart';
+import '../services/discovery_service.dart';
 import 'project_settings_provider.dart';
 
 final routerConnectionManagerProvider =
     Provider<RouterConnectionManager>((ref) {
-  return RouterConnectionManager();
+  final settings = ref.watch(projectSettingsProvider);
+  final manager = RouterConnectionManager();
+  manager.configureFromSettings(settings);
+  return manager;
 });
 
 final routerCommandServiceProvider = Provider<RouterCommandService>((ref) {
-  return RouterCommandService();
-});
+  final connectionManager = ref.watch(routerConnectionManagerProvider);
+  final settings = ref.watch(projectSettingsProvider);
 
-final connectionStatsProvider = Provider<Map<String, dynamic>>((ref) {
-  ref.watch(routerConnectionsNotifierProvider);
-  final manager = ref.watch(routerConnectionManagerProvider);
-  return manager.getConnectionStats();
-});
-
-final routerConnectionsNotifierProvider = StateNotifierProvider<
-    RouterConnectionsNotifier, Map<String, RouterConnection>>((ref) {
-  return RouterConnectionsNotifier(ref.watch(routerConnectionManagerProvider));
+  final service = RouterCommandService(connectionManager);
+  service.configureFromSettings(settings);
+  return service;
 });
 
 final routerConnectionsProvider =
     Provider<Map<String, RouterConnection>>((ref) {
   final manager = ref.watch(routerConnectionManagerProvider);
-  return Map.from(manager.connections);
+  return manager.connections;
 });
 
 final routerConnectionStatusesProvider =
@@ -59,6 +57,11 @@ final routerCommandConfigurationProvider = Provider<void>((ref) {
   commandService.configureFromSettings(settings);
 
   return;
+});
+
+final discoveryServiceProvider = Provider<DiscoveryService>((ref) {
+  final commandService = ref.watch(routerCommandServiceProvider);
+  return DiscoveryService(commandService);
 });
 
 class RouterConnectionsNotifier

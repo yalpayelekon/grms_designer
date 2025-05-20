@@ -9,17 +9,21 @@ import '../comm/models/command_models.dart';
 import '../comm/router_command_service.dart';
 import '../comm/router_connection.dart';
 import '../comm/router_connection_manager.dart';
+import 'router_connection_provider.dart';
 
 class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   final FileStorageService _fileStorageService;
   final RouterStorageService _routerStorageService;
+  final RouterCommandService _commandService;
   bool _initialized = false;
 
   WorkgroupsNotifier({
     required FileStorageService fileStorageService,
     required RouterStorageService routerStorageService,
+    required RouterCommandService commandService,
   })  : _fileStorageService = fileStorageService,
         _routerStorageService = routerStorageService,
+        _commandService = commandService,
         super([]) {
     _initializeData();
   }
@@ -86,8 +90,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         return CommandResult.failure('Router has no IP address', 0);
       }
 
-      final commandService = RouterCommandService();
-      return await commandService.sendCommand(
+      return await _commandService.sendCommand(
         router.ipAddress,
         command,
         priority: priority,
@@ -351,5 +354,6 @@ final workgroupsProvider =
   return WorkgroupsNotifier(
     fileStorageService: ref.watch(fileStorageServiceProvider),
     routerStorageService: ref.watch(routerStorageServiceProvider),
+    commandService: ref.watch(routerCommandServiceProvider),
   );
 });

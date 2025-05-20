@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
+import '../../providers/router_connection_provider.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../services/discovery_service.dart';
 import '../../utils/general_ui.dart';
@@ -21,7 +22,6 @@ class GroupsListScreen extends ConsumerStatefulWidget {
 
 class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
   bool _isLoading = false;
-  final DiscoveryService _discoveryService = DiscoveryService();
   Map<String, bool> expandedGroups = {};
   bool _showGroups = true;
 
@@ -332,8 +332,9 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
 
     try {
       final router = widget.workgroup.routers.first;
+      final discoveryService = ref.watch(discoveryServiceProvider);
       final discoveredGroups =
-          await _discoveryService.discoverGroups(router.ipAddress);
+          await discoveryService.discoverGroups(router.ipAddress);
 
       if (discoveredGroups.isEmpty) {
         if (!mounted) return;
