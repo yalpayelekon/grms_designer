@@ -292,7 +292,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       }
 
       final connectionManager = ref.read(routerConnectionManagerProvider);
-      final settings = ref.read(projectSettingsProvider);
       int connectedCount = 0;
 
       showDialog(
