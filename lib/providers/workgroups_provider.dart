@@ -16,6 +16,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   final RouterStorageService _routerStorageService;
   final RouterCommandService _commandService;
   bool _initialized = false;
+  bool _disposed = false;
 
   WorkgroupsNotifier({
     required FileStorageService fileStorageService,
@@ -28,11 +29,19 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     _initializeData();
   }
 
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   Future<void> _initializeData() async {
-    if (_initialized) return;
+    if (_initialized || _disposed) return;
 
     try {
       final workgroups = await _fileStorageService.loadWorkgroups();
+
+      if (_disposed) return;
       for (var workgroup in workgroups) {
         for (var router in workgroup.routers) {
           try {
@@ -40,6 +49,9 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
               workgroup.id,
               router.address,
             );
+
+            if (_disposed) return;
+
             router.devices.clear();
             router.devices.addAll(devices);
           } catch (e) {
@@ -49,8 +61,10 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         }
       }
 
-      state = workgroups;
-      _initialized = true;
+      if (!_disposed) {
+        state = workgroups;
+        _initialized = true;
+      }
     } catch (e) {
       logError('Error initializing workgroups: $e');
     }
@@ -102,8 +116,13 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 
   Future<void> _saveToStorage() async {
+    if (_disposed) return;
+
     try {
       await _fileStorageService.saveWorkgroups(state);
+
+      if (_disposed) return;
+
       for (var workgroup in state) {
         for (var router in workgroup.routers) {
           try {
@@ -112,6 +131,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
               router.address,
               router.devices,
             );
+
+            if (_disposed) return;
           } catch (e) {
             logError(
                 'Error saving devices for router ${router.description}: $e');

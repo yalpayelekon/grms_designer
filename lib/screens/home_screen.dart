@@ -62,8 +62,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     final wiresheets = ref.watch(flowsheetsProvider);
     final projectName = ref.watch(projectNameProvider);
     connectionStream = ref.watch(routerConnectionStatusStreamProvider);
-    final connectionStatusAsync =
-        ref.watch(routerConnectionStatusStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -209,6 +207,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildConnectionMonitor() {
+    if (connectionStats == null) return const SizedBox.shrink();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
