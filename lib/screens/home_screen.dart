@@ -448,6 +448,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       showingGroups = false;
       showingGroupDetail = false;
       showingProjectSettings = false;
+      showingRouterDetail = false;
+      selectedRouter = null;
 
       switch (nodeName) {
         case 'project':
@@ -537,26 +539,24 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           showingProjectSettings = true;
           break;
         case 'router':
-          setState(() {
-            openWorkGroup = false;
-            openWiresheet = false;
-            openSettings = false;
-            showingImages = false;
-            showingProject = false;
-            showingGroups = false;
-            showingGroupDetail = false;
-            showingProjectSettings = false;
-            showingRouterDetail = true;
+          openWorkGroup = false;
+          openWiresheet = false;
+          openSettings = false;
+          showingImages = false;
+          showingProject = false;
+          showingGroups = false;
+          showingGroupDetail = false;
+          showingProjectSettings = false;
+          showingRouterDetail = true;
 
-            if (additionalData is Map<String, dynamic>) {
-              if (additionalData['workgroup'] is Workgroup) {
-                selectedWorkgroup = additionalData['workgroup'];
-              }
-              if (additionalData['router'] is HelvarRouter) {
-                selectedRouter = additionalData['router'];
-              }
+          if (additionalData is Map<String, dynamic>) {
+            if (additionalData['workgroup'] is Workgroup) {
+              selectedWorkgroup = additionalData['workgroup'];
             }
-          });
+            if (additionalData['router'] is HelvarRouter) {
+              selectedRouter = additionalData['router'];
+            }
+          }
           break;
         default:
           showingProject = true;
