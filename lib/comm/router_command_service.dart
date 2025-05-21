@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:uuid/uuid.dart';
-import '../models/project_settings.dart';
 import '../utils/logger.dart';
+import 'command_queue_controller.dart';
 import 'models/command_models.dart';
 import 'models/connection_config.dart';
 import 'router_connection.dart';
@@ -12,8 +12,7 @@ class RouterCommandService {
   final ConnectionConfig _config;
   final List<QueuedCommand> _commandHistory = [];
   final _commandStatusController = StreamController<QueuedCommand>.broadcast();
-  final Map<String, List<QueuedCommand>> _commandQueues = {};
-  final Map<String, bool> _executingQueues = {};
+  final Map<String, CommandQueueController> _queueControllers = {};
 
   RouterCommandService(this._connectionManager, this._config);
 
@@ -32,6 +31,17 @@ class RouterCommandService {
       logError('Error ensuring connection to $routerIp: $e');
       return false;
     }
+  }
+
+  CommandQueueController _getQueueController(RouterConnection connection) {
+    return _queueControllers.putIfAbsent(connection.ipAddress, () {
+      return CommandQueueController(
+        connection: connection,
+        commandTimeout: _config.commandTimeout,
+        maxRetries: _config.maxRetries,
+        statusController: _commandStatusController,
+      );
+    });
   }
 
   bool isRouterConnected(String routerIp) {
@@ -170,38 +180,19 @@ class RouterCommandService {
       queuedAt: DateTime.now(),
     );
 
-    if (!_commandQueues.containsKey(routerIp)) {
-      _commandQueues[routerIp] = [];
-    }
+    final conn = await _connectionManager.getConnection(routerIp);
 
-    _commandQueues[routerIp]!.add(queuedCommand);
-    _commandQueues[routerIp]!.sort((a, b) => a.compareTo(b));
-    _updateCommandStatus(queuedCommand);
-    _startQueueExecution(routerIp);
+    final controller = _getQueueController(conn);
+    controller.enqueue(queuedCommand);
+
     return commandId;
   }
 
   bool cancelCommand(String commandId) {
-    for (final routerIp in _commandQueues.keys) {
-      final queue = _commandQueues[routerIp]!;
-      final index = queue.indexWhere((cmd) => cmd.id == commandId);
-
-      if (index >= 0) {
-        final command = queue[index];
-
-        if (command.status == CommandStatus.queued) {
-          queue.removeAt(index);
-
-          command.status = CommandStatus.cancelled;
-          command.completedAt = DateTime.now();
-          _updateCommandStatus(command);
-          _addToHistory(command);
-
-          return true;
-        }
-      }
+    for (final controller in _queueControllers.values) {
+      final result = controller.cancel(commandId);
+      if (result) return true;
     }
-
     return false;
   }
 
@@ -244,76 +235,6 @@ class RouterCommandService {
 
     if (_commandHistory.length > _maxHistorySize) {
       _commandHistory.removeLast();
-    }
-  }
-
-  void _startQueueExecution(String routerIp) {
-    if (_executingQueues[routerIp] == true) {
-      return;
-    }
-
-    _executingQueues[routerIp] = true;
-    _executeQueue(routerIp).then((_) {
-      _executingQueues[routerIp] = false;
-    });
-  }
-
-  Future<void> _executeQueue(String routerIp) async {
-    if (!_commandQueues.containsKey(routerIp) ||
-        _commandQueues[routerIp]!.isEmpty) {
-      return;
-    }
-
-    final queue = _commandQueues[routerIp]!;
-    final executingCommands = <String>{};
-
-    while (queue.isNotEmpty) {
-      if (executingCommands.length >= _maxConcurrentCommandsPerRouter) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        continue;
-      }
-
-      final command = queue.removeAt(0);
-      executingCommands.add(command.id);
-      unawaited(_executeQueuedCommand(command).then((_) {
-        executingCommands.remove(command.id);
-      }));
-      await Future.delayed(const Duration(milliseconds: 10));
-    }
-
-    while (executingCommands.isNotEmpty) {
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
-  }
-
-  Future<void> _executeQueuedCommand(QueuedCommand command) async {
-    try {
-      command.status = CommandStatus.executing;
-      command.executedAt = DateTime.now();
-      _updateCommandStatus(command);
-
-      final result = await sendCommand(
-        command.routerIp,
-        command.command,
-        priority: command.priority,
-      );
-
-      command.status =
-          result.success ? CommandStatus.completed : CommandStatus.failed;
-      command.completedAt = DateTime.now();
-      command.response = result.response;
-      command.errorMessage = result.errorMessage;
-      command.attemptsMade = result.attemptsMade;
-
-      _updateCommandStatus(command);
-      _addToHistory(command);
-    } catch (e) {
-      command.status = CommandStatus.failed;
-      command.completedAt = DateTime.now();
-      command.errorMessage = 'Unexpected error: ${e.toString()}';
-
-      _updateCommandStatus(command);
-      _addToHistory(command);
     }
   }
 }

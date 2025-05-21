@@ -12,7 +12,6 @@ import '../providers/project_settings_provider.dart';
 import '../providers/router_connection_provider.dart';
 import '../services/app_directory_service.dart';
 import '../utils/general_ui.dart';
-import '../utils/logger.dart';
 import '../widgets/app_tree_view.dart';
 import 'details/group_detail_screen.dart';
 import 'details/router_detail_screen.dart';
