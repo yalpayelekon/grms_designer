@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/router_connection_provider.dart';
 import '../utils/logger.dart';
+import 'command_executor.dart';
 import 'command_queue_controller.dart';
 import 'models/command_models.dart';
 import 'models/connection_config.dart';
@@ -82,74 +83,12 @@ class RouterCommandService {
     final localMaxRetries = maxRetries ?? _config.maxRetries;
     final localTimeout = timeout ?? _config.commandTimeout;
 
-    return _executeWithRetries(
-        connection, queuedCommand, localTimeout, localMaxRetries);
-  }
-
-  Future<CommandResult> _executeWithRetries(RouterConnection connection,
-      QueuedCommand command, Duration timeout, int maxRetries) async {
-    String? lastError;
-
-    for (int attempt = 0; attempt < maxRetries + 1; attempt++) {
-      command.attemptsMade++;
-
-      if (attempt > 0) {
-        final delay = Duration(milliseconds: 200 * (1 << attempt));
-        await Future.delayed(delay);
-      }
-
-      try {
-        final completer = Completer<String>();
-
-        final subscription = connection.messageStream.listen((message) {
-          if (!completer.isCompleted) {
-            completer.complete(message);
-          }
-        });
-
-        final sent = await connection.sendFireAndForget(command.command);
-        if (!sent) {
-          lastError = 'Failed to send command';
-          await subscription.cancel();
-          continue;
-        }
-
-        String? response;
-        try {
-          response = await completer.future.timeout(timeout);
-        } on TimeoutException {
-          lastError = 'Command timed out';
-          await subscription.cancel();
-          continue;
-        } finally {
-          await subscription.cancel();
-        }
-
-        command.status = CommandStatus.completed;
-        command.completedAt = DateTime.now();
-        command.response = response;
-        _updateCommandStatus(command);
-        _addToHistory(command);
-
-        return CommandResult.success(response, command.attemptsMade);
-      } catch (e) {
-        lastError = e.toString();
-
-        if (attempt == maxRetries) {
-          command.status = CommandStatus.failed;
-          command.completedAt = DateTime.now();
-          command.errorMessage = lastError;
-          _updateCommandStatus(command);
-          _addToHistory(command);
-
-          return CommandResult.failure(lastError, command.attemptsMade);
-        }
-      }
-    }
-
-    return CommandResult.failure(
-      lastError ?? 'Unknown error',
-      command.attemptsMade,
+    return CommandExecutor.executeWithRetries(
+      connection: connection,
+      command: queuedCommand,
+      timeout: localTimeout,
+      maxRetries: localMaxRetries,
+      onStatusUpdate: _updateCommandStatus,
     );
   }
 
