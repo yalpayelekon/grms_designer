@@ -1,0 +1,117 @@
+.
+├── comm
+│   ├── command_queue_controller.dart
+│   ├── discovery_manager.dart
+│   ├── models
+│   │   ├── command_models.dart
+│   │   ├── connection_config.dart
+│   │   └── router_connection_status.dart
+│   ├── router_command_service.dart
+│   ├── router_connection.dart
+│   └── router_connection_manager.dart
+├── extensions
+│   ├── device_address_extensions.dart
+│   └── group_extensions.dart
+├── main.dart
+├── models
+│   ├── flowsheet.dart
+│   ├── helvar_models
+│   │   ├── device_action.dart
+│   │   ├── emergency_device.dart
+│   │   ├── helvar_device.dart
+│   │   ├── helvar_group.dart
+│   │   ├── helvar_router.dart
+│   │   ├── input_device.dart
+│   │   ├── output_device.dart
+│   │   └── workgroup.dart
+│   ├── link.dart
+│   └── project_settings.dart
+├── niagara
+│   ├── home
+│   │   ├── command.dart
+│   │   ├── component_panel.dart
+│   │   ├── component_widget.dart
+│   │   ├── connection_painter.dart
+│   │   ├── grid_painter.dart
+│   │   ├── handlers.dart
+│   │   ├── intents.dart
+│   │   ├── manager.dart
+│   │   ├── paste_special_dialog.dart
+│   │   ├── resize_component_command.dart
+│   │   ├── selection_box_painter.dart
+│   │   └── utils.dart
+│   └── models
+│       ├── command.dart
+│       ├── command_history.dart
+│       ├── component.dart
+│       ├── component_type.dart
+│       ├── connection.dart
+│       ├── helvar_device_component.dart
+│       ├── logic_components.dart
+│       ├── math_components.dart
+│       ├── point_components.dart
+│       ├── port.dart
+│       ├── port_type.dart
+│       ├── ramp_component.dart
+│       └── rectangle.dart
+├── protocol
+│   ├── device_types.dart
+│   ├── message_parser.dart
+│   ├── protocol_constants.dart
+│   ├── protocol_utils.dart
+│   └── query_commands.dart
+├── providers
+│   ├── flowsheet_provider.dart
+│   ├── project_settings_provider.dart
+│   ├── router_connection_provider.dart
+│   ├── settings_provider.dart
+│   └── workgroups_provider.dart
+├── screens
+│   ├── actions.dart
+│   ├── details
+│   │   ├── group_detail_screen.dart
+│   │   ├── router_detail_screen.dart
+│   │   └── workgroup_detail_screen.dart
+│   ├── dialogs
+│   │   ├── action_dialogs.dart
+│   │   ├── add_device_dialog.dart
+│   │   ├── device_context_menu.dart
+│   │   ├── flowsheet_actions.dart
+│   │   ├── network_interface_dialog.dart
+│   │   ├── router_selection.dart
+│   │   └── workgroup_selection_dialog.dart
+│   ├── home_screen.dart
+│   ├── lists
+│   │   ├── flowsheet_list_screen.dart
+│   │   ├── groups_list_screen.dart
+│   │   └── workgroup_list_screen.dart
+│   ├── log_panel_screen.dart
+│   └── project_screens
+│       ├── flow_screen.dart
+│       ├── project_files_screen.dart
+│       ├── project_settings_screen.dart
+│       └── settings_screen.dart
+├── services
+│   ├── app_directory_service.dart
+│   ├── app_initialization.dart
+│   ├── connection_service.dart
+│   ├── discovery_service.dart
+│   ├── file_storage_service.dart
+│   ├── flowsheet_storage_service.dart
+│   ├── log_service.dart
+│   └── router_storage_service.dart
+├── tree.txt
+├── utils
+│   ├── device_icons.dart
+│   ├── file_dialog_helper.dart
+│   ├── general_ui.dart
+│   ├── helpers.dart
+│   ├── logger.dart
+│   └── persistent_helper.dart
+└── widgets
+    ├── app_tree_view.dart
+    ├── command_monitor.dart
+    ├── flow_screen_editor.dart
+    └── wiresheet_flow_editor.dart
+
+18 directories, 96 files
