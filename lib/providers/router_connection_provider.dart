@@ -50,15 +50,6 @@ final commandHistoryProvider = Provider<List<QueuedCommand>>((ref) {
   return service.commandHistory;
 });
 
-final routerCommandConfigurationProvider = Provider<void>((ref) {
-  final settings = ref.watch(projectSettingsProvider);
-  final commandService = ref.watch(routerCommandServiceProvider);
-
-  commandService.configureFromSettings(settings);
-
-  return;
-});
-
 final discoveryServiceProvider = Provider<DiscoveryService>((ref) {
   final commandService = ref.watch(routerCommandServiceProvider);
   return DiscoveryService(commandService);

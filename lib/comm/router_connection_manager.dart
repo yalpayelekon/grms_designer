@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:grms_designer/protocol/protocol_constants.dart';
 
-import '../models/project_settings.dart';
 import 'models/connection_config.dart';
 import 'router_connection.dart';
 import 'models/router_connection_status.dart';
@@ -15,7 +14,7 @@ class RouterConnectionManager {
 
   RouterConnectionManager([this.config = const ConnectionConfig()]);
 
-  int _maxConcurrentConnections = 10;
+  int get _maxConcurrentConnections => config.maxConnections;
 
   Stream<RouterConnectionStatus> get connectionStatusStream =>
       connectionStatusController.stream;
@@ -25,16 +24,6 @@ class RouterConnectionManager {
 
   int get connectionCount => connections.length;
   int get maxConnections => _maxConcurrentConnections;
-
-  void configure({int? maxConnections}) {
-    if (maxConnections != null) {
-      _maxConcurrentConnections = maxConnections;
-    }
-  }
-
-  void configureFromSettings(ProjectSettings settings) {
-    _maxConcurrentConnections = settings.maxConcurrentCommandsPerRouter * 2;
-  }
 
   Future<RouterConnection> getConnection(
     String ipAddress, {

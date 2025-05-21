@@ -11,7 +11,6 @@ class RouterCommandService {
   final RouterConnectionManager _connectionManager;
   final ConnectionConfig _config;
   final List<QueuedCommand> _commandHistory = [];
-  int _maxHistorySize = 100;
   final _commandStatusController = StreamController<QueuedCommand>.broadcast();
   final Map<String, List<QueuedCommand>> _commandQueues = {};
   final Map<String, bool> _executingQueues = {};
@@ -22,12 +21,8 @@ class RouterCommandService {
       _commandStatusController.stream;
   List<QueuedCommand> get commandHistory => List.unmodifiable(_commandHistory);
 
-  int _maxConcurrentCommandsPerRouter = 5;
-
-  void configureFromSettings(ProjectSettings settings) {
-    _maxConcurrentCommandsPerRouter = settings.maxConcurrentCommandsPerRouter;
-    _maxHistorySize = settings.commandHistorySize;
-  }
+  int get _maxConcurrentCommandsPerRouter => _config.maxConcurrentCommands;
+  int get _maxHistorySize => _config.historySize;
 
   Future<bool> ensureConnection(String routerIp) async {
     try {
@@ -36,16 +31,6 @@ class RouterCommandService {
     } catch (e) {
       logError('Error ensuring connection to $routerIp: $e');
       return false;
-    }
-  }
-
-  void configure({
-    int? maxConcurrentCommandsPerRouter,
-    int? maxRetries,
-    Duration? commandTimeout,
-  }) {
-    if (maxConcurrentCommandsPerRouter != null) {
-      _maxConcurrentCommandsPerRouter = maxConcurrentCommandsPerRouter;
     }
   }
 

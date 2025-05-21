@@ -7,6 +7,7 @@ class ConnectionConfig {
   final int maxRetries;
   final int maxConcurrentCommands;
   final int historySize;
+  final int maxConnections;
 
   const ConnectionConfig({
     this.timeout = const Duration(seconds: 5),
@@ -15,6 +16,7 @@ class ConnectionConfig {
     this.maxRetries = 3,
     this.maxConcurrentCommands = 5,
     this.historySize = 100,
+    this.maxConnections = 10,
   });
 
   factory ConnectionConfig.fromProjectSettings(ProjectSettings settings) {
@@ -25,6 +27,7 @@ class ConnectionConfig {
       maxRetries: settings.maxCommandRetries,
       maxConcurrentCommands: settings.maxConcurrentCommandsPerRouter,
       historySize: settings.commandHistorySize,
+      maxConnections: settings.maxConcurrentCommandsPerRouter * 2, // NEW
     );
   }
 }
