@@ -47,9 +47,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   HelvarRouter? selectedRouter;
   bool showingProject = true;
   bool showingGroups = false;
-  bool showingGroupDetail = false;
-  bool showingRouterDetail = false;
   bool showingProjectSettings = false;
+
   double _leftPanelWidth = 500;
   bool _isDragging = false;
   AsyncValue<RouterConnectionStatus>? connectionStream;
@@ -187,49 +186,46 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildMainContent() {
-    if (showingRouterDetail &&
-        selectedRouter != null &&
-        selectedWorkgroup != null) {
-      return RouterDetailScreen(
-        workgroup: selectedWorkgroup!,
-        router: selectedRouter!,
-      );
+    if (showingProject) {
+      return _buildConnectionMonitor();
+    }
+    if (openSettings) {
+      return const ProjectSettingsScreen();
+    }
+    if (openWorkGroup) {
+      return const WorkgroupListScreen();
     }
     if (showingGroups) {
       return GroupsListScreen(
         workgroup: selectedWorkgroup!,
       );
     }
-    if (showingGroupDetail) {
-      return GroupDetailScreen(
-        group: selectedGroup!,
-        workgroup: selectedWorkgroup!,
-      );
-    }
-    if (openSettings) {
-      return const ProjectSettingsScreen();
-    }
-    if (openWorkGroup) {
-      if (selectedWorkgroup == null) {
-        return const WorkgroupListScreen();
-      }
-      return WorkgroupDetailScreen(workgroup: selectedWorkgroup!);
-    }
     if (showingImages) {
       return const ProjectFilesScreen(
           directoryName: AppDirectoryService.imagesDir);
     }
     if (openWiresheet) {
-      if (selectedWiresheetId == null) {
-        return const FlowsheetListScreen();
-      }
+      return const FlowsheetListScreen();
+    }
+    if (selectedWiresheetId != null) {
       return FlowScreen(
         flowsheetId: selectedWiresheetId!,
       );
     }
-
-    if (showingProject) {
-      return _buildConnectionMonitor();
+    if (selectedWorkgroup != null) {
+      if (selectedGroup != null) {
+        return GroupDetailScreen(
+          group: selectedGroup!,
+          workgroup: selectedWorkgroup!,
+        );
+      }
+      if (selectedRouter != null) {
+        return RouterDetailScreen(
+          workgroup: selectedWorkgroup!,
+          router: selectedRouter!,
+        );
+      }
+      return WorkgroupDetailScreen(workgroup: selectedWorkgroup!);
     }
 
     return const FlowsheetListScreen();
@@ -438,7 +434,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _setActiveNode(String nodeName, {dynamic additionalData}) {
+  void _setActiveNode(String nodeName,
+      {Workgroup? workgroup,
+      HelvarGroup? group,
+      HelvarRouter? router,
+      String? wiresheetId}) {
     setState(() {
       openWorkGroup = false;
       openWiresheet = false;
@@ -446,117 +446,54 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       showingImages = false;
       showingProject = false;
       showingGroups = false;
-      showingGroupDetail = false;
       showingProjectSettings = false;
-      showingRouterDetail = false;
       selectedRouter = null;
+      selectedGroup = null;
+      selectedWiresheetId = null;
+      selectedWorkgroup = null;
+      currentFileDirectory = null;
 
       switch (nodeName) {
         case 'project':
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
-          currentFileDirectory = null;
           showingProject = true;
           break;
         case 'settings':
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
-          currentFileDirectory = null;
           openSettings = true;
           break;
         case 'workgroups':
           openWorkGroup = true;
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          currentFileDirectory = null;
-          if (additionalData is Workgroup) {
-            selectedWorkgroup = additionalData;
-          } else {
-            selectedWorkgroup = null;
-          }
+          break;
+        case 'workgroupDetail':
+          selectedWorkgroup = workgroup;
           break;
         case 'wiresheet':
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
-          currentFileDirectory = null;
-          openWiresheet = true;
-          if (additionalData is String) {
-            selectedWiresheetId = additionalData;
-          }
+          selectedWiresheetId = wiresheetId;
           break;
         case 'images':
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
-          currentFileDirectory = null;
-          showingImages = true;
           currentFileDirectory = AppDirectoryService.imagesDir;
           break;
         case 'files':
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
+          // TODO: implement file handling
           currentFileDirectory = null;
           break;
         case 'wiresheets':
           openWiresheet = true;
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
-          currentFileDirectory = null;
           break;
 
         case 'groups':
           showingGroups = true;
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          currentFileDirectory = null;
-          if (additionalData is Workgroup) {
-            selectedWorkgroup = additionalData;
-          }
+          selectedWorkgroup = workgroup;
           break;
         case 'groupDetail':
-          selectedWiresheetId = null;
-          currentFileDirectory = null;
-          showingGroupDetail = true;
-          if (additionalData is Map<String, dynamic>) {
-            if (additionalData['workgroup'] is Workgroup) {
-              selectedWorkgroup = additionalData['workgroup'];
-            }
-            if (additionalData['group'] is HelvarGroup) {
-              selectedGroup = additionalData['group'];
-            }
-          }
+          selectedWorkgroup = workgroup;
+          selectedGroup = group;
           break;
         case 'projectSettings':
-          selectedGroup = null;
-          selectedWiresheetId = null;
-          selectedWorkgroup = null;
-          currentFileDirectory = null;
           showingProjectSettings = true;
           break;
         case 'router':
-          openWorkGroup = false;
-          openWiresheet = false;
-          openSettings = false;
-          showingImages = false;
-          showingProject = false;
-          showingGroups = false;
-          showingGroupDetail = false;
-          showingProjectSettings = false;
-          showingRouterDetail = true;
-
-          if (additionalData is Map<String, dynamic>) {
-            if (additionalData['workgroup'] is Workgroup) {
-              selectedWorkgroup = additionalData['workgroup'];
-            }
-            if (additionalData['router'] is HelvarRouter) {
-              selectedRouter = additionalData['router'];
-            }
-          }
+          selectedWorkgroup = workgroup;
+          selectedRouter = router;
           break;
         default:
           showingProject = true;
