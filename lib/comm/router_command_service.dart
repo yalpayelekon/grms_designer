@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:grms_designer/protocol/protocol_constants.dart';
 import 'package:uuid/uuid.dart';
 import '../models/project_settings.dart';
 import '../utils/logger.dart';
@@ -24,13 +23,9 @@ class RouterCommandService {
   List<QueuedCommand> get commandHistory => List.unmodifiable(_commandHistory);
 
   int _maxConcurrentCommandsPerRouter = 5;
-  int _maxRetries = 3;
-  Duration _commandTimeout = const Duration(seconds: 10);
 
   void configureFromSettings(ProjectSettings settings) {
     _maxConcurrentCommandsPerRouter = settings.maxConcurrentCommandsPerRouter;
-    _maxRetries = settings.maxCommandRetries;
-    _commandTimeout = Duration(milliseconds: settings.commandTimeoutMs);
     _maxHistorySize = settings.commandHistorySize;
   }
 
@@ -51,12 +46,6 @@ class RouterCommandService {
   }) {
     if (maxConcurrentCommandsPerRouter != null) {
       _maxConcurrentCommandsPerRouter = maxConcurrentCommandsPerRouter;
-    }
-    if (maxRetries != null) {
-      _maxRetries = maxRetries;
-    }
-    if (commandTimeout != null) {
-      _commandTimeout = commandTimeout;
     }
   }
 
@@ -82,25 +71,17 @@ class RouterCommandService {
       queuedAt: DateTime.now(),
     );
 
-    // Update command status for tracking
     queuedCommand.status = CommandStatus.executing;
     queuedCommand.executedAt = DateTime.now();
     _updateCommandStatus(queuedCommand);
 
     RouterConnection? connection;
     try {
-      // Get connection using the manager
       connection = await _connectionManager.getConnection(routerIp);
     } catch (e) {
       return _handleConnectionError(queuedCommand, e);
     }
 
-    if (connection == null) {
-      return _handleConnectionError(
-          queuedCommand, Exception('No connection available'));
-    }
-
-    // Use local or default settings
     final localMaxRetries = maxRetries ?? _config.maxRetries;
     final localTimeout = timeout ?? _config.commandTimeout;
 

@@ -65,21 +65,3 @@ final discoveryServiceProvider = Provider<DiscoveryService>((ref) {
   final commandService = ref.watch(routerCommandServiceProvider);
   return DiscoveryService(commandService);
 });
-
-class RouterConnectionsNotifier
-    extends StateNotifier<Map<String, RouterConnection>> {
-  final RouterConnectionManager _manager;
-  StreamSubscription? _subscription;
-
-  RouterConnectionsNotifier(this._manager) : super({..._manager.connections}) {
-    _subscription = _manager.connectionStatusStream.listen((_) {
-      state = {..._manager.connections};
-    });
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
-  }
-}
