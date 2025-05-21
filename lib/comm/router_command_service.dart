@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import '../providers/router_connection_provider.dart';
 import '../utils/logger.dart';
 import 'command_queue_controller.dart';
 import 'models/command_models.dart';
@@ -244,3 +246,8 @@ void unawaited(Future<void> future) {
     logError('Unhandled async error: $error', tag: "RouterCommandService");
   });
 }
+
+final commandStatusStreamProvider = StreamProvider<QueuedCommand>((ref) {
+  final service = ref.watch(routerCommandServiceProvider);
+  return service.commandStatusStream;
+});

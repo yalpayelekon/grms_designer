@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../comm/models/command_models.dart';
 import '../models/link.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
@@ -200,5 +201,22 @@ Color getPortColor(PortType type) {
     case PortType.any:
     default:
       return Colors.purple;
+  }
+}
+
+Color getStatusColor(CommandStatus status) {
+  switch (status) {
+    case CommandStatus.queued:
+      return Colors.grey;
+    case CommandStatus.executing:
+      return Colors.blue;
+    case CommandStatus.completed:
+      return Colors.green;
+    case CommandStatus.failed:
+      return Colors.red;
+    case CommandStatus.cancelled:
+      return Colors.orange;
+    case CommandStatus.timedOut:
+      return Colors.black38;
   }
 }

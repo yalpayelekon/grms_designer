@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 
+import '../comm/models/command_models.dart';
+import '../comm/router_command_service.dart';
 import '../niagara/home/utils.dart';
 import 'project_screens/flow_screen.dart';
 import '../models/helvar_models/helvar_group.dart';
@@ -52,6 +54,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isDragging = false;
   AsyncValue<RouterConnectionStatus>? connectionStream;
   Set<int> selectedIndices = <int>{};
+  final Map<String, List<QueuedCommand>> _liveQueues = {};
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +62,21 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     final wiresheets = ref.watch(flowsheetsProvider);
     final projectName = ref.watch(projectNameProvider);
     connectionStream = ref.watch(routerConnectionStatusStreamProvider);
+    ref.listen<AsyncValue<QueuedCommand>>(
+      commandStatusStreamProvider,
+      (previous, next) {
+        next.whenData((command) {
+          final list = _liveQueues.putIfAbsent(command.routerIp, () => []);
+
+          final index = list.indexWhere((c) => c.id == command.id);
+          if (index != -1) {
+            list[index] = command;
+          } else {
+            list.add(command);
+          }
+        });
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -376,17 +394,47 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         break;
     }
 
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(status.routerIp),
-      subtitle: Text(
-        status.errorMessage != null
-            ? 'Error: ${status.errorMessage}'
-            : 'Last change: ${formatDateTime(status.lastStateChange)}',
+    final commands = _liveQueues[status.routerIp] ?? [];
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(icon, color: color),
+              title: Text(status.routerIp),
+              subtitle: Text(
+                status.errorMessage != null
+                    ? 'Error: ${status.errorMessage}'
+                    : 'Last change: ${formatDateTime(status.lastStateChange)}',
+              ),
+              trailing: status.reconnectAttempts > 0
+                  ? Chip(label: Text('Retry: ${status.reconnectAttempts}'))
+                  : null,
+            ),
+            if (commands.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, top: 4.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: commands
+                      .map((cmd) => Text(
+                            '• [${cmd.status.name}] ${cmd.command}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: getStatusColor(cmd.status),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+          ],
+        ),
       ),
-      trailing: status.reconnectAttempts > 0
-          ? Chip(label: Text('Retry: ${status.reconnectAttempts}'))
-          : null,
     );
   }
 
