@@ -69,11 +69,19 @@ class RouterConnection {
     }
   }
 
-  Future<bool> sendData(List<int> data) async {
+  Future<bool> sendRaw(List<int> data) async {
+    return _send((s) => s.add(data));
+  }
+
+  Future<bool> sendText(String text) async {
+    return _send((s) => s.write(text));
+  }
+
+  Future<bool> _send(void Function(Socket) sendFn) async {
     if (!isConnected) return false;
 
     try {
-      _socket!.add(data);
+      sendFn(_socket!);
       _lastActivity = DateTime.now();
       return true;
     } catch (e) {
@@ -81,6 +89,9 @@ class RouterConnection {
       return false;
     }
   }
+
+  @Deprecated('Use sendRaw instead')
+  Future<bool> sendData(List<int> data) => sendRaw(data);
 
   Future<void> disconnect() async {
     _stopHeartbeat();
@@ -100,18 +111,8 @@ class RouterConnection {
     _updateStatus(RouterConnectionState.disconnected);
   }
 
-  Future<bool> sendCommand(String command) async {
-    if (!isConnected) return false;
-
-    try {
-      _socket!.write(command);
-      _lastActivity = DateTime.now();
-      return true;
-    } catch (e) {
-      _handleError(e);
-      return false;
-    }
-  }
+  @Deprecated('Use sendText instead')
+  Future<bool> sendCommand(String command) => sendText(command);
 
   void _handleData(Uint8List data) {
     _lastActivity = DateTime.now();
@@ -121,21 +122,8 @@ class RouterConnection {
     _processMessageBuffer();
   }
 
-  Future<bool> sendBytes(List<int> data) async {
-    if (!isConnected) {
-      return false;
-    }
-
-    try {
-      _socket!.add(data);
-      _lastActivity = DateTime.now();
-      return true;
-    } catch (e) {
-      logError('Error sending data: $e');
-      _handleError(e);
-      return false;
-    }
-  }
+  @Deprecated('Use sendRaw instead')
+  Future<bool> sendBytes(List<int> data) => sendRaw(data);
 
   Future<void> dispose() async {
     _isClosing = true;

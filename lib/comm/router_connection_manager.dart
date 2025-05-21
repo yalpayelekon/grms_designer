@@ -112,17 +112,6 @@ class RouterConnectionManager {
     await connectionStatusController.close();
   }
 
-  Future<bool> sendCommand(String ipAddress, String command,
-      [int port = 50000]) async {
-    final connectionKey = '$ipAddress:$port';
-
-    if (!connections.containsKey(connectionKey)) {
-      return false;
-    }
-
-    return await connections[connectionKey]!.sendCommand(command);
-  }
-
   Map<String, dynamic> getConnectionStats() {
     int connected = 0;
     int connecting = 0;
