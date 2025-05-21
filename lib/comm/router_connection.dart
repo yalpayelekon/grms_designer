@@ -73,7 +73,7 @@ class RouterConnection {
     return _send((s) => s.add(data));
   }
 
-  Future<bool> sendText(String text) async {
+  Future<bool> sendFireAndForget(String text) async {
     return _send((s) => s.write(text));
   }
 
@@ -110,9 +110,6 @@ class RouterConnection {
 
     _updateStatus(RouterConnectionState.disconnected);
   }
-
-  @Deprecated('Use sendText instead')
-  Future<bool> sendCommand(String command) => sendText(command);
 
   void _handleData(Uint8List data) {
     _lastActivity = DateTime.now();
@@ -222,6 +219,6 @@ class RouterConnection {
       return;
     }
 
-    sendCommand(HelvarNetCommands.queryHelvarNetVersion());
+    sendFireAndForget(HelvarNetCommands.queryHelvarNetVersion());
   }
 }

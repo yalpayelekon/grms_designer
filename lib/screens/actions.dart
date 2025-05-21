@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/extensions/device_address_extensions.dart';
+import 'package:grms_designer/extensions/group_extensions.dart';
 import 'package:grms_designer/providers/project_settings_provider.dart';
 import 'package:grms_designer/utils/general_ui.dart';
 import 'package:grms_designer/utils/logger.dart';
@@ -57,11 +59,7 @@ void performRecallScene(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -117,11 +115,7 @@ void performStoreScene(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -174,11 +168,7 @@ void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -229,11 +219,7 @@ void performDirectProportion(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -283,11 +269,7 @@ void performModifyProportion(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -322,11 +304,7 @@ void performEmergencyFunctionTest(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -359,11 +337,7 @@ void performEmergencyDurationTest(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -396,11 +370,7 @@ void stopEmergencyTest(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -433,11 +403,7 @@ void resetEmergencyBatteryTotalLampTime(
     return;
   }
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -475,11 +441,7 @@ void refreshGroupProperties(
     groupId,
   );
 
-  String routerIpAddress = group.gatewayRouterIpAddress;
-  if (routerIpAddress.isEmpty && workgroup.routers.isNotEmpty) {
-    routerIpAddress = workgroup.routers.first.ipAddress;
-  }
-
+  final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
     logWarning('No router IP address available for this group');
     return;
@@ -526,48 +488,43 @@ void performDeviceDirectLevel(
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final routerAddress = '@$cluster.$router';
+  final routerAddress = device.routerAddress;
 
-    final workgroups = container.read(workgroupsProvider);
-    Workgroup? workgroup;
-    HelvarRouter? helvarRouter;
+  final workgroups = container.read(workgroupsProvider);
+  Workgroup? workgroup;
+  HelvarRouter? helvarRouter;
 
-    for (final wg in workgroups) {
-      for (final r in wg.routers) {
-        if (r.address == routerAddress) {
-          workgroup = wg;
-          helvarRouter = r;
-          break;
-        }
+  for (final wg in workgroups) {
+    for (final r in wg.routers) {
+      if (r.address == routerAddress) {
+        workgroup = wg;
+        helvarRouter = r;
+        break;
       }
-      if (workgroup != null) break;
     }
-
-    if (workgroup == null || helvarRouter == null) {
-      logWarning('Router not found for this device');
-      return;
-    }
-
-    final command = HelvarNetCommands.directLevelDevice(
-      device.address,
-      level,
-      fadeTime: 700, // Default fade time
-    );
-
-    commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-      if (result.success) {
-        logInfo('Set level to $level for device ${device.deviceId}');
-      } else {
-        logWarning('Failed to send command to router');
-      }
-    }).catchError((error) {
-      logError('Connection error: $error');
-    });
+    if (workgroup != null) break;
   }
+
+  if (workgroup == null || helvarRouter == null) {
+    logWarning('Router not found for this device');
+    return;
+  }
+
+  final command = HelvarNetCommands.directLevelDevice(
+    device.address,
+    level,
+    fadeTime: 700,
+  );
+
+  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
+    if (result.success) {
+      logInfo('Set level to $level for device ${device.deviceId}');
+    } else {
+      logWarning('Failed to send command to router');
+    }
+  }).catchError((error) {
+    logError('Connection error: $error');
+  });
 }
 
 void performDeviceRecallScene(
@@ -575,53 +532,46 @@ void performDeviceRecallScene(
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final routerAddress = '@$cluster.$router';
+  final workgroups = container.read(workgroupsProvider);
+  Workgroup? workgroup;
+  HelvarRouter? helvarRouter;
 
-    final workgroups = container.read(workgroupsProvider);
-    Workgroup? workgroup;
-    HelvarRouter? helvarRouter;
-
-    for (final wg in workgroups) {
-      for (final r in wg.routers) {
-        if (r.address == routerAddress) {
-          workgroup = wg;
-          helvarRouter = r;
-          break;
-        }
+  for (final wg in workgroups) {
+    for (final r in wg.routers) {
+      if (r.address == device.routerAddress) {
+        workgroup = wg;
+        helvarRouter = r;
+        break;
       }
-      if (workgroup != null) break;
     }
-
-    if (workgroup == null || helvarRouter == null) {
-      logWarning('Router not found for this device');
-      return;
-    }
-
-    final command = HelvarNetCommands.recallSceneDevice(
-      cluster,
-      router,
-      int.parse(parts[2]), // subnet
-      int.parse(parts[3]), // device
-      1, // Block ID (default to 1)
-      sceneNumber,
-      fadeTime: 700, // Default fade time in 0.1 seconds
-    );
-
-    commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-      if (result.success) {
-        showSnackBarMsg(context,
-            'Recalled scene $sceneNumber for device ${device.deviceId}');
-      } else {
-        logWarning('Failed to send command to router');
-      }
-    }).catchError((error) {
-      logError('Connection error: $error');
-    });
+    if (workgroup != null) break;
   }
+
+  if (workgroup == null || helvarRouter == null) {
+    logWarning('Router not found for this device');
+    return;
+  }
+
+  final command = HelvarNetCommands.recallSceneDevice(
+    device.cluster,
+    device.router,
+    device.subnet,
+    device.device,
+    1, // Block ID (default to 1)
+    sceneNumber,
+    fadeTime: 700, // Default fade time in 0.1 seconds
+  );
+
+  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
+    if (result.success) {
+      showSnackBarMsg(
+          context, 'Recalled scene $sceneNumber for device ${device.deviceId}');
+    } else {
+      logWarning('Failed to send command to router');
+    }
+  }).catchError((error) {
+    logError('Connection error: $error');
+  });
 }
 
 void performDeviceDirectProportion(
@@ -629,52 +579,45 @@ void performDeviceDirectProportion(
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final routerAddress = '@$cluster.$router';
+  final workgroups = container.read(workgroupsProvider);
+  Workgroup? workgroup;
+  HelvarRouter? helvarRouter;
 
-    final workgroups = container.read(workgroupsProvider);
-    Workgroup? workgroup;
-    HelvarRouter? helvarRouter;
-
-    for (final wg in workgroups) {
-      for (final r in wg.routers) {
-        if (r.address == routerAddress) {
-          workgroup = wg;
-          helvarRouter = r;
-          break;
-        }
+  for (final wg in workgroups) {
+    for (final r in wg.routers) {
+      if (r.address == device.routerAddress) {
+        workgroup = wg;
+        helvarRouter = r;
+        break;
       }
-      if (workgroup != null) break;
     }
-
-    if (workgroup == null || helvarRouter == null) {
-      logWarning('Router not found for this device');
-      return;
-    }
-
-    final command = HelvarNetCommands.directProportionDevice(
-      cluster,
-      router,
-      int.parse(parts[2]), // subnet
-      int.parse(parts[3]), // device
-      proportion,
-      fadeTime: 700, // Default fade time
-    );
-
-    commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-      if (result.success) {
-        showSnackBarMsg(context,
-            'Set proportion to $proportion for device ${device.deviceId}');
-      } else {
-        logError('Failed to send command to router');
-      }
-    }).catchError((error) {
-      logError('Connection error: $error');
-    });
+    if (workgroup != null) break;
   }
+
+  if (workgroup == null || helvarRouter == null) {
+    logWarning('Router not found for this device');
+    return;
+  }
+
+  final command = HelvarNetCommands.directProportionDevice(
+    device.cluster,
+    device.router,
+    device.subnet,
+    device.device,
+    proportion,
+    fadeTime: 700,
+  );
+
+  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
+    if (result.success) {
+      showSnackBarMsg(context,
+          'Set proportion to $proportion for device ${device.deviceId}');
+    } else {
+      logError('Failed to send command to router');
+    }
+  }).catchError((error) {
+    logError('Connection error: $error');
+  });
 }
 
 void performDeviceModifyProportion(
@@ -682,52 +625,45 @@ void performDeviceModifyProportion(
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
-  final parts = device.address.split('.');
-  if (parts.length >= 4) {
-    final cluster = int.parse(parts[0]);
-    final router = int.parse(parts[1]);
-    final routerAddress = '@$cluster.$router';
+  final workgroups = container.read(workgroupsProvider);
+  Workgroup? workgroup;
+  HelvarRouter? helvarRouter;
 
-    final workgroups = container.read(workgroupsProvider);
-    Workgroup? workgroup;
-    HelvarRouter? helvarRouter;
-
-    for (final wg in workgroups) {
-      for (final r in wg.routers) {
-        if (r.address == routerAddress) {
-          workgroup = wg;
-          helvarRouter = r;
-          break;
-        }
+  for (final wg in workgroups) {
+    for (final r in wg.routers) {
+      if (r.address == device.routerAddress) {
+        workgroup = wg;
+        helvarRouter = r;
+        break;
       }
-      if (workgroup != null) break;
     }
-
-    if (workgroup == null || helvarRouter == null) {
-      logWarning('Router not found for this device');
-      return;
-    }
-
-    final command = HelvarNetCommands.modifyProportionDevice(
-      cluster,
-      router,
-      int.parse(parts[2]), // subnet
-      int.parse(parts[3]), // device
-      proportion,
-      fadeTime: 700, // Default fade time
-    );
-
-    commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-      if (result.success) {
-        showSnackBarMsg(context,
-            'Modified proportion by $proportion for device ${device.deviceId}');
-      } else {
-        logWarning('Failed to send command to device');
-      }
-    }).catchError((error) {
-      logError('Connection error: $error');
-    });
+    if (workgroup != null) break;
   }
+
+  if (workgroup == null || helvarRouter == null) {
+    logWarning('Router not found for this device');
+    return;
+  }
+
+  final command = HelvarNetCommands.modifyProportionDevice(
+    device.cluster,
+    device.router,
+    device.subnet,
+    device.device,
+    proportion,
+    fadeTime: 700,
+  );
+
+  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
+    if (result.success) {
+      showSnackBarMsg(context,
+          'Modified proportion by $proportion for device ${device.deviceId}');
+    } else {
+      logWarning('Failed to send command to device');
+    }
+  }).catchError((error) {
+    logError('Connection error: $error');
+  });
 }
 
 void showGroupContextMenu(

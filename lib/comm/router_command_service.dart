@@ -102,25 +102,21 @@ class RouterCommandService {
       }
 
       try {
-        // Set up a completer for this command
         final completer = Completer<String>();
 
-        // Subscribe to connection's message stream with a subscription
         final subscription = connection.messageStream.listen((message) {
           if (!completer.isCompleted) {
             completer.complete(message);
           }
         });
 
-        // Send the command
-        final sent = await connection.sendCommand(command.command);
+        final sent = await connection.sendFireAndForget(command.command);
         if (!sent) {
           lastError = 'Failed to send command';
           await subscription.cancel();
           continue;
         }
 
-        // Wait for response with timeout
         String? response;
         try {
           response = await completer.future.timeout(timeout);
@@ -132,7 +128,6 @@ class RouterCommandService {
           await subscription.cancel();
         }
 
-        // Command succeeded
         command.status = CommandStatus.completed;
         command.completedAt = DateTime.now();
         command.response = response;
