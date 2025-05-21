@@ -51,8 +51,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingProjectSettings = false;
   double _leftPanelWidth = 500;
   bool _isDragging = false;
-  List<RouterConnectionStatus>? connectionStatuses;
-  Map<String, dynamic>? connectionStats;
   AsyncValue<RouterConnectionStatus>? connectionStream;
   Set<int> selectedIndices = <int>{};
 
@@ -157,6 +155,20 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Map<String, dynamic> _calculateStats(List<RouterConnectionStatus> statuses) {
+    return {
+      'total': statuses.length,
+      'connected': statuses
+          .where((s) => s.state == RouterConnectionState.connected)
+          .length,
+      'reconnecting': statuses
+          .where((s) => s.state == RouterConnectionState.reconnecting)
+          .length,
+      'failed':
+          statuses.where((s) => s.state == RouterConnectionState.failed).length,
+    };
+  }
+
   Widget _buildMainContent() {
     if (showingRouterDetail &&
         selectedRouter != null &&
@@ -207,52 +219,46 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildConnectionMonitor() {
-    if (connectionStats == null) return const SizedBox.shrink();
+    final connections = ref.watch(routerConnectionManagerProvider).connections;
+    final statuses = connections.values.map((c) => c.status).toList();
+    final stats = _calculateStats(statuses);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Router Connections',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Router Connections',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
+                _buildStatCard(context, 'Total', stats['total']),
                 _buildStatCard(
-                    context, 'Total', connectionStats!['total'] ?? 0),
-                _buildStatCard(context, 'Connected',
-                    connectionStats!['connected'] ?? 0, Colors.green),
-                _buildStatCard(context, 'Reconnecting',
-                    connectionStats!['reconnecting'] ?? 0, Colors.orange),
-                _buildStatCard(context, 'Failed',
-                    connectionStats!['failed'] ?? 0, Colors.red),
+                    context, 'Connected', stats['connected'], Colors.green),
+                _buildStatCard(context, 'Reconnecting', stats['reconnecting'],
+                    Colors.orange),
+                _buildStatCard(context, 'Failed', stats['failed'], Colors.red),
               ],
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () {
-                _connectToExistingRouters(context);
-              },
+              onPressed: () => _connectToExistingRouters(context),
               child: const Text('Connect to Routers'),
             ),
-            if (connectionStatuses!.isEmpty)
-              const Center(
-                child: Text('No active router connections'),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: connectionStatuses!.length,
-                  itemBuilder: (context, index) {
-                    final status = connectionStatuses![index];
-                    return _buildConnectionStatusItem(context, status);
-                  },
-                ),
-              ),
+            statuses.isEmpty
+                ? const Center(child: Text('No active router connections'))
+                : Expanded(
+                    child: ListView.builder(
+                      itemCount: statuses.length,
+                      itemBuilder: (context, index) {
+                        return _buildConnectionStatusItem(
+                            context, statuses[index]);
+                      },
+                    ),
+                  ),
           ],
         ),
       ),
@@ -291,8 +297,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      final connectionManager = ref.read(routerConnectionManagerProvider);
-      int connectedCount = 0;
+      final connectionService = ref.read(connectionServiceProvider);
 
       showDialog(
         context: context,
@@ -309,25 +314,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
 
-      for (final index in selectedRouters) {
-        try {
-          final routerInfo = routersInfo[index];
-          final router = routerInfo['router'] as HelvarRouter;
-
-          if (router.ipAddress.isNotEmpty) {
-            await connectionManager.getConnection(
-              router.ipAddress,
-            );
-            connectedCount++;
-          }
-        } catch (e) {
-          logError('Error connecting to router: $e');
-        }
-      }
+      final routersToConnect = selectedRouters
+          .map((i) => routersInfo[i]['router'] as HelvarRouter)
+          .toList();
+      final result = await connectionService.connectToRouters(routersToConnect);
 
       if (mounted) {
         Navigator.of(context).pop();
-        showSnackBarMsg(context, 'Connected to $connectedCount routers');
+        showSnackBarMsg(context,
+            'Connected to ${result.successCount} routers (${result.failureCount} failed)');
       }
     }
   }

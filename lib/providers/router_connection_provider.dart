@@ -5,6 +5,7 @@ import '../comm/router_command_service.dart';
 import '../comm/router_connection.dart';
 import '../comm/router_connection_manager.dart';
 import '../comm/models/router_connection_status.dart';
+import '../services/connection_service.dart';
 import '../services/discovery_service.dart';
 import 'project_settings_provider.dart';
 
@@ -32,13 +33,6 @@ final routerConnectionsProvider =
   return manager.connections;
 });
 
-final routerConnectionStatusesProvider =
-    Provider<List<RouterConnectionStatus>>((ref) {
-  ref.watch(routerConnectionsProvider);
-  final manager = ref.watch(routerConnectionManagerProvider);
-  return manager.allConnectionStatuses;
-});
-
 final routerConnectionStatusStreamProvider =
     StreamProvider<RouterConnectionStatus>((ref) {
   final manager = ref.watch(routerConnectionManagerProvider);
@@ -53,4 +47,9 @@ final commandHistoryProvider = Provider<List<QueuedCommand>>((ref) {
 final discoveryServiceProvider = Provider<DiscoveryService>((ref) {
   final commandService = ref.watch(routerCommandServiceProvider);
   return DiscoveryService(commandService);
+});
+
+final connectionServiceProvider = Provider<ConnectionService>((ref) {
+  final manager = ref.watch(routerConnectionManagerProvider);
+  return ConnectionService(manager);
 });

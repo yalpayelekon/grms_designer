@@ -39,6 +39,7 @@ class RouterConnection {
       _socket != null && _status.state == RouterConnectionState.connected;
   RouterConnectionStatus get status => _status;
   Stream<RouterConnectionStatus> get statusStream => _statusController.stream;
+
   Stream<String> get messageStream => _messageController.stream;
 
   Future<void> connect() async {
@@ -90,9 +91,6 @@ class RouterConnection {
     }
   }
 
-  @Deprecated('Use sendRaw instead')
-  Future<bool> sendData(List<int> data) => sendRaw(data);
-
   Future<void> disconnect() async {
     _stopHeartbeat();
 
@@ -118,9 +116,6 @@ class RouterConnection {
     _messageBuffer.write(message);
     _processMessageBuffer();
   }
-
-  @Deprecated('Use sendRaw instead')
-  Future<bool> sendBytes(List<int> data) => sendRaw(data);
 
   Future<void> dispose() async {
     _isClosing = true;
