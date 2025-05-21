@@ -540,8 +540,9 @@ void resetEmergencyBatteryTotalLampTime(
 void refreshGroupProperties(
     BuildContext context, HelvarGroup group, Workgroup workgroup) {
   final container = ProviderScope.containerOf(context);
-  final connectionManager = container.read(routerConnectionManagerProvider);
+  final commandService = container.read(routerCommandServiceProvider);
   final settingsProvider = container.read(projectSettingsProvider);
+
   final groupId = int.tryParse(group.groupId);
   if (groupId == null) {
     showSnackBarMsg(context, 'Invalid group ID: ${group.groupId}');
@@ -562,36 +563,36 @@ void refreshGroupProperties(
     return;
   }
 
-  connectionManager
-      .getConnection(
+  commandService
+      .sendCommand(
     routerIpAddress,
+    descriptionCommand,
+    timeout: Duration(milliseconds: settingsProvider.commandTimeoutMs),
   )
-      .then((connection) {
-    if (connection.isConnected) {
-      connection
-          .sendCommandWithResponse(descriptionCommand,
-              Duration(milliseconds: settingsProvider.commandTimeoutMs))
-          .then((response) {
-        if (response != null && response.contains('=')) {
-          final parts = response.split('=');
-          if (parts.length > 1) {
-            final description = parts[1].replaceAll('#', '');
+      .then((result) {
+    if (result.success && result.response != null) {
+      final response = result.response!;
 
-            final updatedGroup = group.copyWith(
-              description: description,
-              lastMessage: 'Group properties refreshed',
-              lastMessageTime: DateTime.now(),
-            );
+      if (response.contains('=')) {
+        final parts = response.split('=');
+        if (parts.length > 1) {
+          final description = parts[1].replaceAll('#', '');
 
-            final workgroupsNotifier =
-                container.read(workgroupsProvider.notifier);
-            workgroupsNotifier.updateGroup(workgroup.id, updatedGroup);
-            showSnackBarMsg(context, 'Group properties refreshed');
-          }
+          final updatedGroup = group.copyWith(
+            description: description,
+            lastMessage: 'Group properties refreshed',
+            lastMessageTime: DateTime.now(),
+          );
+
+          final workgroupsNotifier =
+              container.read(workgroupsProvider.notifier);
+          workgroupsNotifier.updateGroup(workgroup.id, updatedGroup);
+          showSnackBarMsg(context, 'Group properties refreshed');
         }
-      });
+      }
     } else {
-      showSnackBarMsg(context, 'Failed to establish connection to router');
+      showSnackBarMsg(context,
+          'Failed to refresh group properties: ${result.errorMessage ?? "No response"}');
     }
   }).catchError((error) {
     showSnackBarMsg(context, 'Connection error: $error');

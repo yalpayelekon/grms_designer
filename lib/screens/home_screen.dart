@@ -318,10 +318,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           if (router.ipAddress.isNotEmpty) {
             await connectionManager.getConnection(
               router.ipAddress,
-              heartbeatInterval:
-                  Duration(seconds: settings.heartbeatIntervalSeconds),
-              connectionTimeout:
-                  Duration(milliseconds: settings.socketTimeoutMs),
             );
             connectedCount++;
           }

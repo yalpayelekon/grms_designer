@@ -14,17 +14,16 @@ class RouterConnection {
 
   Socket? _socket;
   StreamSubscription? _dataSubscription;
-  StreamController<Uint8List> incomingDataController =
-      StreamController<Uint8List>.broadcast();
-  StreamController<RouterConnectionStatus> statusController =
+  final _statusController =
       StreamController<RouterConnectionStatus>.broadcast();
+  final _messageController = StreamController<String>.broadcast();
   Timer? _heartbeatTimer;
   DateTime _lastActivity = DateTime.now();
   int _reconnectAttempts = 0;
   bool _isClosing = false;
-  final Map<String, Completer<String>> _commandResponses = {};
+  final _messageBuffer = StringBuffer();
   RouterConnectionStatus _status;
-  final StringBuffer _messageBuffer = StringBuffer();
+
   RouterConnection({
     required this.ipAddress,
     this.port = defaultTcpPort,
@@ -39,8 +38,8 @@ class RouterConnection {
   bool get isConnected =>
       _socket != null && _status.state == RouterConnectionState.connected;
   RouterConnectionStatus get status => _status;
-  Stream<Uint8List> get dataStream => incomingDataController.stream;
-  Stream<RouterConnectionStatus> get statusStream => statusController.stream;
+  Stream<RouterConnectionStatus> get statusStream => _statusController.stream;
+  Stream<String> get messageStream => _messageController.stream;
 
   Future<void> connect() async {
     if (_isClosing) return;
@@ -70,6 +69,19 @@ class RouterConnection {
     }
   }
 
+  Future<bool> sendData(List<int> data) async {
+    if (!isConnected) return false;
+
+    try {
+      _socket!.add(data);
+      _lastActivity = DateTime.now();
+      return true;
+    } catch (e) {
+      _handleError(e);
+      return false;
+    }
+  }
+
   Future<void> disconnect() async {
     _stopHeartbeat();
 
@@ -89,19 +101,24 @@ class RouterConnection {
   }
 
   Future<bool> sendCommand(String command) async {
-    if (!isConnected) {
-      return false;
-    }
+    if (!isConnected) return false;
 
     try {
       _socket!.write(command);
       _lastActivity = DateTime.now();
       return true;
     } catch (e) {
-      logError('Error sending command: $e');
       _handleError(e);
       return false;
     }
+  }
+
+  void _handleData(Uint8List data) {
+    _lastActivity = DateTime.now();
+
+    final message = String.fromCharCodes(data);
+    _messageBuffer.write(message);
+    _processMessageBuffer();
   }
 
   Future<bool> sendBytes(List<int> data) async {
@@ -124,16 +141,8 @@ class RouterConnection {
     _isClosing = true;
     await disconnect();
 
-    await statusController.close();
-    await incomingDataController.close();
-  }
-
-  void _handleData(Uint8List data) {
-    _lastActivity = DateTime.now();
-    final message = String.fromCharCodes(data);
-    _messageBuffer.write(message);
-    incomingDataController.add(data);
-    _processMessageBuffer();
+    await _statusController.close();
+    await _messageController.close();
   }
 
   void _processMessageBuffer() {
@@ -142,52 +151,17 @@ class RouterConnection {
 
     if (terminatorIndex >= 0) {
       final completeMessage = bufferContent.substring(0, terminatorIndex + 1);
-      logDebug('Complete message received: $completeMessage');
       _messageBuffer.clear();
+
       if (terminatorIndex + 1 < bufferContent.length) {
         _messageBuffer.write(bufferContent.substring(terminatorIndex + 1));
       }
 
-      if (_commandResponses.isNotEmpty) {
-        final commandId = _commandResponses.keys.first;
-        final completer = _commandResponses.remove(commandId)!;
-        if (!completer.isCompleted) {
-          completer.complete(completeMessage);
-          logInfo(
-              'Completed command $commandId with response: $completeMessage');
-        }
-      }
+      _messageController.add(completeMessage);
 
       if (_messageBuffer.isNotEmpty) {
         _processMessageBuffer();
       }
-    }
-  }
-
-  Future<String?> sendCommandWithResponse(
-    String command,
-    Duration timeout,
-  ) async {
-    if (!isConnected) {
-      return null;
-    }
-
-    final commandId = DateTime.now().millisecondsSinceEpoch.toString();
-    final completer = Completer<String>();
-
-    try {
-      _commandResponses[commandId] = completer;
-      _socket!.write(command);
-      _lastActivity = DateTime.now();
-      final response = await completer.future.timeout(timeout);
-      return response;
-    } on TimeoutException {
-      _commandResponses.remove(commandId);
-      return null;
-    } catch (e) {
-      _commandResponses.remove(commandId);
-      logError('Error sending command: $e');
-      return null;
     }
   }
 
@@ -213,7 +187,7 @@ class RouterConnection {
       reconnectAttempts: _reconnectAttempts,
     );
 
-    statusController.add(_status);
+    _statusController.add(_status);
   }
 
   void _scheduleReconnect() {

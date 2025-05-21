@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../comm/models/command_models.dart';
+import '../comm/models/connection_config.dart';
 import '../comm/router_command_service.dart';
 import '../comm/router_connection.dart';
 import '../comm/router_connection_manager.dart';
@@ -9,21 +10,22 @@ import '../comm/models/router_connection_status.dart';
 import '../services/discovery_service.dart';
 import 'project_settings_provider.dart';
 
-final routerConnectionManagerProvider =
-    Provider<RouterConnectionManager>((ref) {
-  final settings = ref.watch(projectSettingsProvider);
-  final manager = RouterConnectionManager();
-  manager.configureFromSettings(settings);
-  return manager;
-});
-
 final routerCommandServiceProvider = Provider<RouterCommandService>((ref) {
   final connectionManager = ref.watch(routerConnectionManagerProvider);
-  final settings = ref.watch(projectSettingsProvider);
+  final config = ref.watch(connectionConfigProvider);
+  return RouterCommandService(connectionManager, config);
+});
 
-  final service = RouterCommandService(connectionManager);
-  service.configureFromSettings(settings);
-  return service;
+final connectionConfigProvider = Provider<ConnectionConfig>((ref) {
+  final settings = ref.watch(projectSettingsProvider);
+  return ConnectionConfig.fromProjectSettings(settings);
+});
+
+final routerConnectionManagerProvider =
+    Provider<RouterConnectionManager>((ref) {
+  final config = ref.watch(connectionConfigProvider);
+  final manager = RouterConnectionManager(config);
+  return manager;
 });
 
 final routerConnectionsProvider =

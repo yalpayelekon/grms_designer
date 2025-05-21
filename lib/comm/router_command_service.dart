@@ -4,25 +4,46 @@ import 'package:uuid/uuid.dart';
 import '../models/project_settings.dart';
 import '../utils/logger.dart';
 import 'models/command_models.dart';
+import 'models/connection_config.dart';
 import 'router_connection.dart';
 import 'router_connection_manager.dart';
 
 class RouterCommandService {
   final RouterConnectionManager _connectionManager;
-  RouterCommandService(this._connectionManager);
-
-  final Map<String, List<QueuedCommand>> _commandQueues = {};
+  final ConnectionConfig _config;
   final List<QueuedCommand> _commandHistory = [];
   int _maxHistorySize = 100;
   final _commandStatusController = StreamController<QueuedCommand>.broadcast();
-  int _maxConcurrentCommandsPerRouter = 5;
-  int _maxRetries = 3;
-  Duration _commandTimeout = const Duration(seconds: 10);
+  final Map<String, List<QueuedCommand>> _commandQueues = {};
   final Map<String, bool> _executingQueues = {};
+
+  RouterCommandService(this._connectionManager, this._config);
 
   Stream<QueuedCommand> get commandStatusStream =>
       _commandStatusController.stream;
   List<QueuedCommand> get commandHistory => List.unmodifiable(_commandHistory);
+
+  int _maxConcurrentCommandsPerRouter = 5;
+  int _maxRetries = 3;
+  Duration _commandTimeout = const Duration(seconds: 10);
+
+  void configureFromSettings(ProjectSettings settings) {
+    _maxConcurrentCommandsPerRouter = settings.maxConcurrentCommandsPerRouter;
+    _maxRetries = settings.maxCommandRetries;
+    _commandTimeout = Duration(milliseconds: settings.commandTimeoutMs);
+    _maxHistorySize = settings.commandHistorySize;
+  }
+
+  Future<bool> ensureConnection(String routerIp) async {
+    try {
+      await _connectionManager.getConnection(routerIp);
+      return true;
+    } catch (e) {
+      logError('Error ensuring connection to $routerIp: $e');
+      return false;
+    }
+  }
+
   void configure({
     int? maxConcurrentCommandsPerRouter,
     int? maxRetries,
@@ -39,47 +60,8 @@ class RouterCommandService {
     }
   }
 
-  Future<bool> ensureConnection(String routerIp) async {
-    try {
-      final connectionManager = RouterConnectionManager();
-      await connectionManager.getConnection(routerIp);
-      return true;
-    } catch (e) {
-      logError('Error ensuring connection to $routerIp: $e');
-      return false;
-    }
-  }
-
-  Future<String?> executeCommand(String routerIp, String command) async {
-    try {
-      final result = await sendCommand(
-        routerIp,
-        command,
-        priority: CommandPriority.high,
-      );
-
-      if (result.success) {
-        return result.response;
-      } else {
-        logError('Command execution failed: ${result.errorMessage}');
-        return null;
-      }
-    } catch (e) {
-      logError('Error executing command: $e');
-      return null;
-    }
-  }
-
   bool isRouterConnected(String routerIp) {
-    final connectionManager = RouterConnectionManager();
-    return connectionManager.hasConnection(routerIp);
-  }
-
-  void configureFromSettings(ProjectSettings settings) {
-    _maxConcurrentCommandsPerRouter = settings.maxConcurrentCommandsPerRouter;
-    _maxRetries = settings.maxCommandRetries;
-    _commandTimeout = Duration(milliseconds: settings.commandTimeoutMs);
-    _maxHistorySize = settings.commandHistorySize;
+    return _connectionManager.hasConnection(routerIp);
   }
 
   Future<CommandResult> sendCommand(
@@ -88,6 +70,7 @@ class RouterCommandService {
     Duration? timeout,
     int? maxRetries,
     CommandPriority priority = CommandPriority.normal,
+    String? groupId,
   }) async {
     final commandId = const Uuid().v4();
     final queuedCommand = QueuedCommand(
@@ -95,55 +78,42 @@ class RouterCommandService {
       routerIp: routerIp,
       command: command,
       priority: priority,
+      groupId: groupId,
       queuedAt: DateTime.now(),
     );
 
+    // Update command status for tracking
     queuedCommand.status = CommandStatus.executing;
     queuedCommand.executedAt = DateTime.now();
     _updateCommandStatus(queuedCommand);
 
     RouterConnection? connection;
     try {
+      // Get connection using the manager
       connection = await _connectionManager.getConnection(routerIp);
-      if (_connectionManager.hasConnection(routerIp)) {
-        final connectionKey = '$routerIp:$defaultTcpPort';
-        if (_connectionManager.connections.containsKey(connectionKey)) {
-          connection = _connectionManager.connections[connectionKey];
-        }
-      }
     } catch (e) {
-      queuedCommand.status = CommandStatus.failed;
-      queuedCommand.completedAt = DateTime.now();
-      queuedCommand.errorMessage = 'Connection error: ${e.toString()}';
-      _updateCommandStatus(queuedCommand);
-      _addToHistory(queuedCommand);
-
-      return CommandResult.failure(
-        'Failed to establish connection: ${e.toString()}',
-        queuedCommand.attemptsMade,
-      );
+      return _handleConnectionError(queuedCommand, e);
     }
 
     if (connection == null) {
-      queuedCommand.status = CommandStatus.failed;
-      queuedCommand.completedAt = DateTime.now();
-      queuedCommand.errorMessage =
-          'No connection available and routerId not provided';
-      _updateCommandStatus(queuedCommand);
-      _addToHistory(queuedCommand);
-
-      return CommandResult.failure(
-        'No connection available and routerId not provided',
-        queuedCommand.attemptsMade,
-      );
+      return _handleConnectionError(
+          queuedCommand, Exception('No connection available'));
     }
 
-    final localMaxRetries = maxRetries ?? _maxRetries;
-    final localTimeout = timeout ?? _commandTimeout;
+    // Use local or default settings
+    final localMaxRetries = maxRetries ?? _config.maxRetries;
+    final localTimeout = timeout ?? _config.commandTimeout;
+
+    return _executeWithRetries(
+        connection, queuedCommand, localTimeout, localMaxRetries);
+  }
+
+  Future<CommandResult> _executeWithRetries(RouterConnection connection,
+      QueuedCommand command, Duration timeout, int maxRetries) async {
     String? lastError;
 
-    for (int attempt = 0; attempt < localMaxRetries + 1; attempt++) {
-      queuedCommand.attemptsMade++;
+    for (int attempt = 0; attempt < maxRetries + 1; attempt++) {
+      command.attemptsMade++;
 
       if (attempt > 0) {
         final delay = Duration(milliseconds: 200 * (1 << attempt));
@@ -151,51 +121,75 @@ class RouterCommandService {
       }
 
       try {
-        final response = await connection.sendCommandWithResponse(
-          command,
-          localTimeout,
-        );
+        // Set up a completer for this command
+        final completer = Completer<String>();
 
-        if (response == null) {
-          lastError = 'Command timed out or failed to get response';
-
-          if (attempt == localMaxRetries) {
-            queuedCommand.status = CommandStatus.timedOut;
-            queuedCommand.completedAt = DateTime.now();
-            queuedCommand.errorMessage = lastError;
-            _updateCommandStatus(queuedCommand);
-            _addToHistory(queuedCommand);
-
-            return CommandResult.timeout(queuedCommand.attemptsMade);
+        // Subscribe to connection's message stream with a subscription
+        final subscription = connection.messageStream.listen((message) {
+          if (!completer.isCompleted) {
+            completer.complete(message);
           }
+        });
+
+        // Send the command
+        final sent = await connection.sendCommand(command.command);
+        if (!sent) {
+          lastError = 'Failed to send command';
+          await subscription.cancel();
           continue;
         }
 
-        queuedCommand.status = CommandStatus.completed;
-        queuedCommand.completedAt = DateTime.now();
-        queuedCommand.response = response;
-        _updateCommandStatus(queuedCommand);
-        _addToHistory(queuedCommand);
+        // Wait for response with timeout
+        String? response;
+        try {
+          response = await completer.future.timeout(timeout);
+        } on TimeoutException {
+          lastError = 'Command timed out';
+          await subscription.cancel();
+          continue;
+        } finally {
+          await subscription.cancel();
+        }
 
-        return CommandResult.success(response, queuedCommand.attemptsMade);
+        // Command succeeded
+        command.status = CommandStatus.completed;
+        command.completedAt = DateTime.now();
+        command.response = response;
+        _updateCommandStatus(command);
+        _addToHistory(command);
+
+        return CommandResult.success(response, command.attemptsMade);
       } catch (e) {
         lastError = e.toString();
 
-        if (attempt == localMaxRetries) {
-          queuedCommand.status = CommandStatus.failed;
-          queuedCommand.completedAt = DateTime.now();
-          queuedCommand.errorMessage = lastError;
-          _updateCommandStatus(queuedCommand);
-          _addToHistory(queuedCommand);
+        if (attempt == maxRetries) {
+          command.status = CommandStatus.failed;
+          command.completedAt = DateTime.now();
+          command.errorMessage = lastError;
+          _updateCommandStatus(command);
+          _addToHistory(command);
 
-          return CommandResult.failure(lastError, queuedCommand.attemptsMade);
+          return CommandResult.failure(lastError, command.attemptsMade);
         }
       }
     }
 
     return CommandResult.failure(
       lastError ?? 'Unknown error',
-      queuedCommand.attemptsMade,
+      command.attemptsMade,
+    );
+  }
+
+  CommandResult _handleConnectionError(QueuedCommand command, dynamic error) {
+    command.status = CommandStatus.failed;
+    command.completedAt = DateTime.now();
+    command.errorMessage = 'Connection error: ${error.toString()}';
+    _updateCommandStatus(command);
+    _addToHistory(command);
+
+    return CommandResult.failure(
+      'Failed to establish connection: ${error.toString()}',
+      command.attemptsMade,
     );
   }
 

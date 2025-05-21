@@ -3,28 +3,30 @@ import 'dart:async';
 import 'package:grms_designer/protocol/protocol_constants.dart';
 
 import '../models/project_settings.dart';
-import '../utils/logger.dart';
+import 'models/connection_config.dart';
 import 'router_connection.dart';
 import 'models/router_connection_status.dart';
 
 class RouterConnectionManager {
+  final ConnectionConfig config;
   final Map<String, RouterConnection> connections = {};
-
-  final connectionstatusController =
+  final connectionStatusController =
       StreamController<RouterConnectionStatus>.broadcast();
+
+  RouterConnectionManager([this.config = const ConnectionConfig()]);
 
   int _maxConcurrentConnections = 10;
   Duration _defaultHeartbeatInterval = const Duration(seconds: 30);
   Duration _defaultConnectionTimeout = const Duration(seconds: 5);
 
   Stream<RouterConnectionStatus> get connectionStatusStream =>
-      connectionstatusController.stream;
-
-  int get connectionCount => connections.length;
-  int get maxConnections => _maxConcurrentConnections;
+      connectionStatusController.stream;
 
   List<RouterConnectionStatus> get allConnectionStatuses =>
       connections.values.map((conn) => conn.status).toList();
+
+  int get connectionCount => connections.length;
+  int get maxConnections => _maxConcurrentConnections;
 
   void configure({int? maxConnections}) {
     if (maxConnections != null) {
@@ -44,57 +46,42 @@ class RouterConnectionManager {
     String ipAddress, {
     bool forceReconnect = false,
     int port = defaultTcpPort,
-    Duration? heartbeatInterval,
-    Duration? connectionTimeout,
   }) async {
     final connectionKey = '$ipAddress:$port';
-    logInfo("trying to get connection for:$connectionKey");
+
     try {
       if (connections.containsKey(connectionKey) && !forceReconnect) {
         final connection = connections[connectionKey]!;
 
         if (!connection.isConnected) {
-          logDebug('Reconnecting to router at $ipAddress',
-              tag: 'RouterConnectionManager');
           await connection.connect();
         }
 
         return connection;
       }
 
-      if (connections.length >= _maxConcurrentConnections) {
+      if (connections.length >= config.maxConcurrentCommands * 2) {
         throw Exception(
-            'Maximum connection limit reached ($_maxConcurrentConnections)');
+            'Maximum connection limit reached (${config.maxConcurrentCommands * 2})');
       }
 
-      logInfo('Creating new connection to router at $ipAddress');
       final connection = RouterConnection(
         ipAddress: ipAddress,
         port: port,
-        heartbeatInterval: heartbeatInterval ?? _defaultHeartbeatInterval,
-        connectionTimeout: connectionTimeout ?? _defaultConnectionTimeout,
+        heartbeatInterval: config.heartbeatInterval,
+        connectionTimeout: config.timeout,
       );
 
       connection.statusStream.listen((status) {
-        connectionstatusController.add(status);
-        if (status.state == RouterConnectionState.failed ||
-            status.state == RouterConnectionState.disconnected) {
-          logDebug('Router($ipAddress) connection status: ${status.state}');
-          if (status.errorMessage != null) {
-            logError(
-                'Router($ipAddress) connection error: ${status.errorMessage}');
-          }
-        }
+        connectionStatusController.add(status);
       });
 
       connections[connectionKey] = connection;
-      connectionstatusController.add(connection.status);
       await connection.connect();
 
       return connection;
     } catch (e) {
-      logError('Failed to establish connection to $ipAddress: $e');
-      throw Exception('Connection failed to $ipAddress: $e');
+      throw Exception('Failed to establish connection to $ipAddress: $e');
     }
   }
 
@@ -122,7 +109,7 @@ class RouterConnectionManager {
 
   Future<void> dispose() async {
     await closeAllConnections();
-    await connectionstatusController.close();
+    await connectionStatusController.close();
   }
 
   Future<bool> sendCommand(String ipAddress, String command,
