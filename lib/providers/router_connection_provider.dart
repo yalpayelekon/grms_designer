@@ -9,12 +9,6 @@ import '../services/connection_service.dart';
 import '../services/discovery_service.dart';
 import 'project_settings_provider.dart';
 
-final routerCommandServiceProvider = Provider<RouterCommandService>((ref) {
-  final connectionManager = ref.watch(routerConnectionManagerProvider);
-  final config = ref.watch(connectionConfigProvider);
-  return RouterCommandService(connectionManager, config);
-});
-
 final connectionConfigProvider = Provider<ConnectionConfig>((ref) {
   final settings = ref.watch(projectSettingsProvider);
   return ConnectionConfig.fromProjectSettings(settings);
@@ -23,8 +17,13 @@ final connectionConfigProvider = Provider<ConnectionConfig>((ref) {
 final routerConnectionManagerProvider =
     Provider<RouterConnectionManager>((ref) {
   final config = ref.watch(connectionConfigProvider);
-  final manager = RouterConnectionManager(config);
-  return manager;
+  return RouterConnectionManager(config);
+});
+
+final routerCommandServiceProvider = Provider<RouterCommandService>((ref) {
+  final connectionManager = ref.watch(routerConnectionManagerProvider);
+  final config = ref.watch(connectionConfigProvider);
+  return RouterCommandService(connectionManager, config);
 });
 
 final routerConnectionsProvider =

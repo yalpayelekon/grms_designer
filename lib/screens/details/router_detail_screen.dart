@@ -10,6 +10,7 @@ import '../../providers/workgroups_provider.dart';
 import '../../utils/device_icons.dart';
 import '../../utils/file_dialog_helper.dart';
 import '../../utils/general_ui.dart';
+import '../../utils/logger.dart';
 import '../dialogs/add_device_dialog.dart';
 
 class RouterDetailScreen extends ConsumerStatefulWidget {
@@ -630,13 +631,28 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     });
 
     try {
+      // Add some debug logging
+      logInfo(
+          'Starting device discovery for router: ${widget.router.ipAddress}');
+
       final discoveryService = ref.watch(discoveryServiceProvider);
+
+      // Add a small delay to ensure providers are properly initialized
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      logInfo('Discovery service obtained, attempting connection...');
+
       final discoveredRouter = await discoveryService
           .discoverRouterWithPersistentConnection(widget.router.ipAddress);
 
+      logInfo('Discovery completed. Router found: ${discoveredRouter != null}');
+
       if (discoveredRouter == null || discoveredRouter.devices.isEmpty) {
         if (!mounted) return;
-        showSnackBarMsg(context, 'No devices discovered');
+        final message = discoveredRouter == null
+            ? 'Failed to connect to router'
+            : 'No devices discovered';
+        showSnackBarMsg(context, message);
         setState(() {
           _isLoading = false;
         });
@@ -644,6 +660,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       }
 
       final discoveredDevices = discoveredRouter.devices;
+      logInfo('Found ${discoveredDevices.length} devices');
 
       if (!mounted) return;
       final shouldAdd = await showDialog<bool>(
@@ -678,6 +695,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           .where((d) => !existingAddresses.contains(d.address))
           .toList();
 
+      logInfo('Adding ${newDevices.length} new devices');
+
       for (final device in newDevices) {
         await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
               widget.workgroup.id,
@@ -693,7 +712,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         _organizeDevicesBySubnet();
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      logError('Error discovering devices: $e', stackTrace: stackTrace);
       if (!mounted) return;
       showSnackBarMsg(context, 'Error discovering devices: $e');
       setState(() {

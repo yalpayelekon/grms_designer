@@ -19,7 +19,11 @@ class ConnectionConfig {
     this.maxConnections = 10,
   });
 
-  factory ConnectionConfig.fromProjectSettings(ProjectSettings settings) {
+  factory ConnectionConfig.fromProjectSettings(ProjectSettings? settings) {
+    if (settings == null) {
+      return const ConnectionConfig();
+    }
+
     return ConnectionConfig(
       timeout: Duration(milliseconds: settings.socketTimeoutMs),
       heartbeatInterval: Duration(seconds: settings.heartbeatIntervalSeconds),
@@ -27,7 +31,7 @@ class ConnectionConfig {
       maxRetries: settings.maxCommandRetries,
       maxConcurrentCommands: settings.maxConcurrentCommandsPerRouter,
       historySize: settings.commandHistorySize,
-      maxConnections: settings.maxConcurrentCommandsPerRouter * 2, // NEW
+      maxConnections: settings.maxConcurrentCommandsPerRouter * 2,
     );
   }
 }
