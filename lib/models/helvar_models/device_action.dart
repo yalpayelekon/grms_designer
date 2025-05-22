@@ -1,4 +1,4 @@
-import '../link.dart';
+import '../../niagara/models/port_type.dart';
 
 enum DeviceAction {
   clearResult,
@@ -39,23 +39,23 @@ extension DeviceActionExtension on DeviceAction {
   PortType get portType {
     switch (this) {
       case DeviceAction.clearResult:
-        return PortType.boolean;
+        return const PortType(PortType.BOOLEAN);
       case DeviceAction.recallScene:
-        return PortType.number;
+        return const PortType(PortType.NUMERIC);
       case DeviceAction.directLevel:
-        return PortType.number;
+        return const PortType(PortType.NUMERIC);
       case DeviceAction.directProportion:
-        return PortType.number;
+        return const PortType(PortType.NUMERIC);
       case DeviceAction.modifyProportion:
-        return PortType.number;
+        return const PortType(PortType.NUMERIC);
       case DeviceAction.emergencyFunctionTest:
-        return PortType.boolean;
+        return const PortType(PortType.BOOLEAN);
       case DeviceAction.emergencyDurationTest:
-        return PortType.boolean;
+        return const PortType(PortType.BOOLEAN);
       case DeviceAction.stopEmergencyTest:
-        return PortType.boolean;
+        return const PortType(PortType.BOOLEAN);
       case DeviceAction.resetEmergencyBattery:
-        return PortType.boolean;
+        return const PortType(PortType.BOOLEAN);
     }
   }
 }
