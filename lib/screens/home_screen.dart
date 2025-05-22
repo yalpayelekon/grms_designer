@@ -36,7 +36,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
-  bool openWorkGroup = false;
+  bool openWorkGroups = false;
   bool openWiresheet = false;
   bool openSettings = false;
   bool showingImages = false;
@@ -46,6 +46,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   HelvarGroup? selectedGroup;
   HelvarRouter? selectedRouter;
   bool showingProject = true;
+  bool showingWorkgroup = false;
   bool showingGroups = false;
   bool showingProjectSettings = false;
 
@@ -127,7 +128,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 workgroups: workgroups,
                 showingProject: showingProject,
                 openSettings: openSettings,
-                openWorkGroup: openWorkGroup,
+                openWorkGroups: openWorkGroups,
+                showingWorkgroup: showingWorkgroup,
                 openWiresheet: openWiresheet,
                 showingImages: showingImages,
                 showingGroups: showingGroups,
@@ -192,7 +194,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     if (openSettings) {
       return const ProjectSettingsScreen();
     }
-    if (openWorkGroup) {
+    if (openWorkGroups) {
       return const WorkgroupListScreen();
     }
     if (showingGroups) {
@@ -440,7 +442,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       HelvarRouter? router,
       String? wiresheetId}) {
     setState(() {
-      openWorkGroup = false;
+      openWorkGroups = false;
       openWiresheet = false;
       openSettings = false;
       showingImages = false;
@@ -452,6 +454,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       selectedWiresheetId = null;
       selectedWorkgroup = null;
       currentFileDirectory = null;
+      showingWorkgroup = false;
 
       switch (nodeName) {
         case 'project':
@@ -461,9 +464,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           openSettings = true;
           break;
         case 'workgroups':
-          openWorkGroup = true;
+          openWorkGroups = true;
           break;
         case 'workgroupDetail':
+          showingWorkgroup = true;
           selectedWorkgroup = workgroup;
           break;
         case 'wiresheet':

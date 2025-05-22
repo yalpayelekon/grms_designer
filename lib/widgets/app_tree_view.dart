@@ -21,7 +21,8 @@ class AppTreeView extends ConsumerWidget {
   final List<Workgroup> workgroups;
   final bool showingProject;
   final bool openSettings;
-  final bool openWorkGroup;
+  final bool showingWorkgroup;
+  final bool openWorkGroups;
   final bool openWiresheet;
   final bool showingImages;
   final bool showingGroups;
@@ -42,7 +43,8 @@ class AppTreeView extends ConsumerWidget {
     required this.workgroups,
     required this.showingProject,
     required this.openSettings,
-    required this.openWorkGroup,
+    required this.openWorkGroups,
+    required this.showingWorkgroup,
     required this.openWiresheet,
     required this.showingImages,
     required this.showingGroups,
@@ -285,10 +287,10 @@ class AppTreeView extends ConsumerWidget {
                       child: Text(
                         'Workgroups',
                         style: TextStyle(
-                          fontWeight: openWorkGroup
+                          fontWeight: openWorkGroups
                               ? FontWeight.bold
                               : FontWeight.normal,
-                          color: openWorkGroup ? Colors.blue : null,
+                          color: openWorkGroups ? Colors.blue : null,
                         ),
                       ),
                     ),
@@ -311,10 +313,12 @@ class AppTreeView extends ConsumerWidget {
                               child: Text(
                                 workgroup.description,
                                 style: TextStyle(
-                                  fontWeight: selectedWorkgroup == workgroup
+                                  fontWeight: selectedWorkgroup == workgroup &&
+                                          showingWorkgroup
                                       ? FontWeight.bold
                                       : FontWeight.normal,
-                                  color: selectedWorkgroup == workgroup
+                                  color: selectedWorkgroup == workgroup &&
+                                          showingWorkgroup
                                       ? Colors.blue
                                       : null,
                                 ),
@@ -341,10 +345,15 @@ class AppTreeView extends ConsumerWidget {
                                   child: Text(
                                     "Groups",
                                     style: TextStyle(
-                                      fontWeight: showingGroups
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      color: showingGroups ? Colors.blue : null,
+                                      fontWeight:
+                                          selectedWorkgroup == workgroup &&
+                                                  showingGroups
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                      color: selectedWorkgroup == workgroup &&
+                                              showingGroups
+                                          ? Colors.blue
+                                          : null,
                                     ),
                                   ),
                                 ),
