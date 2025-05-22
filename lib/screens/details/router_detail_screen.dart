@@ -151,7 +151,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   }
 
   Widget _buildDevicesList() {
-    return _devices.isEmpty
+    return widget.router.devices.isEmpty
         ? Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
