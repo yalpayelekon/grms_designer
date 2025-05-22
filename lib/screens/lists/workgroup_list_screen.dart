@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/screens/details/workgroup_detail_screen.dart';
 import 'package:grms_designer/utils/logger.dart';
+import 'package:collection/collection.dart';
 
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -130,85 +131,111 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     );
   }
 
+  String _generateUniqueWorkgroupId(List<Workgroup> workgroups) {
+    final existingIds = workgroups.map((w) => w.id).toSet();
+    int counter = 1;
+    while (existingIds.contains(counter.toString())) {
+      counter++;
+    }
+    return counter.toString();
+  }
+
+  List<HelvarRouter> _buildNewRoutersForExistingWorkgroup(
+    Workgroup workgroup,
+    List<Map<String, String>> discoveredRouters,
+  ) {
+    final existingRouterIps = workgroup.routers.map((r) => r.ipAddress).toSet();
+
+    return discoveredRouters
+        .where((router) =>
+            router['workgroup'] == workgroup.description &&
+            !existingRouterIps.contains(router['ip']))
+        .map((router) => HelvarRouter(
+              ipAddress: router['ip'] ?? '',
+              description: '${router['workgroup']} Router',
+            ))
+        .toList();
+  }
+
+  List<HelvarRouter> _buildRoutersForNewWorkgroup(
+    List<Map<String, String>> discoveredRouters,
+    String workgroupName,
+  ) {
+    return discoveredRouters
+        .where((router) => router['workgroup'] == workgroupName)
+        .map((router) {
+      final ipParts = router['ip']!.split('.');
+      return HelvarRouter(
+        address: '@${ipParts[2]}.${ipParts[3]}',
+        ipAddress: router['ip'] ?? '',
+        description: '${router['workgroup']} Router',
+      );
+    }).toList();
+  }
+
+  void _updateExistingWorkgroup(
+    Workgroup existing,
+    List<HelvarRouter> newRouters,
+  ) {
+    final updated = Workgroup(
+      id: _generateUniqueWorkgroupId(ref.read(workgroupsProvider)),
+      description: existing.description,
+      networkInterface: existing.networkInterface,
+      routers: [...existing.routers, ...newRouters],
+    );
+
+    ref.read(workgroupsProvider.notifier).updateWorkgroup(updated);
+
+    if (mounted) {
+      showSnackBarMsg(context,
+          'Updated workgroup: ${existing.description} with ${newRouters.length} new routers');
+    }
+  }
+
+  void _createNewWorkgroup(
+    String workgroupName,
+    String networkInterfaceName,
+    List<HelvarRouter> routers,
+  ) {
+    final workgroup = Workgroup(
+      id: _generateUniqueWorkgroupId(ref.read(workgroupsProvider)),
+      description: workgroupName,
+      networkInterface: networkInterfaceName,
+      routers: routers,
+    );
+
+    ref.read(workgroupsProvider.notifier).addWorkgroup(workgroup);
+
+    if (mounted) {
+      logInfo('Added workgroup: $workgroupName with ${routers.length} routers');
+    }
+  }
+
   void _createWorkgroup(String workgroupName, String networkInterfaceName,
       List<Map<String, String>> discoveredRouters) {
     final existingWorkgroups = ref.read(workgroupsProvider);
     final existingWorkgroup = existingWorkgroups
-        .where((wg) => wg.description == workgroupName)
-        .toList();
+        .firstWhereOrNull((wg) => wg.description == workgroupName);
 
-    if (existingWorkgroup.isNotEmpty) {
-      final workgroup = existingWorkgroup.first;
-      final existingRouterIps =
-          workgroup.routers.map((r) => r.ipAddress).toSet();
-
-      List<HelvarRouter> newRouters = [];
-      for (var routerInfo in discoveredRouters.where(
-        (router) =>
-            router['workgroup'] == workgroupName &&
-            !existingRouterIps.contains(router['ip']),
-      )) {
-        newRouters.add(
-          HelvarRouter(
-            ipAddress: routerInfo['ip'] ?? '',
-            description: '${routerInfo['workgroup']} Router',
-          ),
-        );
-      }
+    if (existingWorkgroup != null) {
+      final newRouters = _buildNewRoutersForExistingWorkgroup(
+          existingWorkgroup, discoveredRouters);
 
       if (newRouters.isNotEmpty) {
-        final updatedWorkgroup = Workgroup(
-          id: workgroup.id,
-          description: workgroup.description,
-          networkInterface: workgroup.networkInterface,
-          routers: [...workgroup.routers, ...newRouters],
-        );
-
-        ref.read(workgroupsProvider.notifier).updateWorkgroup(updatedWorkgroup);
-
-        if (mounted) {
-          showSnackBarMsg(context,
-              'Updated workgroup: $workgroupName with ${newRouters.length} new routers');
-        }
-      } else {
-        if (mounted) {
-          showSnackBarMsg(context,
-              'No new routers found for existing workgroup: $workgroupName');
-        }
+        _updateExistingWorkgroup(existingWorkgroup, newRouters);
+      } else if (mounted) {
+        showSnackBarMsg(context,
+            'No new routers found for existing workgroup: $workgroupName');
       }
 
       return;
     }
 
-    List<HelvarRouter> helvarRouters = [];
+    final newRouters =
+        _buildRoutersForNewWorkgroup(discoveredRouters, workgroupName);
 
-    for (var routerInfo in discoveredRouters.where(
-      (router) => router['workgroup'] == workgroupName,
-    )) {
-      List<String> ipParts = routerInfo['ip']!.split('.');
-      helvarRouters.add(
-        HelvarRouter(
-          address: '@${ipParts[2]}.${ipParts[3]}',
-          ipAddress: routerInfo['ip'] ?? '',
-          description: '${routerInfo['workgroup']} Router',
-        ),
-      );
-    }
-
-    if (helvarRouters.isNotEmpty) {
-      final workgroup = Workgroup(
-        id: (existingWorkgroups.length + 1).toString(),
-        description: workgroupName,
-        networkInterface: networkInterfaceName,
-        routers: helvarRouters,
-      );
-
-      ref.read(workgroupsProvider.notifier).addWorkgroup(workgroup);
-
-      if (mounted) {
-        logInfo(
-            'Added workgroup: $workgroupName with ${helvarRouters.length} routers');
-      }
+    if (newRouters.isNotEmpty) {
+      _createNewWorkgroup(workgroupName, networkInterfaceName, newRouters);
     }
   }
 
