@@ -173,20 +173,6 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Map<String, dynamic> _calculateStats(List<RouterConnectionStatus> statuses) {
-    return {
-      'total': statuses.length,
-      'connected': statuses
-          .where((s) => s.state == RouterConnectionState.connected)
-          .length,
-      'reconnecting': statuses
-          .where((s) => s.state == RouterConnectionState.reconnecting)
-          .length,
-      'failed':
-          statuses.where((s) => s.state == RouterConnectionState.failed).length,
-    };
-  }
-
   Widget _buildMainContent() {
     if (showingProject) {
       return _buildConnectionMonitor();
@@ -234,9 +220,10 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildConnectionMonitor() {
-    final connections = ref.watch(routerConnectionManagerProvider).connections;
+    final connectionManager = ref.watch(routerConnectionManagerProvider);
+    final stats = connectionManager.getConnectionStats();
+    final connections = connectionManager.connections;
     final statuses = connections.values.map((c) => c.status).toList();
-    final stats = _calculateStats(statuses);
 
     return Card(
       child: Padding(
@@ -253,9 +240,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 _buildStatCard(context, 'Total', stats['total']),
                 _buildStatCard(
                     context, 'Connected', stats['connected'], Colors.green),
+                _buildStatCard(
+                    context, 'Connecting', stats['connecting'], Colors.blue),
                 _buildStatCard(context, 'Reconnecting', stats['reconnecting'],
                     Colors.orange),
                 _buildStatCard(context, 'Failed', stats['failed'], Colors.red),
+                _buildStatCard(context, 'Disconnected', stats['disconnected'],
+                    Colors.grey),
               ],
             ),
             const SizedBox(height: 16),

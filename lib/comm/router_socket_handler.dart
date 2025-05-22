@@ -46,9 +46,10 @@ class RouterSocketHandler {
         onError: _handleError,
         onDone: _handleDisconnect,
       );
-      _setStatus(SocketStatus.connected);
-      _startHeartbeat();
+
       _reconnectAttempts = 0;
+      _startHeartbeat();
+      _setStatus(SocketStatus.connected);
     } catch (e) {
       logError('Connection error: $e');
       _setStatus(SocketStatus.failed);
