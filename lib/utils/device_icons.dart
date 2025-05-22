@@ -1,22 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/helvar_models/helvar_device.dart';
 
-IconData getDeviceIcon(HelvarDevice? device) {
-  if (device == null) return Icons.device_unknown;
-
-  if (device.isButtonDevice) {
-    return Icons.touch_app;
-  } else if (device.isMultisensor) {
-    return Icons.sensors;
-  } else if (device.helvarType == 'emergency') {
-    return Icons.emergency;
-  } else if (device.helvarType == 'output') {
-    return Icons.lightbulb;
-  }
-
-  return Icons.device_unknown;
-}
-
 String getDeviceIconAsset(HelvarDevice? device) {
   if (device == null) return 'assets/icons/device.png';
 

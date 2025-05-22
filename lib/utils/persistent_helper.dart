@@ -12,8 +12,7 @@ class PersistenceHelper {
   final FlowManager flowManager;
   final Map<String, Offset> componentPositions;
   final Map<String, double> componentWidths;
-  final Function()
-      getMountedStatus; // Function to check if the widget is still mounted
+  final Function() getMountedStatus;
 
   PersistenceHelper({
     required this.flowsheet,
@@ -21,7 +20,7 @@ class PersistenceHelper {
     required this.flowManager,
     required this.componentPositions,
     required this.componentWidths,
-    required this.getMountedStatus, // Add this parameter
+    required this.getMountedStatus,
   });
 
   Future<void> saveFullState() async {

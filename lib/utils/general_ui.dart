@@ -64,7 +64,6 @@ String getComponentSymbol(Component component) {
 }
 
 Color getComponentColor(Component component) {
-  // Custom components
   if (component.type.type == RectangleComponent.RECTANGLE) {
     return Colors.lime[100]!;
   }
@@ -72,7 +71,6 @@ Color getComponentColor(Component component) {
     return Colors.amber[100]!;
   }
 
-  // Standard components
   if (component.type.isLogicGate) {
     return Colors.lightBlue[100]!;
   } else if (component.type.isMathOperation) {
@@ -91,7 +89,6 @@ Color getComponentColor(Component component) {
   }
 }
 
-// utils.dart (continued)
 Color getComponentTextColor(Component component) {
   // Custom components
   if (component.type.type == RectangleComponent.RECTANGLE) {
