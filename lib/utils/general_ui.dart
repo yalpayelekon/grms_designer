@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../comm/models/command_models.dart';
-import '../models/link.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/ramp_component.dart';
@@ -188,20 +187,6 @@ void showSnackBarMsg(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(message)),
   );
-}
-
-Color getPortColor(PortType type) {
-  switch (type) {
-    case PortType.boolean:
-      return Colors.green;
-    case PortType.number:
-      return Colors.blue;
-    case PortType.string:
-      return Colors.orange;
-    case PortType.any:
-    default:
-      return Colors.purple;
-  }
 }
 
 Color getStatusColor(CommandStatus status) {
