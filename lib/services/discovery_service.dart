@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:uuid/uuid.dart';
 import '../comm/models/command_models.dart';
 import '../models/helvar_models/helvar_device.dart';
@@ -92,30 +91,39 @@ class DiscoveryService {
     }
   }
 
+  Future<HelvarRouter?> _createBasicRouter(String routerIpAddress) async {
+    final ipParts = routerIpAddress.split('.');
+    if (ipParts.length != 4) {
+      logDebug('Invalid router IP address format: $routerIpAddress');
+      return null;
+    }
+
+    final clusterId = int.parse(ipParts[2]);
+    final clusterMemberId = int.parse(ipParts[3]);
+    final routerAddress = '$clusterId.$clusterMemberId';
+
+    logInfo('Router address derived as: $routerAddress');
+
+    return HelvarRouter(
+      address: routerAddress,
+      ipAddress: routerIpAddress,
+      description: 'Router $clusterMemberId',
+      clusterId: clusterId,
+      clusterMemberId: clusterMemberId,
+    );
+  }
+
   Future<HelvarRouter?> discoverRouter(String routerIpAddress) async {
     try {
-      final ipParts = routerIpAddress.split('.');
-      if (ipParts.length != 4) {
-        logDebug('Invalid router IP address format: $routerIpAddress');
+      final router = await _createBasicRouter(routerIpAddress);
+      if (router == null) {
         return null;
       }
 
-      final clusterId = int.parse(ipParts[2]);
-      final clusterMemberId = int.parse(ipParts[3]);
-      final routerAddress = '$clusterId.$clusterMemberId';
-
-      logInfo('Router address derived as: $routerAddress');
-
-      final router = HelvarRouter(
-        address: routerAddress,
-        ipAddress: routerIpAddress,
-        description: 'Router $clusterMemberId',
-        clusterId: clusterId,
-        clusterMemberId: clusterMemberId,
-      );
-
-      final typeResponse = await commandService.sendCommand(routerIpAddress,
-          HelvarNetCommands.queryDeviceType("$clusterId.$clusterMemberId"),
+      final typeResponse = await commandService.sendCommand(
+          routerIpAddress,
+          HelvarNetCommands.queryDeviceType(
+              "${router.clusterId}.${router.clusterMemberId}"),
           priority: CommandPriority.high);
 
       if (typeResponse.success && typeResponse.response != null) {
@@ -132,7 +140,7 @@ class DiscoveryService {
       final descResponse = await commandService.sendCommand(
           routerIpAddress,
           HelvarNetCommands.queryDescriptionDevice(
-              "$clusterId.$clusterMemberId"));
+              "${router.clusterId}.${router.clusterMemberId}"));
       if (descResponse.success && descResponse.response != null) {
         final descValue = extractResponseValue(descResponse.response!);
         if (descValue != null) {
@@ -142,8 +150,10 @@ class DiscoveryService {
         }
       }
 
-      final stateResponse = await commandService.sendCommand(routerIpAddress,
-          HelvarNetCommands.queryDeviceState("$clusterId.$clusterMemberId"));
+      final stateResponse = await commandService.sendCommand(
+          routerIpAddress,
+          HelvarNetCommands.queryDeviceState(
+              "${router.clusterId}.${router.clusterMemberId}"));
       if (stateResponse.success && stateResponse.response != null) {
         final stateValue = extractResponseValue(stateResponse.response!);
         if (stateValue != null) {
@@ -154,9 +164,10 @@ class DiscoveryService {
           logDebug('Failed to get router state: $stateResponse');
         }
       }
+
       final typesAndAddressesResponse = await commandService.sendCommand(
           routerIpAddress,
-          HelvarNetCommands.queryDeviceTypesAndAddresses(routerAddress));
+          HelvarNetCommands.queryDeviceTypesAndAddresses(router.address));
       if (typesAndAddressesResponse.success &&
           typesAndAddressesResponse.response != null) {
         final addressesValue =
@@ -169,11 +180,12 @@ class DiscoveryService {
         }
       }
 
+      // Device discovery loop remains the same for now
       for (int subnet = 1; subnet <= 4; subnet++) {
         final devicesResponse = await commandService.sendCommand(
             routerIpAddress,
             HelvarNetCommands.queryDeviceTypesAndAddresses(
-                '$clusterId.$clusterMemberId.$subnet'));
+                '${router.clusterId}.${router.clusterMemberId}.$subnet'));
         if (devicesResponse.success && devicesResponse.response != null) {
           final devicesValue = extractResponseValue(devicesResponse.response!);
           if (devicesValue == null || devicesValue.isEmpty) {
@@ -193,7 +205,7 @@ class DiscoveryService {
             }
 
             final deviceAddress =
-                '$clusterId.$clusterMemberId.$subnet.$deviceId';
+                '${router.clusterId}.${router.clusterMemberId}.$subnet.$deviceId';
             final descResponse = await commandService.sendCommand(
                 routerIpAddress,
                 HelvarNetCommands.queryDescriptionDevice(deviceAddress));
@@ -322,17 +334,18 @@ class DiscoveryService {
   }
 
   Future<List<HelvarGroup>> discoverGroups(String routerIpAddress) async {
-    Socket? socket;
     final groups = <HelvarGroup>[];
 
     try {
-      socket = await Socket.connect(routerIpAddress, defaultTcpPort);
-      final broadcastStream = socket.asBroadcastStream();
+      final groupsResponse = await commandService.sendCommand(
+        routerIpAddress,
+        HelvarNetCommands.queryGroups(),
+        priority: CommandPriority.high,
+      );
 
-      final groupsResponse = await _sendCommand(
-          socket, HelvarNetCommands.queryGroups(), broadcastStream);
+      final groupsValue =
+          DiscoveryService.extractResponseValue(groupsResponse.response ?? '');
 
-      final groupsValue = extractResponseValue(groupsResponse);
       if (groupsValue != null && groupsValue.isNotEmpty) {
         final groupIds = groupsValue.split(',');
 
@@ -340,16 +353,18 @@ class DiscoveryService {
           if (groupId.isEmpty) continue;
 
           try {
-            final id = int.parse(groupId);
+            final descResponse = await commandService.sendCommand(
+              routerIpAddress,
+              HelvarNetCommands.queryDescriptionGroup(int.parse(groupId)),
+              priority: CommandPriority.high,
+            );
 
-            final descResponse = await _sendCommand(socket,
-                HelvarNetCommands.queryDescriptionGroup(id), broadcastStream);
-
-            final description =
-                extractResponseValue(descResponse) ?? 'Group $id';
+            final description = DiscoveryService.extractResponseValue(
+                    descResponse.response ?? '') ??
+                'Group $groupId';
 
             groups.add(HelvarGroup(
-              id: const Uuid().v4(), // Generate a unique ID
+              id: const Uuid().v4(),
               groupId: groupId,
               description: description,
               type: 'Group',
@@ -366,8 +381,6 @@ class DiscoveryService {
     } catch (e) {
       logError('Error discovering groups: $e');
       return [];
-    } finally {
-      socket?.destroy();
     }
   }
 
@@ -384,62 +397,5 @@ class DiscoveryService {
     }
 
     return routers;
-  }
-
-  static Future<String> _sendCommand(
-      Socket socket, String command, Stream<List<int>> broadcastStream,
-      {Duration timeout = const Duration(seconds: 15)}) async {
-    final completer = Completer<String>();
-
-    final subscription = broadcastStream.listen(
-      (List<int> data) {
-        final response = String.fromCharCodes(data).trim();
-        completer.complete(response);
-      },
-      onError: (error) {
-        logVerbose('Socket error: $error');
-        completer.complete('ERROR: $error');
-      },
-      onDone: () {
-        if (!completer.isCompleted) {
-          completer.complete('NO_RESPONSE');
-        }
-      },
-    );
-
-    socket.write(command);
-
-    final result = await completer.future.timeout(
-      timeout,
-      onTimeout: () {
-        logVerbose('Command timed out: $command');
-        return 'TIMEOUT';
-      },
-    );
-
-    await subscription.cancel();
-    return result;
-  }
-
-  Future<String?> sendPersistentCommand(
-      String routerIp, String routerId, String command,
-      {Duration? timeout}) async {
-    try {
-      final result = await commandService.sendCommand(
-        routerIp,
-        command,
-        timeout: timeout,
-      );
-
-      if (result.success) {
-        return result.response;
-      } else {
-        logVerbose('Command failed: ${result.errorMessage}');
-        return null;
-      }
-    } catch (e) {
-      logError('Error sending command: $e');
-      return null;
-    }
   }
 }
