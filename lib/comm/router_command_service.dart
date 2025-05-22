@@ -23,7 +23,6 @@ class RouterCommandService {
       _commandStatusController.stream;
   List<QueuedCommand> get commandHistory => List.unmodifiable(_commandHistory);
 
-  int get _maxConcurrentCommandsPerRouter => _config.maxConcurrentCommands;
   int get _maxHistorySize => _config.historySize;
 
   Future<bool> ensureConnection(String routerIp) async {

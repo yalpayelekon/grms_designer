@@ -1,5 +1,6 @@
 // lib/comm/router_socket_handler.dart
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import '../protocol/protocol_constants.dart';
@@ -79,7 +80,7 @@ class RouterSocketHandler {
 
   void _handleData(Uint8List data) {
     _lastActivity = DateTime.now();
-    final msg = String.fromCharCodes(data);
+    final msg = utf8.decode(data, allowMalformed: true);
     _buffer.write(msg);
     _flushBuffer();
   }
