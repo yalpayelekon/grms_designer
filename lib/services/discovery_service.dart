@@ -4,76 +4,185 @@ import '../comm/models/command_models.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_router.dart';
-import '../models/helvar_models/input_device.dart';
-import '../models/helvar_models/output_device.dart';
-import '../models/helvar_models/emergency_device.dart';
 import '../protocol/device_types.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
 import '../comm/router_command_service.dart';
 import '../utils/logger.dart';
+import '../factories/helvar_device_factory.dart';
+import '../protocol/protocol_parser.dart';
 
 class DiscoveryService {
   final RouterCommandService commandService;
 
   DiscoveryService(this.commandService);
 
-  static List<ButtonPoint> generateButtonPoints(String deviceName) {
-    final points = <ButtonPoint>[];
-    points.add(ButtonPoint(
-      name: '${deviceName}_Missing',
-      function: 'Status',
-      buttonId: 0,
-    ));
-    for (int i = 1; i <= 7; i++) {
-      points.add(ButtonPoint(
-        name: '${deviceName}_Button$i',
-        function: 'Button',
-        buttonId: i,
-      ));
+  Future<HelvarDevice?> _createDeviceFromDiscovery(
+      HelvarRouter router, int subnet, int deviceId, int typeCode) async {
+    final routerIpAddress = router.ipAddress;
+    final deviceAddress =
+        '${router.clusterId}.${router.clusterMemberId}.$subnet.$deviceId';
+
+    final descResponse = await commandService.sendCommand(routerIpAddress,
+        HelvarNetCommands.queryDescriptionDevice(deviceAddress));
+    final description = descResponse.success && descResponse.response != null
+        ? ProtocolParser.extractResponseValue(descResponse.response!) ??
+            'Device $deviceId'
+        : 'Device $deviceId';
+
+    final deviceStateResponse = await commandService.sendCommand(
+        routerIpAddress, HelvarNetCommands.queryDeviceState(deviceAddress));
+
+    int? deviceStateCode;
+    String deviceState = '';
+    if (deviceStateResponse.success && deviceStateResponse.response != null) {
+      final deviceStateValue =
+          ProtocolParser.extractResponseValue(deviceStateResponse.response!);
+      deviceStateCode = int.tryParse(deviceStateValue!) ?? 0;
+      deviceState = getStateFlagsDescription(deviceStateCode);
+      logInfo('  State: $deviceStateCode ($deviceState)');
     }
-    for (int i = 1; i <= 7; i++) {
-      points.add(ButtonPoint(
-        name: '${deviceName}_IR$i',
-        function: 'IR Receiver',
-        buttonId: i + 100, // Using offset for IR receivers
-      ));
-    }
 
-    return points;
-  }
-
-  static String? extractResponseValue(String response) {
-    if ((response.startsWith('?') || response.startsWith('!')) &&
-        response.contains('=')) {
-      final parts = response.split('=');
-      if (parts.length > 1) {
-        return parts[1].replaceAll('#', '');
-      }
-    }
-    return null;
-  }
-
-  static Map<int, int> parseDeviceAddressesAndTypes(String response) {
-    final deviceMap = <int, int>{};
-    final pairs = response.split(',');
-
-    for (final pair in pairs) {
-      if (pair.contains('@')) {
-        final parts = pair.split('@');
-        if (parts.length == 2) {
-          try {
-            final deviceType = int.parse(parts[0]);
-            final deviceId = int.parse(parts[1]);
-            deviceMap[deviceId] = deviceType;
-          } catch (e) {
-            logError('Error parsing device pair: $pair - $e');
-          }
+    int? loadLevel;
+    if (typeCode == 1 || typeCode == 1025 || typeCode == 1537) {
+      try {
+        final levelResponse = await commandService.sendCommand(
+            routerIpAddress, HelvarNetCommands.queryLoadLevel(deviceAddress));
+        if (levelResponse.success && levelResponse.response != null) {
+          final levelValue =
+              ProtocolParser.extractResponseValue(levelResponse.response!);
+          loadLevel = int.tryParse(levelValue!) ?? 0;
         }
+      } catch (e) {
+        logError('Error getting load level: $e');
       }
     }
 
-    return deviceMap;
+    final bool isButton = isButtonDevice(typeCode);
+    final bool isMultisensor = isDeviceMultisensor(typeCode);
+    final String deviceTypeString = getDeviceTypeDescription(typeCode);
+
+    return HelvarDeviceFactory.createDevice(
+      deviceId: deviceId,
+      deviceAddress: deviceAddress,
+      deviceState: deviceState,
+      description: description,
+      deviceTypeString: deviceTypeString,
+      typeCode: typeCode,
+      deviceStateCode: deviceStateCode,
+      loadLevel: loadLevel,
+      isButton: isButton,
+      isMultisensor: isMultisensor,
+    );
+  }
+
+  Future<List<HelvarDevice>> _discoverSubnetDevices(
+      HelvarRouter router, int subnet) async {
+    final routerIpAddress = router.ipAddress;
+    final subnetAddress =
+        '${router.clusterId}.${router.clusterMemberId}.$subnet';
+
+    final devicesResponse = await commandService.sendCommand(routerIpAddress,
+        HelvarNetCommands.queryDeviceTypesAndAddresses(subnetAddress));
+
+    if (!devicesResponse.success || devicesResponse.response == null) {
+      return [];
+    }
+
+    final devicesValue =
+        ProtocolParser.extractResponseValue(devicesResponse.response!);
+    if (devicesValue == null || devicesValue.isEmpty) {
+      logWarning('No devices found on subnet $subnet');
+      return [];
+    }
+
+    final deviceAddressTypes =
+        ProtocolParser.parseDeviceAddressesAndTypes(devicesValue);
+    final subnetDevices = <HelvarDevice>[];
+
+    for (final entry in deviceAddressTypes.entries) {
+      final deviceId = entry.key;
+      final typeCode = entry.value;
+
+      if (deviceId >= 65500) {
+        logWarning('Skipping high device ID: $deviceId');
+        continue;
+      }
+
+      final device =
+          await _createDeviceFromDiscovery(router, subnet, deviceId, typeCode);
+
+      if (device != null) {
+        subnetDevices.add(device);
+      }
+    }
+
+    return subnetDevices;
+  }
+
+  Future<void> _fetchRouterMetadata(HelvarRouter router) async {
+    final routerIpAddress = router.ipAddress;
+    final routerAddress = "${router.clusterId}.${router.clusterMemberId}";
+
+    final typeResponse = await commandService.sendCommand(
+        routerIpAddress, HelvarNetCommands.queryDeviceType(routerAddress),
+        priority: CommandPriority.high);
+
+    if (typeResponse.success && typeResponse.response != null) {
+      final typeValue =
+          ProtocolParser.extractResponseValue(typeResponse.response!);
+      if (typeValue != null) {
+        final typeCode = int.tryParse(typeValue) ?? 0;
+        router.deviceTypeCode = typeCode;
+        router.deviceType = getDeviceTypeDescription(typeCode);
+      }
+    } else {
+      logDebug('Failed to get router type: $typeResponse');
+    }
+
+    final descResponse = await commandService.sendCommand(routerIpAddress,
+        HelvarNetCommands.queryDescriptionDevice(routerAddress));
+
+    if (descResponse.success && descResponse.response != null) {
+      final descValue =
+          ProtocolParser.extractResponseValue(descResponse.response!);
+      if (descValue != null) {
+        router.description = descValue;
+      } else {
+        logDebug('Failed to get router description: $descResponse');
+      }
+    }
+
+    final stateResponse = await commandService.sendCommand(
+        routerIpAddress, HelvarNetCommands.queryDeviceState(routerAddress));
+
+    if (stateResponse.success && stateResponse.response != null) {
+      final stateValue =
+          ProtocolParser.extractResponseValue(stateResponse.response!);
+      if (stateValue != null) {
+        final stateCode = int.tryParse(stateValue) ?? 0;
+        router.deviceStateCode = stateCode;
+        router.deviceState = getStateFlagsDescription(stateCode);
+      } else {
+        logDebug('Failed to get router state: $stateResponse');
+      }
+    }
+
+    final typesAndAddressesResponse = await commandService.sendCommand(
+        routerIpAddress,
+        HelvarNetCommands.queryDeviceTypesAndAddresses(router.address));
+
+    if (typesAndAddressesResponse.success &&
+        typesAndAddressesResponse.response != null) {
+      final addressesValue = ProtocolParser.extractResponseValue(
+          typesAndAddressesResponse.response!);
+      if (addressesValue != null) {
+        router.deviceAddresses = addressesValue.split(',');
+      } else {
+        logDebug(
+            'Failed to get device types and addresses: $typesAndAddressesResponse');
+      }
+    }
   }
 
   Future<HelvarRouter?> discoverRouterWithPersistentConnection(
@@ -113,6 +222,21 @@ class DiscoveryService {
     );
   }
 
+  Future<void> _discoverRouterDevices(HelvarRouter router) async {
+    for (int subnet = 1; subnet <= 4; subnet++) {
+      final subnetDevices = await _discoverSubnetDevices(router, subnet);
+
+      if (subnetDevices.isNotEmpty) {
+        router.devicesBySubnet[subnet] = subnetDevices;
+        for (final device in subnetDevices) {
+          router.devices.add(device);
+        }
+      } else {
+        logWarning('No devices found on subnet $subnet');
+      }
+    }
+  }
+
   Future<HelvarRouter?> discoverRouter(String routerIpAddress) async {
     try {
       final router = await _createBasicRouter(routerIpAddress);
@@ -120,211 +244,8 @@ class DiscoveryService {
         return null;
       }
 
-      final typeResponse = await commandService.sendCommand(
-          routerIpAddress,
-          HelvarNetCommands.queryDeviceType(
-              "${router.clusterId}.${router.clusterMemberId}"),
-          priority: CommandPriority.high);
-
-      if (typeResponse.success && typeResponse.response != null) {
-        final typeValue = extractResponseValue(typeResponse.response!);
-        if (typeValue != null) {
-          final typeCode = int.tryParse(typeValue) ?? 0;
-          router.deviceTypeCode = typeCode;
-          router.deviceType = getDeviceTypeDescription(typeCode);
-        }
-      } else {
-        logDebug('Failed to get router type: $typeResponse');
-      }
-
-      final descResponse = await commandService.sendCommand(
-          routerIpAddress,
-          HelvarNetCommands.queryDescriptionDevice(
-              "${router.clusterId}.${router.clusterMemberId}"));
-      if (descResponse.success && descResponse.response != null) {
-        final descValue = extractResponseValue(descResponse.response!);
-        if (descValue != null) {
-          router.description = descValue;
-        } else {
-          logDebug('Failed to get router description: $descResponse');
-        }
-      }
-
-      final stateResponse = await commandService.sendCommand(
-          routerIpAddress,
-          HelvarNetCommands.queryDeviceState(
-              "${router.clusterId}.${router.clusterMemberId}"));
-      if (stateResponse.success && stateResponse.response != null) {
-        final stateValue = extractResponseValue(stateResponse.response!);
-        if (stateValue != null) {
-          final stateCode = int.tryParse(stateValue) ?? 0;
-          router.deviceStateCode = stateCode;
-          router.deviceState = getStateFlagsDescription(stateCode);
-        } else {
-          logDebug('Failed to get router state: $stateResponse');
-        }
-      }
-
-      final typesAndAddressesResponse = await commandService.sendCommand(
-          routerIpAddress,
-          HelvarNetCommands.queryDeviceTypesAndAddresses(router.address));
-      if (typesAndAddressesResponse.success &&
-          typesAndAddressesResponse.response != null) {
-        final addressesValue =
-            extractResponseValue(typesAndAddressesResponse.response!);
-        if (addressesValue != null) {
-          router.deviceAddresses = addressesValue.split(',');
-        } else {
-          logDebug(
-              'Failed to get device types and addresses: $typesAndAddressesResponse');
-        }
-      }
-
-      // Device discovery loop remains the same for now
-      for (int subnet = 1; subnet <= 4; subnet++) {
-        final devicesResponse = await commandService.sendCommand(
-            routerIpAddress,
-            HelvarNetCommands.queryDeviceTypesAndAddresses(
-                '${router.clusterId}.${router.clusterMemberId}.$subnet'));
-        if (devicesResponse.success && devicesResponse.response != null) {
-          final devicesValue = extractResponseValue(devicesResponse.response!);
-          if (devicesValue == null || devicesValue.isEmpty) {
-            logWarning('No devices found on subnet $subnet');
-            continue;
-          }
-
-          final deviceAddressTypes = parseDeviceAddressesAndTypes(devicesValue);
-          final subnetDevices = <HelvarDevice>[];
-          for (final entry in deviceAddressTypes.entries) {
-            final deviceId = entry.key;
-            final typeCode = entry.value;
-
-            if (deviceId >= 65500) {
-              logWarning('Skipping high device ID: $deviceId');
-              continue;
-            }
-
-            final deviceAddress =
-                '${router.clusterId}.${router.clusterMemberId}.$subnet.$deviceId';
-            final descResponse = await commandService.sendCommand(
-                routerIpAddress,
-                HelvarNetCommands.queryDescriptionDevice(deviceAddress));
-            final description =
-                descResponse.success && descResponse.response != null
-                    ? extractResponseValue(descResponse.response!)
-                    : 'Device $deviceId';
-
-            final deviceStateResponse = await commandService.sendCommand(
-                routerIpAddress,
-                HelvarNetCommands.queryDeviceState(deviceAddress));
-            int? deviceStateCode;
-            String deviceState = '';
-
-            if (deviceStateResponse.success &&
-                deviceStateResponse.response != null) {
-              final deviceStateValue =
-                  extractResponseValue(deviceStateResponse.response!);
-              deviceStateCode = int.tryParse(deviceStateValue!) ?? 0;
-              deviceState = getStateFlagsDescription(deviceStateCode);
-              logInfo('  State: $deviceStateCode ($deviceState)');
-            }
-
-            int? loadLevel;
-            if (typeCode == 1 || typeCode == 1025 || typeCode == 1537) {
-              try {
-                final levelResponse = await commandService.sendCommand(
-                    routerIpAddress,
-                    HelvarNetCommands.queryLoadLevel(deviceAddress));
-                if (levelResponse.success && levelResponse.response != null) {
-                  final levelValue =
-                      extractResponseValue(levelResponse.response!);
-                  loadLevel = int.tryParse(levelValue!) ?? 0;
-                }
-              } catch (e) {
-                logError('Error getting load level: $e');
-              }
-            }
-
-            final bool isButton = isButtonDevice(typeCode);
-            final bool isMultisensor = isDeviceMultisensor(typeCode);
-            final String deviceTypeString = getDeviceTypeDescription(typeCode);
-
-            HelvarDevice device;
-
-            if (isButton) {
-              device = HelvarDriverInputDevice(
-                deviceId: deviceId,
-                address: deviceAddress,
-                state: deviceState,
-                description: description!,
-                props: deviceTypeString,
-                hexId: '0x${typeCode.toRadixString(16)}',
-                helvarType: 'input',
-                deviceTypeCode: typeCode,
-                deviceStateCode: deviceStateCode,
-                isButtonDevice: true,
-                buttonPoints: generateButtonPoints(description),
-              );
-            } else if (isMultisensor) {
-              device = HelvarDriverInputDevice(
-                deviceId: deviceId,
-                address: deviceAddress,
-                state: deviceState,
-                description: description!,
-                props: deviceTypeString,
-                hexId: '0x${typeCode.toRadixString(16)}',
-                helvarType: 'input',
-                deviceTypeCode: typeCode,
-                deviceStateCode: deviceStateCode,
-                isMultisensor: true,
-                sensorInfo: {
-                  'hasPresence': true,
-                  'hasLightLevel': true,
-                  'hasTemperature': false,
-                },
-              );
-            } else if (typeCode == 0x0101 ||
-                (typeCode & 0xFF) == 0x01 && ((typeCode >> 8) & 0xFF) == 0x01) {
-              device = HelvarDriverEmergencyDevice(
-                deviceId: deviceId,
-                address: deviceAddress,
-                state: deviceState,
-                description: description!,
-                props: deviceTypeString,
-                hexId: '0x${typeCode.toRadixString(16)}',
-                helvarType: 'emergency',
-                deviceTypeCode: typeCode,
-                deviceStateCode: deviceStateCode,
-                emergency: true,
-              );
-            } else {
-              device = HelvarDriverOutputDevice(
-                deviceId: deviceId,
-                address: deviceAddress,
-                state: deviceState,
-                description: description!,
-                props: deviceTypeString,
-                hexId: '0x${typeCode.toRadixString(16)}',
-                helvarType: 'output',
-                deviceTypeCode: typeCode,
-                deviceStateCode: deviceStateCode,
-                level: loadLevel ?? 100,
-              );
-            }
-
-            subnetDevices.add(device);
-          }
-
-          if (subnetDevices.isNotEmpty) {
-            router.devicesBySubnet[subnet] = subnetDevices;
-            for (final device in subnetDevices) {
-              router.devices.add(device);
-            }
-          } else {
-            logWarning('No devices found on subnet $subnet');
-          }
-        }
-      }
+      await _fetchRouterMetadata(router);
+      await _discoverRouterDevices(router);
 
       return router;
     } catch (e) {
@@ -344,7 +265,7 @@ class DiscoveryService {
       );
 
       final groupsValue =
-          DiscoveryService.extractResponseValue(groupsResponse.response ?? '');
+          ProtocolParser.extractResponseValue(groupsResponse.response ?? '');
 
       if (groupsValue != null && groupsValue.isNotEmpty) {
         final groupIds = groupsValue.split(',');
@@ -359,7 +280,7 @@ class DiscoveryService {
               priority: CommandPriority.high,
             );
 
-            final description = DiscoveryService.extractResponseValue(
+            final description = ProtocolParser.extractResponseValue(
                     descResponse.response ?? '') ??
                 'Group $groupId';
 
