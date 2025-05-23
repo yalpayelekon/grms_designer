@@ -485,24 +485,7 @@ class AppTreeView extends ConsumerWidget {
           ],
         ),
         children: device.buttonPoints
-            .map((point) => TreeNode(
-                  content: Row(
-                    children: [
-                      Icon(
-                        point.function.contains('Status') ||
-                                point.name.contains('Missing')
-                            ? Icons.info_outline
-                            : point.function.contains('IR')
-                                ? Icons.settings_remote
-                                : Icons.touch_app,
-                        size: 16,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(point.name.split('_').last),
-                    ],
-                  ),
-                ))
+            .map((point) => _buildDraggableButtonPointNode(point, device))
             .toList(),
       ));
     }
@@ -530,6 +513,93 @@ class AppTreeView extends ConsumerWidget {
       ),
       children: deviceChildren.isEmpty ? null : deviceChildren,
     );
+  }
+
+  TreeNode _buildDraggableButtonPointNode(
+      ButtonPoint buttonPoint, HelvarDevice parentDevice) {
+    return TreeNode(
+      content: Draggable<Map<String, dynamic>>(
+        data: {
+          "componentType": "BooleanPoint",
+          "buttonPoint": buttonPoint,
+          "parentDevice": parentDevice,
+          "pointData": {
+            "name": buttonPoint.name,
+            "function": buttonPoint.function,
+            "buttonId": buttonPoint.buttonId,
+            "deviceAddress": parentDevice.address,
+            "deviceId": parentDevice.deviceId,
+            "isButtonPoint": true,
+          }
+        },
+        feedback: Material(
+          elevation: 4.0,
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.green[100],
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: Colors.green),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _getButtonPointIcon(buttonPoint),
+                  color: Colors.green,
+                  size: 20,
+                ),
+                const SizedBox(width: 8.0),
+                Text(
+                  _getButtonPointDisplayName(buttonPoint),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
+        childWhenDragging: Row(
+          children: [
+            Icon(
+              _getButtonPointIcon(buttonPoint),
+              size: 16,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _getButtonPointDisplayName(buttonPoint),
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _getButtonPointIcon(buttonPoint),
+              size: 16,
+              color: Colors.green,
+            ),
+            const SizedBox(width: 4),
+            Text(_getButtonPointDisplayName(buttonPoint)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getButtonPointIcon(ButtonPoint buttonPoint) {
+    if (buttonPoint.function.contains('Status') ||
+        buttonPoint.name.contains('Missing')) {
+      return Icons.info_outline;
+    } else if (buttonPoint.function.contains('IR')) {
+      return Icons.settings_remote;
+    } else {
+      return Icons.touch_app;
+    }
+  }
+
+  String _getButtonPointDisplayName(ButtonPoint buttonPoint) {
+    return buttonPoint.name.split('_').last;
   }
 
   TreeNode _buildLogicComponentsNode(BuildContext context) {

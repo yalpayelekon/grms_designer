@@ -7,6 +7,7 @@ import 'package:grms_designer/models/flowsheet.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 
 import '../models/helvar_models/helvar_device.dart';
+import '../models/helvar_models/input_device.dart';
 import '../niagara/home/command.dart';
 import '../niagara/home/handlers.dart';
 import '../niagara/home/utils.dart';
@@ -21,6 +22,7 @@ import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
 import '../niagara/models/helvar_device_component.dart';
+import '../niagara/models/port_type.dart';
 import '../niagara/models/ramp_component.dart';
 import '../niagara/models/rectangle.dart';
 import '../utils/general_ui.dart';
@@ -731,9 +733,16 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                               _addNewComponent(details.data,
                                   clickPosition: canvasPosition);
                             } else if (details.data is Map<String, dynamic>) {
-                              Map<String, dynamic> deviceData = details.data;
-                              _addNewDeviceComponent(deviceData,
-                                  clickPosition: canvasPosition);
+                              Map<String, dynamic> dragData = details.data;
+
+                              if (dragData.containsKey("buttonPoint") &&
+                                  dragData.containsKey("pointData")) {
+                                _addNewButtonPointComponent(dragData,
+                                    clickPosition: canvasPosition);
+                              } else if (dragData.containsKey("device")) {
+                                _addNewDeviceComponent(dragData,
+                                    clickPosition: canvasPosition);
+                              }
                             }
                           }
                         },
@@ -1399,6 +1408,106 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         _selectedComponents.remove(component);
       });
     }
+  }
+
+  void _addNewButtonPointComponent(Map<String, dynamic> buttonPointData,
+      {Offset? clickPosition}) {
+    final ButtonPoint buttonPoint =
+        buttonPointData["buttonPoint"] as ButtonPoint;
+    final HelvarDevice parentDevice =
+        buttonPointData["parentDevice"] as HelvarDevice;
+    final Map<String, dynamic> pointData =
+        buttonPointData["pointData"] as Map<String, dynamic>;
+
+    String baseName = buttonPoint.name;
+    String componentId = baseName;
+    int counter = 1;
+
+    while (_flowManager.components.any((comp) => comp.id == componentId)) {
+      componentId = "${baseName}_$counter";
+      counter++;
+    }
+
+    Component newComponent = _flowManager.createComponentByType(
+        componentId, ComponentType.BOOLEAN_POINT);
+
+    bool initialValue = _getInitialButtonPointValue(buttonPoint);
+
+    for (var property in newComponent.properties) {
+      if (!property.isInput && property.type.type == PortType.BOOLEAN) {
+        property.value = initialValue;
+        break;
+      }
+    }
+
+    _storeButtonPointMetadata(componentId, buttonPoint, parentDevice);
+
+    Offset newPosition = clickPosition ?? _getDefaultPosition();
+    final newKey = GlobalKey();
+
+    Map<String, dynamic> state = {
+      'position': newPosition,
+      'key': newKey,
+      'positions': _componentPositions,
+      'keys': _componentKeys,
+    };
+
+    setState(() {
+      final command = AddComponentCommand(_flowManager, newComponent, state);
+      _commandHistory.execute(command);
+      _componentWidths[newComponent.id] = 160.0;
+      _componentPositions[newComponent.id] = newPosition;
+      _componentKeys[newComponent.id] = newKey;
+
+      _persistenceHelper.saveAddComponent(newComponent);
+      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
+      _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
+
+      _updateCanvasSize();
+    });
+  }
+
+  Offset _getDefaultPosition() {
+    final RenderBox? viewerChildRenderBox =
+        _interactiveViewerChildKey.currentContext?.findRenderObject()
+            as RenderBox?;
+
+    if (viewerChildRenderBox != null) {
+      final viewportSize = viewerChildRenderBox.size;
+      final viewportCenter =
+          Offset(viewportSize.width / 2, viewportSize.height / 2);
+
+      final matrix = _transformationController.value;
+      final inverseMatrix = Matrix4.inverted(matrix);
+      final transformedCenter =
+          MatrixUtils.transformPoint(inverseMatrix, viewportCenter);
+
+      return transformedCenter;
+    }
+
+    return Offset(_canvasSize.width / 2, _canvasSize.height / 2);
+  }
+
+  bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
+    if (buttonPoint.function.contains('Status') ||
+        buttonPoint.name.toLowerCase().contains('missing')) {
+      return false;
+    }
+
+    return false;
+  }
+
+  final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
+
+  void _storeButtonPointMetadata(
+      String componentId, ButtonPoint buttonPoint, HelvarDevice parentDevice) {
+    _buttonPointMetadata[componentId] = {
+      'buttonPoint': buttonPoint,
+      'parentDevice': parentDevice,
+      'deviceAddress': parentDevice.address,
+      'buttonId': buttonPoint.buttonId,
+      'function': buttonPoint.function,
+    };
   }
 
   void _handleCopyComponent(Component component) {
