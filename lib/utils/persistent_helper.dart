@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/flowsheet.dart';
 import '../niagara/home/manager.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/connection.dart';
-import '../providers/flowsheet_provider.dart';
+import '../services/flowsheet_storage_service.dart';
 
 class PersistenceHelper {
   final Flowsheet flowsheet;
-  final WidgetRef ref;
+  final FlowsheetStorageService storageService;
   final FlowManager flowManager;
   final Map<String, Offset> componentPositions;
   final Map<String, double> componentWidths;
   final Function() getMountedStatus;
+  final Function(Flowsheet) onFlowsheetUpdate;
 
   PersistenceHelper({
     required this.flowsheet,
-    required this.ref,
+    required this.storageService,
     required this.flowManager,
     required this.componentPositions,
     required this.componentWidths,
     required this.getMountedStatus,
+    required this.onFlowsheetUpdate,
   });
 
   Future<void> saveFullState() async {
@@ -52,8 +53,8 @@ class PersistenceHelper {
       }
 
       if (getMountedStatus()) {
-        final storageService = ref.read(flowsheetStorageServiceProvider);
         await storageService.saveFlowsheet(updatedFlowsheet);
+        onFlowsheetUpdate(updatedFlowsheet);
       }
     } catch (e) {
       print('Error saving flowsheet state: $e');
@@ -73,32 +74,33 @@ class PersistenceHelper {
       String componentId, Offset position) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).updateComponentPosition(
-            flowsheet.id,
-            componentId,
-            position,
-          );
+
+      flowsheet.updateComponentPosition(componentId, position);
+      flowsheet.modifiedAt = DateTime.now();
+
+      // Only save to storage, don't update provider
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 
   Future<void> saveComponentWidth(String componentId, double width) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).updateComponentWidth(
-            flowsheet.id,
-            componentId,
-            width,
-          );
+
+      flowsheet.updateComponentWidth(componentId, width);
+      flowsheet.modifiedAt = DateTime.now();
+
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 
   Future<void> saveAddComponent(Component component) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).addFlowsheetComponent(
-            flowsheet.id,
-            component,
-          );
+
+      flowsheet.addComponent(component);
+
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 
@@ -106,31 +108,30 @@ class PersistenceHelper {
       String componentId, Component component) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).updateFlowsheetComponent(
-            flowsheet.id,
-            componentId,
-            component,
-          );
+
+      flowsheet.updateComponent(componentId, component);
+
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 
   Future<void> saveRemoveComponent(String componentId) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).removeFlowsheetComponent(
-            flowsheet.id,
-            componentId,
-          );
+
+      flowsheet.removeComponent(componentId);
+
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 
   Future<void> saveAddConnection(Connection connection) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).addConnection(
-            flowsheet.id,
-            connection,
-          );
+
+      flowsheet.addConnection(connection);
+
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 
@@ -138,13 +139,11 @@ class PersistenceHelper {
       String toComponentId, int toPortIndex) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).removeConnection(
-            flowsheet.id,
-            fromComponentId,
-            fromPortIndex,
-            toComponentId,
-            toPortIndex,
-          );
+
+      flowsheet.removeConnection(
+          fromComponentId, fromPortIndex, toComponentId, toPortIndex);
+
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 
@@ -152,12 +151,10 @@ class PersistenceHelper {
       String componentId, int slotIndex, dynamic value) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
-      await ref.read(flowsheetsProvider.notifier).updatePortValue(
-            flowsheet.id,
-            componentId,
-            slotIndex,
-            value,
-          );
+
+      flowsheet.updatePortValue(componentId, slotIndex, value);
+
+      await storageService.saveFlowsheet(flowsheet);
     });
   }
 }

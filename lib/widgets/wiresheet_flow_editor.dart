@@ -25,6 +25,7 @@ import '../niagara/models/helvar_device_component.dart';
 import '../niagara/models/port_type.dart';
 import '../niagara/models/ramp_component.dart';
 import '../niagara/models/rectangle.dart';
+import '../services/flowsheet_storage_service.dart';
 import '../utils/general_ui.dart';
 import '../utils/persistent_helper.dart';
 
@@ -41,13 +42,15 @@ class WiresheetFlowEditor extends ConsumerStatefulWidget {
 }
 
 class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
-  final FlowManager _flowManager = FlowManager();
-  final CommandHistory _commandHistory = CommandHistory();
+  late FlowManager _flowManager;
+  late CommandHistory _commandHistory;
   final GlobalKey _canvasKey = GlobalKey();
 
   final Map<String, Offset> _componentPositions = {};
   final Map<String, GlobalKey> _componentKeys = {};
   late FlowHandlers _flowHandlers;
+  late PersistenceHelper _persistenceHelper;
+  late FlowsheetStorageService _storageService;
   Offset? _selectionBoxStart;
   Offset? _selectionBoxEnd;
   bool _isDraggingSelectionBox = false;
@@ -56,7 +59,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   Offset? _tempLineEndPoint;
   Offset? _dragStartPosition;
   Offset? _clipboardComponentPosition;
-  late PersistenceHelper _persistenceHelper;
   final TransformationController _transformationController =
       TransformationController();
   final GlobalKey _interactiveViewerChildKey = GlobalKey();
@@ -74,7 +76,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   void initState() {
     super.initState();
     _transformationController.value = Matrix4.identity();
-
+    _flowManager = FlowManager();
+    _commandHistory = CommandHistory();
+    _storageService = ref.read(flowsheetStorageServiceProvider);
     _flowHandlers = FlowHandlers(
       flowManager: _flowManager,
       commandHistory: _commandHistory,
@@ -96,11 +100,19 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     _persistenceHelper = PersistenceHelper(
       flowsheet: widget.flowsheet,
-      ref: ref,
+      storageService: _storageService,
       flowManager: _flowManager,
       componentPositions: _componentPositions,
       componentWidths: _componentWidths,
       getMountedStatus: () => mounted,
+      onFlowsheetUpdate: (updatedFlowsheet) {
+        if (mounted) {
+          ref.read(flowsheetsProvider.notifier).updateFlowsheet(
+                widget.flowsheet.id,
+                updatedFlowsheet,
+              );
+        }
+      },
     );
 
     _initializeComponents();
@@ -108,10 +120,100 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   @override
   void dispose() {
-    if (mounted) {
-      _persistenceHelper.saveFullState();
-    }
+    _saveStateSync();
     super.dispose();
+  }
+
+  void _saveStateSync() {
+    try {
+      final updatedFlowsheet = widget.flowsheet.copy();
+      updatedFlowsheet.components = _flowManager.components;
+
+      final List<Connection> connections = [];
+      for (final component in _flowManager.components) {
+        for (final entry in component.inputConnections.entries) {
+          connections.add(Connection(
+            fromComponentId: entry.value.componentId,
+            fromPortIndex: entry.value.portIndex,
+            toComponentId: component.id,
+            toPortIndex: entry.key,
+          ));
+        }
+      }
+      updatedFlowsheet.connections = connections;
+
+      for (final entry in _componentPositions.entries) {
+        updatedFlowsheet.updateComponentPosition(entry.key, entry.value);
+      }
+
+      for (final entry in _componentWidths.entries) {
+        updatedFlowsheet.updateComponentWidth(entry.key, entry.value);
+      }
+
+      _storageService.saveFlowsheet(updatedFlowsheet);
+    } catch (e) {
+      print('Error saving flowsheet state in dispose: $e');
+    }
+  }
+
+  @override
+  void didUpdateWidget(WiresheetFlowEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If the flowsheet ID has changed, we need to reinitialize everything
+    if (oldWidget.flowsheet.id != widget.flowsheet.id) {
+      // Save the old flowsheet state before switching
+      _saveStateSync();
+
+      // Clear and reinitialize for the new flowsheet
+      _flowManager = FlowManager();
+      _commandHistory = CommandHistory();
+      _componentPositions.clear();
+      _componentKeys.clear();
+      _componentWidths.clear();
+      _selectedComponents.clear();
+      _clipboardComponents.clear();
+      _clipboardPositions.clear();
+      _clipboardConnections.clear();
+
+      _flowHandlers = FlowHandlers(
+        flowManager: _flowManager,
+        commandHistory: _commandHistory,
+        componentPositions: _componentPositions,
+        componentKeys: _componentKeys,
+        componentWidths: _componentWidths,
+        setState: setState,
+        updateCanvasSize: _updateCanvasSize,
+        selectedComponents: _selectedComponents,
+        clipboardComponents: _clipboardComponents,
+        clipboardPositions: _clipboardPositions,
+        clipboardConnections: _clipboardConnections,
+        setClipboardComponentPosition: (position) {
+          setState(() {
+            _clipboardComponentPosition = position;
+          });
+        },
+      );
+
+      _persistenceHelper = PersistenceHelper(
+        flowsheet: widget.flowsheet,
+        storageService: _storageService,
+        flowManager: _flowManager,
+        componentPositions: _componentPositions,
+        componentWidths: _componentWidths,
+        getMountedStatus: () => mounted,
+        onFlowsheetUpdate: (updatedFlowsheet) {
+          if (mounted) {
+            ref.read(flowsheetsProvider.notifier).updateFlowsheet(
+                  widget.flowsheet.id,
+                  updatedFlowsheet,
+                );
+          }
+        },
+      );
+
+      _initializeComponents();
+    }
   }
 
   void _updateCanvasSize() {
@@ -409,8 +511,15 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      onPopInvokedWithResult: (didPop, result) async {
-        await _persistenceHelper.saveFullState();
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _persistenceHelper.saveFullState();
+            }
+          });
+        }
       },
       child: Shortcuts(
         shortcuts: getShortcuts(),
@@ -607,7 +716,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         Offset? canvasPosition =
                             getPosition(details.globalPosition);
                         if (canvasPosition != null) {
-                          //print("Canvas position onTapDown: $canvasPosition");
                           setState(() {
                             _selectionBoxStart = canvasPosition;
                             _isDraggingSelectionBox = false;
@@ -619,7 +727,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         Offset? canvasPosition =
                             getPosition(details.globalPosition);
                         if (canvasPosition != null) {
-                          print("Canvas position onPanStart: $canvasPosition");
                           bool isClickOnComponent = false;
 
                           for (final componentId in _componentPositions.keys) {
@@ -702,8 +809,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                       onDoubleTapDown: (TapDownDetails details) {
                         Offset? canvasPosition =
                             getPosition(details.globalPosition);
-                        print(
-                            "Canvas position onSecondaryTapDown: $canvasPosition");
                         if (canvasPosition != null) {
                           bool isClickOnComponent = false;
 
