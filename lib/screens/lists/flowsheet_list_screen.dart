@@ -147,11 +147,19 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
   }
 
   void _openFlowsheet(Flowsheet flowsheet) {
+    final activeFlowsheetId =
+        ref.read(flowsheetsProvider.notifier).activeFlowsheetId;
+    if (activeFlowsheetId != null && activeFlowsheetId != flowsheet.id) {
+      ref.read(flowsheetsProvider.notifier).saveActiveFlowsheet();
+    }
+
     ref.read(flowsheetsProvider.notifier).setActiveFlowsheet(flowsheet.id);
-    Navigator.push(
+
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => FlowScreen(
+          key: ValueKey(flowsheet.id),
           flowsheetId: flowsheet.id,
         ),
       ),

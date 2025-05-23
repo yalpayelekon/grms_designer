@@ -43,6 +43,7 @@ class FlowScreen extends ConsumerWidget {
         ],
       ),
       body: WiresheetFlowEditor(
+        key: ValueKey(flowsheet.id),
         flowsheet: flowsheet,
       ),
     );

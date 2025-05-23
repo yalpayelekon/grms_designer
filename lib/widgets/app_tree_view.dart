@@ -206,10 +206,12 @@ class AppTreeView extends ConsumerWidget {
                         ...wiresheets.map((wiresheet) => TreeNode(
                               content: GestureDetector(
                                 onDoubleTap: () {
-                                  if (ref
-                                          .read(flowsheetsProvider.notifier)
-                                          .activeFlowsheetId !=
-                                      null) {
+                                  final activeFlowsheetId = ref
+                                      .read(flowsheetsProvider.notifier)
+                                      .activeFlowsheetId;
+
+                                  if (activeFlowsheetId != null &&
+                                      activeFlowsheetId != wiresheet.id) {
                                     ref
                                         .read(flowsheetsProvider.notifier)
                                         .saveActiveFlowsheet();
