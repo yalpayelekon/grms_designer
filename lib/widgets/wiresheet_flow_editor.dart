@@ -43,6 +43,7 @@ class WiresheetFlowEditor extends ConsumerStatefulWidget {
 class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   final FlowManager _flowManager = FlowManager();
   final CommandHistory _commandHistory = CommandHistory();
+  final GlobalKey _canvasKey = GlobalKey();
 
   final Map<String, Offset> _componentPositions = {};
   final Map<String, GlobalKey> _componentKeys = {};
@@ -187,23 +188,32 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       setState(() {
         _canvasSize = newCanvasSize;
         _canvasOffset = newCanvasOffset;
-
-        ref.read(flowsheetsProvider.notifier).updateCanvasSize(
-              widget.flowsheet.id,
-              newCanvasSize,
-            );
-
-        ref.read(flowsheetsProvider.notifier).updateCanvasOffset(
-              widget.flowsheet.id,
-              newCanvasOffset,
-            );
-
-        for (var id in _componentPositions.keys) {
-          _persistenceHelper.saveComponentPosition(
-              id, _componentPositions[id]!);
-        }
       });
+
+      _updateCanvasSizeAsync(newCanvasSize, newCanvasOffset);
     }
+  }
+
+  Future<void> _updateCanvasSizeAsync(
+      Size newCanvasSize, Offset newCanvasOffset) async {
+    Future.microtask(() async {
+      if (!mounted) return;
+
+      await ref.read(flowsheetsProvider.notifier).updateCanvasSize(
+            widget.flowsheet.id,
+            newCanvasSize,
+          );
+
+      await ref.read(flowsheetsProvider.notifier).updateCanvasOffset(
+            widget.flowsheet.id,
+            newCanvasOffset,
+          );
+
+      for (var id in _componentPositions.keys) {
+        await _persistenceHelper.saveComponentPosition(
+            id, _componentPositions[id]!);
+      }
+    });
   }
 
   Future<void> saveFullState() async {
@@ -327,18 +337,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   Offset? getPosition(Offset globalPosition) {
-    final RenderBox? viewerChildRenderBox =
-        _interactiveViewerChildKey.currentContext?.findRenderObject()
-            as RenderBox?;
+    final RenderBox? canvasBox =
+        _canvasKey.currentContext?.findRenderObject() as RenderBox?;
 
-    if (viewerChildRenderBox != null) {
-      final Offset localPosition =
-          viewerChildRenderBox.globalToLocal(globalPosition);
+    if (canvasBox != null) {
+      final Offset localPosition = canvasBox.globalToLocal(globalPosition);
 
       final matrix = _transformationController.value;
       final inverseMatrix = Matrix4.inverted(matrix);
       final canvasPosition =
           MatrixUtils.transformPoint(inverseMatrix, localPosition);
+
       return canvasPosition;
     }
     return null;
@@ -727,8 +736,20 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                       child: DragTarget<Object>(
                         onAcceptWithDetails:
                             (DragTargetDetails<dynamic> details) {
-                          Offset? canvasPosition = getPosition(details.offset);
-                          if (canvasPosition != null) {
+                          final RenderBox? canvasBox = _canvasKey.currentContext
+                              ?.findRenderObject() as RenderBox?;
+
+                          if (canvasBox != null) {
+                            final Offset localPosition =
+                                canvasBox.globalToLocal(details.offset);
+                            print("localPosition: $localPosition");
+
+                            final matrix = _transformationController.value;
+                            final inverseMatrix = Matrix4.inverted(matrix);
+                            final canvasPosition = MatrixUtils.transformPoint(
+                                inverseMatrix, localPosition);
+                            print("canvasPosition: $canvasPosition");
+
                             if (details.data is ComponentType) {
                               _addNewComponent(details.data,
                                   clickPosition: canvasPosition);
@@ -748,6 +769,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         },
                         builder: (context, candidateData, rejectedData) {
                           return Container(
+                            key: _canvasKey,
                             width: _canvasSize.width,
                             height: _canvasSize.height,
                             color: Colors.grey[50],

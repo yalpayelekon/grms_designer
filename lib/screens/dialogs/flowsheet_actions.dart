@@ -26,12 +26,10 @@ void createNewFlowsheet(BuildContext context, WidgetRef ref) {
           onPressed: () async {
             final name = nameController.text.trim();
             if (name.isNotEmpty) {
-              // Create the flowsheet using the provider
               final flowsheet = await ref
                   .read(flowsheetsProvider.notifier)
                   .createFlowsheet(name);
 
-              // Ensure the flowsheet is saved properly
               await ref
                   .read(flowsheetsProvider.notifier)
                   .saveFlowsheet(flowsheet.id);
