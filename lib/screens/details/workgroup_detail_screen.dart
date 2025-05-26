@@ -32,22 +32,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       appBar: AppBar(
         title: Text(widget.workgroup.description),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.group_work),
-            tooltip: 'View Groups',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GroupsListScreen(
-                    workgroup: widget.workgroup,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+        actions: const [],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
