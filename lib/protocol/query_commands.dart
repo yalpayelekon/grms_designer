@@ -60,6 +60,30 @@ class HelvarNetCommands {
     return '>V:$version,C:129,@$address#';
   }
 
+  static String queryInputs() {
+    return '>V:$version,C:151#';
+  }
+
+  static String queryInputsForDevice(String address) {
+    return '>V:$version,C:151,@$address#';
+  }
+
+  static String queryMeasurement(String address) {
+    return '>V:$version,C:150,@$address#';
+  }
+
+  static String queryDeviceInfo(String address) {
+    return '>V:$version,C:100,@$address#';
+  }
+
+  static String querySceneInfoForDevice(String address) {
+    return '>V:$version,C:167,@$address#';
+  }
+
+  static String queryDeviceProperties(String address) {
+    return '>V:$version,C:104,@$address#';
+  }
+
   static String queryLoadLevel(String address) {
     return '>V:$version,C:152,@$address#';
   }

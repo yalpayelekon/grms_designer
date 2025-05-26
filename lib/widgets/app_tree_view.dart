@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
+import 'package:grms_designer/widgets/button_point_status_widget.dart';
 import '../models/helvar_models/input_device.dart';
 import '../utils/device_icons.dart';
 import '../models/helvar_models/helvar_group.dart';
@@ -528,7 +529,8 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
           ],
         ),
         children: device.buttonPoints
-            .map((point) => _buildDraggableButtonPointNode(point, device))
+            .map((point) =>
+                _buildDraggableButtonPointNodeWithStatus(point, device))
             .toList(),
       ));
     }
@@ -655,6 +657,90 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
 
   String _getButtonPointDisplayName(ButtonPoint buttonPoint) {
     return buttonPoint.name.split('_').last;
+  }
+
+  TreeNode _buildDraggableButtonPointNodeWithStatus(
+      ButtonPoint buttonPoint, HelvarDevice parentDevice) {
+    return TreeNode(
+      content: Row(
+        children: [
+          Expanded(
+            child: Draggable<Map<String, dynamic>>(
+              data: {
+                "componentType": "BooleanPoint",
+                "buttonPoint": buttonPoint,
+                "parentDevice": parentDevice,
+                "pointData": {
+                  "name": buttonPoint.name,
+                  "function": buttonPoint.function,
+                  "buttonId": buttonPoint.buttonId,
+                  "deviceAddress": parentDevice.address,
+                  "deviceId": parentDevice.deviceId,
+                  "isButtonPoint": true,
+                }
+              },
+              feedback: Material(
+                elevation: 4.0,
+                child: Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getButtonPointIcon(buttonPoint),
+                        color: Colors.green,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8.0),
+                      Text(
+                        _getButtonPointDisplayName(buttonPoint),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              childWhenDragging: Row(
+                children: [
+                  Icon(
+                    _getButtonPointIcon(buttonPoint),
+                    size: 16,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _getButtonPointDisplayName(buttonPoint),
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _getButtonPointIcon(buttonPoint),
+                    size: 16,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(_getButtonPointDisplayName(buttonPoint)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ButtonPointStatusWidget(
+            deviceAddress: parentDevice.address,
+            buttonId: buttonPoint.buttonId,
+            label: null,
+          ),
+        ],
+      ),
+    );
   }
 
   TreeNode _buildLogicComponentsNode(BuildContext context) {

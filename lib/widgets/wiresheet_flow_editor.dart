@@ -4,7 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/flowsheet.dart';
+import 'package:grms_designer/providers/button_point_status_provider.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
+import 'package:grms_designer/providers/workgroups_provider.dart';
+import 'package:grms_designer/services/button_point_status_service.dart';
+import 'package:grms_designer/utils/logger.dart';
 
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/input_device.dart';
@@ -63,9 +67,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       TransformationController();
   final GlobalKey _interactiveViewerChildKey = GlobalKey();
   final Map<String, double> _componentWidths = {};
-  Size _canvasSize = const Size(2000, 2000); // Initial canvas size
+  Size _canvasSize = const Size(2000, 2000);
   Offset _canvasOffset = Offset.zero; // Canvas position within the view
-  static const double _canvasPadding = 100.0; // Padding around components
+  static const double _canvasPadding = 100.0;
 
   final List<Component> _clipboardComponents = [];
   final List<Offset> _clipboardPositions = [];
@@ -116,10 +120,25 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     );
 
     _initializeComponents();
+    _initializeButtonPointStatusMonitoring();
   }
 
   @override
   void dispose() {
+    final monitoringNotifier = ref.read(buttonPointMonitoringProvider.notifier);
+    for (final metadata in _buttonPointMetadata.values) {
+      final deviceAddress = metadata['deviceAddress'] as String;
+      final workgroups = ref.read(workgroupsProvider);
+      for (final workgroup in workgroups) {
+        for (final router in workgroup.routers) {
+          if (router.devices.any((d) => d.address == deviceAddress)) {
+            monitoringNotifier.stopMonitoring(deviceAddress, router.ipAddress);
+            break;
+          }
+        }
+      }
+    }
+
     _saveStateSync();
     super.dispose();
   }
@@ -160,12 +179,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   void didUpdateWidget(WiresheetFlowEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // If the flowsheet ID has changed, we need to reinitialize everything
     if (oldWidget.flowsheet.id != widget.flowsheet.id) {
-      // Save the old flowsheet state before switching
       _saveStateSync();
 
-      // Clear and reinitialize for the new flowsheet
       _flowManager = FlowManager();
       _commandHistory = CommandHistory();
       _componentPositions.clear();
@@ -289,9 +305,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     if (needsUpdate) {
       setState(() {
         _canvasSize = newCanvasSize;
-        _canvasOffset = newCanvasOffset;
       });
 
+      _canvasOffset = newCanvasOffset;
       _updateCanvasSizeAsync(newCanvasSize, newCanvasOffset);
     }
   }
@@ -320,6 +336,70 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   Future<void> saveFullState() async {
     await _persistenceHelper.saveFullState();
+  }
+
+  void _updateButtonPointComponentStatus(ButtonPointStatus status) {
+    final matchingComponents = _buttonPointMetadata.entries.where((entry) {
+      final metadata = entry.value;
+      return metadata['deviceAddress'] == status.deviceAddress &&
+          metadata['buttonId'] == status.buttonId;
+    }).map((entry) => entry.key);
+
+    for (final componentId in matchingComponents) {
+      final component = _flowManager.findComponentById(componentId);
+      if (component != null) {
+        for (var property in component.properties) {
+          if (!property.isInput && property.type.type == PortType.BOOLEAN) {
+            if (property.value != status.value) {
+              logInfo(
+                  'Updating button point component $componentId: ${property.value} -> ${status.value}');
+
+              setState(() {
+                property.value = status.value;
+                _flowManager.recalculateAll();
+              });
+
+              _persistenceHelper.savePortValue(
+                  componentId, property.index, status.value);
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  void _initializeButtonPointStatusMonitoring() {
+    ref.listen<AsyncValue<ButtonPointStatus>>(
+      buttonPointStatusStreamProvider,
+      (previous, next) {
+        next.whenData((status) {
+          _updateButtonPointComponentStatus(status);
+        });
+      },
+    );
+  }
+
+  bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
+    if (buttonPoint.function.contains('Status') ||
+        buttonPoint.name.toLowerCase().contains('missing')) {
+      return false;
+    }
+
+    return false;
+  }
+
+  final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
+
+  void _storeButtonPointMetadata(
+      String componentId, ButtonPoint buttonPoint, HelvarDevice parentDevice) {
+    _buttonPointMetadata[componentId] = {
+      'buttonPoint': buttonPoint,
+      'parentDevice': parentDevice,
+      'deviceAddress': parentDevice.address,
+      'buttonId': buttonPoint.buttonId,
+      'function': buttonPoint.function,
+    };
   }
 
   void _initializeComponents() {
@@ -449,7 +529,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       final inverseMatrix = Matrix4.inverted(matrix);
       final canvasPosition =
           MatrixUtils.transformPoint(inverseMatrix, localPosition);
-
+      // TODO: use _canvasOffset to update get actual position,
+      // there is a bug after scrolling on empty canvas with right-click
       return canvasPosition;
     }
     return null;
@@ -1592,6 +1673,34 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       _updateCanvasSize();
     });
+
+    _startButtonPointMonitoring(parentDevice, buttonPoint);
+  }
+
+  void _startButtonPointMonitoring(
+      HelvarDevice parentDevice, ButtonPoint buttonPoint) {
+    final workgroups = ref.read(workgroupsProvider);
+    String? routerIpAddress;
+
+    for (final workgroup in workgroups) {
+      for (final router in workgroup.routers) {
+        if (router.devices.any((d) => d.address == parentDevice.address)) {
+          routerIpAddress = router.ipAddress;
+          break;
+        }
+      }
+      if (routerIpAddress != null) break;
+    }
+
+    if (routerIpAddress != null && routerIpAddress.isNotEmpty) {
+      logInfo(
+          'Starting button point monitoring for ${parentDevice.address} on router $routerIpAddress');
+      ref
+          .read(buttonPointMonitoringProvider.notifier)
+          .startMonitoring(parentDevice.address, routerIpAddress, parentDevice);
+    } else {
+      logWarning('Could not find router IP for device ${parentDevice.address}');
+    }
   }
 
   Offset _getDefaultPosition() {
@@ -1613,28 +1722,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     }
 
     return Offset(_canvasSize.width / 2, _canvasSize.height / 2);
-  }
-
-  bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
-    if (buttonPoint.function.contains('Status') ||
-        buttonPoint.name.toLowerCase().contains('missing')) {
-      return false;
-    }
-
-    return false;
-  }
-
-  final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
-
-  void _storeButtonPointMetadata(
-      String componentId, ButtonPoint buttonPoint, HelvarDevice parentDevice) {
-    _buttonPointMetadata[componentId] = {
-      'buttonPoint': buttonPoint,
-      'parentDevice': parentDevice,
-      'deviceAddress': parentDevice.address,
-      'buttonId': buttonPoint.buttonId,
-      'function': buttonPoint.function,
-    };
   }
 
   void _handleCopyComponent(Component component) {
