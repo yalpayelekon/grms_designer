@@ -514,13 +514,6 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         ? "Device_${device.deviceId}"
         : device.description;
 
-    // Generate unique node ID for this device
-    final deviceNodeId = '${workgroup.id}_${router.address}_${device.address}';
-
-    // Get the expansion state for this device
-    final expansionNotifier = ref.read(treeExpansionProvider.notifier);
-    final isExpanded = expansionNotifier.getInitialExpansionState(deviceNodeId);
-
     final List<TreeNode> deviceChildren = [];
 
     if (device is HelvarDriverInputDevice &&
