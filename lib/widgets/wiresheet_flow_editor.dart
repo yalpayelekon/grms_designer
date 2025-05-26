@@ -75,6 +75,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   final List<Offset> _clipboardPositions = [];
   final List<Connection> _clipboardConnections = [];
   final Set<Component> _selectedComponents = {};
+  final Map<String, String> _deviceToRouterIpMap = {};
 
   @override
   void initState() {
@@ -124,18 +125,19 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   @override
   void dispose() {
-    final monitoringNotifier = ref.read(buttonPointMonitoringProvider.notifier);
-    for (final metadata in _buttonPointMetadata.values) {
-      final deviceAddress = metadata['deviceAddress'] as String;
-      final workgroups = ref.read(workgroupsProvider);
-      for (final workgroup in workgroups) {
-        for (final router in workgroup.routers) {
-          if (router.devices.any((d) => d.address == deviceAddress)) {
-            monitoringNotifier.stopMonitoring(deviceAddress, router.ipAddress);
-            break;
-          }
+    try {
+      if (mounted && context.mounted) {
+        final monitoringNotifier =
+            ref.read(buttonPointMonitoringProvider.notifier);
+
+        for (final entry in _deviceToRouterIpMap.entries) {
+          final deviceAddress = entry.key;
+          final routerIpAddress = entry.value;
+          monitoringNotifier.stopMonitoring(deviceAddress, routerIpAddress);
         }
       }
+    } catch (e) {
+      print('Warning: Could not stop monitoring during disposal: $e');
     }
 
     _saveStateSync();
@@ -1690,6 +1692,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     }
 
     if (routerIpAddress != null && routerIpAddress.isNotEmpty) {
+      // Cache the device -> router IP mapping
+      _deviceToRouterIpMap[parentDevice.address] = routerIpAddress;
+
       logInfo(
           'Starting button point monitoring for ${parentDevice.address} on router $routerIpAddress');
       ref
