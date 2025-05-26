@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/screens/details/workgroup_detail_screen.dart';
 import 'package:grms_designer/utils/logger.dart';
 import 'package:collection/collection.dart';
+import 'package:grms_designer/utils/network_utils.dart';
 
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -35,8 +36,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   Future<NetworkInterfaceDetails?> _selectNetworkInterface() async {
     try {
-      List<NetworkInterfaceDetails> interfaces =
-          await discoveryManager!.getNetworkInterfaces();
+      List<NetworkInterfaceDetails> interfaces = await getNetworkInterfaces();
 
       if (interfaces.isEmpty) {
         if (mounted) {
@@ -74,7 +74,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     try {
       await discoveryManager!.start(interfaceResult.ipv4!);
       final discoveryTimeout = ref.read(discoveryTimeoutProvider);
-      final broadcastAddress = discoveryManager!.calculateBroadcastAddress(
+      final broadcastAddress = calculateBroadcastAddress(
         interfaceResult.ipv4!,
         interfaceResult.subnetMask!,
       );
