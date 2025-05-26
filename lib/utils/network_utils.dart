@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/general_ui.dart';
+
 import '../screens/dialogs/network_interface_dialog.dart';
 import 'logger.dart';
 
@@ -15,6 +18,31 @@ Future<List<NetworkInterfaceDetails>> getNetworkInterfaces() async {
     return [];
   }
   return filteredInterfaces;
+}
+
+Future<NetworkInterfaceDetails?> selectNetworkInterface(
+    BuildContext context) async {
+  try {
+    List<NetworkInterfaceDetails> interfaces = await getNetworkInterfaces();
+
+    if (interfaces.isEmpty) {
+      showSnackBarMsg(context, 'No network interfaces found');
+      return null;
+    }
+
+    final result = await showDialog<NetworkInterfaceDetails>(
+      context: context,
+      builder: (BuildContext context) {
+        return NetworkInterfaceDialog(interfaces: interfaces);
+      },
+    );
+
+    return result;
+  } catch (e) {
+    logError('Error selecting network interface: $e');
+    showSnackBarMsg(context, 'Error selecting network interface.');
+    return null;
+  }
 }
 
 List<NetworkInterfaceDetails> parseIpConfig(String output) {

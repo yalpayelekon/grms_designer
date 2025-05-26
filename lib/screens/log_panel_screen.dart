@@ -220,7 +220,7 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   decoration: BoxDecoration(
-                    color: log.levelColor.withOpacity(0.2),
+                    color: log.levelColor.withValues(alpha: 0.2 * 255),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -238,7 +238,7 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2 * 255),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(

@@ -56,7 +56,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2 * 255),
             blurRadius: 3,
             offset: const Offset(1, 2),
           ),
@@ -79,7 +79,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                 width: widget.width,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.black.withOpacity(0.25)),
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5 * 255),
                   borderRadius: BorderRadius.circular(3),
                 ),
                 child: Column(
@@ -168,7 +168,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               width: 2.0,
               height: 16.0,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.7),
+                color: Colors.grey.withValues(alpha: 0.7 * 255),
                 borderRadius: BorderRadius.circular(1.0),
               ),
             ),
@@ -213,7 +213,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             child: Container(
               height: rowHeight,
               decoration: BoxDecoration(
-                color: Colors.indigo.withOpacity(0.2),
+                color: Colors.indigo.withValues(alpha: 0.2 * 255),
                 border: Border.all(
                   color: Colors.indigo,
                   width: 1.0,
@@ -242,7 +242,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
               color: (candidateData.isNotEmpty)
-                  ? Colors.lightBlue.withOpacity(0.3)
+                  ? Colors.lightBlue.withValues(alpha: 0.3 * 255)
                   : null,
               border: Border(
                 bottom: BorderSide(
@@ -260,14 +260,14 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                     Icon(
                       isInput ? Icons.arrow_back : Icons.arrow_forward,
                       size: 12,
-                      color: Colors.indigo.withOpacity(0.6),
+                      color: Colors.indigo.withValues(alpha: 0.6 * 255),
                     ),
                     const SizedBox(width: 3),
                     Text(
                       label,
                       style: TextStyle(
                         fontSize: 9,
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8 * 255),
                       ),
                     ),
                     const SizedBox(width: 3),
@@ -300,7 +300,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             child: Container(
               height: rowHeight,
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.2),
+                color: Colors.amber.withValues(alpha: 0.2 * 255),
                 border: Border.all(
                   color: Colors.amber.shade800,
                   width: 1.0,
@@ -329,7 +329,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
               color: (candidateData.isNotEmpty)
-                  ? Colors.amber.withOpacity(0.2)
+                  ? Colors.amber.withValues(alpha: 0.2 * 255)
                   : null,
               border: Border(
                 bottom: BorderSide(
@@ -354,7 +354,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                       label,
                       style: TextStyle(
                         fontSize: 9,
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8 * 255),
                       ),
                     ),
                     if (action.parameterType != null) ...[
@@ -399,7 +399,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             child: Container(
               height: rowHeight,
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
+                color: Colors.green.withValues(alpha: 0.2 * 255),
                 border: Border.all(
                   color: Colors.green.shade800,
                   width: 1.0,
@@ -428,7 +428,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             decoration: BoxDecoration(
               color: (candidateData.isNotEmpty)
-                  ? Colors.green.withOpacity(0.2)
+                  ? Colors.green.withValues(alpha: 0.2 * 255)
                   : null,
               border: Border(
                 bottom: BorderSide(
@@ -453,7 +453,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                       label,
                       style: TextStyle(
                         fontSize: 9,
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8 * 255),
                       ),
                     ),
                     const SizedBox(width: 3),

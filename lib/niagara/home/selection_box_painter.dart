@@ -11,7 +11,7 @@ class SelectionBoxPainter extends CustomPainter {
     if (start == null || end == null) return;
 
     final paint = Paint()
-      ..color = Colors.blue.withOpacity(0.2)
+      ..color = Colors.blue.withValues(alpha: 0.2 * 255)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()

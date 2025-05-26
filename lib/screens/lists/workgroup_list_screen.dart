@@ -34,37 +34,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     );
   }
 
-  Future<NetworkInterfaceDetails?> _selectNetworkInterface() async {
-    try {
-      List<NetworkInterfaceDetails> interfaces = await getNetworkInterfaces();
-
-      if (interfaces.isEmpty) {
-        if (mounted) {
-          showSnackBarMsg(context, 'No network interfaces found');
-        }
-        return null;
-      }
-
-      if (!mounted) return null;
-
-      final result = await showDialog<NetworkInterfaceDetails>(
-        context: context,
-        builder: (BuildContext context) {
-          return NetworkInterfaceDialog(interfaces: interfaces);
-        },
-      );
-
-      if (result == null) {
-        return null;
-      }
-
-      return result;
-    } catch (e) {
-      _showErrorMessage('Error finding network interfaces: ${e.toString()}');
-      return null;
-    }
-  }
-
   Future<List<Map<String, String>>> _performRouterDiscovery(
       NetworkInterfaceDetails interfaceResult) async {
     setState(() {
@@ -248,7 +217,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   Future<void> _discoverWorkgroups() async {
     discoveryManager = DiscoveryManager();
-    final interfaceResult = await _selectNetworkInterface();
+    final interfaceResult = await selectNetworkInterface(context);
     if (interfaceResult == null) return;
 
     List<Map<String, String>> discoveredRouters =
@@ -500,7 +469,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   Future<void> _discoverMoreRouters(Workgroup workgroup) async {
     discoveryManager = DiscoveryManager();
-    final interfaceResult = await _selectNetworkInterface();
+    final interfaceResult = await selectNetworkInterface(context);
     if (interfaceResult == null) return;
 
     List<Map<String, String>> discoveredRouters =

@@ -50,7 +50,7 @@ class ConnectionPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final Paint tempLinePaint = Paint()
-      ..color = Colors.blue.withOpacity(0.7)
+      ..color = Colors.blue.withValues(alpha: 0.7 * 255)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -267,7 +267,7 @@ class ConnectionPainter extends CustomPainter {
     final double stepY = dy / dashCount;
 
     final Paint backgroundPaint = Paint()
-      ..color = Colors.white.withOpacity(0.5)
+      ..color = Colors.white.withValues(alpha: 0.5 * 255)
       ..strokeWidth = paint.strokeWidth + 1.0
       ..style = PaintingStyle.stroke
       ..strokeCap = paint.strokeCap;
@@ -304,22 +304,22 @@ class ConnectionPainter extends CustomPainter {
     switch (property.type.type) {
       case PortType.BOOLEAN:
         borderColor = (property.value as bool)
-            ? Colors.green.withOpacity(0.6)
-            : Colors.red.withOpacity(0.6);
+            ? Colors.green.withValues(alpha: 0.6 * 255)
+            : Colors.red.withValues(alpha: 0.6 * 255);
         displayValue = (property.value as bool) ? 'T' : 'F';
         break;
       case PortType.NUMERIC:
-        borderColor = Colors.teal.withOpacity(0.6);
+        borderColor = Colors.teal.withValues(alpha: 0.6 * 255);
         num value = property.value as num;
         displayValue = value.toStringAsFixed(1);
         break;
       case PortType.STRING:
-        borderColor = Colors.orange.withOpacity(0.6);
+        borderColor = Colors.orange.withValues(alpha: 0.6 * 255);
         displayValue =
             '"${(property.value as String).length > 3 ? '${(property.value as String).substring(0, 3)}...' : property.value as String}"';
         break;
       case PortType.ANY:
-        borderColor = Colors.purple.withOpacity(0.6);
+        borderColor = Colors.purple.withValues(alpha: 0.6 * 255);
         if (property.value == null) {
           displayValue = 'null';
         } else if (property.value is bool) {
@@ -376,7 +376,7 @@ class ConnectionPainter extends CustomPainter {
       ..color = Colors.white.withOpacity(0.85)
       ..style = PaintingStyle.fill;
 
-    Color borderColor = Colors.green.withOpacity(0.6);
+    Color borderColor = Colors.green.withValues(alpha: 0.6 * 255);
     String displayValue = _formatEventValue(topic.lastEvent);
 
     final Paint borderPaint = Paint()

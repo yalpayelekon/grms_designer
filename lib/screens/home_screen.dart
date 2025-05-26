@@ -336,7 +336,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildStatCard(BuildContext context, String label, int value,
       [Color? color]) {
     return Card(
-      color: color?.withOpacity(0.1),
+      color: color?.withValues(alpha: 0.1 * 255),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Column(
