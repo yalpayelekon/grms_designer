@@ -295,7 +295,7 @@ class ConnectionPainter extends CustomPainter {
     );
 
     final Paint backgroundPaint = Paint()
-      ..color = Colors.white.withOpacity(0.85)
+      ..color = Colors.white.withValues(alpha: .85 * 255)
       ..style = PaintingStyle.fill;
 
     Color? borderColor;
@@ -373,7 +373,7 @@ class ConnectionPainter extends CustomPainter {
     );
 
     final Paint backgroundPaint = Paint()
-      ..color = Colors.white.withOpacity(0.85)
+      ..color = Colors.white.withValues(alpha: .85 * 255)
       ..style = PaintingStyle.fill;
 
     Color borderColor = Colors.green.withValues(alpha: 0.6 * 255);

@@ -78,7 +78,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               Container(
                 width: widget.width,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black.withOpacity(0.25)),
+                  border: Border.all(
+                      color: Colors.black.withValues(alpha: .25 * 255)),
                   color: Colors.white.withValues(alpha: 0.5 * 255),
                   borderRadius: BorderRadius.circular(3),
                 ),
@@ -246,7 +247,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   : null,
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: .15 * 255),
                   width: 0.5,
                 ),
               ),
@@ -333,7 +334,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   : null,
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: .15 * 255),
                   width: 0.5,
                 ),
               ),
@@ -432,7 +433,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   : null,
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: .15 * 255),
                   width: 0.5,
                 ),
               ),
