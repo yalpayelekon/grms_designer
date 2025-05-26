@@ -9,21 +9,25 @@ import 'models/command_models.dart';
 import 'models/connection_config.dart';
 import 'router_connection.dart';
 import 'router_connection_manager.dart';
+import '../services/command_history_service.dart';
 
 class RouterCommandService {
   final RouterConnectionManager _connectionManager;
   final ConnectionConfig _config;
-  final List<QueuedCommand> _commandHistory = [];
-  final _commandStatusController = StreamController<QueuedCommand>.broadcast();
   final Map<String, CommandQueueController> _queueControllers = {};
+  final _commandStatusController = StreamController<QueuedCommand>.broadcast();
+
+  /// Service to manage command history
+  late final CommandHistoryService _history =
+      CommandHistoryService(maxHistorySize: _config.historySize);
+  void _addToHistory(QueuedCommand command) => _history.add(command);
+  List<QueuedCommand> get commandHistory => _history.all;
+  void clearHistory() => _history.clear();
 
   RouterCommandService(this._connectionManager, this._config);
 
   Stream<QueuedCommand> get commandStatusStream =>
       _commandStatusController.stream;
-  List<QueuedCommand> get commandHistory => List.unmodifiable(_commandHistory);
-
-  int get _maxHistorySize => _config.historySize;
 
   Future<bool> ensureConnection(String routerIp) async {
     try {
@@ -161,21 +165,9 @@ class RouterCommandService {
     return results;
   }
 
-  void clearHistory() {
-    _commandHistory.clear();
-  }
-
   void _updateCommandStatus(QueuedCommand command) {
     logInfo('Command status updated: ${command.toString()}');
     _commandStatusController.add(command);
-  }
-
-  void _addToHistory(QueuedCommand command) {
-    _commandHistory.insert(0, command);
-
-    if (_commandHistory.length > _maxHistorySize) {
-      _commandHistory.removeLast();
-    }
   }
 }
 
