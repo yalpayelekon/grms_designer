@@ -120,7 +120,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     );
 
     _initializeComponents();
-    _initializeButtonPointStatusMonitoring();
   }
 
   @override
@@ -369,17 +368,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     }
   }
 
-  void _initializeButtonPointStatusMonitoring() {
-    ref.listen<AsyncValue<ButtonPointStatus>>(
-      buttonPointStatusStreamProvider,
-      (previous, next) {
-        next.whenData((status) {
-          _updateButtonPointComponentStatus(status);
-        });
-      },
-    );
-  }
-
   bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
     if (buttonPoint.function.contains('Status') ||
         buttonPoint.name.toLowerCase().contains('missing')) {
@@ -591,6 +579,15 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<ButtonPointStatus>>(
+      buttonPointStatusStreamProvider,
+      (previous, next) {
+        next.whenData((status) {
+          _updateButtonPointComponentStatus(status);
+        });
+      },
+    );
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
