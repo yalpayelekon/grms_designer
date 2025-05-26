@@ -10,11 +10,13 @@ import '../comm/router_command_service.dart';
 import '../comm/router_connection.dart';
 import '../comm/router_connection_manager.dart';
 import 'router_connection_provider.dart';
+import 'tree_expansion_provider.dart';
 
 class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   final FileStorageService _fileStorageService;
   final RouterStorageService _routerStorageService;
   final RouterCommandService _commandService;
+  final Ref _ref;
   bool _initialized = false;
   bool _disposed = false;
 
@@ -22,9 +24,11 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     required FileStorageService fileStorageService,
     required RouterStorageService routerStorageService,
     required RouterCommandService commandService,
+    required Ref ref,
   })  : _fileStorageService = fileStorageService,
         _routerStorageService = routerStorageService,
         _commandService = commandService,
+        _ref = ref,
         super([]) {
     _initializeData();
   }
@@ -144,6 +148,91 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
+  Future<void> addDeviceToRouter(
+      String workgroupId, String routerAddress, HelvarDevice device) async {
+    final newState = [...state];
+    final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
+
+    if (workgroupIndex >= 0) {
+      final workgroup = newState[workgroupIndex];
+      final routerIndex = workgroup.routers
+          .indexWhere((router) => router.address == routerAddress);
+
+      if (routerIndex >= 0) {
+        final router = workgroup.routers[routerIndex];
+        router.addDevice(device);
+
+        final deviceNodeId =
+            '${workgroupId}_${routerAddress}_${device.address}';
+
+        _ref
+            .read(treeExpansionProvider.notifier)
+            .markNodesAsNewlyAdded([deviceNodeId]);
+
+        state = newState;
+        try {
+          await _routerStorageService.saveRouterDevices(
+            workgroupId,
+            routerAddress,
+            router.devices,
+          );
+        } catch (e) {
+          logError('Error saving devices for router ${router.description}: $e');
+        }
+        try {
+          await _fileStorageService.saveWorkgroups(state);
+        } catch (e) {
+          logError('Error saving workgroups: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> addMultipleDevicesToRouter(String workgroupId,
+      String routerAddress, List<HelvarDevice> devices) async {
+    final newState = [...state];
+    final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
+
+    if (workgroupIndex >= 0) {
+      final workgroup = newState[workgroupIndex];
+      final routerIndex = workgroup.routers
+          .indexWhere((router) => router.address == routerAddress);
+
+      if (routerIndex >= 0) {
+        final router = workgroup.routers[routerIndex];
+
+        final newDeviceNodeIds = devices
+            .map(
+                (device) => '${workgroupId}_${routerAddress}_${device.address}')
+            .toList();
+
+        for (final device in devices) {
+          router.addDevice(device);
+        }
+
+        _ref
+            .read(treeExpansionProvider.notifier)
+            .markNodesAsNewlyAdded(newDeviceNodeIds);
+
+        state = newState;
+        try {
+          await _routerStorageService.saveRouterDevices(
+            workgroupId,
+            routerAddress,
+            router.devices,
+          );
+        } catch (e) {
+          logError('Error saving devices for router ${router.description}: $e');
+        }
+        try {
+          await _fileStorageService.saveWorkgroups(state);
+        } catch (e) {
+          logError('Error saving workgroups: $e');
+        }
+      }
+    }
+  }
+
   void addWorkgroup(Workgroup workgroup) {
     state = [...state, workgroup];
     _saveToStorage();
@@ -164,39 +253,6 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   void clearWorkgroups() {
     state = [];
     _saveToStorage();
-  }
-
-  Future<void> addDeviceToRouter(
-      String workgroupId, String routerAddress, HelvarDevice device) async {
-    final newState = [...state];
-    final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
-
-    if (workgroupIndex >= 0) {
-      final workgroup = newState[workgroupIndex];
-      final routerIndex = workgroup.routers
-          .indexWhere((router) => router.address == routerAddress);
-
-      if (routerIndex >= 0) {
-        final router = workgroup.routers[routerIndex];
-        router.addDevice(device);
-
-        state = newState;
-        try {
-          await _routerStorageService.saveRouterDevices(
-            workgroupId,
-            routerAddress,
-            router.devices,
-          );
-        } catch (e) {
-          logError('Error saving devices for router ${router.description}: $e');
-        }
-        try {
-          await _fileStorageService.saveWorkgroups(state);
-        } catch (e) {
-          logError('Error saving workgroups: $e');
-        }
-      }
-    }
   }
 
   Future<void> removeDeviceFromRouter(
@@ -376,5 +432,6 @@ final workgroupsProvider =
     fileStorageService: ref.watch(fileStorageServiceProvider),
     routerStorageService: ref.watch(routerStorageServiceProvider),
     commandService: ref.watch(routerCommandServiceProvider),
+    ref: ref,
   );
 });

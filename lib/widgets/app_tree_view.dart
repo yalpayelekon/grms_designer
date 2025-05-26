@@ -11,12 +11,13 @@ import '../niagara/home/utils.dart';
 import '../niagara/models/component_type.dart';
 import '../models/flowsheet.dart';
 import '../providers/flowsheet_provider.dart';
+import '../providers/tree_expansion_provider.dart'; // Add this import
 import '../screens/actions.dart';
 import '../screens/dialogs/device_context_menu.dart';
 import '../screens/dialogs/flowsheet_actions.dart';
 import '../utils/general_ui.dart';
 
-class AppTreeView extends ConsumerWidget {
+class AppTreeView extends ConsumerStatefulWidget {
   final List<Flowsheet> wiresheets;
   final List<Workgroup> workgroups;
   final bool showingProject;
@@ -57,24 +58,54 @@ class AppTreeView extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  AppTreeViewState createState() => AppTreeViewState();
+}
+
+class AppTreeViewState extends ConsumerState<AppTreeView> {
+  late TreeController _treeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _treeController = TreeController(allNodesExpanded: false);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(treeExpansionProvider.notifier).resetExpansionState();
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          ref.read(treeExpansionProvider.notifier).clearNewlyAddedNodes();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(treeExpansionProvider);
+
     return SingleChildScrollView(
       child: Column(
         children: [
-          TreeView(nodes: [
+          TreeView(treeController: _treeController, nodes: [
             TreeNode(
               content: GestureDetector(
                 onDoubleTap: () {
-                  setActiveNode('project');
+                  widget.setActiveNode('project');
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
                     "Project",
                     style: TextStyle(
-                      fontWeight:
-                          showingProject ? FontWeight.bold : FontWeight.normal,
-                      color: showingProject ? Colors.blue : null,
+                      fontWeight: widget.showingProject
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: widget.showingProject ? Colors.blue : null,
                     ),
                   ),
                 ),
@@ -83,17 +114,17 @@ class AppTreeView extends ConsumerWidget {
                 TreeNode(
                   content: GestureDetector(
                     onDoubleTap: () {
-                      setActiveNode('settings');
+                      widget.setActiveNode('settings');
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         "Settings",
                         style: TextStyle(
-                          fontWeight: openSettings
+                          fontWeight: widget.openSettings
                               ? FontWeight.bold
                               : FontWeight.normal,
-                          color: openSettings ? Colors.blue : null,
+                          color: widget.openSettings ? Colors.blue : null,
                         ),
                       ),
                     ),
@@ -102,18 +133,19 @@ class AppTreeView extends ConsumerWidget {
                 TreeNode(
                   content: GestureDetector(
                     onDoubleTap: () {
-                      setActiveNode('files');
+                      widget.setActiveNode('files');
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         "Files",
                         style: TextStyle(
-                          fontWeight:
-                              currentFileDirectory != null && !showingImages
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                          color: currentFileDirectory != null && !showingImages
+                          fontWeight: widget.currentFileDirectory != null &&
+                                  !widget.showingImages
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: widget.currentFileDirectory != null &&
+                                  !widget.showingImages
                               ? Colors.blue
                               : null,
                         ),
@@ -124,17 +156,17 @@ class AppTreeView extends ConsumerWidget {
                     TreeNode(
                       content: GestureDetector(
                         onDoubleTap: () {
-                          setActiveNode('images');
+                          widget.setActiveNode('images');
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
                             "Images",
                             style: TextStyle(
-                              fontWeight: showingImages
+                              fontWeight: widget.showingImages
                                   ? FontWeight.bold
                                   : FontWeight.normal,
-                              color: showingImages ? Colors.blue : null,
+                              color: widget.showingImages ? Colors.blue : null,
                             ),
                           ),
                         ),
@@ -143,7 +175,7 @@ class AppTreeView extends ConsumerWidget {
                     TreeNode(
                       content: GestureDetector(
                         onDoubleTap: () {
-                          setActiveNode('graphics');
+                          widget.setActiveNode('graphics');
                         },
                         child: const Padding(
                           padding: EdgeInsets.all(8.0),
@@ -159,7 +191,7 @@ class AppTreeView extends ConsumerWidget {
                         TreeNode(
                           content: GestureDetector(
                             onDoubleTap: () {
-                              setActiveNode('graphicsDetail');
+                              widget.setActiveNode('graphicsDetail');
                             },
                             child: const Padding(
                               padding: EdgeInsets.all(8.0),
@@ -180,17 +212,18 @@ class AppTreeView extends ConsumerWidget {
                         children: [
                           GestureDetector(
                             onDoubleTap: () {
-                              setActiveNode('wiresheets');
+                              widget.setActiveNode('wiresheets');
                             },
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
                                 "Flowsheets",
                                 style: TextStyle(
-                                  fontWeight: openWiresheet
+                                  fontWeight: widget.openWiresheet
                                       ? FontWeight.bold
                                       : FontWeight.normal,
-                                  color: openWiresheet ? Colors.blue : null,
+                                  color:
+                                      widget.openWiresheet ? Colors.blue : null,
                                 ),
                               ),
                             ),
@@ -203,7 +236,7 @@ class AppTreeView extends ConsumerWidget {
                         ],
                       ),
                       children: [
-                        ...wiresheets.map((wiresheet) => TreeNode(
+                        ...widget.wiresheets.map((wiresheet) => TreeNode(
                               content: GestureDetector(
                                 onDoubleTap: () {
                                   final activeFlowsheetId = ref
@@ -217,7 +250,7 @@ class AppTreeView extends ConsumerWidget {
                                         .saveActiveFlowsheet();
                                   }
 
-                                  setActiveNode('wiresheet',
+                                  widget.setActiveNode('wiresheet',
                                       wiresheetId: wiresheet.id);
                                 },
                                 child: Row(
@@ -229,11 +262,12 @@ class AppTreeView extends ConsumerWidget {
                                       child: Text(
                                         wiresheet.name,
                                         style: TextStyle(
-                                          fontWeight: selectedWiresheetId ==
-                                                  wiresheet.id
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          color: selectedWiresheetId ==
+                                          fontWeight:
+                                              widget.selectedWiresheetId ==
+                                                      wiresheet.id
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                          color: widget.selectedWiresheetId ==
                                                   wiresheet.id
                                               ? Colors.blue
                                               : null,
@@ -252,9 +286,9 @@ class AppTreeView extends ConsumerWidget {
                                                 ref);
 
                                         if (result && context.mounted) {
-                                          if (selectedWiresheetId ==
+                                          if (widget.selectedWiresheetId ==
                                               wiresheet.id) {
-                                            setActiveNode('wiresheets');
+                                            widget.setActiveNode('wiresheets');
                                           }
 
                                           ScaffoldMessenger.of(context)
@@ -279,7 +313,7 @@ class AppTreeView extends ConsumerWidget {
             TreeNode(
               content: GestureDetector(
                 onDoubleTap: () {
-                  setActiveNode('workgroups');
+                  widget.setActiveNode('workgroups');
                 },
                 child: Row(
                   children: [
@@ -289,22 +323,22 @@ class AppTreeView extends ConsumerWidget {
                       child: Text(
                         'Workgroups',
                         style: TextStyle(
-                          fontWeight: openWorkGroups
+                          fontWeight: widget.openWorkGroups
                               ? FontWeight.bold
                               : FontWeight.normal,
-                          color: openWorkGroups ? Colors.blue : null,
+                          color: widget.openWorkGroups ? Colors.blue : null,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              children: workgroups
+              children: widget.workgroups
                   .map(
                     (workgroup) => TreeNode(
                       content: GestureDetector(
                         onDoubleTap: () {
-                          setActiveNode('workgroupDetail',
+                          widget.setActiveNode('workgroupDetail',
                               workgroup: workgroup);
                         },
                         child: Row(
@@ -315,14 +349,16 @@ class AppTreeView extends ConsumerWidget {
                               child: Text(
                                 workgroup.description,
                                 style: TextStyle(
-                                  fontWeight: selectedWorkgroup == workgroup &&
-                                          showingWorkgroup
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color: selectedWorkgroup == workgroup &&
-                                          showingWorkgroup
-                                      ? Colors.blue
-                                      : null,
+                                  fontWeight:
+                                      widget.selectedWorkgroup == workgroup &&
+                                              widget.showingWorkgroup
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                  color:
+                                      widget.selectedWorkgroup == workgroup &&
+                                              widget.showingWorkgroup
+                                          ? Colors.blue
+                                          : null,
                                 ),
                               ),
                             ),
@@ -333,7 +369,7 @@ class AppTreeView extends ConsumerWidget {
                         TreeNode(
                           content: GestureDetector(
                             onDoubleTap: () {
-                              setActiveNode(
+                              widget.setActiveNode(
                                 'groups',
                                 workgroup: workgroup,
                               );
@@ -347,13 +383,14 @@ class AppTreeView extends ConsumerWidget {
                                   child: Text(
                                     "Groups",
                                     style: TextStyle(
-                                      fontWeight:
-                                          selectedWorkgroup == workgroup &&
-                                                  showingGroups
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                      color: selectedWorkgroup == workgroup &&
-                                              showingGroups
+                                      fontWeight: widget.selectedWorkgroup ==
+                                                  workgroup &&
+                                              widget.showingGroups
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: widget.selectedWorkgroup ==
+                                                  workgroup &&
+                                              widget.showingGroups
                                           ? Colors.blue
                                           : null,
                                     ),
@@ -367,7 +404,7 @@ class AppTreeView extends ConsumerWidget {
                                 (group) => TreeNode(
                                   content: GestureDetector(
                                     onDoubleTap: () {
-                                      setActiveNode('groupDetail',
+                                      widget.setActiveNode('groupDetail',
                                           workgroup: workgroup, group: group);
                                     },
                                     onSecondaryTap: () {
@@ -384,12 +421,14 @@ class AppTreeView extends ConsumerWidget {
                                                 ? "Group ${group.groupId}"
                                                 : group.description,
                                             style: TextStyle(
-                                              fontWeight: selectedGroup == group
-                                                  ? FontWeight.bold
-                                                  : FontWeight.normal,
-                                              color: selectedGroup == group
-                                                  ? Colors.blue
-                                                  : null,
+                                              fontWeight:
+                                                  widget.selectedGroup == group
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                              color:
+                                                  widget.selectedGroup == group
+                                                      ? Colors.blue
+                                                      : null,
                                             ),
                                           ),
                                         ),
@@ -404,11 +443,11 @@ class AppTreeView extends ConsumerWidget {
                           (router) => TreeNode(
                             content: GestureDetector(
                               onDoubleTap: () {
-                                setActiveNode('router',
+                                widget.setActiveNode('router',
                                     workgroup: workgroup, router: router);
                               },
                               onSecondaryTap: () {
-                                setActiveNode('router',
+                                widget.setActiveNode('router',
                                     workgroup: workgroup, router: router);
                               },
                               child: Row(
@@ -419,10 +458,11 @@ class AppTreeView extends ConsumerWidget {
                                     child: Text(
                                       router.description,
                                       style: TextStyle(
-                                        fontWeight: selectedRouter == router
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        color: selectedRouter == router
+                                        fontWeight:
+                                            widget.selectedRouter == router
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                        color: widget.selectedRouter == router
                                             ? Colors.blue
                                             : null,
                                       ),
@@ -448,7 +488,7 @@ class AppTreeView extends ConsumerWidget {
                                   children: subnetDevices
                                       .map(
                                         (device) => _buildDeviceTreeNode(
-                                            device, context),
+                                            device, context, workgroup, router),
                                       )
                                       .toList(),
                                 );
@@ -468,10 +508,18 @@ class AppTreeView extends ConsumerWidget {
     );
   }
 
-  TreeNode _buildDeviceTreeNode(HelvarDevice device, BuildContext context) {
+  TreeNode _buildDeviceTreeNode(HelvarDevice device, BuildContext context,
+      Workgroup workgroup, HelvarRouter router) {
     final deviceName = device.description.isEmpty
         ? "Device_${device.deviceId}"
         : device.description;
+
+    // Generate unique node ID for this device
+    final deviceNodeId = '${workgroup.id}_${router.address}_${device.address}';
+
+    // Get the expansion state for this device
+    final expansionNotifier = ref.read(treeExpansionProvider.notifier);
+    final isExpanded = expansionNotifier.getInitialExpansionState(deviceNodeId);
 
     final List<TreeNode> deviceChildren = [];
 
@@ -501,17 +549,29 @@ class AppTreeView extends ConsumerWidget {
             Text("Alarm Source Info"),
           ],
         ),
+        children: [
+          TreeNode(
+            content: Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Text('State: ${device.state}'),
+            ),
+          ),
+          if (device.deviceStateCode != null)
+            TreeNode(
+              content: Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: Text(
+                    'State Code: 0x${device.deviceStateCode!.toRadixString(16)}'),
+              ),
+            ),
+        ],
       ));
     }
 
     return TreeNode(
       content: GestureDetector(
         onSecondaryTap: () => showDeviceContextMenu(context, device),
-        child: _buildDraggable(
-          deviceName,
-          device,
-          context,
-        ),
+        child: _buildDraggable(deviceName, device, context),
       ),
       children: deviceChildren.isEmpty ? null : deviceChildren,
     );
@@ -608,7 +668,7 @@ class AppTreeView extends ConsumerWidget {
     return TreeNode(
       content: GestureDetector(
         onDoubleTap: () {
-// Expandable section logic if needed
+          // Expandable section logic if needed
         },
         child: const Padding(
           padding: EdgeInsets.all(8.0),

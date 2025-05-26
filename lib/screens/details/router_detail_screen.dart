@@ -631,13 +631,11 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     });
 
     try {
-      // Add some debug logging
       logInfo(
           'Starting device discovery for router: ${widget.router.ipAddress}');
 
       final discoveryService = ref.watch(discoveryServiceProvider);
 
-      // Add a small delay to ensure providers are properly initialized
       await Future.delayed(const Duration(milliseconds: 100));
 
       logInfo('Discovery service obtained, attempting connection...');
@@ -697,11 +695,11 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
       logInfo('Adding ${newDevices.length} new devices');
 
-      for (final device in newDevices) {
-        await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
+      if (newDevices.isNotEmpty) {
+        await ref.read(workgroupsProvider.notifier).addMultipleDevicesToRouter(
               widget.workgroup.id,
               widget.router.address,
-              device,
+              newDevices,
             );
       }
 
