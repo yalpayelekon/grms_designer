@@ -576,6 +576,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     return TreeNode(
       content: Container(
         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+        constraints: const BoxConstraints(maxWidth: 200),
         child: Row(
           children: [
             Expanded(
@@ -620,6 +621,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                   ),
                 ),
                 childWhenDragging: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       _getButtonPointIcon(buttonPoint),
@@ -627,13 +629,17 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                       color: Colors.grey[400],
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      _getButtonPointDisplayName(buttonPoint),
-                      style: TextStyle(color: Colors.grey[600]),
+                    Flexible(
+                      child: Text(
+                        _getButtonPointDisplayName(buttonPoint),
+                        style: TextStyle(color: Colors.grey[600]),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       _getButtonPointIcon(buttonPoint),
@@ -641,7 +647,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                       color: Colors.green,
                     ),
                     const SizedBox(width: 4),
-                    Expanded(
+                    Flexible(
                       child: Text(
                         _getButtonPointDisplayName(buttonPoint),
                         overflow: TextOverflow.ellipsis,
@@ -652,23 +658,18 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
               ),
             ),
             const SizedBox(width: 8),
-            ButtonPointStatusWidget(
-              deviceAddress: parentDevice.address,
-              buttonId: buttonPoint.buttonId,
-              label: _getShortButtonLabel(buttonPoint),
+            SizedBox(
+              width: 50,
+              child: ButtonPointStatusWidget(
+                deviceAddress: parentDevice.address,
+                buttonId: buttonPoint.buttonId,
+                label: _getShortButtonLabel(buttonPoint),
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _getShortButtonLabel(ButtonPoint buttonPoint) {
-    final name = buttonPoint.name.split('_').last;
-    if (name.contains('Missing')) return 'STS';
-    if (name.contains('Button')) return name.replaceAll('Button', 'B');
-    if (name.contains('IR')) return name;
-    return name.length > 4 ? name.substring(0, 4) : name;
   }
 
   IconData _getButtonPointIcon(ButtonPoint buttonPoint) {
@@ -928,5 +929,9 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         ],
       ),
     );
+  }
+
+  String _getShortButtonLabel(ButtonPoint buttonPoint) {
+    return buttonPoint.name.split('_').last;
   }
 }

@@ -38,8 +38,14 @@ class ButtonPointStatusWidget extends ConsumerWidget {
           width: 0.5,
         ),
       ),
+      constraints: const BoxConstraints(
+        maxWidth: 50,
+        minHeight: 20,
+        maxHeight: 24,
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             _getStatusIcon(status),
@@ -47,12 +53,16 @@ class ButtonPointStatusWidget extends ConsumerWidget {
             color: _getIconColor(status),
           ),
           const SizedBox(width: 2),
-          Text(
-            label ?? 'B$buttonId',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: _getTextColor(status),
+          Flexible(
+            child: Text(
+              label ?? 'B$buttonId',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: _getTextColor(status),
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],
@@ -71,8 +81,14 @@ class ButtonPointStatusWidget extends ConsumerWidget {
           width: 0.5,
         ),
       ),
+      constraints: const BoxConstraints(
+        maxWidth: 50,
+        minHeight: 20,
+        maxHeight: 24,
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
             Icons.help_outline,
@@ -80,11 +96,15 @@ class ButtonPointStatusWidget extends ConsumerWidget {
             color: Colors.grey,
           ),
           const SizedBox(width: 2),
-          Text(
-            label ?? 'B$buttonId',
-            style: const TextStyle(
-              fontSize: 10,
-              color: Colors.grey,
+          Flexible(
+            child: Text(
+              label ?? 'B$buttonId',
+              style: const TextStyle(
+                fontSize: 10,
+                color: Colors.grey,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],
@@ -95,6 +115,11 @@ class ButtonPointStatusWidget extends ConsumerWidget {
   Widget _buildErrorWidget() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      constraints: const BoxConstraints(
+        maxWidth: 24,
+        minHeight: 20,
+        maxHeight: 24,
+      ),
       child: const Icon(
         Icons.error_outline,
         size: 12,
