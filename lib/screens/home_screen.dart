@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 
 import '../comm/models/command_models.dart';
@@ -27,6 +28,7 @@ import 'lists/workgroup_list_screen.dart';
 import '../providers/workgroups_provider.dart';
 import 'project_screens/project_settings_screen.dart';
 import 'project_screens/project_files_screen.dart';
+import '../screens/details/subnet_detail_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -49,7 +51,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingWorkgroup = false;
   bool showingGroups = false;
   bool showingProjectSettings = false;
-
+  bool showingSubnetDetail = false;
+  int? selectedSubnetNumber;
+  List<HelvarDevice>? selectedSubnetDevices;
   double _leftPanelWidth = 500;
   bool _isDragging = false;
   AsyncValue<RouterConnectionStatus>? connectionStream;
@@ -201,6 +205,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
     if (selectedWorkgroup != null) {
+      if (showingSubnetDetail &&
+          selectedRouter != null &&
+          selectedSubnetNumber != null &&
+          selectedSubnetDevices != null) {
+        return SubnetDetailScreen(
+          workgroup: selectedWorkgroup!,
+          router: selectedRouter!,
+          subnetNumber: selectedSubnetNumber!,
+          devices: selectedSubnetDevices!,
+        );
+      }
       if (selectedGroup != null) {
         return GroupDetailScreen(
           group: selectedGroup!,
@@ -431,7 +446,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       {Workgroup? workgroup,
       HelvarGroup? group,
       HelvarRouter? router,
-      String? wiresheetId}) {
+      String? wiresheetId,
+      int? subnetNumber,
+      List<HelvarDevice>? subnetDevices}) {
     setState(() {
       openWorkGroups = false;
       openWiresheet = false;
@@ -440,10 +457,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       showingProject = false;
       showingGroups = false;
       showingProjectSettings = false;
+      showingSubnetDetail = false;
       selectedRouter = null;
       selectedGroup = null;
       selectedWiresheetId = null;
       selectedWorkgroup = null;
+      selectedSubnetNumber = null;
+      selectedSubnetDevices = null;
       currentFileDirectory = null;
       showingWorkgroup = false;
 
@@ -468,13 +488,11 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           currentFileDirectory = AppDirectoryService.imagesDir;
           break;
         case 'files':
-          // TODO: implement file handling
           currentFileDirectory = null;
           break;
         case 'wiresheets':
           openWiresheet = true;
           break;
-
         case 'groups':
           showingGroups = true;
           selectedWorkgroup = workgroup;
@@ -489,6 +507,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         case 'router':
           selectedWorkgroup = workgroup;
           selectedRouter = router;
+          break;
+        case 'subnetDetail':
+          showingSubnetDetail = true;
+          selectedWorkgroup = workgroup;
+          selectedRouter = router;
+          selectedSubnetNumber = subnetNumber;
+          selectedSubnetDevices = subnetDevices;
           break;
         default:
           showingProject = true;

@@ -36,7 +36,9 @@ class AppTreeView extends ConsumerStatefulWidget {
       {Workgroup? workgroup,
       HelvarGroup? group,
       HelvarRouter? router,
-      String? wiresheetId}) setActiveNode;
+      String? wiresheetId,
+      int? subnetNumber,
+      List<HelvarDevice>? subnetDevices}) setActiveNode;
 
   const AppTreeView({
     super.key,
@@ -476,14 +478,26 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                 final subnet = entry.key;
                                 final subnetDevices = entry.value;
                                 return TreeNode(
-                                  content: Row(
-                                    children: [
-                                      const Icon(Icons.hub),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text("Subnet$subnet"),
-                                      ),
-                                    ],
+                                  content: GestureDetector(
+                                    onDoubleTap: () {
+                                      widget.setActiveNode(
+                                        'subnetDetail',
+                                        workgroup: workgroup,
+                                        router: router,
+                                        subnetNumber: subnet,
+                                        subnetDevices: subnetDevices,
+                                      );
+                                    },
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.hub),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                              "Subnet $subnet (${subnetDevices.length} devices)"),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   children: subnetDevices
                                       .map(
