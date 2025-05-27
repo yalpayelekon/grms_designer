@@ -31,6 +31,9 @@ import '../providers/workgroups_provider.dart';
 import 'project_screens/project_settings_screen.dart';
 import 'project_screens/project_files_screen.dart';
 import '../screens/details/subnet_detail_screen.dart';
+import '../screens/details/points_detail_screen.dart';
+import '../screens/details/point_detail_screen.dart';
+import '../models/helvar_models/input_device.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -219,6 +222,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           workgroup: selectedWorkgroup!,
           router: selectedRouter!,
           device: selectedDevice!,
+        );
+      }
+      if (showingPointsDetail &&
+          selectedRouter != null &&
+          selectedDevice != null) {
+        return PointsDetailScreen(
+          workgroup: selectedWorkgroup!,
+          router: selectedRouter!,
+          device: selectedDevice!,
+          onNavigate: _setActiveNode,
         );
       }
       if (showingSubnetDetail &&
@@ -466,8 +479,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       String? wiresheetId,
       int? subnetNumber,
       List<HelvarDevice>? subnetDevices,
-      HelvarDevice? device}) {
+      HelvarDevice? device,
+      ButtonPoint? point}) {
     setState(() {
+      showingPointsDetail = false;
+      showingPointDetail = false;
+      selectedPoint = null;
       openWorkGroups = false;
       openWiresheet = false;
       openSettings = false;
@@ -540,6 +557,19 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedWorkgroup = workgroup;
           selectedRouter = router;
           selectedDevice = device;
+          break;
+        case 'pointsDetail':
+          showingPointsDetail = true;
+          selectedWorkgroup = workgroup;
+          selectedRouter = router;
+          selectedDevice = device;
+          break;
+        case 'pointDetail':
+          showingPointDetail = true;
+          selectedWorkgroup = workgroup;
+          selectedRouter = router;
+          selectedDevice = device;
+          selectedPoint = point;
           break;
         default:
           showingProject = true;

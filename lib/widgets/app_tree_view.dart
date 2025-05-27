@@ -535,12 +535,22 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         device.isButtonDevice &&
         device.buttonPoints.isNotEmpty) {
       deviceChildren.add(TreeNode(
-        content: const Row(
-          children: [
-            Icon(Icons.add_circle_outline, size: 18),
-            SizedBox(width: 4),
-            Text("Points"),
-          ],
+        content: GestureDetector(
+          onDoubleTap: () {
+            widget.setActiveNode(
+              'pointsDetail',
+              workgroup: workgroup,
+              router: router,
+              device: device,
+            );
+          },
+          child: const Row(
+            children: [
+              Icon(Icons.add_circle_outline, size: 18),
+              SizedBox(width: 4),
+              Text("Points"),
+            ],
+          ),
         ),
         children: device.buttonPoints
             .map((point) => _buildDraggableButtonPointNode(point, device))

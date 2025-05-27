@@ -12,12 +12,18 @@ class DeviceDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
   final HelvarRouter router;
   final HelvarDevice device;
+  final Function(String,
+      {Workgroup? workgroup,
+      HelvarRouter? router,
+      HelvarDevice? device,
+      ButtonPoint? point})? onNavigate;
 
   const DeviceDetailScreen({
     super.key,
     required this.workgroup,
     required this.router,
     required this.device,
+    this.onNavigate,
   });
 
   @override
@@ -374,11 +380,30 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   }
 
   void _navigateToPointsDetail() {
-    showSnackBarMsg(context, 'Points Detail page will be implemented next');
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'pointsDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: widget.device,
+      );
+    } else {
+      showSnackBarMsg(context, 'Points Detail navigation not available');
+    }
   }
 
   void _navigateToPointDetail(ButtonPoint point) {
-    showSnackBarMsg(context, 'Point Detail page will be implemented next');
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'pointDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: widget.device,
+        point: point,
+      );
+    } else {
+      showSnackBarMsg(context, 'Point Detail navigation not available');
+    }
   }
 
   void _showDirectLevelDialog() {
