@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
+import 'package:grms_designer/models/helvar_models/input_device.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 import 'package:grms_designer/screens/details/device_detail_screen.dart';
 
@@ -57,6 +58,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingDeviceDetail = false;
   HelvarDevice? selectedDevice;
   List<HelvarDevice>? selectedSubnetDevices;
+  bool showingPointsDetail = false;
+  bool showingPointDetail = false;
+  ButtonPoint? selectedPoint;
   double _leftPanelWidth = 500;
   bool _isDragging = false;
   AsyncValue<RouterConnectionStatus>? connectionStream;
