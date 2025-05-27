@@ -1,4 +1,3 @@
-// File: lib/screens/details/device_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/helvar_models/helvar_device.dart';
@@ -8,11 +7,6 @@ import '../../models/helvar_models/input_device.dart';
 import '../../models/helvar_models/output_device.dart';
 import '../../utils/device_icons.dart';
 import '../../utils/general_ui.dart';
-import '../../utils/logger.dart';
-import '../../providers/router_connection_provider.dart';
-import '../../protocol/query_commands.dart';
-import '../../protocol/protocol_parser.dart';
-import '../../comm/models/command_models.dart';
 
 class DeviceDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -31,16 +25,6 @@ class DeviceDetailScreen extends ConsumerStatefulWidget {
 }
 
 class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
-  bool _isRefreshing = false;
-  Map<String, String> _deviceStatus = {};
-  String? _lastRefreshTime;
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshDeviceStatus();
-  }
-
   @override
   Widget build(BuildContext context) {
     final deviceName = widget.device.description.isEmpty
@@ -49,20 +33,13 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(deviceName),
-        leading: Text('${widget.device.address} - ${widget.device.helvarType}'),
+        title: Text('${widget.device.address} - $deviceName'),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: _isRefreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh),
-            tooltip: 'Refresh Status',
-            onPressed: _isRefreshing ? null : _refreshDeviceStatus,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Query Real-time Status',
+            onPressed: () => _showQueryDialog(),
           ),
         ],
       ),
@@ -73,7 +50,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
           children: [
             _buildDeviceInfoCard(),
             const SizedBox(height: 16),
-            _buildStatusCard(),
+            _buildStaticStatusCard(),
             const SizedBox(height: 16),
             if (widget.device.helvarType == 'output')
               _buildOutputControlsCard(),
@@ -143,7 +120,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     );
   }
 
-  Widget _buildStatusCard() {
+  Widget _buildStaticStatusCard() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -154,24 +131,28 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Real-time Status',
+                  'Device Status',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (_lastRefreshTime != null)
-                  Text(
-                    'Last updated: $_lastRefreshTime',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                ElevatedButton.icon(
+                  onPressed: () => _showQueryDialog(),
+                  icon: const Icon(Icons.cloud_download, size: 16),
+                  label: const Text('Query Live Status'),
+                ),
               ],
             ),
             const Divider(),
-            if (_deviceStatus.isEmpty && !_isRefreshing)
-              const Text('No status data available')
-            else if (_isRefreshing)
-              const Center(child: CircularProgressIndicator())
-            else
-              ..._deviceStatus.entries
-                  .map((entry) => _buildInfoRow(entry.key, entry.value)),
+            if (widget.device.state.isNotEmpty)
+              _buildInfoRow('State', widget.device.state),
+            if (widget.device.deviceStateCode != null)
+              _buildInfoRow('State Code',
+                  '0x${widget.device.deviceStateCode!.toRadixString(16)}'),
+            _buildInfoRow(
+                'Button Device', widget.device.isButtonDevice ? 'Yes' : 'No'),
+            _buildInfoRow(
+                'Multisensor', widget.device.isMultisensor ? 'Yes' : 'No'),
+            _buildInfoRow(
+                'Points Created', widget.device.pointsCreated ? 'Yes' : 'No'),
           ],
         ),
       ),
@@ -196,6 +177,10 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             const Divider(),
             _buildInfoRow('Current Level', '${outputDevice.level}%'),
             _buildInfoRow('Proportion', '${outputDevice.proportion}'),
+            _buildInfoRow('Missing',
+                outputDevice.missing.isEmpty ? 'No' : outputDevice.missing),
+            _buildInfoRow('Faulty',
+                outputDevice.faulty.isEmpty ? 'No' : outputDevice.faulty),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
@@ -361,96 +346,38 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     }
   }
 
-  Future<void> _refreshDeviceStatus() async {
-    setState(() {
-      _isRefreshing = true;
-    });
-
-    try {
-      final commandService = ref.read(routerCommandServiceProvider);
-      final deviceAddress = widget.device.address;
-
-      // Query device state
-      final stateCommand = HelvarNetCommands.queryDeviceState(deviceAddress);
-      final stateResult = await commandService.sendCommand(
-        widget.router.ipAddress,
-        stateCommand,
-        priority: CommandPriority.high,
-      );
-
-      Map<String, String> newStatus = {};
-
-      if (stateResult.success && stateResult.response != null) {
-        final stateValue =
-            ProtocolParser.extractResponseValue(stateResult.response!);
-        if (stateValue != null) {
-          final stateCode = int.tryParse(stateValue);
-          if (stateCode != null) {
-            newStatus['Device State'] = 'Code: $stateCode';
-            // You can add more detailed state parsing here
-          }
-        }
-      }
-
-      // Query load level for output devices
-      if (widget.device.helvarType == 'output') {
-        final levelCommand = HelvarNetCommands.queryLoadLevel(deviceAddress);
-        final levelResult = await commandService.sendCommand(
-          widget.router.ipAddress,
-          levelCommand,
-          priority: CommandPriority.high,
-        );
-
-        if (levelResult.success && levelResult.response != null) {
-          final levelValue =
-              ProtocolParser.extractResponseValue(levelResult.response!);
-          if (levelValue != null) {
-            newStatus['Load Level'] = '$levelValue%';
-          }
-        }
-      }
-
-      // Query device type for confirmation
-      final typeCommand = HelvarNetCommands.queryDeviceType(deviceAddress);
-      final typeResult = await commandService.sendCommand(
-        widget.router.ipAddress,
-        typeCommand,
-        priority: CommandPriority.high,
-      );
-
-      if (typeResult.success && typeResult.response != null) {
-        final typeValue =
-            ProtocolParser.extractResponseValue(typeResult.response!);
-        if (typeValue != null) {
-          newStatus['Device Type Code'] = typeValue;
-        }
-      }
-
-      setState(() {
-        _deviceStatus = newStatus;
-        _lastRefreshTime = DateTime.now().toString().substring(11, 19);
-      });
-    } catch (e) {
-      logError('Error refreshing device status: $e');
-      if (mounted) {
-        showSnackBarMsg(context, 'Error refreshing device status: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-        });
-      }
-    }
+  void _showQueryDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Query Real-time Status'),
+        content: const Text(
+          'This will query the router for current device status. '
+          'This may take a few seconds and requires an active connection to the router.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              showSnackBarMsg(context,
+                  'Real-time query functionality will be implemented later');
+            },
+            child: const Text('Query Status'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToPointsDetail() {
-    // TODO: Navigate to points detail page
     showSnackBarMsg(context, 'Points Detail page will be implemented next');
   }
 
   void _navigateToPointDetail(ButtonPoint point) {
-    // TODO: Navigate to individual point detail page
     showSnackBarMsg(context, 'Point Detail page will be implemented next');
   }
 

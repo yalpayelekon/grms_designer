@@ -34,9 +34,8 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Subnet ${widget.subnetNumber}'),
-        leading: Text(
-            '${widget.router.description} - ${widget.devices.length} devices'),
+        leading:
+            Text('${widget.router.description} Subnet ${widget.subnetNumber}'),
         centerTitle: true,
         actions: [
           IconButton(
