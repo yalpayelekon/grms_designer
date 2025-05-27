@@ -80,7 +80,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     try {
       if (sceneParams.isNotEmpty) {
         List<String> temp = sceneParams.split(',');
-
         String timestamp = DateTime.now().toString();
         String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
         logInfo(s);
@@ -98,7 +97,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   void directLevel(String levelParams) {
     try {
       List<String> temp = levelParams.split(',');
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Level Device: ${temp[0]}";
       logInfo(s);
@@ -112,7 +110,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   void directProportion(String proportionParams) {
     try {
       List<String> temp = proportionParams.split(',');
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
       out = s;
@@ -126,7 +123,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   void modifyProportion(String proportionParams) {
     try {
       List<String> temp = proportionParams.split(',');
-
       String timestamp = DateTime.now().toString();
       String s = "Success ($timestamp) Direct Proportion Device: ${temp[0]}";
       logInfo(s);
@@ -138,9 +134,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   }
 
   @override
-  void updatePoints() {
-    // This method can be used to update point values from real device queries
-  }
+  void updatePoints() {}
 
   @override
   void started() {
@@ -190,22 +184,21 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   }
 
   void generateOutputPoints() {
-    if (outputPoints.isNotEmpty) return; // Already generated
+    if (outputPoints.isNotEmpty) return;
 
     final deviceName = description.isEmpty ? "Device_$deviceId" : description;
 
-    // Create the 6 standard output points as shown in Niagara
     outputPoints.addAll([
       OutputPoint(
         name: '${deviceName}_DeviceState',
-        function: 'Device State',
+        function: 'DeviceState',
         pointId: 1,
         pointType: 'boolean',
         value: false,
       ),
       OutputPoint(
         name: '${deviceName}_LampFailure',
-        function: 'Lamp Failure',
+        function: 'LampFailure',
         pointId: 2,
         pointType: 'boolean',
         value: false,
@@ -226,14 +219,14 @@ class HelvarDriverOutputDevice extends HelvarDevice {
       ),
       OutputPoint(
         name: '${deviceName}_OutputLevel',
-        function: 'Output Level',
+        function: 'OutputLevel',
         pointId: 5,
         pointType: 'numeric',
         value: 0.0,
       ),
       OutputPoint(
         name: '${deviceName}_PowerConsumption',
-        function: 'Power Consumption',
+        function: 'PowerConsumption',
         pointId: 6,
         pointType: 'numeric',
         value: 0.0,
@@ -267,13 +260,9 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     }
   }
 
-  void createOutputPoints(String deviceAddress, String name) {
-    // This method can be overridden to create points in specific systems
-  }
+  void createOutputPoints(String deviceAddress, String name) {}
 
-  void queryLoadLevel() {
-    // This method can be implemented to query the actual load level
-  }
+  void queryLoadLevel() {}
 
   @override
   Map<String, dynamic> toJson() {
@@ -284,43 +273,5 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     json['proportion'] = proportion;
     json['outputPoints'] = outputPoints.map((point) => point.toJson()).toList();
     return json;
-  }
-
-  static HelvarDriverOutputDevice fromJson(Map<String, dynamic> json) {
-    final outputPoints = <OutputPoint>[];
-    if (json['outputPoints'] != null) {
-      for (var point in (json['outputPoints'] as List)) {
-        outputPoints.add(OutputPoint.fromJson(point));
-      }
-    }
-
-    return HelvarDriverOutputDevice(
-      deviceId: json['deviceId'] as int? ?? 1,
-      address: json['address'] as String? ?? '@',
-      state: json['state'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-      props: json['props'] as String? ?? '',
-      iconPath: json['iconPath'] as String? ?? '',
-      hexId: json['hexId'] as String? ?? '',
-      addressingScheme: json['addressingScheme'] as String? ?? '',
-      emergency: json['emergency'] as bool? ?? false,
-      blockId: json['blockId'] as String? ?? '1',
-      sceneId: json['sceneId'] as String? ?? '',
-      fadeTime: json['fadeTime'] as int? ?? 700,
-      out: json['out'] as String? ?? '',
-      helvarType: json['helvarType'] as String? ?? 'output',
-      pointsCreated: json['pointsCreated'] as bool? ?? false,
-      missing: json['missing'] as String? ?? '',
-      faulty: json['faulty'] as String? ?? '',
-      level: json['level'] as int? ?? 100,
-      proportion: json['proportion'] as int? ?? 0,
-      deviceTypeCode: json['deviceTypeCode'] as int?,
-      deviceStateCode: json['deviceStateCode'] as int?,
-      isButtonDevice: json['isButtonDevice'] as bool? ?? false,
-      isMultisensor: json['isMultisensor'] as bool? ?? false,
-      sensorInfo: json['sensorInfo'] as Map<String, dynamic>? ?? {},
-      additionalInfo: json['additionalInfo'] as Map<String, dynamic>? ?? {},
-      outputPoints: outputPoints,
-    );
   }
 }

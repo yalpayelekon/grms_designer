@@ -561,29 +561,36 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
       ));
     }
 
-    if (device is HelvarDriverOutputDevice && device.outputPoints.isNotEmpty) {
-      deviceChildren.add(TreeNode(
-        content: GestureDetector(
-          onDoubleTap: () {
-            widget.setActiveNode(
-              'outputPointsDetail',
-              workgroup: workgroup,
-              router: router,
-              device: device,
-            );
-          },
-          child: const Row(
-            children: [
-              Icon(Icons.add_circle_outline, size: 18, color: Colors.orange),
-              SizedBox(width: 4),
-              Text("Points"),
-            ],
+    if (device is HelvarDriverOutputDevice) {
+      if (device.outputPoints.isEmpty) {
+        device.generateOutputPoints();
+      }
+
+      if (device.outputPoints.isNotEmpty) {
+        deviceChildren.add(TreeNode(
+          content: GestureDetector(
+            onDoubleTap: () {
+              widget.setActiveNode(
+                'outputPointsDetail',
+                workgroup: workgroup,
+                router: router,
+                device: device,
+              );
+              print('Output points tapped for ${device.address}');
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.add_circle_outline, size: 18, color: Colors.orange),
+                SizedBox(width: 4),
+                Text("Points"),
+              ],
+            ),
           ),
-        ),
-        children: device.outputPoints
-            .map((point) => _buildDraggableOutputPointNode(point, device))
-            .toList(),
-      ));
+          children: device.outputPoints
+              .map((point) => _buildOutputPointNode(point, device))
+              .toList(),
+        ));
+      }
     }
 
     if (device.helvarType == 'input' || device.emergency) {
@@ -631,157 +638,56 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     );
   }
 
-  TreeNode _buildDraggableOutputPointNode(
+  TreeNode _buildOutputPointNode(
       OutputPoint outputPoint, HelvarDevice parentDevice) {
     return TreeNode(
-      content: GestureDetector(
-        onDoubleTap: () {
-          Workgroup? workgroup;
-          HelvarRouter? router;
-
-          for (final wg in widget.workgroups) {
-            for (final r in wg.routers) {
-              if (r.devices.any((d) => d.address == parentDevice.address)) {
-                workgroup = wg;
-                router = r;
-                break;
-              }
-            }
-            if (workgroup != null) break;
-          }
-
-          if (workgroup != null && router != null) {
-            widget.setActiveNode(
-              'outputPointDetail',
-              workgroup: workgroup,
-              router: router,
-              device: parentDevice,
-              outputPoint: outputPoint,
-            );
-          }
-        },
-        child: Draggable<Map<String, dynamic>>(
-          data: {
-            "componentType": outputPoint.pointType == 'boolean'
-                ? "BooleanPoint"
-                : "NumericPoint",
-            "outputPoint": outputPoint,
-            "parentDevice": parentDevice,
-            "pointData": {
-              "name": outputPoint.name,
-              "function": outputPoint.function,
-              "pointId": outputPoint.pointId,
-              "pointType": outputPoint.pointType,
-              "deviceAddress": parentDevice.address,
-              "deviceId": parentDevice.deviceId,
-              "isOutputPoint": true,
-              "value": outputPoint.value,
-            }
-          },
-          feedback: Material(
-            elevation: 4.0,
-            child: Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: outputPoint.pointType == 'boolean'
-                    ? Colors.orange[100]
-                    : Colors.purple[100],
-                borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(
-                  color: outputPoint.pointType == 'boolean'
-                      ? Colors.orange
-                      : Colors.purple,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _getOutputPointIcon(outputPoint),
-                    color: outputPoint.pointType == 'boolean'
-                        ? Colors.orange
-                        : Colors.purple,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8.0),
-                  Text(
-                    _getOutputPointDisplayName(outputPoint),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
+      content: Row(
+        children: [
+          Icon(
+            _getOutputPointIcon(outputPoint),
+            size: 16,
+            color: Colors.orange,
+          ),
+          const SizedBox(width: 4),
+          Text(outputPoint.function),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: _getOutputPointValueColor(outputPoint),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              _formatOutputPointValue(outputPoint),
+              style: const TextStyle(
+                fontSize: 10,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          childWhenDragging: Row(
-            children: [
-              Icon(
-                _getOutputPointIcon(outputPoint),
-                size: 16,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                _getOutputPointDisplayName(outputPoint),
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(
-                _getOutputPointIcon(outputPoint),
-                size: 16,
-                color: outputPoint.pointType == 'boolean'
-                    ? Colors.orange
-                    : Colors.purple,
-              ),
-              const SizedBox(width: 4),
-              Text(_getOutputPointDisplayName(outputPoint)),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _getOutputPointValueColor(outputPoint),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  _formatOutputPointValue(outputPoint),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
 
   IconData _getOutputPointIcon(OutputPoint outputPoint) {
     switch (outputPoint.pointId) {
-      case 1: // Device State
+      case 1:
         return Icons.device_hub;
-      case 2: // Lamp Failure
+      case 2:
         return Icons.lightbulb_outline;
-      case 3: // Missing
+      case 3:
         return Icons.help_outline;
-      case 4: // Faulty
+      case 4:
         return Icons.warning;
-      case 5: // Output Level
+      case 5:
         return Icons.tune;
-      case 6: // Power Consumption
+      case 6:
         return Icons.power;
       default:
         return Icons.circle;
     }
-  }
-
-  String _getOutputPointDisplayName(OutputPoint outputPoint) {
-    final parts = outputPoint.name.split('_');
-    return parts.length > 1 ? parts.last : outputPoint.name;
   }
 
   Color _getOutputPointValueColor(OutputPoint outputPoint) {
@@ -791,8 +697,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     } else {
       final value = (outputPoint.value as num?)?.toDouble() ?? 0.0;
       if (value == 0) return Colors.grey;
-      if (value < 50) return Colors.blue;
-      return Colors.green;
+      return Colors.blue;
     }
   }
 

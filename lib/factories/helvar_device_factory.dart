@@ -11,71 +11,52 @@ class HelvarDeviceFactory {
     required String description,
     required String deviceTypeString,
     required int typeCode,
-    required int? deviceStateCode,
-    required int? loadLevel,
-    required bool isButton,
-    required bool isMultisensor,
+    int? deviceStateCode,
+    int? loadLevel,
+    bool isButton = false,
+    bool isMultisensor = false,
   }) {
-    if (isButton) {
-      return HelvarDriverInputDevice(
+    HelvarDevice? device;
+
+    if (isButton || deviceTypeString.toLowerCase().contains('button')) {
+      device = HelvarDriverInputDevice(
         deviceId: deviceId,
         address: deviceAddress,
         state: deviceState,
         description: description,
         props: deviceTypeString,
-        hexId: '0x${typeCode.toRadixString(16)}',
-        helvarType: 'input',
         deviceTypeCode: typeCode,
         deviceStateCode: deviceStateCode,
-        isButtonDevice: true,
-        buttonPoints: generateButtonPoints(description),
+        isButtonDevice: isButton,
+        isMultisensor: isMultisensor,
       );
-    } else if (isMultisensor) {
-      return HelvarDriverInputDevice(
+    } else if (deviceTypeString.toLowerCase().contains('emergency')) {
+      device = HelvarDriverEmergencyDevice(
         deviceId: deviceId,
         address: deviceAddress,
         state: deviceState,
         description: description,
         props: deviceTypeString,
-        hexId: '0x${typeCode.toRadixString(16)}',
-        helvarType: 'input',
-        deviceTypeCode: typeCode,
-        deviceStateCode: deviceStateCode,
-        isMultisensor: true,
-        sensorInfo: {
-          'hasPresence': true,
-          'hasLightLevel': true,
-          'hasTemperature': false,
-        },
-      );
-    } else if (typeCode == 0x0101 ||
-        (typeCode & 0xFF) == 0x01 && ((typeCode >> 8) & 0xFF) == 0x01) {
-      return HelvarDriverEmergencyDevice(
-        deviceId: deviceId,
-        address: deviceAddress,
-        state: deviceState,
-        description: description,
-        props: deviceTypeString,
-        hexId: '0x${typeCode.toRadixString(16)}',
-        helvarType: 'emergency',
         deviceTypeCode: typeCode,
         deviceStateCode: deviceStateCode,
         emergency: true,
       );
     } else {
-      return HelvarDriverOutputDevice(
+      device = HelvarDriverOutputDevice(
         deviceId: deviceId,
         address: deviceAddress,
         state: deviceState,
         description: description,
         props: deviceTypeString,
-        hexId: '0x${typeCode.toRadixString(16)}',
-        helvarType: 'output',
         deviceTypeCode: typeCode,
         deviceStateCode: deviceStateCode,
-        level: loadLevel ?? 100,
+        level: loadLevel ?? 0,
       );
     }
+
+    device.started();
+
+    return device;
   }
 
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
