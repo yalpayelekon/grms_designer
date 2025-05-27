@@ -224,6 +224,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           device: selectedDevice!,
         );
       }
+      if (showingPointDetail &&
+          selectedRouter != null &&
+          selectedDevice != null &&
+          selectedPoint != null) {
+        return PointDetailScreen(
+          workgroup: selectedWorkgroup!,
+          router: selectedRouter!,
+          device: selectedDevice!,
+          point: selectedPoint!,
+        );
+      }
       if (showingPointsDetail &&
           selectedRouter != null &&
           selectedDevice != null) {

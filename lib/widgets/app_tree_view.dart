@@ -39,7 +39,8 @@ class AppTreeView extends ConsumerStatefulWidget {
       String? wiresheetId,
       int? subnetNumber,
       List<HelvarDevice>? subnetDevices,
-      HelvarDevice? device}) setActiveNode;
+      HelvarDevice? device,
+      ButtonPoint? point}) setActiveNode;
 
   const AppTreeView({
     super.key,
@@ -606,70 +607,97 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
   TreeNode _buildDraggableButtonPointNode(
       ButtonPoint buttonPoint, HelvarDevice parentDevice) {
     return TreeNode(
-      content: Draggable<Map<String, dynamic>>(
-        data: {
-          "componentType": "BooleanPoint",
-          "buttonPoint": buttonPoint,
-          "parentDevice": parentDevice,
-          "pointData": {
-            "name": buttonPoint.name,
-            "function": buttonPoint.function,
-            "buttonId": buttonPoint.buttonId,
-            "deviceAddress": parentDevice.address,
-            "deviceId": parentDevice.deviceId,
-            "isButtonPoint": true,
+      content: GestureDetector(
+        onDoubleTap: () {
+          Workgroup? workgroup;
+          HelvarRouter? router;
+
+          for (final wg in widget.workgroups) {
+            for (final r in wg.routers) {
+              if (r.devices.any((d) => d.address == parentDevice.address)) {
+                workgroup = wg;
+                router = r;
+                break;
+              }
+            }
+            if (workgroup != null) break;
+          }
+
+          if (workgroup != null && router != null) {
+            widget.setActiveNode(
+              'pointDetail',
+              workgroup: workgroup,
+              router: router,
+              device: parentDevice,
+              point: buttonPoint,
+            );
           }
         },
-        feedback: Material(
-          elevation: 4.0,
-          child: Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.green[100],
-              borderRadius: BorderRadius.circular(8.0),
-              border: Border.all(color: Colors.green),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _getButtonPointIcon(buttonPoint),
-                  color: Colors.green,
-                  size: 20,
-                ),
-                const SizedBox(width: 8.0),
-                Text(
-                  _getButtonPointDisplayName(buttonPoint),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
+        child: Draggable<Map<String, dynamic>>(
+          data: {
+            "componentType": "BooleanPoint",
+            "buttonPoint": buttonPoint,
+            "parentDevice": parentDevice,
+            "pointData": {
+              "name": buttonPoint.name,
+              "function": buttonPoint.function,
+              "buttonId": buttonPoint.buttonId,
+              "deviceAddress": parentDevice.address,
+              "deviceId": parentDevice.deviceId,
+              "isButtonPoint": true,
+            }
+          },
+          feedback: Material(
+            elevation: 4.0,
+            child: Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.green[100],
+                borderRadius: BorderRadius.circular(8.0),
+                border: Border.all(color: Colors.green),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getButtonPointIcon(buttonPoint),
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8.0),
+                  Text(
+                    _getButtonPointDisplayName(buttonPoint),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        childWhenDragging: Row(
-          children: [
-            Icon(
-              _getButtonPointIcon(buttonPoint),
-              size: 16,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(width: 4),
-            Text(
-              _getButtonPointDisplayName(buttonPoint),
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              _getButtonPointIcon(buttonPoint),
-              size: 16,
-              color: Colors.green,
-            ),
-            const SizedBox(width: 4),
-            Text(_getButtonPointDisplayName(buttonPoint)),
-          ],
+          childWhenDragging: Row(
+            children: [
+              Icon(
+                _getButtonPointIcon(buttonPoint),
+                size: 16,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _getButtonPointDisplayName(buttonPoint),
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _getButtonPointIcon(buttonPoint),
+                size: 16,
+                color: Colors.green,
+              ),
+              const SizedBox(width: 4),
+              Text(_getButtonPointDisplayName(buttonPoint)),
+            ],
+          ),
         ),
       ),
     );
