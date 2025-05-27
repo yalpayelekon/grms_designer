@@ -12,7 +12,6 @@ import '../../utils/file_dialog_helper.dart';
 import '../../utils/general_ui.dart';
 import '../../utils/logger.dart';
 import '../dialogs/add_device_dialog.dart';
-import '../debug/device_status_explorer.dart';
 
 class RouterDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -96,18 +95,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         showSnackBarMsg(context, 'Device added successfully');
       }
     }
-  }
-
-  void _exploreDeviceStatus(HelvarDevice device) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DeviceStatusExplorer(
-          device: device,
-          routerIpAddress: widget.router.ipAddress,
-        ),
-      ),
-    );
   }
 
   @override
@@ -232,16 +219,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       onTap: () => _showDeviceAlarmInfo(device),
     ));
 
-    if (device.helvarType == 'input' && device.isButtonDevice) {
-      subItems.add(ListTile(
-        leading: const Icon(Icons.analytics, size: 20),
-        title: const Text('Explore Device Status'),
-        contentPadding: const EdgeInsets.only(left: 56),
-        dense: true,
-        onTap: () => _exploreDeviceStatus(device),
-      ));
-    }
-
     if (device is HelvarDriverInputDevice &&
         device.isButtonDevice &&
         device.buttonPoints.isNotEmpty) {
@@ -266,16 +243,12 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                   subtitle: Text(point.function),
                   contentPadding: const EdgeInsets.only(left: 16),
                   dense: true,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.analytics, size: 16),
-                    onPressed: () => _exploreDeviceStatus(device),
-                    tooltip: 'Explore Status',
-                  ),
                 ))
             .toList(),
       ));
     }
 
+    // Add sensor info for multisensors
     if (device.isMultisensor) {
       subItems.add(ExpansionTile(
         title: const Text('Sensor Data'),
@@ -291,6 +264,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       ));
     }
 
+    // Create the main device expansion tile
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ExpansionTile(
@@ -312,12 +286,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (device.helvarType == 'input' && device.isButtonDevice)
-              IconButton(
-                icon: const Icon(Icons.analytics),
-                onPressed: () => _exploreDeviceStatus(device),
-                tooltip: 'Explore device status',
-              ),
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () => _editDevice(device),

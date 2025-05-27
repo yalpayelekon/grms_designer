@@ -1,5 +1,6 @@
-.
+lib/
 ├── comm
+│   ├── command_executor.dart
 │   ├── command_queue_controller.dart
 │   ├── discovery_manager.dart
 │   ├── models
@@ -8,10 +9,16 @@
 │   │   └── router_connection_status.dart
 │   ├── router_command_service.dart
 │   ├── router_connection.dart
-│   └── router_connection_manager.dart
+│   ├── router_connection_manager.dart
+│   └── router_socket_handler.dart
+├── domain
 ├── extensions
 │   ├── device_address_extensions.dart
 │   └── group_extensions.dart
+├── factories
+│   └── helvar_device_factory.dart
+├── infra
+│   └── networking
 ├── main.dart
 ├── models
 │   ├── flowsheet.dart
@@ -24,7 +31,6 @@
 │   │   ├── input_device.dart
 │   │   ├── output_device.dart
 │   │   └── workgroup.dart
-│   ├── link.dart
 │   └── project_settings.dart
 ├── niagara
 │   ├── home
@@ -58,6 +64,7 @@
 │   ├── device_types.dart
 │   ├── message_parser.dart
 │   ├── protocol_constants.dart
+│   ├── protocol_parser.dart
 │   ├── protocol_utils.dart
 │   └── query_commands.dart
 ├── providers
@@ -65,6 +72,7 @@
 │   ├── project_settings_provider.dart
 │   ├── router_connection_provider.dart
 │   ├── settings_provider.dart
+│   ├── tree_expansion_provider.dart
 │   └── workgroups_provider.dart
 ├── screens
 │   ├── actions.dart
@@ -94,6 +102,7 @@
 ├── services
 │   ├── app_directory_service.dart
 │   ├── app_initialization.dart
+│   ├── command_history_service.dart
 │   ├── connection_service.dart
 │   ├── discovery_service.dart
 │   ├── file_storage_service.dart
@@ -102,16 +111,18 @@
 │   └── router_storage_service.dart
 ├── tree.txt
 ├── utils
+│   ├── date_utils.dart
 │   ├── device_icons.dart
+│   ├── device_utils.dart
 │   ├── file_dialog_helper.dart
 │   ├── general_ui.dart
 │   ├── helpers.dart
 │   ├── logger.dart
+│   ├── network_utils.dart
 │   └── persistent_helper.dart
 └── widgets
     ├── app_tree_view.dart
     ├── command_monitor.dart
-    ├── flow_screen_editor.dart
     └── wiresheet_flow_editor.dart
 
-18 directories, 96 files
+22 directories, 103 files
