@@ -35,8 +35,7 @@ class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            '${widget.device.description} - ${widget.point.function} - ${widget.point.name}'),
+        title: Text('${widget.router.description} - ${widget.point.name}'),
         centerTitle: true,
         actions: [
           IconButton(
