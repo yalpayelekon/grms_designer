@@ -11,6 +11,10 @@ class SubnetDetailScreen extends ConsumerStatefulWidget {
   final HelvarRouter router;
   final int subnetNumber;
   final List<HelvarDevice> devices;
+  final Function(String,
+      {Workgroup? workgroup,
+      HelvarRouter? router,
+      HelvarDevice? device})? onNavigate;
 
   const SubnetDetailScreen({
     super.key,
@@ -18,6 +22,7 @@ class SubnetDetailScreen extends ConsumerStatefulWidget {
     required this.router,
     required this.subnetNumber,
     required this.devices,
+    this.onNavigate,
   });
 
   @override
@@ -135,8 +140,16 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
   }
 
   void _navigateToDeviceDetail(HelvarDevice device) {
-    // TODO: Navigate to device detail page
-    showSnackBarMsg(context, 'Device Detail page will be implemented next');
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'deviceDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: device,
+      );
+    } else {
+      showSnackBarMsg(context, 'Device Detail navigation not available');
+    }
   }
 
   void _showDeviceControls(HelvarDevice device) {

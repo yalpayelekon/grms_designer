@@ -38,7 +38,8 @@ class AppTreeView extends ConsumerStatefulWidget {
       HelvarRouter? router,
       String? wiresheetId,
       int? subnetNumber,
-      List<HelvarDevice>? subnetDevices}) setActiveNode;
+      List<HelvarDevice>? subnetDevices,
+      HelvarDevice? device}) setActiveNode;
 
   const AppTreeView({
     super.key,
@@ -577,6 +578,14 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
 
     return TreeNode(
       content: GestureDetector(
+        onDoubleTap: () {
+          widget.setActiveNode(
+            'deviceDetail',
+            workgroup: workgroup,
+            router: router,
+            device: device,
+          );
+        },
         onSecondaryTap: () => showDeviceContextMenu(context, device),
         child: _buildDraggable(deviceName, device, context),
       ),
