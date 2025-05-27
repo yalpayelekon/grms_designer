@@ -34,6 +34,8 @@ import '../screens/details/subnet_detail_screen.dart';
 import '../screens/details/points_detail_screen.dart';
 import '../screens/details/point_detail_screen.dart';
 import '../models/helvar_models/input_device.dart';
+import '../screens/details/output_points_detail_screen.dart';
+import '../models/helvar_models/output_device.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -60,6 +62,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   int? selectedSubnetNumber;
   bool showingDeviceDetail = false;
   HelvarDevice? selectedDevice;
+  bool showingOutputPointsDetail = false;
+  OutputPoint? selectedOutputPoint;
   List<HelvarDevice>? selectedSubnetDevices;
   bool showingPointsDetail = false;
   bool showingPointDetail = false;
@@ -239,6 +243,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedRouter != null &&
           selectedDevice != null) {
         return PointsDetailScreen(
+          workgroup: selectedWorkgroup!,
+          router: selectedRouter!,
+          device: selectedDevice!,
+          onNavigate: _setActiveNode,
+        );
+      }
+      if (showingOutputPointsDetail &&
+          selectedRouter != null &&
+          selectedDevice != null &&
+          selectedDevice is HelvarDriverOutputDevice) {
+        return OutputPointsDetailScreen(
           workgroup: selectedWorkgroup!,
           router: selectedRouter!,
           device: selectedDevice!,
@@ -491,11 +506,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       int? subnetNumber,
       List<HelvarDevice>? subnetDevices,
       HelvarDevice? device,
-      ButtonPoint? point}) {
+      ButtonPoint? point,
+      OutputPoint? outputPoint}) {
     setState(() {
       showingPointsDetail = false;
       showingPointDetail = false;
+      showingOutputPointsDetail = false;
       selectedPoint = null;
+      selectedOutputPoint = null;
       openWorkGroups = false;
       openWiresheet = false;
       openSettings = false;
@@ -581,6 +599,19 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedRouter = router;
           selectedDevice = device;
           selectedPoint = point;
+          break;
+        case 'outputPointsDetail':
+          showingOutputPointsDetail = true;
+          selectedWorkgroup = workgroup;
+          selectedRouter = router;
+          selectedDevice = device;
+          break;
+        case 'outputPointDetail':
+          showingOutputPointsDetail = true;
+          selectedWorkgroup = workgroup;
+          selectedRouter = router;
+          selectedDevice = device;
+          selectedOutputPoint = outputPoint;
           break;
         default:
           showingProject = true;

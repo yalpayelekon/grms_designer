@@ -120,33 +120,7 @@ abstract class HelvarDevice extends TreeNode {
       );
     }
     if (helvarType == "output") {
-      return HelvarDriverOutputDevice(
-        deviceId: json['deviceId'] as int? ?? 1,
-        address: json['address'] as String? ?? '@',
-        state: json['state'] as String? ?? '',
-        description: json['description'] as String? ?? '',
-        props: json['props'] as String? ?? '',
-        iconPath: json['iconPath'] as String? ?? '',
-        hexId: json['hexId'] as String? ?? '',
-        addressingScheme: json['addressingScheme'] as String? ?? '',
-        emergency: json['emergency'] as bool? ?? false,
-        blockId: json['blockId'] as String? ?? '1',
-        sceneId: json['sceneId'] as String? ?? '',
-        fadeTime: json['fadeTime'] as int? ?? 700,
-        out: json['out'] as String? ?? '',
-        helvarType: json['helvarType'] as String? ?? 'output',
-        pointsCreated: json['pointsCreated'] as bool? ?? false,
-        missing: json['missing'] as String? ?? '',
-        faulty: json['faulty'] as String? ?? '',
-        level: json['level'] as int? ?? 100,
-        proportion: json['proportion'] as int? ?? 0,
-        deviceTypeCode: json['deviceTypeCode'] as int?,
-        deviceStateCode: json['deviceStateCode'] as int?,
-        isButtonDevice: json['isButtonDevice'] as bool? ?? false,
-        isMultisensor: json['isMultisensor'] as bool? ?? false,
-        sensorInfo: json['sensorInfo'] as Map<String, dynamic>? ?? {},
-        additionalInfo: json['additionalInfo'] as Map<String, dynamic>? ?? {},
-      );
+      return HelvarDriverOutputDevice.fromJson(json);
     } else {
       // Default to emergency device if (json['helvarType'] == "emergency")
       return HelvarDriverEmergencyDevice(

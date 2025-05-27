@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/services/device_query_service.dart';
 import '../comm/models/command_models.dart';
 import '../comm/models/connection_config.dart';
 import '../comm/router_command_service.dart';
@@ -51,4 +52,9 @@ final discoveryServiceProvider = Provider<DiscoveryService>((ref) {
 final connectionServiceProvider = Provider<ConnectionService>((ref) {
   final manager = ref.watch(routerConnectionManagerProvider);
   return ConnectionService(manager);
+});
+
+final deviceQueryServiceProvider = Provider<DeviceQueryService>((ref) {
+  final commandService = ref.watch(routerCommandServiceProvider);
+  return DeviceQueryService(commandService);
 });
