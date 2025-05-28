@@ -1,55 +1,45 @@
 import 'package:flutter/services.dart';
 import '../models/component.dart';
 
+typedef SelectionChangedCallback = void Function(Set<Component> selected);
+
 class SelectionManager {
-  /// Set of currently selected components
   final Set<Component> _selectedComponents = {};
+  SelectionChangedCallback? _onSelectionChanged;
 
-  /// Starting point of the selection box
   Offset? _selectionBoxStart;
-
-  /// Current end point of the selection box
   Offset? _selectionBoxEnd;
-
-  /// Flag indicating if a selection box is being dragged
   bool _isDraggingSelectionBox = false;
-
-  /// Get the current set of selected components
   Set<Component> get selectedComponents => _selectedComponents;
-
-  /// Check if a selection box is currently being dragged
   bool get isDraggingSelectionBox => _isDraggingSelectionBox;
-
-  /// Get the starting point of the selection box
   Offset? get selectionBoxStart => _selectionBoxStart;
-
-  /// Get the end point of the selection box
   Offset? get selectionBoxEnd => _selectionBoxEnd;
 
-  /// Get the rectangle formed by the selection box
   Rect? getSelectionRect() {
     if (_selectionBoxStart == null || _selectionBoxEnd == null) return null;
     return Rect.fromPoints(_selectionBoxStart!, _selectionBoxEnd!);
   }
 
-  /// Clear all selections
   void clearSelection() {
-    _selectedComponents.clear();
+    if (_selectedComponents.isNotEmpty) {
+      _selectedComponents.clear();
+      _notifySelectionChanged();
+    }
   }
 
-  /// Select a single component
   void selectComponent(Component component) {
     clearSelection();
     _selectedComponents.add(component);
+    _notifySelectionChanged();
   }
 
-  /// Toggle selection of a component (for multi-select with Ctrl/Cmd)
   void toggleComponentSelection(Component component) {
     if (_selectedComponents.contains(component)) {
       _selectedComponents.remove(component);
     } else {
       _selectedComponents.add(component);
     }
+    _notifySelectionChanged();
   }
 
   /// Check if a component is selected
@@ -131,5 +121,66 @@ class SelectionManager {
   void selectAll(List<Component> allComponents) {
     _selectedComponents.clear();
     _selectedComponents.addAll(allComponents);
+  }
+
+  // Add these methods to your SelectionManager class
+
+  /// More efficient selection box completion with component size lookup
+  void endSelectionBoxWithSizes(
+    List<Component> allComponents,
+    Map<String, Offset> componentPositions,
+    Map<String, double> componentWidths, // Use actual widths
+    double defaultHeight,
+  ) {
+    if (!_isDraggingSelectionBox ||
+        _selectionBoxStart == null ||
+        _selectionBoxEnd == null) {
+      _isDraggingSelectionBox = false;
+      return;
+    }
+
+    final selectionRect = getSelectionRect();
+    if (selectionRect == null) {
+      _isDraggingSelectionBox = false;
+      return;
+    }
+
+    // If not pressing Ctrl/Cmd, clear previous selection
+    if (!HardwareKeyboard.instance.isControlPressed) {
+      clearSelection();
+    }
+
+    // Select components that intersect with the selection box
+    for (final component in allComponents) {
+      final componentPos = componentPositions[component.id];
+      if (componentPos != null) {
+        final componentWidth = componentWidths[component.id] ?? 160.0;
+        final componentHeight = defaultHeight;
+
+        final componentRect = Rect.fromLTWH(
+          componentPos.dx,
+          componentPos.dy,
+          componentWidth + 20, // Include padding
+          componentHeight,
+        );
+
+        if (selectionRect.overlaps(componentRect)) {
+          _selectedComponents.add(component);
+        }
+      }
+    }
+
+    // Reset selection box state
+    _isDraggingSelectionBox = false;
+    _selectionBoxStart = null;
+    _selectionBoxEnd = null;
+  }
+
+  void setOnSelectionChanged(SelectionChangedCallback callback) {
+    _onSelectionChanged = callback;
+  }
+
+  void _notifySelectionChanged() {
+    _onSelectionChanged?.call(_selectedComponents);
   }
 }

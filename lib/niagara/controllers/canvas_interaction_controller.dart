@@ -9,7 +9,8 @@ class CanvasInteractionController {
   /// Controller for canvas transformations (pan/zoom)
   final TransformationController transformationController;
 
-  /// Current size of the canvas
+  Matrix4? _cachedInverseMatrix;
+  Matrix4? _lastMatrix;
   Size _canvasSize;
 
   /// Current offset of the canvas within the view
@@ -42,20 +43,67 @@ class CanvasInteractionController {
     transformationController.value = Matrix4.identity();
   }
 
-  Offset? getCanvasPosition(Offset globalPosition, RenderBox canvasBox) {
+  Offset? getCanvasPositionOptimized(
+    Offset globalPosition,
+    RenderBox canvasBox,
+  ) {
     final Offset localPosition = canvasBox.globalToLocal(globalPosition);
-
     final matrix = transformationController.value;
-    final inverseMatrix = Matrix4.inverted(matrix);
+
+    if (_lastMatrix != matrix) {
+      _cachedInverseMatrix = Matrix4.inverted(matrix);
+      _lastMatrix = matrix.clone();
+    }
+
     final canvasPosition = MatrixUtils.transformPoint(
-      inverseMatrix,
+      _cachedInverseMatrix!,
       localPosition,
     );
 
     return canvasPosition;
   }
 
-  bool updateCanvasSize(Map<String, Offset> componentPositions) {
+  Rect getViewportBounds(Size viewportSize) {
+    final matrix = transformationController.value;
+    final inverseMatrix = Matrix4.inverted(matrix);
+
+    final topLeft = MatrixUtils.transformPoint(inverseMatrix, Offset.zero);
+    final bottomRight = MatrixUtils.transformPoint(
+      inverseMatrix,
+      Offset(viewportSize.width, viewportSize.height),
+    );
+
+    return Rect.fromPoints(topLeft, bottomRight);
+  }
+
+  /// Check if a component is visible in the current viewport
+  bool isComponentVisible(
+    Offset componentPos,
+    Size componentSize,
+    Size viewportSize,
+  ) {
+    final viewportBounds = getViewportBounds(viewportSize);
+    final componentRect = Rect.fromLTWH(
+      componentPos.dx,
+      componentPos.dy,
+      componentSize.width,
+      componentSize.height,
+    );
+
+    return viewportBounds.overlaps(componentRect);
+  }
+
+  /// Clear the transformation cache
+  void clearCache() {
+    _cachedInverseMatrix = null;
+    _lastMatrix = null;
+  }
+
+  /// Update the canvas size with better bounds calculation
+  bool updateCanvasSize(
+    Map<String, Offset> componentPositions,
+    Map<String, double> componentWidths,
+  ) {
     if (componentPositions.isEmpty) return false;
 
     double minX = double.infinity;
@@ -63,25 +111,23 @@ class CanvasInteractionController {
     double maxX = double.negativeInfinity;
     double maxY = double.negativeInfinity;
 
-    for (var position in componentPositions.values) {
-      const estimatedWidth = 180.0; // 160 width + 20 padding
+    // Find the bounds of all components using actual widths
+    componentPositions.forEach((id, position) {
+      final width = componentWidths[id] ?? 160.0;
       const estimatedHeight = 120.0;
 
       minX = minX < position.dx ? minX : position.dx;
       minY = minY < position.dy ? minY : position.dy;
-      maxX = maxX > position.dx + estimatedWidth
-          ? maxX
-          : position.dx + estimatedWidth;
+      maxX = maxX > position.dx + width ? maxX : position.dx + width;
       maxY = maxY > position.dy + estimatedHeight
           ? maxY
           : position.dy + estimatedHeight;
-    }
+    });
 
     bool needsUpdate = false;
     Size newCanvasSize = _canvasSize;
     Offset newCanvasOffset = _canvasOffset;
 
-    // Check if canvas needs to expand left
     if (minX < canvasPadding) {
       double extraWidth = canvasPadding - minX;
       newCanvasSize = Size(
@@ -132,13 +178,26 @@ class CanvasInteractionController {
     if (needsUpdate) {
       _canvasSize = newCanvasSize;
       _canvasOffset = newCanvasOffset;
+      clearCache(); // Clear cache when canvas changes
       return true;
     }
 
     return false;
   }
 
-  /// Get adjusted component positions after canvas resize
+  Offset? getCanvasPosition(Offset globalPosition, RenderBox canvasBox) {
+    final Offset localPosition = canvasBox.globalToLocal(globalPosition);
+
+    final matrix = transformationController.value;
+    final inverseMatrix = Matrix4.inverted(matrix);
+    final canvasPosition = MatrixUtils.transformPoint(
+      inverseMatrix,
+      localPosition,
+    );
+
+    return canvasPosition;
+  }
+
   Map<String, Offset> getAdjustedPositions(
     Map<String, Offset> componentPositions,
     Offset offsetChange,
@@ -153,7 +212,6 @@ class CanvasInteractionController {
     return adjustedPositions;
   }
 
-  /// Set canvas size and offset
   void setCanvasSize(Size size, Offset offset) {
     _canvasSize = size;
     _canvasOffset = offset;
