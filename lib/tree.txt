@@ -11,14 +11,11 @@
 │   ├── router_connection.dart
 │   ├── router_connection_manager.dart
 │   └── router_socket_handler.dart
-├── domain
 ├── extensions
 │   ├── device_address_extensions.dart
 │   └── group_extensions.dart
 ├── factories
 │   └── helvar_device_factory.dart
-├── infra
-│   └── networking
 ├── main.dart
 ├── models
 │   ├── flowsheet.dart
@@ -33,9 +30,14 @@
 │   │   └── workgroup.dart
 │   └── project_settings.dart
 ├── niagara
+│   ├── controllers
+│   │   ├── canvas_interaction_controller.dart
+│   │   ├── clipboard_manager.dart
+│   │   ├── drag_operation_manager.dart
+│   │   ├── flow_editor_state.dart
+│   │   └── selection_manager.dart
 │   ├── home
 │   │   ├── command.dart
-│   │   ├── component_panel.dart
 │   │   ├── component_widget.dart
 │   │   ├── connection_painter.dart
 │   │   ├── grid_painter.dart
@@ -44,8 +46,7 @@
 │   │   ├── manager.dart
 │   │   ├── paste_special_dialog.dart
 │   │   ├── resize_component_command.dart
-│   │   ├── selection_box_painter.dart
-│   │   └── utils.dart
+│   │   └── selection_box_painter.dart
 │   └── models
 │       ├── command.dart
 │       ├── command_history.dart
@@ -117,6 +118,7 @@
 │   └── router_storage_service.dart
 ├── tree.txt
 ├── utils
+│   ├── canvas_utils.dart
 │   ├── date_utils.dart
 │   ├── device_icons.dart
 │   ├── device_utils.dart
@@ -131,4 +133,4 @@
     ├── command_monitor.dart
     └── wiresheet_flow_editor.dart
 
-22 directories, 109 files
+20 directories, 113 files
