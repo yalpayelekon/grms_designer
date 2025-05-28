@@ -36,8 +36,12 @@ class FlowManager {
     }
   }
 
-  bool canCreateConnection(String fromComponentId, int fromPortIndex,
-      String toComponentId, int toPortIndex) {
+  bool canCreateConnection(
+    String fromComponentId,
+    int fromPortIndex,
+    String toComponentId,
+    int toPortIndex,
+  ) {
     Component? fromComponent = findComponentById(fromComponentId);
     Component? toComponent = findComponentById(toComponentId);
 
@@ -75,37 +79,50 @@ class FlowManager {
     return false;
   }
 
-  void createConnection(String fromComponentId, int fromPortIndex,
-      String toComponentId, int toPortIndex) {
+  void createConnection(
+    String fromComponentId,
+    int fromPortIndex,
+    String toComponentId,
+    int toPortIndex,
+  ) {
     if (!canCreateConnection(
-        fromComponentId, fromPortIndex, toComponentId, toPortIndex)) {
+      fromComponentId,
+      fromPortIndex,
+      toComponentId,
+      toPortIndex,
+    )) {
       return;
     }
 
-    bool connectionExists = connections.any((connection) =>
-        connection.fromComponentId == fromComponentId &&
-        connection.fromPortIndex == fromPortIndex &&
-        connection.toComponentId == toComponentId &&
-        connection.toPortIndex == toPortIndex);
+    bool connectionExists = connections.any(
+      (connection) =>
+          connection.fromComponentId == fromComponentId &&
+          connection.fromPortIndex == fromPortIndex &&
+          connection.toComponentId == toComponentId &&
+          connection.toPortIndex == toPortIndex,
+    );
 
     if (!connectionExists) {
       Component? fromComponent = findComponentById(fromComponentId);
       Component? toComponent = findComponentById(toComponentId);
 
       if (fromComponent != null && toComponent != null) {
-        connections.add(Connection(
-          fromComponentId: fromComponentId,
-          fromPortIndex: fromPortIndex,
-          toComponentId: toComponentId,
-          toPortIndex: toPortIndex,
-        ));
+        connections.add(
+          Connection(
+            fromComponentId: fromComponentId,
+            fromPortIndex: fromPortIndex,
+            toComponentId: toComponentId,
+            toPortIndex: toPortIndex,
+          ),
+        );
 
         toComponent.addInputConnection(
-            toPortIndex,
-            ConnectionEndpoint(
-              componentId: fromComponentId,
-              portIndex: fromPortIndex,
-            ));
+          toPortIndex,
+          ConnectionEndpoint(
+            componentId: fromComponentId,
+            portIndex: fromPortIndex,
+          ),
+        );
 
         Slot? fromSlot = fromComponent.getSlotByIndex(fromPortIndex);
         Slot? toSlot = toComponent.getSlotByIndex(toPortIndex);
@@ -117,13 +134,19 @@ class FlowManager {
     }
   }
 
-  void removeConnection(String fromComponentId, int fromPortIndex,
-      String toComponentId, int toPortIndex) {
-    connections.removeWhere((connection) =>
-        connection.fromComponentId == fromComponentId &&
-        connection.fromPortIndex == fromPortIndex &&
-        connection.toComponentId == toComponentId &&
-        connection.toPortIndex == toPortIndex);
+  void removeConnection(
+    String fromComponentId,
+    int fromPortIndex,
+    String toComponentId,
+    int toPortIndex,
+  ) {
+    connections.removeWhere(
+      (connection) =>
+          connection.fromComponentId == fromComponentId &&
+          connection.fromPortIndex == fromPortIndex &&
+          connection.toComponentId == toComponentId &&
+          connection.toPortIndex == toPortIndex,
+    );
 
     Component? toComponent = findComponentById(toComponentId);
     if (toComponent != null) {
@@ -161,17 +184,23 @@ class FlowManager {
       dynamic result = slot.execute(parameter: value);
 
       if (slot.returnType != null && result != null) {
-        for (var connection in connections.where((connection) =>
-            connection.isFromComponent(componentId, portIndex))) {
-          Component? targetComponent =
-              findComponentById(connection.toComponentId);
+        for (var connection in connections.where(
+          (connection) => connection.isFromComponent(componentId, portIndex),
+        )) {
+          Component? targetComponent = findComponentById(
+            connection.toComponentId,
+          );
           if (targetComponent != null) {
-            Slot? targetSlot =
-                targetComponent.getSlotByIndex(connection.toPortIndex);
+            Slot? targetSlot = targetComponent.getSlotByIndex(
+              connection.toPortIndex,
+            );
 
             if (targetSlot is ActionSlot) {
               updatePortValue(
-                  connection.toComponentId, connection.toPortIndex, result);
+                connection.toComponentId,
+                connection.toPortIndex,
+                result,
+              );
             } else if (targetSlot is Topic) {
               targetSlot.fire(result);
               propagateTopicEvent(targetComponent, connection.toPortIndex);
@@ -183,16 +212,23 @@ class FlowManager {
   }
 
   void propagatePropertyValue(
-      Component sourceComponent, int sourcePropertyIndex) {
-    Property? sourceProperty =
-        sourceComponent.getPropertyByIndex(sourcePropertyIndex);
+    Component sourceComponent,
+    int sourcePropertyIndex,
+  ) {
+    Property? sourceProperty = sourceComponent.getPropertyByIndex(
+      sourcePropertyIndex,
+    );
     if (sourceProperty == null || sourceProperty.isInput) return;
 
     dynamic valueToPropagate = sourceProperty.value;
 
     List<Connection> outgoingConnections = connections
-        .where((connection) =>
-            connection.isFromComponent(sourceComponent.id, sourcePropertyIndex))
+        .where(
+          (connection) => connection.isFromComponent(
+            sourceComponent.id,
+            sourcePropertyIndex,
+          ),
+        )
         .toList();
 
     for (var connection in outgoingConnections) {
@@ -206,8 +242,9 @@ class FlowManager {
         targetSlot.value = valueToPropagate;
         targetComponent.calculate();
 
-        for (var property
-            in targetComponent.properties.where((p) => !p.isInput)) {
+        for (var property in targetComponent.properties.where(
+          (p) => !p.isInput,
+        )) {
           propagatePropertyValue(targetComponent, property.index);
         }
 
@@ -218,21 +255,29 @@ class FlowManager {
         dynamic result = targetSlot.execute(parameter: valueToPropagate);
 
         if (result != null) {
-          for (var actionConnection in connections.where((conn) => conn
-              .isFromComponent(targetComponent.id, connection.toPortIndex))) {
-            Component? actionTargetComponent =
-                findComponentById(actionConnection.toComponentId);
+          for (var actionConnection in connections.where(
+            (conn) => conn.isFromComponent(
+              targetComponent.id,
+              connection.toPortIndex,
+            ),
+          )) {
+            Component? actionTargetComponent = findComponentById(
+              actionConnection.toComponentId,
+            );
             if (actionTargetComponent == null) continue;
 
-            Slot? actionTargetSlot = actionTargetComponent
-                .getSlotByIndex(actionConnection.toPortIndex);
+            Slot? actionTargetSlot = actionTargetComponent.getSlotByIndex(
+              actionConnection.toPortIndex,
+            );
 
             if (actionTargetSlot is ActionSlot) {
               actionTargetSlot.execute(parameter: result);
             } else if (actionTargetSlot is Topic) {
               actionTargetSlot.fire(result);
               propagateTopicEvent(
-                  actionTargetComponent, actionConnection.toPortIndex);
+                actionTargetComponent,
+                actionConnection.toPortIndex,
+              );
             }
           }
         }
@@ -248,8 +293,10 @@ class FlowManager {
     if (eventToPropagate == null) return;
 
     List<Connection> outgoingConnections = connections
-        .where((connection) =>
-            connection.isFromComponent(sourceComponent.id, sourceTopicIndex))
+        .where(
+          (connection) =>
+              connection.isFromComponent(sourceComponent.id, sourceTopicIndex),
+        )
         .toList();
 
     for (var connection in outgoingConnections) {
@@ -263,21 +310,29 @@ class FlowManager {
         dynamic result = targetSlot.execute(parameter: eventToPropagate);
 
         if (result != null) {
-          for (var actionConnection in connections.where((conn) => conn
-              .isFromComponent(targetComponent.id, connection.toPortIndex))) {
-            Component? actionTargetComponent =
-                findComponentById(actionConnection.toComponentId);
+          for (var actionConnection in connections.where(
+            (conn) => conn.isFromComponent(
+              targetComponent.id,
+              connection.toPortIndex,
+            ),
+          )) {
+            Component? actionTargetComponent = findComponentById(
+              actionConnection.toComponentId,
+            );
             if (actionTargetComponent == null) continue;
 
-            Slot? actionTargetSlot = actionTargetComponent
-                .getSlotByIndex(actionConnection.toPortIndex);
+            Slot? actionTargetSlot = actionTargetComponent.getSlotByIndex(
+              actionConnection.toPortIndex,
+            );
 
             if (actionTargetSlot is ActionSlot) {
               actionTargetSlot.execute(parameter: result);
             } else if (actionTargetSlot is Topic) {
               actionTargetSlot.fire(result);
               propagateTopicEvent(
-                  actionTargetComponent, actionConnection.toPortIndex);
+                actionTargetComponent,
+                actionConnection.toPortIndex,
+              );
             }
           }
         }
@@ -353,7 +408,7 @@ class FlowManager {
         typeStr == ComponentType.HELVAR_OUTPUT ||
         typeStr == ComponentType.HELVAR_EMERGENCY) {
       // For device components when creating from type (not from an actual device)
-      // we'll use a default configuration which can be edited later
+      // TODO
       String deviceType = "unknown";
       if (typeStr == ComponentType.HELVAR_INPUT) {
         deviceType = "input";
@@ -374,6 +429,8 @@ class FlowManager {
     }
 
     return PointComponent(
-        id: id, type: const ComponentType(ComponentType.BOOLEAN_WRITABLE));
+      id: id,
+      type: const ComponentType(ComponentType.BOOLEAN_WRITABLE),
+    );
   }
 }

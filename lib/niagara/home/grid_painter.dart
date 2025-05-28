@@ -1,5 +1,3 @@
-// Updated lib/home/flow_screen.dart with dynamic canvas functionality
-
 import 'package:flutter/material.dart';
 
 class GridPainter extends CustomPainter {

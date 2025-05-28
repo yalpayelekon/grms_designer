@@ -1,4 +1,3 @@
-// connection_painter.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/component.dart';
@@ -12,19 +11,19 @@ class ConnectionPainter extends CustomPainter {
   final FlowManager flowManager;
   final Map<String, Offset> componentPositions;
   final Map<String, GlobalKey> componentKeys;
-  final Map<String, double> componentWidths; // Add this
+  final Map<String, double> componentWidths;
   final SlotDragInfo? tempLineStartInfo;
   final Offset? tempLineEndPoint;
 
-  static const double rowVerticalOffset = 28.0; // Title section height
-  static const double rowHeight = 36.0; // Height of each port row
-  static const double itemPadding = 8.0; // Padding around the item
+  static const double rowVerticalOffset = 28.0;
+  static const double rowHeight = 36.0;
+  static const double itemPadding = 8.0;
 
   ConnectionPainter({
     required this.flowManager,
     required this.componentPositions,
     required this.componentKeys,
-    required this.componentWidths, // Add this
+    required this.componentWidths,
     this.tempLineStartInfo,
     this.tempLineEndPoint,
   });
@@ -57,21 +56,37 @@ class ConnectionPainter extends CustomPainter {
 
     for (final connection in flowManager.connections) {
       _drawConnection(
-          canvas, connection, propertyPaint, actionPaint, topicPaint);
+        canvas,
+        connection,
+        propertyPaint,
+        actionPaint,
+        topicPaint,
+      );
     }
 
     if (tempLineStartInfo != null && tempLineEndPoint != null) {
       _drawTempLine(
-          canvas, tempLineStartInfo!, tempLineEndPoint!, tempLinePaint);
+        canvas,
+        tempLineStartInfo!,
+        tempLineEndPoint!,
+        tempLinePaint,
+      );
     }
   }
 
-  void _drawConnection(Canvas canvas, Connection connection,
-      Paint propertyPaint, Paint actionPaint, Paint topicPaint) {
-    final Component? fromComponent =
-        flowManager.findComponentById(connection.fromComponentId);
-    final Component? toComponent =
-        flowManager.findComponentById(connection.toComponentId);
+  void _drawConnection(
+    Canvas canvas,
+    Connection connection,
+    Paint propertyPaint,
+    Paint actionPaint,
+    Paint topicPaint,
+  ) {
+    final Component? fromComponent = flowManager.findComponentById(
+      connection.fromComponentId,
+    );
+    final Component? toComponent = flowManager.findComponentById(
+      connection.toComponentId,
+    );
 
     if (fromComponent == null || toComponent == null) return;
 
@@ -93,36 +108,46 @@ class ConnectionPainter extends CustomPainter {
     } else if (fromSlot is Topic || toSlot is Topic) {
       paint = topicPaint;
     } else {
-      paint = propertyPaint; // default
+      paint = propertyPaint;
     }
 
     bool isFromOutput = false;
     if (fromSlot is Property) {
       isFromOutput = !fromSlot.isInput;
     } else if (fromSlot is Action) {
-      isFromOutput = false; // Actions are always inputs
+      isFromOutput = false;
     } else if (fromSlot is Topic) {
-      isFromOutput = true; // Topics are always outputs
+      isFromOutput = true;
     }
 
     bool isToOutput = false;
     if (toSlot is Property) {
       isToOutput = !toSlot.isInput;
     } else if (toSlot is Action) {
-      isToOutput = false; // Actions are always inputs
+      isToOutput = false;
     } else if (toSlot is Topic) {
-      isToOutput = true; // Topics are always outputs
+      isToOutput = true;
     }
 
-    int fromRowIndex =
-        _calculateRowIndex(fromComponent, connection.fromPortIndex);
+    int fromRowIndex = _calculateRowIndex(
+      fromComponent,
+      connection.fromPortIndex,
+    );
     int toRowIndex = _calculateRowIndex(toComponent, connection.toPortIndex);
 
     final fromSlotPos = _calculateSlotPosition(
-        fromPosition, fromRowIndex, isFromOutput, fromComponent.id);
+      fromPosition,
+      fromRowIndex,
+      isFromOutput,
+      fromComponent.id,
+    );
 
     final toSlotPos = _calculateSlotPosition(
-        toPosition, toRowIndex, isToOutput, toComponent.id);
+      toPosition,
+      toRowIndex,
+      isToOutput,
+      toComponent.id,
+    );
 
     _drawArrowLine(canvas, fromSlotPos, toSlotPos, paint);
 
@@ -161,26 +186,27 @@ class ConnectionPainter extends CustomPainter {
         component.properties.contains(slot)) {
       rowIndex = propertiesBeforeIndex;
       if (component.actions.isNotEmpty || component.topics.isNotEmpty) {
-        rowIndex += 1; // Add 1 for the section header
+        rowIndex += 1;
       }
     } else if (component.actions.isNotEmpty &&
         component.actions.contains(slot)) {
       rowIndex = component.properties.length + actionsBeforeIndex;
       if (component.properties.isNotEmpty) {
-        rowIndex += 1; // Add 1 for the section header
+        rowIndex += 1;
       }
       if (component.topics.isNotEmpty) {
-        rowIndex += 1; // Add 1 for the section header
+        rowIndex += 1;
       }
     } else if (component.topics.isNotEmpty && component.topics.contains(slot)) {
-      rowIndex = component.properties.length +
+      rowIndex =
+          component.properties.length +
           component.actions.length +
           topicsBeforeIndex;
       if (component.properties.isNotEmpty) {
-        rowIndex += 1; // Add 1 for the section header
+        rowIndex += 1;
       }
       if (component.actions.isNotEmpty) {
-        rowIndex += 1; // Add 1 for the section header
+        rowIndex += 1;
       }
     }
 
@@ -188,9 +214,14 @@ class ConnectionPainter extends CustomPainter {
   }
 
   void _drawTempLine(
-      Canvas canvas, SlotDragInfo startInfo, Offset endPoint, Paint paint) {
-    final Component? fromComponent =
-        flowManager.findComponentById(startInfo.componentId);
+    Canvas canvas,
+    SlotDragInfo startInfo,
+    Offset endPoint,
+    Paint paint,
+  ) {
+    final Component? fromComponent = flowManager.findComponentById(
+      startInfo.componentId,
+    );
     if (fromComponent == null) return;
 
     final Offset? fromPosition = componentPositions[startInfo.componentId];
@@ -203,27 +234,36 @@ class ConnectionPainter extends CustomPainter {
     if (fromSlot is Property) {
       isOutput = !fromSlot.isInput;
     } else if (fromSlot is Topic) {
-      isOutput = true; // Topics are always outputs
+      isOutput = true;
     }
 
     int rowIndex = _calculateRowIndex(fromComponent, startInfo.slotIndex);
 
     final fromSlotPos = _calculateSlotPosition(
-        fromPosition, rowIndex, isOutput, fromComponent.id);
+      fromPosition,
+      rowIndex,
+      isOutput,
+      fromComponent.id,
+    );
 
     _drawDashedLine(canvas, fromSlotPos, endPoint, paint);
   }
 
   Offset _calculateSlotPosition(
-      Offset itemPosition, int rowIndex, bool isRightSide, String componentId) {
+    Offset itemPosition,
+    int rowIndex,
+    bool isRightSide,
+    String componentId,
+  ) {
     final double itemWidth = componentWidths[componentId] ?? 160.0;
     final double totalWidth = itemWidth + (itemPadding * 2);
 
     final double portX = isRightSide
-        ? itemPosition.dx + totalWidth // Right side for outputs
-        : itemPosition.dx; // Left side for inputs
+        ? itemPosition.dx + totalWidth
+        : itemPosition.dx;
 
-    final double portY = itemPosition.dy +
+    final double portY =
+        itemPosition.dy +
         itemPadding +
         rowVerticalOffset +
         (rowIndex * rowHeight) +
@@ -288,7 +328,11 @@ class ConnectionPainter extends CustomPainter {
   }
 
   void _drawTransferredValue(
-      Canvas canvas, Offset start, Offset end, Property property) {
+    Canvas canvas,
+    Offset start,
+    Offset end,
+    Property property,
+  ) {
     final Offset midpoint = Offset(
       (start.dx + end.dx) / 2,
       (start.dy + end.dy) / 2,
@@ -366,7 +410,11 @@ class ConnectionPainter extends CustomPainter {
   }
 
   void _drawTransferredTopicEvent(
-      Canvas canvas, Offset start, Offset end, Topic topic) {
+    Canvas canvas,
+    Offset start,
+    Offset end,
+    Topic topic,
+  ) {
     final Offset midpoint = Offset(
       (start.dx + end.dx) / 2,
       (start.dy + end.dy) / 2,

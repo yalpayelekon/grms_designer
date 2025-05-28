@@ -16,9 +16,9 @@ abstract class Component {
     List<Property>? properties,
     List<ActionSlot>? actions,
     List<Topic>? topics,
-  })  : properties = properties ?? [],
-        actions = actions ?? [],
-        topics = topics ?? [];
+  }) : properties = properties ?? [],
+       actions = actions ?? [],
+       topics = topics ?? [];
 
   List<Slot> get allSlots {
     List<Slot> slots = [];
@@ -28,7 +28,6 @@ abstract class Component {
     return slots;
   }
 
-  // Find a property by index
   Property? getPropertyByIndex(int index) {
     try {
       return properties.firstWhere((prop) => prop.index == index);

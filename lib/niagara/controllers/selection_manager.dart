@@ -42,26 +42,22 @@ class SelectionManager {
     _notifySelectionChanged();
   }
 
-  /// Check if a component is selected
   bool isComponentSelected(Component component) {
     return _selectedComponents.contains(component);
   }
 
-  /// Start a selection box operation
   void startSelectionBox(Offset position) {
     _selectionBoxStart = position;
     _selectionBoxEnd = position;
     _isDraggingSelectionBox = true;
   }
 
-  /// Update the selection box during drag
   void updateSelectionBox(Offset position) {
     if (_isDraggingSelectionBox) {
       _selectionBoxEnd = position;
     }
   }
 
-  /// Complete a selection box operation
   void endSelectionBox(
     List<Component> allComponents,
     Map<String, Offset> componentPositions,
@@ -79,12 +75,10 @@ class SelectionManager {
       return;
     }
 
-    // If not pressing Ctrl/Cmd, clear previous selection
     if (!HardwareKeyboard.instance.isControlPressed) {
       clearSelection();
     }
 
-    // Select components that intersect with the selection box
     for (final component in allComponents) {
       final componentPos = componentPositions[component.id];
       if (componentPos != null) {
@@ -104,32 +98,26 @@ class SelectionManager {
       }
     }
 
-    // Reset selection box state
     _isDraggingSelectionBox = false;
     _selectionBoxStart = null;
     _selectionBoxEnd = null;
   }
 
-  /// Cancel the current selection box operation
   void cancelSelectionBox() {
     _isDraggingSelectionBox = false;
     _selectionBoxStart = null;
     _selectionBoxEnd = null;
   }
 
-  /// Select all components
   void selectAll(List<Component> allComponents) {
     _selectedComponents.clear();
     _selectedComponents.addAll(allComponents);
   }
 
-  // Add these methods to your SelectionManager class
-
-  /// More efficient selection box completion with component size lookup
   void endSelectionBoxWithSizes(
     List<Component> allComponents,
     Map<String, Offset> componentPositions,
-    Map<String, double> componentWidths, // Use actual widths
+    Map<String, double> componentWidths,
     double defaultHeight,
   ) {
     if (!_isDraggingSelectionBox ||
@@ -145,12 +133,10 @@ class SelectionManager {
       return;
     }
 
-    // If not pressing Ctrl/Cmd, clear previous selection
     if (!HardwareKeyboard.instance.isControlPressed) {
       clearSelection();
     }
 
-    // Select components that intersect with the selection box
     for (final component in allComponents) {
       final componentPos = componentPositions[component.id];
       if (componentPos != null) {
@@ -160,7 +146,7 @@ class SelectionManager {
         final componentRect = Rect.fromLTWH(
           componentPos.dx,
           componentPos.dy,
-          componentWidth + 20, // Include padding
+          componentWidth + 20,
           componentHeight,
         );
 
@@ -170,7 +156,6 @@ class SelectionManager {
       }
     }
 
-    // Reset selection box state
     _isDraggingSelectionBox = false;
     _selectionBoxStart = null;
     _selectionBoxEnd = null;

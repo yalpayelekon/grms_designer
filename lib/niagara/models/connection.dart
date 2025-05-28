@@ -1,4 +1,3 @@
-// connection.dart
 class Connection {
   String fromComponentId;
   int fromPortIndex;
@@ -25,8 +24,5 @@ class ConnectionEndpoint {
   String componentId;
   int portIndex;
 
-  ConnectionEndpoint({
-    required this.componentId,
-    required this.portIndex,
-  });
+  ConnectionEndpoint({required this.componentId, required this.portIndex});
 }

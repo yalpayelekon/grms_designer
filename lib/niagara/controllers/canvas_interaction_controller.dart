@@ -1,42 +1,26 @@
 import 'package:flutter/material.dart';
 
-/// Manages canvas interactions including pan, zoom, and transformation.
-///
-/// This controller centralizes the logic for canvas manipulation,
-/// making it easier to optimize canvas performance and handle
-/// complex interactions.
 class CanvasInteractionController {
-  /// Controller for canvas transformations (pan/zoom)
   final TransformationController transformationController;
 
   Matrix4? _cachedInverseMatrix;
   Matrix4? _lastMatrix;
   Size _canvasSize;
 
-  /// Current offset of the canvas within the view
   Offset _canvasOffset;
-
-  /// Padding around components when auto-sizing the canvas
   static const double canvasPadding = 100.0;
-
-  /// Flag indicating if the canvas is being dragged
   bool isDragging = false;
 
-  /// Constructor
   CanvasInteractionController({
     Size initialCanvasSize = const Size(2000, 2000),
     Offset initialCanvasOffset = Offset.zero,
   }) : transformationController = TransformationController(),
        _canvasSize = initialCanvasSize,
        _canvasOffset = initialCanvasOffset {
-    // Initialize with identity matrix (no transformation)
     transformationController.value = Matrix4.identity();
   }
 
-  /// Get the current canvas size
   Size get canvasSize => _canvasSize;
-
-  /// Get the current canvas offset
   Offset get canvasOffset => _canvasOffset;
 
   void resetView() {
@@ -76,7 +60,6 @@ class CanvasInteractionController {
     return Rect.fromPoints(topLeft, bottomRight);
   }
 
-  /// Check if a component is visible in the current viewport
   bool isComponentVisible(
     Offset componentPos,
     Size componentSize,
@@ -93,13 +76,11 @@ class CanvasInteractionController {
     return viewportBounds.overlaps(componentRect);
   }
 
-  /// Clear the transformation cache
   void clearCache() {
     _cachedInverseMatrix = null;
     _lastMatrix = null;
   }
 
-  /// Update the canvas size with better bounds calculation
   bool updateCanvasSize(
     Map<String, Offset> componentPositions,
     Map<String, double> componentWidths,
@@ -111,7 +92,6 @@ class CanvasInteractionController {
     double maxX = double.negativeInfinity;
     double maxY = double.negativeInfinity;
 
-    // Find the bounds of all components using actual widths
     componentPositions.forEach((id, position) {
       final width = componentWidths[id] ?? 160.0;
       const estimatedHeight = 120.0;
@@ -141,7 +121,6 @@ class CanvasInteractionController {
       needsUpdate = true;
     }
 
-    // Check if canvas needs to expand top
     if (minY < canvasPadding) {
       double extraHeight = canvasPadding - minY;
       newCanvasSize = Size(
@@ -155,7 +134,6 @@ class CanvasInteractionController {
       needsUpdate = true;
     }
 
-    // Check if canvas needs to expand right
     if (maxX > _canvasSize.width - canvasPadding) {
       double extraWidth = maxX - (_canvasSize.width - canvasPadding);
       newCanvasSize = Size(
@@ -165,7 +143,6 @@ class CanvasInteractionController {
       needsUpdate = true;
     }
 
-    // Check if canvas needs to expand bottom
     if (maxY > _canvasSize.height - canvasPadding) {
       double extraHeight = maxY - (_canvasSize.height - canvasPadding);
       newCanvasSize = Size(
@@ -178,7 +155,7 @@ class CanvasInteractionController {
     if (needsUpdate) {
       _canvasSize = newCanvasSize;
       _canvasOffset = newCanvasOffset;
-      clearCache(); // Clear cache when canvas changes
+      clearCache();
       return true;
     }
 

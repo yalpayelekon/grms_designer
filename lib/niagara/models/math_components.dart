@@ -6,10 +6,7 @@ import 'port.dart';
 import 'port_type.dart';
 
 class MathComponent extends Component {
-  MathComponent({
-    required super.id,
-    required super.type,
-  }) {
+  MathComponent({required super.id, required super.type}) {
     _setupPorts();
   }
 
@@ -21,52 +18,76 @@ class MathComponent extends Component {
       case ComponentType.DIVIDE:
       case ComponentType.MAX:
       case ComponentType.MIN:
-        properties.add(Property.withDefaultValue(
+        properties.add(
+          Property.withDefaultValue(
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.NUMERIC)));
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
         break;
 
       case ComponentType.POWER:
-        properties.add(Property.withDefaultValue(
+        properties.add(
+          Property.withDefaultValue(
             name: "Base",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Exponent",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.NUMERIC)));
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
         break;
 
       case ComponentType.ABS:
-        properties.add(Property.withDefaultValue(
+        properties.add(
+          Property.withDefaultValue(
             name: "Input",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Output",
             index: 1,
             isInput: false,
-            type: const PortType(PortType.NUMERIC)));
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
         break;
     }
   }
@@ -95,7 +116,6 @@ class MathComponent extends Component {
       case ComponentType.DIVIDE:
         final num inputA = properties[0].value as num;
         final num inputB = properties[1].value as num;
-        // Check for division by zero
         properties[2].value = inputB != 0 ? inputA / inputB : double.infinity;
         break;
 

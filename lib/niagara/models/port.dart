@@ -4,16 +4,13 @@ abstract class Slot {
   final String name;
   final int index;
 
-  Slot({
-    required this.name,
-    required this.index,
-  });
+  Slot({required this.name, required this.index});
 }
 
 class Property extends Slot {
   final bool isInput;
   final PortType type;
-  dynamic value; // Can store boolean, number, or string
+  dynamic value;
 
   Property({
     required super.name,
@@ -88,13 +85,9 @@ class Topic extends Slot {
   final PortType eventType;
   dynamic lastEvent;
 
-  Topic({
-    required super.name,
-    required super.index,
-    required this.eventType,
-  });
+  Topic({required super.name, required super.index, required this.eventType});
 
   void fire(dynamic event) {
-    lastEvent = event; // Store the last event value
+    lastEvent = event;
   }
 }

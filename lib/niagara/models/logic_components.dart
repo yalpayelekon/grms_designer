@@ -1,14 +1,10 @@
-// logic_components.dart
 import 'component.dart';
 import 'component_type.dart';
 import 'port.dart';
 import 'port_type.dart';
 
 class LogicComponent extends Component {
-  LogicComponent({
-    required super.id,
-    required super.type,
-  }) {
+  LogicComponent({required super.id, required super.type}) {
     _setupPorts();
   }
 
@@ -17,71 +13,104 @@ class LogicComponent extends Component {
       case ComponentType.AND_GATE:
       case ComponentType.OR_GATE:
       case ComponentType.XOR_GATE:
-        properties.add(Property.withDefaultValue(
+        properties.add(
+          Property.withDefaultValue(
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.BOOLEAN),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.BOOLEAN),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: const PortType(PortType.BOOLEAN),
+          ),
+        );
         break;
 
       case ComponentType.NOT_GATE:
-        properties.add(Property.withDefaultValue(
+        properties.add(
+          Property.withDefaultValue(
             name: "Input",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.BOOLEAN)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.BOOLEAN),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Output",
             index: 1,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: const PortType(PortType.BOOLEAN),
+          ),
+        );
         break;
 
       case ComponentType.IS_GREATER_THAN:
       case ComponentType.IS_LESS_THAN:
-        properties.add(Property.withDefaultValue(
+        properties.add(
+          Property.withDefaultValue(
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.NUMERIC)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.NUMERIC),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: const PortType(PortType.BOOLEAN),
+          ),
+        );
         break;
 
       case ComponentType.IS_EQUAL:
-        properties.add(Property.withDefaultValue(
+        properties.add(
+          Property.withDefaultValue(
             name: "Input A",
             index: 0,
             isInput: true,
-            type: const PortType(PortType.ANY)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.ANY),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Input B",
             index: 1,
             isInput: true,
-            type: const PortType(PortType.ANY)));
-        properties.add(Property.withDefaultValue(
+            type: const PortType(PortType.ANY),
+          ),
+        );
+        properties.add(
+          Property.withDefaultValue(
             name: "Output",
             index: 2,
             isInput: false,
-            type: const PortType(PortType.BOOLEAN)));
+            type: const PortType(PortType.BOOLEAN),
+          ),
+        );
         break;
     }
   }

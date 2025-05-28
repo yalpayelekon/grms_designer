@@ -62,7 +62,6 @@ class RemoveComponentCommand extends Command {
   void undo() {
     flowManager.addComponent(component);
 
-    // Restore all connections
     for (var connection in affectedConnections) {
       flowManager.createConnection(
         connection.fromComponentId,

@@ -15,7 +15,6 @@ class PortType {
   @override
   int get hashCode => type.hashCode;
 
-  // Factory method
   static PortType fromString(String type) {
     return PortType(type);
   }

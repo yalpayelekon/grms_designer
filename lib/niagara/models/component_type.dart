@@ -90,7 +90,6 @@ class ComponentType {
 
   bool get isStringType => type == STRING_WRITABLE || type == STRING_POINT;
 
-  // Factory method to create from string
   static ComponentType fromString(String type) {
     return ComponentType(type);
   }
