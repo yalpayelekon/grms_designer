@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/date_utils.dart';
 import '../providers/router_connection_provider.dart';
 import '../comm/models/command_models.dart';
 
@@ -89,11 +90,13 @@ class CommandMonitor extends ConsumerWidget {
 
     return ExpansionTile(
       leading: Icon(icon, color: color),
-      title: Text(command.command.length > 30
-          ? '${command.command.substring(0, 30)}...'
-          : command.command),
+      title: Text(
+        command.command.length > 30
+            ? '${command.command.substring(0, 30)}...'
+            : command.command,
+      ),
       subtitle: Text(
-        '${command.routerIp} - ${_formatDateTime(command.queuedAt)}',
+        '${command.routerIp} - ${formatDateTime(command.queuedAt)}',
       ),
       trailing: command.attemptsMade > 1
           ? Chip(label: Text('${command.attemptsMade} attempts'))
@@ -112,17 +115,14 @@ class CommandMonitor extends ConsumerWidget {
               const SizedBox(height: 8),
               if (command.groupId != null) Text('Group ID: ${command.groupId}'),
               if (command.groupId != null) const SizedBox(height: 8),
-              Text(
-                  'Queued At: ${_formatDateTime(command.queuedAt, showSeconds: true)}'),
+              Text('Queued At: ${formatDateTime(command.queuedAt)}'),
               if (command.executedAt != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                    'Executed At: ${_formatDateTime(command.executedAt!, showSeconds: true)}'),
+                Text('Executed At: ${formatDateTime(command.executedAt!)}'),
               ],
               if (command.completedAt != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                    'Completed At: ${_formatDateTime(command.completedAt!, showSeconds: true)}'),
+                Text('Completed At: ${formatDateTime(command.completedAt!)}'),
               ],
               if (command.response != null) ...[
                 const SizedBox(height: 8),
@@ -130,25 +130,15 @@ class CommandMonitor extends ConsumerWidget {
               ],
               if (command.errorMessage != null) ...[
                 const SizedBox(height: 8),
-                Text('Error: ${command.errorMessage}',
-                    style: const TextStyle(color: Colors.red)),
+                Text(
+                  'Error: ${command.errorMessage}',
+                  style: const TextStyle(color: Colors.red),
+                ),
               ],
             ],
           ),
         ),
       ],
     );
-  }
-
-  String _formatDateTime(DateTime dateTime, {bool showSeconds = false}) {
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    final second = dateTime.second.toString().padLeft(2, '0');
-
-    if (showSeconds) {
-      return '$hour:$minute:$second';
-    } else {
-      return '$hour:$minute';
-    }
   }
 }

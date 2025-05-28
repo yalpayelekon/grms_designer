@@ -884,13 +884,15 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                   painter: GridPainter(),
                                   size: _canvasSize,
                                 ),
-                                if (_isDraggingSelectionBox &&
-                                    _selectionBoxStart != null &&
-                                    _selectionBoxEnd != null)
+                                if (_selectionManager.isDraggingSelectionBox &&
+                                    _selectionManager.selectionBoxStart !=
+                                        null &&
+                                    _selectionManager.selectionBoxEnd != null)
                                   CustomPaint(
                                     painter: SelectionBoxPainter(
-                                      start: _selectionBoxStart,
-                                      end: _selectionBoxEnd,
+                                      start:
+                                          _selectionManager.selectionBoxStart,
+                                      end: _selectionManager.selectionBoxEnd,
                                     ),
                                     size: _canvasSize,
                                   ),
@@ -924,8 +926,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                           height:
                                               component.allSlots.length *
                                               rowHeight,
-                                          isSelected: _selectedComponents
-                                              .contains(component),
+                                          isSelected: _selectionManager
+                                              .isComponentSelected(component),
                                           widgetKey: _editorState
                                               .getComponentKey(component.id),
                                           position: _editorState
@@ -951,8 +953,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                           height:
                                               component.allSlots.length *
                                               rowHeight,
-                                          isSelected: _selectedComponents
-                                              .contains(component),
+                                          isSelected: _selectionManager
+                                              .isComponentSelected(component),
                                           widgetKey: GlobalKey(),
                                           position: _editorState
                                               .getComponentPosition(
@@ -997,13 +999,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                                   localOffset -
                                                   _dragStartPosition!;
 
-                                              if (_selectedComponents.contains(
-                                                    component,
-                                                  ) &&
-                                                  _selectedComponents.length >
+                                              if (_selectionManager
+                                                      .isComponentSelected(
+                                                        component,
+                                                      ) &&
+                                                  _selectionManager
+                                                          .selectedComponents
+                                                          .length >
                                                       1) {
                                                 for (var selectedComponent
-                                                    in _selectedComponents) {
+                                                    in _selectionManager
+                                                        .selectedComponents) {
                                                   final currentPos =
                                                       _editorState
                                                           .getComponentPosition(
@@ -1044,10 +1050,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                                       component.id,
                                                       localOffset,
                                                     );
-                                                _selectedComponents.clear();
-                                                _selectedComponents.add(
-                                                  component,
-                                                );
+                                                _selectionManager
+                                                    .selectComponent(component);
                                               }
 
                                               _dragStartPosition = null;
@@ -1069,26 +1073,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                           if (HardwareKeyboard
                                               .instance
                                               .isControlPressed) {
-                                            setState(() {
-                                              if (_selectedComponents.contains(
-                                                component,
-                                              )) {
-                                                _selectedComponents.remove(
+                                            _selectionManager
+                                                .toggleComponentSelection(
                                                   component,
                                                 );
-                                              } else {
-                                                _selectedComponents.add(
-                                                  component,
-                                                );
-                                              }
-                                            });
                                           } else {
-                                            setState(() {
-                                              _selectedComponents.clear();
-                                              _selectedComponents.add(
-                                                component,
-                                              );
-                                            });
+                                            _selectionManager.selectComponent(
+                                              component,
+                                            );
                                           }
                                         },
                                         child: ComponentWidget(
@@ -1101,8 +1093,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                           ),
                                           onWidthChanged:
                                               _handleComponentResize,
-                                          isSelected: _selectedComponents
-                                              .contains(component),
+                                          isSelected: _selectionManager
+                                              .isComponentSelected(component),
                                           widgetKey: _editorState
                                               .getComponentKey(component.id),
                                           position: _editorState
@@ -1242,10 +1234,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
           _showPasteSpecialDialog(canvasPosition);
           break;
         case 'select-all':
-          setState(() {
-            _selectedComponents.clear();
-            _selectedComponents.addAll(_editorState.flowManager.components);
-          });
+          _selectionManager.selectAll(_editorState.flowManager.components);
           break;
       }
     });
@@ -1487,9 +1476,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       switch (value) {
         case 'copy':
-          if (_selectedComponents.length == 1) {
-            _handleCopyComponent(_selectedComponents.first);
-          } else if (_selectedComponents.isNotEmpty) {
+          if (_selectionManager.selectedComponents.length == 1) {
+            _handleCopyComponent(_selectionManager.selectedComponents.first);
+          } else if (_selectionManager.selectedComponents.isNotEmpty) {
             _handleCopyMultipleComponents();
           }
           break;
@@ -1548,12 +1537,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         connection.toComponentId,
         connection.toPortIndex,
       );
-    }
-
-    if (_selectedComponents.contains(component)) {
-      setState(() {
-        _selectedComponents.remove(component);
-      });
     }
   }
 
