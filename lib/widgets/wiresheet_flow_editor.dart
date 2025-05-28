@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/flowsheet.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
+import 'package:grms_designer/utils/canvas_utils.dart';
+import 'package:grms_designer/utils/device_utils.dart';
+import 'package:grms_designer/utils/logger.dart';
 
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/input_device.dart';
@@ -21,7 +24,6 @@ import '../niagara/home/selection_box_painter.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
-import '../niagara/models/helvar_device_component.dart';
 import '../niagara/models/port_type.dart';
 import '../niagara/models/ramp_component.dart';
 import '../niagara/models/rectangle.dart';
@@ -32,10 +34,7 @@ import '../utils/persistent_helper.dart';
 class WiresheetFlowEditor extends ConsumerStatefulWidget {
   final Flowsheet flowsheet;
 
-  const WiresheetFlowEditor({
-    super.key,
-    required this.flowsheet,
-  });
+  const WiresheetFlowEditor({super.key, required this.flowsheet});
 
   @override
   WiresheetFlowEditorState createState() => WiresheetFlowEditorState();
@@ -45,7 +44,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   late FlowManager _flowManager;
   late CommandHistory _commandHistory;
   final GlobalKey _canvasKey = GlobalKey();
-
+  final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
   final Map<String, Offset> _componentPositions = {};
   final Map<String, GlobalKey> _componentKeys = {};
   late FlowHandlers _flowHandlers;
@@ -107,10 +106,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       getMountedStatus: () => mounted,
       onFlowsheetUpdate: (updatedFlowsheet) {
         if (mounted) {
-          ref.read(flowsheetsProvider.notifier).updateFlowsheet(
-                widget.flowsheet.id,
-                updatedFlowsheet,
-              );
+          ref
+              .read(flowsheetsProvider.notifier)
+              .updateFlowsheet(widget.flowsheet.id, updatedFlowsheet);
         }
       },
     );
@@ -132,12 +130,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       final List<Connection> connections = [];
       for (final component in _flowManager.components) {
         for (final entry in component.inputConnections.entries) {
-          connections.add(Connection(
-            fromComponentId: entry.value.componentId,
-            fromPortIndex: entry.value.portIndex,
-            toComponentId: component.id,
-            toPortIndex: entry.key,
-          ));
+          connections.add(
+            Connection(
+              fromComponentId: entry.value.componentId,
+              fromPortIndex: entry.value.portIndex,
+              toComponentId: component.id,
+              toPortIndex: entry.key,
+            ),
+          );
         }
       }
       updatedFlowsheet.connections = connections;
@@ -160,12 +160,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   void didUpdateWidget(WiresheetFlowEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // If the flowsheet ID has changed, we need to reinitialize everything
     if (oldWidget.flowsheet.id != widget.flowsheet.id) {
-      // Save the old flowsheet state before switching
       _saveStateSync();
 
-      // Clear and reinitialize for the new flowsheet
       _flowManager = FlowManager();
       _commandHistory = CommandHistory();
       _componentPositions.clear();
@@ -204,10 +201,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         getMountedStatus: () => mounted,
         onFlowsheetUpdate: (updatedFlowsheet) {
           if (mounted) {
-            ref.read(flowsheetsProvider.notifier).updateFlowsheet(
-                  widget.flowsheet.id,
-                  updatedFlowsheet,
-                );
+            ref
+                .read(flowsheetsProvider.notifier)
+                .updateFlowsheet(widget.flowsheet.id, updatedFlowsheet);
           }
         },
       );
@@ -242,10 +238,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     if (minX < _canvasPadding) {
       double extraWidth = _canvasPadding - minX;
-      newCanvasSize =
-          Size(_canvasSize.width + extraWidth, newCanvasSize.height);
-      newCanvasOffset =
-          Offset(_canvasOffset.dx - extraWidth, newCanvasOffset.dy);
+      newCanvasSize = Size(
+        _canvasSize.width + extraWidth,
+        newCanvasSize.height,
+      );
+      newCanvasOffset = Offset(
+        _canvasOffset.dx - extraWidth,
+        newCanvasOffset.dy,
+      );
 
       for (var id in _componentPositions.keys) {
         _componentPositions[id] = Offset(
@@ -258,10 +258,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     if (minY < _canvasPadding) {
       double extraHeight = _canvasPadding - minY;
-      newCanvasSize =
-          Size(newCanvasSize.width, _canvasSize.height + extraHeight);
-      newCanvasOffset =
-          Offset(newCanvasOffset.dx, _canvasOffset.dy - extraHeight);
+      newCanvasSize = Size(
+        newCanvasSize.width,
+        _canvasSize.height + extraHeight,
+      );
+      newCanvasOffset = Offset(
+        newCanvasOffset.dx,
+        _canvasOffset.dy - extraHeight,
+      );
 
       for (var id in _componentPositions.keys) {
         _componentPositions[id] = Offset(
@@ -274,15 +278,19 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     if (maxX > _canvasSize.width - _canvasPadding) {
       double extraWidth = maxX - (_canvasSize.width - _canvasPadding);
-      newCanvasSize =
-          Size(_canvasSize.width + extraWidth, newCanvasSize.height);
+      newCanvasSize = Size(
+        _canvasSize.width + extraWidth,
+        newCanvasSize.height,
+      );
       needsUpdate = true;
     }
 
     if (maxY > _canvasSize.height - _canvasPadding) {
       double extraHeight = maxY - (_canvasSize.height - _canvasPadding);
-      newCanvasSize =
-          Size(newCanvasSize.width, _canvasSize.height + extraHeight);
+      newCanvasSize = Size(
+        newCanvasSize.width,
+        _canvasSize.height + extraHeight,
+      );
       needsUpdate = true;
     }
 
@@ -297,23 +305,25 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   Future<void> _updateCanvasSizeAsync(
-      Size newCanvasSize, Offset newCanvasOffset) async {
+    Size newCanvasSize,
+    Offset newCanvasOffset,
+  ) async {
     Future.microtask(() async {
       if (!mounted) return;
 
-      await ref.read(flowsheetsProvider.notifier).updateCanvasSize(
-            widget.flowsheet.id,
-            newCanvasSize,
-          );
+      await ref
+          .read(flowsheetsProvider.notifier)
+          .updateCanvasSize(widget.flowsheet.id, newCanvasSize);
 
-      await ref.read(flowsheetsProvider.notifier).updateCanvasOffset(
-            widget.flowsheet.id,
-            newCanvasOffset,
-          );
+      await ref
+          .read(flowsheetsProvider.notifier)
+          .updateCanvasOffset(widget.flowsheet.id, newCanvasOffset);
 
       for (var id in _componentPositions.keys) {
         await _persistenceHelper.saveComponentPosition(
-            id, _componentPositions[id]!);
+          id,
+          _componentPositions[id]!,
+        );
       }
     });
   }
@@ -343,10 +353,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     for (var connection in widget.flowsheet.connections) {
       _flowManager.createConnection(
-          connection.fromComponentId,
-          connection.fromPortIndex,
-          connection.toComponentId,
-          connection.toPortIndex);
+        connection.fromComponentId,
+        connection.fromPortIndex,
+        connection.toComponentId,
+        connection.toPortIndex,
+      );
     }
 
     _flowManager.recalculateAll();
@@ -372,8 +383,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       newName = '$baseName $counter';
     }
 
-    Component newComponent =
-        _flowManager.createComponentByType(newName, type.type);
+    Component newComponent = _flowManager.createComponentByType(
+      newName,
+      type.type,
+    );
 
     Offset newPosition;
     if (clickPosition != null) {
@@ -387,13 +400,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       if (viewerChildRenderBox != null) {
         final viewportSize = viewerChildRenderBox.size;
-        final viewportCenter =
-            Offset(viewportSize.width / 2, viewportSize.height / 2);
+        final viewportCenter = Offset(
+          viewportSize.width / 2,
+          viewportSize.height / 2,
+        );
 
         final matrix = _transformationController.value;
         final inverseMatrix = Matrix4.inverted(matrix);
-        final transformedCenter =
-            MatrixUtils.transformPoint(inverseMatrix, viewportCenter);
+        final transformedCenter = MatrixUtils.transformPoint(
+          inverseMatrix,
+          viewportCenter,
+        );
 
         final random = Random();
         final randomOffset = Offset(
@@ -429,30 +446,16 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _handleValueChanged(
-      String componentId, int slotIndex, dynamic newValue) {
+    String componentId,
+    int slotIndex,
+    dynamic newValue,
+  ) {
     _flowHandlers.handleValueChanged(componentId, slotIndex, newValue);
     final comp = _flowManager.findComponentById(componentId);
     if (comp != null) {
       _persistenceHelper.savePortValue(componentId, slotIndex, newValue);
       _persistenceHelper.saveUpdateComponent(componentId, comp);
     }
-  }
-
-  Offset? getPosition(Offset globalPosition) {
-    final RenderBox? canvasBox =
-        _canvasKey.currentContext?.findRenderObject() as RenderBox?;
-
-    if (canvasBox != null) {
-      final Offset localPosition = canvasBox.globalToLocal(globalPosition);
-
-      final matrix = _transformationController.value;
-      final inverseMatrix = Matrix4.inverted(matrix);
-      final canvasPosition =
-          MatrixUtils.transformPoint(inverseMatrix, localPosition);
-
-      return canvasPosition;
-    }
-    return null;
   }
 
   void _handlePortDragStarted(SlotDragInfo slotInfo) {
@@ -463,17 +466,20 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   void _handlePortDragAccepted(SlotDragInfo targetSlotInfo) {
     if (_currentDraggedPort != null) {
-      Component? sourceComponent =
-          _flowManager.findComponentById(_currentDraggedPort!.componentId);
-      Component? targetComponent =
-          _flowManager.findComponentById(targetSlotInfo.componentId);
+      Component? sourceComponent = _flowManager.findComponentById(
+        _currentDraggedPort!.componentId,
+      );
+      Component? targetComponent = _flowManager.findComponentById(
+        targetSlotInfo.componentId,
+      );
 
       if (sourceComponent != null && targetComponent != null) {
         if (_flowManager.canCreateConnection(
-            _currentDraggedPort!.componentId,
-            _currentDraggedPort!.slotIndex,
-            targetSlotInfo.componentId,
-            targetSlotInfo.slotIndex)) {
+          _currentDraggedPort!.componentId,
+          _currentDraggedPort!.slotIndex,
+          targetSlotInfo.componentId,
+          targetSlotInfo.slotIndex,
+        )) {
           setState(() {
             final command = CreateConnectionCommand(
               _flowManager,
@@ -483,20 +489,18 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
               targetSlotInfo.slotIndex,
             );
             _commandHistory.execute(command);
-            _persistenceHelper.saveAddConnection(Connection(
-              fromComponentId: _currentDraggedPort!.componentId,
-              fromPortIndex: _currentDraggedPort!.slotIndex,
-              toComponentId: targetSlotInfo.componentId,
-              toPortIndex: targetSlotInfo.slotIndex,
-            ));
+            _persistenceHelper.saveAddConnection(
+              Connection(
+                fromComponentId: _currentDraggedPort!.componentId,
+                fromPortIndex: _currentDraggedPort!.slotIndex,
+                toComponentId: targetSlotInfo.componentId,
+                toPortIndex: targetSlotInfo.slotIndex,
+              ),
+            );
           });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Cannot connect these slots - type mismatch or invalid connection'),
-              duration: Duration(seconds: 2),
-            ),
+          logWarning(
+            'Cannot connect these slots - type mismatch or invalid connection',
           );
         }
       }
@@ -622,24 +626,30 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                 if (_clipboardComponents.isNotEmpty) {
                   if (_clipboardComponentPosition != null) {
                     const double offsetAmount = 30.0;
-                    final Offset pastePosition = _clipboardComponentPosition! +
+                    final Offset pastePosition =
+                        _clipboardComponentPosition! +
                         const Offset(offsetAmount, offsetAmount);
 
                     _handlePasteComponent(pastePosition);
                   } else {
                     final RenderBox? viewerChildRenderBox =
                         _interactiveViewerChildKey.currentContext
-                            ?.findRenderObject() as RenderBox?;
+                                ?.findRenderObject()
+                            as RenderBox?;
 
                     if (viewerChildRenderBox != null) {
                       final viewportSize = viewerChildRenderBox.size;
                       final viewportCenter = Offset(
-                          viewportSize.width / 2, viewportSize.height / 2);
+                        viewportSize.width / 2,
+                        viewportSize.height / 2,
+                      );
 
                       final matrix = _transformationController.value;
                       final inverseMatrix = Matrix4.inverted(matrix);
                       final canvasPosition = MatrixUtils.transformPoint(
-                          inverseMatrix, viewportCenter);
+                        inverseMatrix,
+                        viewportCenter,
+                      );
 
                       _handlePasteComponent(canvasPosition);
                     }
@@ -713,8 +723,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                     ),
                     child: GestureDetector(
                       onTapDown: (details) {
-                        Offset? canvasPosition =
-                            getPosition(details.globalPosition);
+                        Offset? canvasPosition = getPosition(
+                          details.globalPosition,
+                          _canvasKey,
+                          _transformationController,
+                        );
                         if (canvasPosition != null) {
                           setState(() {
                             _selectionBoxStart = canvasPosition;
@@ -724,8 +737,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         }
                       },
                       onPanStart: (details) {
-                        Offset? canvasPosition =
-                            getPosition(details.globalPosition);
+                        Offset? canvasPosition = getPosition(
+                          details.globalPosition,
+                          _canvasKey,
+                          _transformationController,
+                        );
                         if (canvasPosition != null) {
                           bool isClickOnComponent = false;
 
@@ -759,8 +775,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                       },
                       onPanUpdate: (details) {
                         if (_isDraggingSelectionBox) {
-                          Offset? canvasPosition =
-                              getPosition(details.globalPosition);
+                          Offset? canvasPosition = getPosition(
+                            details.globalPosition,
+                            _canvasKey,
+                            _transformationController,
+                          );
                           if (canvasPosition != null) {
                             setState(() {
                               _selectionBoxEnd = canvasPosition;
@@ -773,7 +792,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                             _selectionBoxStart != null &&
                             _selectionBoxEnd != null) {
                           final selectionRect = Rect.fromPoints(
-                              _selectionBoxStart!, _selectionBoxEnd!);
+                            _selectionBoxStart!,
+                            _selectionBoxEnd!,
+                          );
 
                           setState(() {
                             if (!HardwareKeyboard.instance.isControlPressed) {
@@ -807,8 +828,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         }
                       },
                       onDoubleTapDown: (TapDownDetails details) {
-                        Offset? canvasPosition =
-                            getPosition(details.globalPosition);
+                        Offset? canvasPosition = getPosition(
+                          details.globalPosition,
+                          _canvasKey,
+                          _transformationController,
+                        );
                         if (canvasPosition != null) {
                           bool isClickOnComponent = false;
 
@@ -834,44 +858,57 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
                           if (!isClickOnComponent) {
                             _showCanvasContextMenu(
-                                context, details.globalPosition);
+                              context,
+                              details.globalPosition,
+                            );
                           }
                         }
                       },
                       child: DragTarget<Object>(
                         onAcceptWithDetails:
                             (DragTargetDetails<dynamic> details) {
-                          final RenderBox? canvasBox = _canvasKey.currentContext
-                              ?.findRenderObject() as RenderBox?;
+                              final RenderBox? canvasBox =
+                                  _canvasKey.currentContext?.findRenderObject()
+                                      as RenderBox?;
 
-                          if (canvasBox != null) {
-                            final Offset localPosition =
-                                canvasBox.globalToLocal(details.offset);
-                            print("localPosition: $localPosition");
+                              if (canvasBox != null) {
+                                final Offset localPosition = canvasBox
+                                    .globalToLocal(details.offset);
+                                print("localPosition: $localPosition");
 
-                            final matrix = _transformationController.value;
-                            final inverseMatrix = Matrix4.inverted(matrix);
-                            final canvasPosition = MatrixUtils.transformPoint(
-                                inverseMatrix, localPosition);
-                            print("canvasPosition: $canvasPosition");
+                                final matrix = _transformationController.value;
+                                final inverseMatrix = Matrix4.inverted(matrix);
+                                final canvasPosition =
+                                    MatrixUtils.transformPoint(
+                                      inverseMatrix,
+                                      localPosition,
+                                    );
+                                print("canvasPosition: $canvasPosition");
 
-                            if (details.data is ComponentType) {
-                              _addNewComponent(details.data,
-                                  clickPosition: canvasPosition);
-                            } else if (details.data is Map<String, dynamic>) {
-                              Map<String, dynamic> dragData = details.data;
+                                if (details.data is ComponentType) {
+                                  _addNewComponent(
+                                    details.data,
+                                    clickPosition: canvasPosition,
+                                  );
+                                } else if (details.data
+                                    is Map<String, dynamic>) {
+                                  Map<String, dynamic> dragData = details.data;
 
-                              if (dragData.containsKey("buttonPoint") &&
-                                  dragData.containsKey("pointData")) {
-                                _addNewButtonPointComponent(dragData,
-                                    clickPosition: canvasPosition);
-                              } else if (dragData.containsKey("device")) {
-                                _addNewDeviceComponent(dragData,
-                                    clickPosition: canvasPosition);
+                                  if (dragData.containsKey("buttonPoint") &&
+                                      dragData.containsKey("pointData")) {
+                                    _addNewButtonPointComponent(
+                                      dragData,
+                                      clickPosition: canvasPosition,
+                                    );
+                                  } else if (dragData.containsKey("device")) {
+                                    _addNewDeviceComponent(
+                                      dragData,
+                                      clickPosition: canvasPosition,
+                                    );
+                                  }
+                                }
                               }
-                            }
-                          }
-                        },
+                            },
                         builder: (context, candidateData, rejectedData) {
                           return Container(
                             key: _canvasKey,
@@ -905,204 +942,219 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                       ),
                                     ),
                                   ),
-                                ..._flowManager.components.map(
-                                  (component) {
-                                    return Positioned(
-                                      left: _componentPositions[component.id]
-                                              ?.dx ??
-                                          0,
-                                      top: _componentPositions[component.id]
-                                              ?.dy ??
-                                          0,
-                                      child: Draggable<String>(
-                                        data: component.id,
-                                        feedback: Material(
-                                          elevation: 5.0,
-                                          color: Colors.transparent,
-                                          child: ComponentWidget(
-                                            component: component,
-                                            height: component.allSlots.length *
-                                                rowHeight,
-                                            isSelected: _selectedComponents
-                                                .contains(component),
-                                            widgetKey:
-                                                _componentKeys[component.id] ??
-                                                    GlobalKey(),
-                                            position: _componentPositions[
-                                                    component.id] ??
-                                                Offset.zero,
-                                            width: _componentWidths[
-                                                    component.id] ??
-                                                160.0,
-                                            onValueChanged: _handleValueChanged,
-                                            onSlotDragStarted:
-                                                _handlePortDragStarted,
-                                            onSlotDragAccepted:
-                                                _handlePortDragAccepted,
-                                            onWidthChanged:
-                                                _handleComponentResize,
-                                          ),
-                                        ),
-                                        childWhenDragging: Opacity(
-                                          opacity: 0.3,
-                                          child: ComponentWidget(
-                                            component: component,
-                                            height: component.allSlots.length *
-                                                rowHeight,
-                                            isSelected: _selectedComponents
-                                                .contains(component),
-                                            widgetKey: GlobalKey(),
-                                            position: _componentPositions[
-                                                    component.id] ??
-                                                Offset.zero,
-                                            width: _componentWidths[
-                                                    component.id] ??
-                                                160.0,
-                                            onValueChanged: _handleValueChanged,
-                                            onSlotDragStarted:
-                                                _handlePortDragStarted,
-                                            onSlotDragAccepted:
-                                                _handlePortDragAccepted,
-                                            onWidthChanged:
-                                                _handleComponentResize,
-                                          ),
-                                        ),
-                                        onDragStarted: () {
-                                          _dragStartPosition =
-                                              _componentPositions[component.id];
-                                        },
-                                        onDragEnd: (details) {
-                                          final RenderBox?
-                                              viewerChildRenderBox =
-                                              _interactiveViewerChildKey
-                                                      .currentContext
-                                                      ?.findRenderObject()
-                                                  as RenderBox?;
-
-                                          if (viewerChildRenderBox != null) {
-                                            final Offset localOffset =
-                                                viewerChildRenderBox
-                                                    .globalToLocal(
-                                                        details.offset);
-
-                                            if (_dragStartPosition != null &&
-                                                _dragStartPosition !=
-                                                    localOffset) {
-                                              setState(() {
-                                                final offset = localOffset -
-                                                    _dragStartPosition!;
-
-                                                if (_selectedComponents
-                                                        .contains(component) &&
-                                                    _selectedComponents.length >
-                                                        1) {
-                                                  for (var selectedComponent
-                                                      in _selectedComponents) {
-                                                    final currentPos =
-                                                        _componentPositions[
-                                                            selectedComponent
-                                                                .id];
-                                                    if (currentPos != null) {
-                                                      final newPos =
-                                                          currentPos + offset;
-                                                      final command =
-                                                          MoveComponentCommand(
-                                                        selectedComponent.id,
-                                                        newPos,
-                                                        currentPos,
-                                                        _componentPositions,
-                                                      );
-                                                      _commandHistory
-                                                          .execute(command);
-                                                      _persistenceHelper
-                                                          .saveComponentPosition(
-                                                              selectedComponent
-                                                                  .id,
-                                                              newPos);
-                                                    }
-                                                  }
-                                                } else {
-                                                  final command =
-                                                      MoveComponentCommand(
-                                                    component.id,
-                                                    localOffset,
-                                                    _dragStartPosition!,
-                                                    _componentPositions,
-                                                  );
-                                                  _commandHistory
-                                                      .execute(command);
-                                                  _persistenceHelper
-                                                      .saveComponentPosition(
-                                                          component.id,
-                                                          localOffset);
-                                                  _selectedComponents.clear();
-                                                  _selectedComponents
-                                                      .add(component);
-                                                }
-
-                                                _dragStartPosition = null;
-
-                                                _updateCanvasSize();
-                                              });
-                                            }
-                                          }
-                                        },
-                                        child: GestureDetector(
-                                          onSecondaryTapDown: (details) {
-                                            _showContextMenu(
-                                                context,
-                                                details.globalPosition,
-                                                component);
-                                          },
-                                          onTap: () {
-                                            if (HardwareKeyboard
-                                                .instance.isControlPressed) {
-                                              setState(() {
-                                                if (_selectedComponents
-                                                    .contains(component)) {
-                                                  _selectedComponents
-                                                      .remove(component);
-                                                } else {
-                                                  _selectedComponents
-                                                      .add(component);
-                                                }
-                                              });
-                                            } else {
-                                              setState(() {
-                                                _selectedComponents.clear();
-                                                _selectedComponents
-                                                    .add(component);
-                                              });
-                                            }
-                                          },
-                                          child: ComponentWidget(
-                                            component: component,
-                                            height: component.allSlots.length *
-                                                rowHeight,
-                                            width: _componentWidths[
-                                                    component.id] ??
-                                                160.0,
-                                            onWidthChanged:
-                                                _handleComponentResize,
-                                            isSelected: _selectedComponents
-                                                .contains(component),
-                                            widgetKey:
-                                                _componentKeys[component.id] ??
-                                                    GlobalKey(),
-                                            position: _componentPositions[
-                                                    component.id] ??
-                                                Offset.zero,
-                                            onValueChanged: _handleValueChanged,
-                                            onSlotDragStarted:
-                                                _handlePortDragStarted,
-                                            onSlotDragAccepted:
-                                                _handlePortDragAccepted,
-                                          ),
+                                ..._flowManager.components.map((component) {
+                                  return Positioned(
+                                    left:
+                                        _componentPositions[component.id]?.dx ??
+                                        0,
+                                    top:
+                                        _componentPositions[component.id]?.dy ??
+                                        0,
+                                    child: Draggable<String>(
+                                      data: component.id,
+                                      feedback: Material(
+                                        elevation: 5.0,
+                                        color: Colors.transparent,
+                                        child: ComponentWidget(
+                                          component: component,
+                                          height:
+                                              component.allSlots.length *
+                                              rowHeight,
+                                          isSelected: _selectedComponents
+                                              .contains(component),
+                                          widgetKey:
+                                              _componentKeys[component.id] ??
+                                              GlobalKey(),
+                                          position:
+                                              _componentPositions[component
+                                                  .id] ??
+                                              Offset.zero,
+                                          width:
+                                              _componentWidths[component.id] ??
+                                              160.0,
+                                          onValueChanged: _handleValueChanged,
+                                          onSlotDragStarted:
+                                              _handlePortDragStarted,
+                                          onSlotDragAccepted:
+                                              _handlePortDragAccepted,
+                                          onWidthChanged:
+                                              _handleComponentResize,
                                         ),
                                       ),
-                                    );
-                                  },
-                                ),
+                                      childWhenDragging: Opacity(
+                                        opacity: 0.3,
+                                        child: ComponentWidget(
+                                          component: component,
+                                          height:
+                                              component.allSlots.length *
+                                              rowHeight,
+                                          isSelected: _selectedComponents
+                                              .contains(component),
+                                          widgetKey: GlobalKey(),
+                                          position:
+                                              _componentPositions[component
+                                                  .id] ??
+                                              Offset.zero,
+                                          width:
+                                              _componentWidths[component.id] ??
+                                              160.0,
+                                          onValueChanged: _handleValueChanged,
+                                          onSlotDragStarted:
+                                              _handlePortDragStarted,
+                                          onSlotDragAccepted:
+                                              _handlePortDragAccepted,
+                                          onWidthChanged:
+                                              _handleComponentResize,
+                                        ),
+                                      ),
+                                      onDragStarted: () {
+                                        _dragStartPosition =
+                                            _componentPositions[component.id];
+                                      },
+                                      onDragEnd: (details) {
+                                        final RenderBox? viewerChildRenderBox =
+                                            _interactiveViewerChildKey
+                                                    .currentContext
+                                                    ?.findRenderObject()
+                                                as RenderBox?;
+
+                                        if (viewerChildRenderBox != null) {
+                                          final Offset localOffset =
+                                              viewerChildRenderBox
+                                                  .globalToLocal(
+                                                    details.offset,
+                                                  );
+
+                                          if (_dragStartPosition != null &&
+                                              _dragStartPosition !=
+                                                  localOffset) {
+                                            setState(() {
+                                              final offset =
+                                                  localOffset -
+                                                  _dragStartPosition!;
+
+                                              if (_selectedComponents.contains(
+                                                    component,
+                                                  ) &&
+                                                  _selectedComponents.length >
+                                                      1) {
+                                                for (var selectedComponent
+                                                    in _selectedComponents) {
+                                                  final currentPos =
+                                                      _componentPositions[selectedComponent
+                                                          .id];
+                                                  if (currentPos != null) {
+                                                    final newPos =
+                                                        currentPos + offset;
+                                                    final command =
+                                                        MoveComponentCommand(
+                                                          selectedComponent.id,
+                                                          newPos,
+                                                          currentPos,
+                                                          _componentPositions,
+                                                        );
+                                                    _commandHistory.execute(
+                                                      command,
+                                                    );
+                                                    _persistenceHelper
+                                                        .saveComponentPosition(
+                                                          selectedComponent.id,
+                                                          newPos,
+                                                        );
+                                                  }
+                                                }
+                                              } else {
+                                                final command =
+                                                    MoveComponentCommand(
+                                                      component.id,
+                                                      localOffset,
+                                                      _dragStartPosition!,
+                                                      _componentPositions,
+                                                    );
+                                                _commandHistory.execute(
+                                                  command,
+                                                );
+                                                _persistenceHelper
+                                                    .saveComponentPosition(
+                                                      component.id,
+                                                      localOffset,
+                                                    );
+                                                _selectedComponents.clear();
+                                                _selectedComponents.add(
+                                                  component,
+                                                );
+                                              }
+
+                                              _dragStartPosition = null;
+
+                                              _updateCanvasSize();
+                                            });
+                                          }
+                                        }
+                                      },
+                                      child: GestureDetector(
+                                        onSecondaryTapDown: (details) {
+                                          _showContextMenu(
+                                            context,
+                                            details.globalPosition,
+                                            component,
+                                          );
+                                        },
+                                        onTap: () {
+                                          if (HardwareKeyboard
+                                              .instance
+                                              .isControlPressed) {
+                                            setState(() {
+                                              if (_selectedComponents.contains(
+                                                component,
+                                              )) {
+                                                _selectedComponents.remove(
+                                                  component,
+                                                );
+                                              } else {
+                                                _selectedComponents.add(
+                                                  component,
+                                                );
+                                              }
+                                            });
+                                          } else {
+                                            setState(() {
+                                              _selectedComponents.clear();
+                                              _selectedComponents.add(
+                                                component,
+                                              );
+                                            });
+                                          }
+                                        },
+                                        child: ComponentWidget(
+                                          component: component,
+                                          height:
+                                              component.allSlots.length *
+                                              rowHeight,
+                                          width:
+                                              _componentWidths[component.id] ??
+                                              160.0,
+                                          onWidthChanged:
+                                              _handleComponentResize,
+                                          isSelected: _selectedComponents
+                                              .contains(component),
+                                          widgetKey:
+                                              _componentKeys[component.id] ??
+                                              GlobalKey(),
+                                          position:
+                                              _componentPositions[component
+                                                  .id] ??
+                                              Offset.zero,
+                                          onValueChanged: _handleValueChanged,
+                                          onSlotDragStarted:
+                                              _handlePortDragStarted,
+                                          onSlotDragAccepted:
+                                              _handlePortDragAccepted,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
                               ],
                             ),
                           );
@@ -1135,7 +1187,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _showCanvasContextMenu(BuildContext context, Offset globalPosition) {
-    Offset canvasPosition = getPosition(globalPosition)!;
+    Offset canvasPosition = getPosition(
+      globalPosition,
+      _canvasKey,
+      _transformationController,
+    )!;
 
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -1152,15 +1208,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
           enabled: _clipboardComponents.isNotEmpty,
           child: Row(
             children: [
-              Icon(Icons.content_paste,
-                  size: 18,
-                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey),
+              Icon(
+                Icons.content_paste,
+                size: 18,
+                color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Paste',
                 style: TextStyle(
-                    color:
-                        _clipboardComponents.isNotEmpty ? null : Colors.grey),
+                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+                ),
               ),
             ],
           ),
@@ -1170,15 +1228,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
           enabled: _clipboardComponents.isNotEmpty,
           child: Row(
             children: [
-              Icon(Icons.copy_all,
-                  size: 18,
-                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey),
+              Icon(
+                Icons.copy_all,
+                size: 18,
+                color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Paste Special...',
                 style: TextStyle(
-                    color:
-                        _clipboardComponents.isNotEmpty ? null : Colors.grey),
+                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+                ),
               ),
             ],
           ),
@@ -1252,8 +1312,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
                       ),
                     ),
                   ),
@@ -1289,7 +1351,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                 copies = copies.clamp(1, 20); // Limit to reasonable number
 
                 _flowHandlers.handlePasteSpecialComponent(
-                    pastePosition, copies, keepConnections);
+                  pastePosition,
+                  copies,
+                  keepConnections,
+                );
               },
               child: const Text('Paste'),
             ),
@@ -1314,59 +1379,41 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             height: 400,
             child: ListView(
               children: [
-                _buildComponentCategorySection(
-                    'Custom Components',
-                    [
-                      RectangleComponent.RECTANGLE,
-                      RampComponent.RAMP,
-                    ],
-                    position),
-                _buildComponentCategorySection(
-                    'Logic Gates',
-                    [
-                      ComponentType.AND_GATE,
-                      ComponentType.OR_GATE,
-                      ComponentType.XOR_GATE,
-                      ComponentType.NOT_GATE,
-                    ],
-                    position),
-                _buildComponentCategorySection(
-                    'Math Operations',
-                    [
-                      ComponentType.ADD,
-                      ComponentType.SUBTRACT,
-                      ComponentType.MULTIPLY,
-                      ComponentType.DIVIDE,
-                      ComponentType.MAX,
-                      ComponentType.MIN,
-                      ComponentType.POWER,
-                      ComponentType.ABS,
-                    ],
-                    position),
-                _buildComponentCategorySection(
-                    'Comparisons',
-                    [
-                      ComponentType.IS_GREATER_THAN,
-                      ComponentType.IS_LESS_THAN,
-                      ComponentType.IS_EQUAL,
-                    ],
-                    position),
-                _buildComponentCategorySection(
-                    'Writable Points',
-                    [
-                      ComponentType.BOOLEAN_WRITABLE,
-                      ComponentType.NUMERIC_WRITABLE,
-                      ComponentType.STRING_WRITABLE,
-                    ],
-                    position),
-                _buildComponentCategorySection(
-                    'Read-Only Points',
-                    [
-                      ComponentType.BOOLEAN_POINT,
-                      ComponentType.NUMERIC_POINT,
-                      ComponentType.STRING_POINT,
-                    ],
-                    position),
+                _buildComponentCategorySection('Custom Components', [
+                  RectangleComponent.RECTANGLE,
+                  RampComponent.RAMP,
+                ], position),
+                _buildComponentCategorySection('Logic Gates', [
+                  ComponentType.AND_GATE,
+                  ComponentType.OR_GATE,
+                  ComponentType.XOR_GATE,
+                  ComponentType.NOT_GATE,
+                ], position),
+                _buildComponentCategorySection('Math Operations', [
+                  ComponentType.ADD,
+                  ComponentType.SUBTRACT,
+                  ComponentType.MULTIPLY,
+                  ComponentType.DIVIDE,
+                  ComponentType.MAX,
+                  ComponentType.MIN,
+                  ComponentType.POWER,
+                  ComponentType.ABS,
+                ], position),
+                _buildComponentCategorySection('Comparisons', [
+                  ComponentType.IS_GREATER_THAN,
+                  ComponentType.IS_LESS_THAN,
+                  ComponentType.IS_EQUAL,
+                ], position),
+                _buildComponentCategorySection('Writable Points', [
+                  ComponentType.BOOLEAN_WRITABLE,
+                  ComponentType.NUMERIC_WRITABLE,
+                  ComponentType.STRING_WRITABLE,
+                ], position),
+                _buildComponentCategorySection('Read-Only Points', [
+                  ComponentType.BOOLEAN_POINT,
+                  ComponentType.NUMERIC_POINT,
+                  ComponentType.STRING_POINT,
+                ], position),
               ],
             ),
           ),
@@ -1376,9 +1423,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   Widget _buildComponentCategorySection(
-      String title, List<String> typeStrings, Offset position) {
-    List<ComponentType> types =
-        typeStrings.map((t) => ComponentType(t)).toList();
+    String title,
+    List<String> typeStrings,
+    Offset position,
+  ) {
+    List<ComponentType> types = typeStrings
+        .map((t) => ComponentType(t))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1387,10 +1438,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
           padding: const EdgeInsets.only(top: 12.0, bottom: 6.0),
           child: Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
         const Divider(),
@@ -1425,7 +1473,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _showContextMenu(
-      BuildContext context, Offset position, Component component) {
+    BuildContext context,
+    Offset position,
+    Component component,
+  ) {
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox;
 
@@ -1499,23 +1550,27 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     for (final comp in _flowManager.components) {
       for (final entry in comp.inputConnections.entries) {
         if (entry.value.componentId == componentId) {
-          connectionsToDelete.add(Connection(
-            fromComponentId: entry.value.componentId,
-            fromPortIndex: entry.value.portIndex,
-            toComponentId: comp.id,
-            toPortIndex: entry.key,
-          ));
+          connectionsToDelete.add(
+            Connection(
+              fromComponentId: entry.value.componentId,
+              fromPortIndex: entry.value.portIndex,
+              toComponentId: comp.id,
+              toPortIndex: entry.key,
+            ),
+          );
         }
       }
     }
 
     for (final entry in component.inputConnections.entries) {
-      connectionsToDelete.add(Connection(
-        fromComponentId: entry.value.componentId,
-        fromPortIndex: entry.value.portIndex,
-        toComponentId: componentId,
-        toPortIndex: entry.key,
-      ));
+      connectionsToDelete.add(
+        Connection(
+          fromComponentId: entry.value.componentId,
+          fromPortIndex: entry.value.portIndex,
+          toComponentId: componentId,
+          toPortIndex: entry.key,
+        ),
+      );
     }
 
     _flowHandlers.handleDeleteComponent(component);
@@ -1524,10 +1579,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     for (final connection in connectionsToDelete) {
       _persistenceHelper.saveRemoveConnection(
-          connection.fromComponentId,
-          connection.fromPortIndex,
-          connection.toComponentId,
-          connection.toPortIndex);
+        connection.fromComponentId,
+        connection.fromPortIndex,
+        connection.toComponentId,
+        connection.toPortIndex,
+      );
     }
 
     if (_selectedComponents.contains(component)) {
@@ -1537,8 +1593,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     }
   }
 
-  void _addNewButtonPointComponent(Map<String, dynamic> buttonPointData,
-      {Offset? clickPosition}) {
+  void _addNewButtonPointComponent(
+    Map<String, dynamic> buttonPointData, {
+    Offset? clickPosition,
+  }) {
     final ButtonPoint buttonPoint =
         buttonPointData["buttonPoint"] as ButtonPoint;
     final HelvarDevice parentDevice =
@@ -1556,7 +1614,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     }
 
     Component newComponent = _flowManager.createComponentByType(
-        componentId, ComponentType.BOOLEAN_POINT);
+      componentId,
+      ComponentType.BOOLEAN_POINT,
+    );
 
     bool initialValue = _getInitialButtonPointValue(buttonPoint);
 
@@ -1601,13 +1661,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     if (viewerChildRenderBox != null) {
       final viewportSize = viewerChildRenderBox.size;
-      final viewportCenter =
-          Offset(viewportSize.width / 2, viewportSize.height / 2);
+      final viewportCenter = Offset(
+        viewportSize.width / 2,
+        viewportSize.height / 2,
+      );
 
       final matrix = _transformationController.value;
       final inverseMatrix = Matrix4.inverted(matrix);
-      final transformedCenter =
-          MatrixUtils.transformPoint(inverseMatrix, viewportCenter);
+      final transformedCenter = MatrixUtils.transformPoint(
+        inverseMatrix,
+        viewportCenter,
+      );
 
       return transformedCenter;
     }
@@ -1624,10 +1688,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     return false;
   }
 
-  final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
-
   void _storeButtonPointMetadata(
-      String componentId, ButtonPoint buttonPoint, HelvarDevice parentDevice) {
+    String componentId,
+    ButtonPoint buttonPoint,
+    HelvarDevice parentDevice,
+  ) {
     _buttonPointMetadata[componentId] = {
       'buttonPoint': buttonPoint,
       'parentDevice': parentDevice,
@@ -1661,14 +1726,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     _flowHandlers.handleMoveComponentRight(component);
   }
 
-  void _addNewDeviceComponent(Map<String, dynamic> deviceData,
-      {Offset? clickPosition}) {
+  void _addNewDeviceComponent(
+    Map<String, dynamic> deviceData, {
+    Offset? clickPosition,
+  }) {
     HelvarDevice? device = deviceData["device"] as HelvarDevice?;
 
     if (device == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid device data')),
-      );
+      logError('Invalid device data');
       return;
     }
 
@@ -1683,7 +1748,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       componentId = "${deviceName}_$counter";
     }
 
-    Component newComponent = _createComponentFromDevice(componentId, device);
+    Component newComponent = createComponentFromDevice(componentId, device);
 
     Offset newPosition;
     if (clickPosition != null) {
@@ -1697,12 +1762,16 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       if (viewerChildRenderBox != null) {
         final viewportSize = viewerChildRenderBox.size;
-        final viewportCenter =
-            Offset(viewportSize.width / 2, viewportSize.height / 2);
+        final viewportCenter = Offset(
+          viewportSize.width / 2,
+          viewportSize.height / 2,
+        );
         final matrix = _transformationController.value;
         final inverseMatrix = Matrix4.inverted(matrix);
-        final transformedCenter =
-            MatrixUtils.transformPoint(inverseMatrix, viewportCenter);
+        final transformedCenter = MatrixUtils.transformPoint(
+          inverseMatrix,
+          viewportCenter,
+        );
 
         newPosition = transformedCenter;
       }
@@ -1730,31 +1799,5 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       _updateCanvasSize();
     });
-  }
-
-  Component _createComponentFromDevice(String id, HelvarDevice device) {
-    return HelvarDeviceComponent(
-      id: id,
-      deviceId: device.deviceId,
-      deviceAddress: device.address,
-      deviceType: device.helvarType,
-      description: device.description.isEmpty
-          ? "Device_${device.deviceId}"
-          : device.description,
-      type: ComponentType(getHelvarComponentType(device.helvarType)),
-    );
-  }
-
-  String getHelvarComponentType(String helvarType) {
-    switch (helvarType) {
-      case 'output':
-        return ComponentType.HELVAR_OUTPUT;
-      case 'input':
-        return ComponentType.HELVAR_INPUT;
-      case 'emergency':
-        return ComponentType.HELVAR_EMERGENCY;
-      default:
-        return ComponentType.HELVAR_DEVICE;
-    }
   }
 }
