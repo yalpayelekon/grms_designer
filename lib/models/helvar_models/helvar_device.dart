@@ -1,4 +1,3 @@
-// lib/models/helvar_device.dart
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/utils/logger.dart';
 
@@ -64,8 +63,8 @@ abstract class HelvarDevice extends TreeNode {
     this.isMultisensor = false,
     Map<String, dynamic>? sensorInfo,
     Map<String, dynamic>? additionalInfo,
-  })  : sensorInfo = sensorInfo ?? {},
-        additionalInfo = additionalInfo ?? {} {
+  }) : sensorInfo = sensorInfo ?? {},
+       additionalInfo = additionalInfo ?? {} {
     if (address.startsWith('@')) {
       address = address.substring(1);
     }
@@ -153,7 +152,7 @@ abstract class HelvarDevice extends TreeNode {
         isMultisensor: json['isMultisensor'] as bool? ?? false,
         sensorInfo: json['sensorInfo'] as Map<String, dynamic>? ?? {},
         additionalInfo: json['additionalInfo'] as Map<String, dynamic>? ?? {},
-        outputPoints: outputPoints, // Add this line
+        outputPoints: outputPoints,
       );
     } else {
       return HelvarDriverEmergencyDevice(

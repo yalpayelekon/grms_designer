@@ -11,9 +11,10 @@ import 'package:grms_designer/utils/logger.dart';
 
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/input_device.dart';
+import '../niagara/controllers/flow_editor_state.dart';
+import '../niagara/controllers/selection_manager.dart';
 import '../niagara/home/command.dart';
 import '../niagara/home/handlers.dart';
-import '../niagara/home/utils.dart';
 import '../niagara/models/command_history.dart';
 import '../niagara/home/component_widget.dart';
 import '../niagara/home/connection_painter.dart';
@@ -41,52 +42,62 @@ class WiresheetFlowEditor extends ConsumerStatefulWidget {
 }
 
 class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
-  late FlowManager _flowManager;
-  late CommandHistory _commandHistory;
-  final GlobalKey _canvasKey = GlobalKey();
+  // Replace individual state variables with FlowEditorState
+  late FlowEditorState _editorState;
+
+  // Keep non-core state variables as they were
   final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
-  final Map<String, Offset> _componentPositions = {};
-  final Map<String, GlobalKey> _componentKeys = {};
   late FlowHandlers _flowHandlers;
   late PersistenceHelper _persistenceHelper;
   late FlowsheetStorageService _storageService;
-  Offset? _selectionBoxStart;
-  Offset? _selectionBoxEnd;
-  bool _isDraggingSelectionBox = false;
-  bool isPanelExpanded = false;
+  late SelectionManager _selectionManager;
   SlotDragInfo? _currentDraggedPort;
   Offset? _tempLineEndPoint;
   Offset? _dragStartPosition;
   Offset? _clipboardComponentPosition;
   final TransformationController _transformationController =
       TransformationController();
-  final GlobalKey _interactiveViewerChildKey = GlobalKey();
-  final Map<String, double> _componentWidths = {};
-  Size _canvasSize = const Size(2000, 2000); // Initial canvas size
-  Offset _canvasOffset = Offset.zero; // Canvas position within the view
-  static const double _canvasPadding = 100.0; // Padding around components
+  Size _canvasSize = const Size(2000, 2000);
+  Offset _canvasOffset = Offset.zero;
+  static const double _canvasPadding = 100.0;
 
   final List<Component> _clipboardComponents = [];
   final List<Offset> _clipboardPositions = [];
   final List<Connection> _clipboardConnections = [];
-  final Set<Component> _selectedComponents = {};
 
   @override
   void initState() {
     super.initState();
+    _initializeState();
+  }
+
+  void _initializeState() {
     _transformationController.value = Matrix4.identity();
-    _flowManager = FlowManager();
-    _commandHistory = CommandHistory();
+
+    // Initialize FlowEditorState
+    final flowManager = FlowManager();
+    final commandHistory = CommandHistory();
+    _editorState = FlowEditorState(
+      flowManager: flowManager,
+      commandHistory: commandHistory,
+    );
+
+    // Initialize SelectionManager with callback
+    _selectionManager = SelectionManager();
+    _selectionManager.setOnSelectionChanged(_onSelectionChanged);
+
     _storageService = ref.read(flowsheetStorageServiceProvider);
+
     _flowHandlers = FlowHandlers(
-      flowManager: _flowManager,
-      commandHistory: _commandHistory,
-      componentPositions: _componentPositions,
-      componentKeys: _componentKeys,
-      componentWidths: _componentWidths,
+      flowManager: _editorState.flowManager,
+      commandHistory: _editorState.commandHistory,
+      componentPositions: _editorState.componentPositions,
+      componentKeys: _editorState.componentKeys,
+      componentWidths: _editorState.componentWidths,
       setState: setState,
       updateCanvasSize: _updateCanvasSize,
-      selectedComponents: _selectedComponents,
+      selectedComponents:
+          _selectionManager.selectedComponents, // Use SelectionManager
       clipboardComponents: _clipboardComponents,
       clipboardPositions: _clipboardPositions,
       clipboardConnections: _clipboardConnections,
@@ -100,9 +111,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     _persistenceHelper = PersistenceHelper(
       flowsheet: widget.flowsheet,
       storageService: _storageService,
-      flowManager: _flowManager,
-      componentPositions: _componentPositions,
-      componentWidths: _componentWidths,
+      flowManager: _editorState.flowManager,
+      componentPositions: _editorState.componentPositions,
+      componentWidths: _editorState.componentWidths,
       getMountedStatus: () => mounted,
       onFlowsheetUpdate: (updatedFlowsheet) {
         if (mounted) {
@@ -116,6 +127,12 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     _initializeComponents();
   }
 
+  void _onSelectionChanged(Set<Component> selectedComponents) {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
     _saveStateSync();
@@ -125,10 +142,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   void _saveStateSync() {
     try {
       final updatedFlowsheet = widget.flowsheet.copy();
-      updatedFlowsheet.components = _flowManager.components;
+      updatedFlowsheet.components = _editorState.flowManager.components;
 
       final List<Connection> connections = [];
-      for (final component in _flowManager.components) {
+      for (final component in _editorState.flowManager.components) {
         for (final entry in component.inputConnections.entries) {
           connections.add(
             Connection(
@@ -142,11 +159,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       }
       updatedFlowsheet.connections = connections;
 
-      for (final entry in _componentPositions.entries) {
+      for (final entry in _editorState.componentPositions.entries) {
         updatedFlowsheet.updateComponentPosition(entry.key, entry.value);
       }
 
-      for (final entry in _componentWidths.entries) {
+      for (final entry in _editorState.componentWidths.entries) {
         updatedFlowsheet.updateComponentWidth(entry.key, entry.value);
       }
 
@@ -163,25 +180,23 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     if (oldWidget.flowsheet.id != widget.flowsheet.id) {
       _saveStateSync();
 
-      _flowManager = FlowManager();
-      _commandHistory = CommandHistory();
-      _componentPositions.clear();
-      _componentKeys.clear();
-      _componentWidths.clear();
-      _selectedComponents.clear();
+      // Clear and reinitialize state
+      _editorState.clear();
+      _selectionManager.clearSelection();
       _clipboardComponents.clear();
       _clipboardPositions.clear();
       _clipboardConnections.clear();
 
+      // Reinitialize with new flowsheet
       _flowHandlers = FlowHandlers(
-        flowManager: _flowManager,
-        commandHistory: _commandHistory,
-        componentPositions: _componentPositions,
-        componentKeys: _componentKeys,
-        componentWidths: _componentWidths,
+        flowManager: _editorState.flowManager,
+        commandHistory: _editorState.commandHistory,
+        componentPositions: _editorState.componentPositions,
+        componentKeys: _editorState.componentKeys,
+        componentWidths: _editorState.componentWidths,
         setState: setState,
         updateCanvasSize: _updateCanvasSize,
-        selectedComponents: _selectedComponents,
+        selectedComponents: _selectionManager.selectedComponents,
         clipboardComponents: _clipboardComponents,
         clipboardPositions: _clipboardPositions,
         clipboardConnections: _clipboardConnections,
@@ -195,9 +210,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       _persistenceHelper = PersistenceHelper(
         flowsheet: widget.flowsheet,
         storageService: _storageService,
-        flowManager: _flowManager,
-        componentPositions: _componentPositions,
-        componentWidths: _componentWidths,
+        flowManager: _editorState.flowManager,
+        componentPositions: _editorState.componentPositions,
+        componentWidths: _editorState.componentWidths,
         getMountedStatus: () => mounted,
         onFlowsheetUpdate: (updatedFlowsheet) {
           if (mounted) {
@@ -213,14 +228,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _updateCanvasSize() {
-    if (_componentPositions.isEmpty) return;
+    if (_editorState.componentPositions.isEmpty) return;
 
     double minX = double.infinity;
     double minY = double.infinity;
     double maxX = double.negativeInfinity;
     double maxY = double.negativeInfinity;
 
-    for (var entry in _componentPositions.entries) {
+    for (var entry in _editorState.componentPositions.entries) {
       final position = entry.value;
 
       const estimatedWidth = 180.0; // 160 width + 20 padding
@@ -247,10 +262,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         newCanvasOffset.dy,
       );
 
-      for (var id in _componentPositions.keys) {
-        _componentPositions[id] = Offset(
-          _componentPositions[id]!.dx + extraWidth,
-          _componentPositions[id]!.dy,
+      for (var id in _editorState.componentPositions.keys) {
+        _editorState.setComponentPosition(
+          id,
+          Offset(
+            _editorState.getComponentPosition(id).dx + extraWidth,
+            _editorState.getComponentPosition(id).dy,
+          ),
         );
       }
       needsUpdate = true;
@@ -267,10 +285,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         _canvasOffset.dy - extraHeight,
       );
 
-      for (var id in _componentPositions.keys) {
-        _componentPositions[id] = Offset(
-          _componentPositions[id]!.dx,
-          _componentPositions[id]!.dy + extraHeight,
+      for (var id in _editorState.componentPositions.keys) {
+        _editorState.setComponentPosition(
+          id,
+          Offset(
+            _editorState.getComponentPosition(id).dx,
+            _editorState.getComponentPosition(id).dy + extraHeight,
+          ),
         );
       }
       needsUpdate = true;
@@ -319,10 +340,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
           .read(flowsheetsProvider.notifier)
           .updateCanvasOffset(widget.flowsheet.id, newCanvasOffset);
 
-      for (var id in _componentPositions.keys) {
+      for (var id in _editorState.componentPositions.keys) {
         await _persistenceHelper.saveComponentPosition(
           id,
-          _componentPositions[id]!,
+          _editorState.getComponentPosition(id),
         );
       }
     });
@@ -334,25 +355,27 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   void _initializeComponents() {
     for (var component in widget.flowsheet.components) {
-      _flowManager.addComponent(component);
+      _editorState.flowManager.addComponent(component);
 
+      Offset position = Offset.zero;
       if (widget.flowsheet.componentPositions.containsKey(component.id)) {
-        _componentPositions[component.id] =
-            widget.flowsheet.componentPositions[component.id]!;
+        position = widget.flowsheet.componentPositions[component.id]!;
       }
 
+      double width = 160.0;
       if (widget.flowsheet.componentWidths.containsKey(component.id)) {
-        _componentWidths[component.id] =
-            widget.flowsheet.componentWidths[component.id]!;
-      } else {
-        _componentWidths[component.id] = 160.0; // Default width
+        width = widget.flowsheet.componentWidths[component.id]!;
       }
 
-      _componentKeys[component.id] = GlobalKey();
+      _editorState.initializeComponentState(
+        component,
+        position: position,
+        width: width,
+      );
     }
 
     for (var connection in widget.flowsheet.connections) {
-      _flowManager.createConnection(
+      _editorState.flowManager.createConnection(
         connection.fromComponentId,
         connection.fromPortIndex,
         connection.toComponentId,
@@ -360,14 +383,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       );
     }
 
-    _flowManager.recalculateAll();
+    _editorState.flowManager.recalculateAll();
     _updateCanvasSize();
-    _commandHistory.clear();
+    _editorState.commandHistory.clear();
   }
 
   void _handleComponentResize(String componentId, double newWidth) {
     _flowHandlers.handleComponentResize(componentId, newWidth);
-    _componentWidths[componentId] = newWidth;
+    _editorState.setComponentWidth(componentId, newWidth);
 
     _persistenceHelper.saveComponentWidth(componentId, newWidth);
     _updateCanvasSize();
@@ -378,12 +401,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     int counter = 1;
     String newName = '$baseName $counter';
 
-    while (_flowManager.components.any((comp) => comp.id == newName)) {
+    while (_editorState.flowManager.components.any(
+      (comp) => comp.id == newName,
+    )) {
       counter++;
       newName = '$baseName $counter';
     }
 
-    Component newComponent = _flowManager.createComponentByType(
+    Component newComponent = _editorState.flowManager.createComponentByType(
       newName,
       type.type,
     );
@@ -393,7 +418,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       newPosition = clickPosition;
     } else {
       final RenderBox? viewerChildRenderBox =
-          _interactiveViewerChildKey.currentContext?.findRenderObject()
+          _editorState.interactiveViewerChildKey.currentContext
+                  ?.findRenderObject()
               as RenderBox?;
 
       newPosition = Offset(_canvasSize.width / 2, _canvasSize.height / 2);
@@ -422,21 +448,26 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       }
     }
 
-    final newKey = GlobalKey();
-
     Map<String, dynamic> state = {
       'position': newPosition,
-      'key': newKey,
-      'positions': _componentPositions,
-      'keys': _componentKeys,
+      'key': _editorState.getComponentKey(newComponent.id),
+      'positions': _editorState.componentPositions,
+      'keys': _editorState.componentKeys,
     };
 
     setState(() {
-      final command = AddComponentCommand(_flowManager, newComponent, state);
-      _commandHistory.execute(command);
-      _componentWidths[newComponent.id] = 160.0;
-      _componentPositions[newComponent.id] = newPosition;
-      _componentKeys[newComponent.id] = newKey;
+      final command = AddComponentCommand(
+        _editorState.flowManager,
+        newComponent,
+        state,
+      );
+      _editorState.commandHistory.execute(command);
+
+      _editorState.initializeComponentState(
+        newComponent,
+        position: newPosition,
+        width: 160.0,
+      );
 
       _persistenceHelper.saveAddComponent(newComponent);
       _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
@@ -451,7 +482,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     dynamic newValue,
   ) {
     _flowHandlers.handleValueChanged(componentId, slotIndex, newValue);
-    final comp = _flowManager.findComponentById(componentId);
+    final comp = _editorState.flowManager.findComponentById(componentId);
     if (comp != null) {
       _persistenceHelper.savePortValue(componentId, slotIndex, newValue);
       _persistenceHelper.saveUpdateComponent(componentId, comp);
@@ -466,15 +497,15 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   void _handlePortDragAccepted(SlotDragInfo targetSlotInfo) {
     if (_currentDraggedPort != null) {
-      Component? sourceComponent = _flowManager.findComponentById(
+      Component? sourceComponent = _editorState.flowManager.findComponentById(
         _currentDraggedPort!.componentId,
       );
-      Component? targetComponent = _flowManager.findComponentById(
+      Component? targetComponent = _editorState.flowManager.findComponentById(
         targetSlotInfo.componentId,
       );
 
       if (sourceComponent != null && targetComponent != null) {
-        if (_flowManager.canCreateConnection(
+        if (_editorState.flowManager.canCreateConnection(
           _currentDraggedPort!.componentId,
           _currentDraggedPort!.slotIndex,
           targetSlotInfo.componentId,
@@ -482,13 +513,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         )) {
           setState(() {
             final command = CreateConnectionCommand(
-              _flowManager,
+              _editorState.flowManager,
               _currentDraggedPort!.componentId,
               _currentDraggedPort!.slotIndex,
               targetSlotInfo.componentId,
               targetSlotInfo.slotIndex,
             );
-            _commandHistory.execute(command);
+            _editorState.commandHistory.execute(command);
             _persistenceHelper.saveAddConnection(
               Connection(
                 fromComponentId: _currentDraggedPort!.componentId,
@@ -531,9 +562,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
           actions: <Type, Action<Intent>>{
             UndoIntent: CallbackAction<UndoIntent>(
               onInvoke: (UndoIntent intent) {
-                if (_commandHistory.canUndo) {
+                if (_editorState.commandHistory.canUndo) {
                   setState(() {
-                    _commandHistory.undo();
+                    _editorState.commandHistory.undo();
                   });
                 }
                 return null;
@@ -541,9 +572,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ),
             RedoIntent: CallbackAction<RedoIntent>(
               onInvoke: (RedoIntent intent) {
-                if (_commandHistory.canRedo) {
+                if (_editorState.commandHistory.canRedo) {
                   setState(() {
-                    _commandHistory.redo();
+                    _editorState.commandHistory.redo();
                   });
                 }
                 return null;
@@ -551,31 +582,33 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ),
             SelectAllIntent: CallbackAction<SelectAllIntent>(
               onInvoke: (SelectAllIntent intent) {
-                setState(() {
-                  _selectedComponents.clear();
-                  _selectedComponents.addAll(_flowManager.components);
-                });
+                _selectionManager.selectAll(
+                  _editorState.flowManager.components,
+                );
                 return null;
               },
             ),
             DeleteIntent: CallbackAction<DeleteIntent>(
               onInvoke: (DeleteIntent intent) {
-                setState(() {
-                  if (_selectedComponents.isNotEmpty) {
-                    for (var component in _selectedComponents.toList()) {
+                if (_selectionManager.selectedComponents.isNotEmpty) {
+                  setState(() {
+                    for (var component
+                        in _selectionManager.selectedComponents.toList()) {
                       _handleDeleteComponent(component);
                     }
-                    _selectedComponents.clear();
-                  }
-                });
+                    _selectionManager.clearSelection();
+                  });
+                }
                 return null;
               },
             ),
             CopyIntent: CallbackAction<CopyIntent>(
               onInvoke: (CopyIntent intent) {
-                if (_selectedComponents.length == 1) {
-                  _handleCopyComponent(_selectedComponents.first);
-                } else if (_selectedComponents.isNotEmpty) {
+                if (_selectionManager.selectedComponents.length == 1) {
+                  _handleCopyComponent(
+                    _selectionManager.selectedComponents.first,
+                  );
+                } else if (_selectionManager.selectedComponents.isNotEmpty) {
                   _handleCopyMultipleComponents();
                 }
                 return null;
@@ -583,8 +616,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ),
             MoveDownIntent: CallbackAction<MoveDownIntent>(
               onInvoke: (MoveDownIntent intent) {
-                if (_selectedComponents.isNotEmpty) {
-                  for (var component in _selectedComponents) {
+                if (_selectionManager.selectedComponents.isNotEmpty) {
+                  for (var component in _selectionManager.selectedComponents) {
                     _handleMoveComponentDown(component);
                   }
                 }
@@ -593,8 +626,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ),
             MoveLeftIntent: CallbackAction<MoveLeftIntent>(
               onInvoke: (MoveLeftIntent intent) {
-                if (_selectedComponents.isNotEmpty) {
-                  for (var component in _selectedComponents) {
+                if (_selectionManager.selectedComponents.isNotEmpty) {
+                  for (var component in _selectionManager.selectedComponents) {
                     _handleMoveComponentLeft(component);
                   }
                 }
@@ -603,8 +636,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ),
             MoveRightIntent: CallbackAction<MoveRightIntent>(
               onInvoke: (MoveRightIntent intent) {
-                if (_selectedComponents.isNotEmpty) {
-                  for (var component in _selectedComponents) {
+                if (_selectionManager.selectedComponents.isNotEmpty) {
+                  for (var component in _selectionManager.selectedComponents) {
                     _handleMoveComponentRight(component);
                   }
                 }
@@ -613,8 +646,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ),
             MoveUpIntent: CallbackAction<MoveUpIntent>(
               onInvoke: (MoveUpIntent intent) {
-                if (_selectedComponents.isNotEmpty) {
-                  for (var component in _selectedComponents) {
+                if (_selectionManager.selectedComponents.isNotEmpty) {
+                  for (var component in _selectionManager.selectedComponents) {
                     _handleMoveComponentUp(component);
                   }
                 }
@@ -633,7 +666,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                     _handlePasteComponent(pastePosition);
                   } else {
                     final RenderBox? viewerChildRenderBox =
-                        _interactiveViewerChildKey.currentContext
+                        _editorState.interactiveViewerChildKey.currentContext
                                 ?.findRenderObject()
                             as RenderBox?;
 
@@ -676,29 +709,29 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.undo),
-                    tooltip: _commandHistory.canUndo
-                        ? 'Undo: ${_commandHistory.lastUndoDescription}'
+                    tooltip: _editorState.commandHistory.canUndo
+                        ? 'Undo: ${_editorState.commandHistory.lastUndoDescription}'
                         : 'Undo',
-                    onPressed: _commandHistory.canUndo
+                    onPressed: _editorState.commandHistory.canUndo
                         ? () {
                             setState(() {
-                              _commandHistory.undo();
+                              _editorState.commandHistory.undo();
                             });
                           }
-                        : null, // Disable button if cannot undo
+                        : null,
                   ),
                   IconButton(
                     icon: const Icon(Icons.redo),
-                    tooltip: _commandHistory.canRedo
-                        ? 'Redo: ${_commandHistory.lastRedoDescription}'
+                    tooltip: _editorState.commandHistory.canRedo
+                        ? 'Redo: ${_editorState.commandHistory.lastRedoDescription}'
                         : 'Redo',
-                    onPressed: _commandHistory.canRedo
+                    onPressed: _editorState.commandHistory.canRedo
                         ? () {
                             setState(() {
-                              _commandHistory.redo();
+                              _editorState.commandHistory.redo();
                             });
                           }
-                        : null, // Disable button if cannot redo
+                        : null,
                   ),
                 ],
               ),
@@ -712,12 +745,12 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                   panEnabled: true,
                   scaleEnabled: true,
                   child: CustomPaint(
-                    key: _interactiveViewerChildKey,
+                    key: _editorState.interactiveViewerChildKey,
                     foregroundPainter: ConnectionPainter(
-                      flowManager: _flowManager,
-                      componentPositions: _componentPositions,
-                      componentKeys: _componentKeys,
-                      componentWidths: _componentWidths,
+                      flowManager: _editorState.flowManager,
+                      componentPositions: _editorState.componentPositions,
+                      componentKeys: _editorState.componentKeys,
+                      componentWidths: _editorState.componentWidths,
                       tempLineStartInfo: _currentDraggedPort,
                       tempLineEndPoint: _tempLineEndPoint,
                     ),
@@ -725,136 +758,66 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                       onTapDown: (details) {
                         Offset? canvasPosition = getPosition(
                           details.globalPosition,
-                          _canvasKey,
+                          _editorState.canvasKey,
                           _transformationController,
                         );
                         if (canvasPosition != null) {
-                          setState(() {
-                            _selectionBoxStart = canvasPosition;
-                            _isDraggingSelectionBox = false;
-                            _selectedComponents.clear();
-                          });
+                          _selectionManager.clearSelection();
                         }
                       },
                       onPanStart: (details) {
                         Offset? canvasPosition = getPosition(
                           details.globalPosition,
-                          _canvasKey,
+                          _editorState.canvasKey,
                           _transformationController,
                         );
                         if (canvasPosition != null) {
-                          bool isClickOnComponent = false;
-
-                          for (final componentId in _componentPositions.keys) {
-                            final componentPos =
-                                _componentPositions[componentId]!;
-                            const double componentWidth = 180.0;
-                            const double componentHeight = 150.0;
-
-                            final componentRect = Rect.fromLTWH(
-                              componentPos.dx,
-                              componentPos.dy,
-                              componentWidth,
-                              componentHeight,
-                            );
-
-                            if (componentRect.contains(canvasPosition)) {
-                              isClickOnComponent = true;
-                              break;
-                            }
-                          }
+                          bool isClickOnComponent = _editorState
+                              .isPointOverComponent(canvasPosition);
 
                           if (!isClickOnComponent) {
-                            setState(() {
-                              _isDraggingSelectionBox = true;
-                              _selectionBoxStart = canvasPosition;
-                              _selectionBoxEnd = canvasPosition;
-                            });
+                            _selectionManager.startSelectionBox(canvasPosition);
                           }
                         }
                       },
                       onPanUpdate: (details) {
-                        if (_isDraggingSelectionBox) {
+                        if (_selectionManager.isDraggingSelectionBox) {
                           Offset? canvasPosition = getPosition(
                             details.globalPosition,
-                            _canvasKey,
+                            _editorState.canvasKey,
                             _transformationController,
                           );
                           if (canvasPosition != null) {
                             setState(() {
-                              _selectionBoxEnd = canvasPosition;
+                              _selectionManager.updateSelectionBox(
+                                canvasPosition,
+                              );
                             });
                           }
                         }
                       },
                       onPanEnd: (details) {
-                        if (_isDraggingSelectionBox &&
-                            _selectionBoxStart != null &&
-                            _selectionBoxEnd != null) {
-                          final selectionRect = Rect.fromPoints(
-                            _selectionBoxStart!,
-                            _selectionBoxEnd!,
-                          );
-
+                        if (_selectionManager.isDraggingSelectionBox) {
                           setState(() {
-                            if (!HardwareKeyboard.instance.isControlPressed) {
-                              _selectedComponents.clear();
-                            }
-
-                            for (final component in _flowManager.components) {
-                              final componentPos =
-                                  _componentPositions[component.id];
-                              if (componentPos != null) {
-                                const double componentWidth = 180.0;
-                                const double componentHeight = 150.0;
-
-                                final componentRect = Rect.fromLTWH(
-                                  componentPos.dx,
-                                  componentPos.dy,
-                                  componentWidth,
-                                  componentHeight,
-                                );
-
-                                if (selectionRect.overlaps(componentRect)) {
-                                  _selectedComponents.add(component);
-                                }
-                              }
-                            }
-
-                            _isDraggingSelectionBox = false;
-                            _selectionBoxStart = null;
-                            _selectionBoxEnd = null;
+                            // Use SelectionManager with custom size calculation for better accuracy
+                            _selectionManager.endSelectionBoxWithSizes(
+                              _editorState.flowManager.components,
+                              _editorState.componentPositions,
+                              _editorState.componentWidths,
+                              150.0, // Default component height
+                            );
                           });
                         }
                       },
                       onDoubleTapDown: (TapDownDetails details) {
                         Offset? canvasPosition = getPosition(
                           details.globalPosition,
-                          _canvasKey,
+                          _editorState.canvasKey,
                           _transformationController,
                         );
                         if (canvasPosition != null) {
-                          bool isClickOnComponent = false;
-
-                          for (final componentId in _componentPositions.keys) {
-                            final componentPos =
-                                _componentPositions[componentId]!;
-
-                            const double componentWidth = 180.0;
-                            const double componentHeight = 150.0;
-
-                            final componentRect = Rect.fromLTWH(
-                              componentPos.dx,
-                              componentPos.dy,
-                              componentWidth,
-                              componentHeight,
-                            );
-
-                            if (componentRect.contains(canvasPosition)) {
-                              isClickOnComponent = true;
-                              break;
-                            }
-                          }
+                          bool isClickOnComponent = _editorState
+                              .isPointOverComponent(canvasPosition);
 
                           if (!isClickOnComponent) {
                             _showCanvasContextMenu(
@@ -868,13 +831,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                         onAcceptWithDetails:
                             (DragTargetDetails<dynamic> details) {
                               final RenderBox? canvasBox =
-                                  _canvasKey.currentContext?.findRenderObject()
+                                  _editorState.canvasKey.currentContext
+                                          ?.findRenderObject()
                                       as RenderBox?;
 
                               if (canvasBox != null) {
                                 final Offset localPosition = canvasBox
                                     .globalToLocal(details.offset);
-                                print("localPosition: $localPosition");
 
                                 final matrix = _transformationController.value;
                                 final inverseMatrix = Matrix4.inverted(matrix);
@@ -883,7 +846,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                       inverseMatrix,
                                       localPosition,
                                     );
-                                print("canvasPosition: $canvasPosition");
 
                                 if (details.data is ComponentType) {
                                   _addNewComponent(
@@ -911,7 +873,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                             },
                         builder: (context, candidateData, rejectedData) {
                           return Container(
-                            key: _canvasKey,
+                            key: _editorState.canvasKey,
                             width: _canvasSize.width,
                             height: _canvasSize.height,
                             color: Colors.grey[50],
@@ -932,7 +894,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                     ),
                                     size: _canvasSize,
                                   ),
-                                if (_flowManager.components.isEmpty)
+                                if (_editorState.flowManager.components.isEmpty)
                                   const Center(
                                     child: Text(
                                       'Add components to the canvas',
@@ -942,14 +904,16 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                       ),
                                     ),
                                   ),
-                                ..._flowManager.components.map((component) {
+                                ..._editorState.flowManager.components.map((
+                                  component,
+                                ) {
                                   return Positioned(
-                                    left:
-                                        _componentPositions[component.id]?.dx ??
-                                        0,
-                                    top:
-                                        _componentPositions[component.id]?.dy ??
-                                        0,
+                                    left: _editorState
+                                        .getComponentPosition(component.id)
+                                        .dx,
+                                    top: _editorState
+                                        .getComponentPosition(component.id)
+                                        .dy,
                                     child: Draggable<String>(
                                       data: component.id,
                                       feedback: Material(
@@ -962,16 +926,15 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                               rowHeight,
                                           isSelected: _selectedComponents
                                               .contains(component),
-                                          widgetKey:
-                                              _componentKeys[component.id] ??
-                                              GlobalKey(),
-                                          position:
-                                              _componentPositions[component
-                                                  .id] ??
-                                              Offset.zero,
-                                          width:
-                                              _componentWidths[component.id] ??
-                                              160.0,
+                                          widgetKey: _editorState
+                                              .getComponentKey(component.id),
+                                          position: _editorState
+                                              .getComponentPosition(
+                                                component.id,
+                                              ),
+                                          width: _editorState.getComponentWidth(
+                                            component.id,
+                                          ),
                                           onValueChanged: _handleValueChanged,
                                           onSlotDragStarted:
                                               _handlePortDragStarted,
@@ -991,13 +954,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                           isSelected: _selectedComponents
                                               .contains(component),
                                           widgetKey: GlobalKey(),
-                                          position:
-                                              _componentPositions[component
-                                                  .id] ??
-                                              Offset.zero,
-                                          width:
-                                              _componentWidths[component.id] ??
-                                              160.0,
+                                          position: _editorState
+                                              .getComponentPosition(
+                                                component.id,
+                                              ),
+                                          width: _editorState.getComponentWidth(
+                                            component.id,
+                                          ),
                                           onValueChanged: _handleValueChanged,
                                           onSlotDragStarted:
                                               _handlePortDragStarted,
@@ -1008,12 +971,13 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                         ),
                                       ),
                                       onDragStarted: () {
-                                        _dragStartPosition =
-                                            _componentPositions[component.id];
+                                        _dragStartPosition = _editorState
+                                            .getComponentPosition(component.id);
                                       },
                                       onDragEnd: (details) {
                                         final RenderBox? viewerChildRenderBox =
-                                            _interactiveViewerChildKey
+                                            _editorState
+                                                    .interactiveViewerChildKey
                                                     .currentContext
                                                     ?.findRenderObject()
                                                 as RenderBox?;
@@ -1041,27 +1005,28 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                                 for (var selectedComponent
                                                     in _selectedComponents) {
                                                   final currentPos =
-                                                      _componentPositions[selectedComponent
-                                                          .id];
-                                                  if (currentPos != null) {
-                                                    final newPos =
-                                                        currentPos + offset;
-                                                    final command =
-                                                        MoveComponentCommand(
-                                                          selectedComponent.id,
-                                                          newPos,
-                                                          currentPos,
-                                                          _componentPositions,
-                                                        );
-                                                    _commandHistory.execute(
-                                                      command,
-                                                    );
-                                                    _persistenceHelper
-                                                        .saveComponentPosition(
-                                                          selectedComponent.id,
-                                                          newPos,
-                                                        );
-                                                  }
+                                                      _editorState
+                                                          .getComponentPosition(
+                                                            selectedComponent
+                                                                .id,
+                                                          );
+                                                  final newPos =
+                                                      currentPos + offset;
+                                                  final command =
+                                                      MoveComponentCommand(
+                                                        selectedComponent.id,
+                                                        newPos,
+                                                        currentPos,
+                                                        _editorState
+                                                            .componentPositions,
+                                                      );
+                                                  _editorState.commandHistory
+                                                      .execute(command);
+                                                  _persistenceHelper
+                                                      .saveComponentPosition(
+                                                        selectedComponent.id,
+                                                        newPos,
+                                                      );
                                                 }
                                               } else {
                                                 final command =
@@ -1069,11 +1034,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                                       component.id,
                                                       localOffset,
                                                       _dragStartPosition!,
-                                                      _componentPositions,
+                                                      _editorState
+                                                          .componentPositions,
                                                     );
-                                                _commandHistory.execute(
-                                                  command,
-                                                );
+                                                _editorState.commandHistory
+                                                    .execute(command);
                                                 _persistenceHelper
                                                     .saveComponentPosition(
                                                       component.id,
@@ -1131,20 +1096,19 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                           height:
                                               component.allSlots.length *
                                               rowHeight,
-                                          width:
-                                              _componentWidths[component.id] ??
-                                              160.0,
+                                          width: _editorState.getComponentWidth(
+                                            component.id,
+                                          ),
                                           onWidthChanged:
                                               _handleComponentResize,
                                           isSelected: _selectedComponents
                                               .contains(component),
-                                          widgetKey:
-                                              _componentKeys[component.id] ??
-                                              GlobalKey(),
-                                          position:
-                                              _componentPositions[component
-                                                  .id] ??
-                                              Offset.zero,
+                                          widgetKey: _editorState
+                                              .getComponentKey(component.id),
+                                          position: _editorState
+                                              .getComponentPosition(
+                                                component.id,
+                                              ),
                                           onValueChanged: _handleValueChanged,
                                           onSlotDragStarted:
                                               _handlePortDragStarted,
@@ -1189,7 +1153,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   void _showCanvasContextMenu(BuildContext context, Offset globalPosition) {
     Offset canvasPosition = getPosition(
       globalPosition,
-      _canvasKey,
+      _editorState.canvasKey,
       _transformationController,
     )!;
 
@@ -1280,7 +1244,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         case 'select-all':
           setState(() {
             _selectedComponents.clear();
-            _selectedComponents.addAll(_flowManager.components);
+            _selectedComponents.addAll(_editorState.flowManager.components);
           });
           break;
       }
@@ -1348,7 +1312,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
               onPressed: () {
                 Navigator.pop(context);
                 int copies = int.tryParse(copiesController.text) ?? 1;
-                copies = copies.clamp(1, 20); // Limit to reasonable number
+                copies = copies.clamp(1, 20);
 
                 _flowHandlers.handlePasteSpecialComponent(
                   pastePosition,
@@ -1547,7 +1511,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     final componentId = component.id;
 
     final List<Connection> connectionsToDelete = [];
-    for (final comp in _flowManager.components) {
+    for (final comp in _editorState.flowManager.components) {
       for (final entry in comp.inputConnections.entries) {
         if (entry.value.componentId == componentId) {
           connectionsToDelete.add(
@@ -1608,12 +1572,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     String componentId = baseName;
     int counter = 1;
 
-    while (_flowManager.components.any((comp) => comp.id == componentId)) {
+    while (_editorState.flowManager.components.any(
+      (comp) => comp.id == componentId,
+    )) {
       componentId = "${baseName}_$counter";
       counter++;
     }
 
-    Component newComponent = _flowManager.createComponentByType(
+    Component newComponent = _editorState.flowManager.createComponentByType(
       componentId,
       ComponentType.BOOLEAN_POINT,
     );
@@ -1630,21 +1596,27 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     _storeButtonPointMetadata(componentId, buttonPoint, parentDevice);
 
     Offset newPosition = clickPosition ?? _getDefaultPosition();
-    final newKey = GlobalKey();
 
     Map<String, dynamic> state = {
       'position': newPosition,
-      'key': newKey,
-      'positions': _componentPositions,
-      'keys': _componentKeys,
+      'key': _editorState.getComponentKey(newComponent.id),
+      'positions': _editorState.componentPositions,
+      'keys': _editorState.componentKeys,
     };
 
     setState(() {
-      final command = AddComponentCommand(_flowManager, newComponent, state);
-      _commandHistory.execute(command);
-      _componentWidths[newComponent.id] = 160.0;
-      _componentPositions[newComponent.id] = newPosition;
-      _componentKeys[newComponent.id] = newKey;
+      final command = AddComponentCommand(
+        _editorState.flowManager,
+        newComponent,
+        state,
+      );
+      _editorState.commandHistory.execute(command);
+
+      _editorState.initializeComponentState(
+        newComponent,
+        position: newPosition,
+        width: 160.0,
+      );
 
       _persistenceHelper.saveAddComponent(newComponent);
       _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
@@ -1656,7 +1628,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   Offset _getDefaultPosition() {
     final RenderBox? viewerChildRenderBox =
-        _interactiveViewerChildKey.currentContext?.findRenderObject()
+        _editorState.interactiveViewerChildKey.currentContext
+                ?.findRenderObject()
             as RenderBox?;
 
     if (viewerChildRenderBox != null) {
@@ -1743,7 +1716,9 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
     int counter = 1;
     String componentId = deviceName;
-    while (_flowManager.components.any((comp) => comp.id == componentId)) {
+    while (_editorState.flowManager.components.any(
+      (comp) => comp.id == componentId,
+    )) {
       counter++;
       componentId = "${deviceName}_$counter";
     }
@@ -1755,7 +1730,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       newPosition = clickPosition;
     } else {
       final RenderBox? viewerChildRenderBox =
-          _interactiveViewerChildKey.currentContext?.findRenderObject()
+          _editorState.interactiveViewerChildKey.currentContext
+                  ?.findRenderObject()
               as RenderBox?;
 
       newPosition = Offset(_canvasSize.width / 2, _canvasSize.height / 2);
@@ -1777,21 +1753,26 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       }
     }
 
-    final newKey = GlobalKey();
-
     Map<String, dynamic> state = {
       'position': newPosition,
-      'key': newKey,
-      'positions': _componentPositions,
-      'keys': _componentKeys,
+      'key': _editorState.getComponentKey(newComponent.id),
+      'positions': _editorState.componentPositions,
+      'keys': _editorState.componentKeys,
     };
 
     setState(() {
-      final command = AddComponentCommand(_flowManager, newComponent, state);
-      _commandHistory.execute(command);
-      _componentWidths[newComponent.id] = 180.0;
-      _componentPositions[newComponent.id] = newPosition;
-      _componentKeys[newComponent.id] = newKey;
+      final command = AddComponentCommand(
+        _editorState.flowManager,
+        newComponent,
+        state,
+      );
+      _editorState.commandHistory.execute(command);
+
+      _editorState.initializeComponentState(
+        newComponent,
+        position: newPosition,
+        width: 180.0,
+      );
 
       _persistenceHelper.saveAddComponent(newComponent);
       _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);

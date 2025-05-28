@@ -1,4 +1,3 @@
-// lib/models/input_device.dart
 import '../../utils/logger.dart';
 import 'device_action.dart';
 import 'helvar_device.dart';
@@ -89,7 +88,10 @@ class HelvarDriverInputDevice extends HelvarDevice {
   }
 
   void createInputPoints(
-      String deviceAddress, String pointProps, String subAddress) {}
+    String deviceAddress,
+    String pointProps,
+    String subAddress,
+  ) {}
 
   void generateButtonPoints() {
     if (!isButtonDevice) return;
@@ -98,28 +100,32 @@ class HelvarDriverInputDevice extends HelvarDevice {
 
     final deviceName = description.isEmpty ? "Device_$deviceId" : description;
 
-    buttonPoints.add(ButtonPoint(
-      name: '${deviceName}_Missing',
-      function: 'Status',
-      buttonId: 0,
-    ));
+    buttonPoints.add(
+      ButtonPoint(
+        name: '${deviceName}_Missing',
+        function: 'Status',
+        buttonId: 0,
+      ),
+    );
 
-    // Add buttons (typically 7 for Button 135)
     for (int i = 1; i <= 7; i++) {
-      buttonPoints.add(ButtonPoint(
-        name: '${deviceName}_Button$i',
-        function: 'Button',
-        buttonId: i,
-      ));
+      buttonPoints.add(
+        ButtonPoint(
+          name: '${deviceName}_Button$i',
+          function: 'Button',
+          buttonId: i,
+        ),
+      );
     }
 
-    // Add IR receivers
     for (int i = 1; i <= 7; i++) {
-      buttonPoints.add(ButtonPoint(
-        name: '${deviceName}_IR$i',
-        function: 'IR Receiver',
-        buttonId: i + 100, // Using offset for IR receivers
-      ));
+      buttonPoints.add(
+        ButtonPoint(
+          name: '${deviceName}_IR$i',
+          function: 'IR Receiver',
+          buttonId: i + 100, // Using offset for IR receivers
+        ),
+      );
     }
   }
 
@@ -143,11 +149,7 @@ class ButtonPoint {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'function': function,
-      'buttonId': buttonId,
-    };
+    return {'name': name, 'function': function, 'buttonId': buttonId};
   }
 
   factory ButtonPoint.fromJson(Map<String, dynamic> json) {

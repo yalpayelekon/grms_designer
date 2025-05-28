@@ -17,9 +17,9 @@ class RouterCommandService {
   final Map<String, CommandQueueController> _queueControllers = {};
   final _commandStatusController = StreamController<QueuedCommand>.broadcast();
 
-  /// Service to manage command history
-  late final CommandHistoryService _history =
-      CommandHistoryService(maxHistorySize: _config.historySize);
+  late final CommandHistoryService _history = CommandHistoryService(
+    maxHistorySize: _config.historySize,
+  );
   void _addToHistory(QueuedCommand command) => _history.add(command);
   List<QueuedCommand> get commandHistory => _history.all;
   void clearHistory() => _history.clear();
@@ -149,11 +149,7 @@ class RouterCommandService {
     final results = <CommandResult>[];
 
     for (final command in commands) {
-      final result = await sendCommand(
-        routerIp,
-        command,
-        priority: priority,
-      );
+      final result = await sendCommand(routerIp, command, priority: priority);
 
       results.add(result);
 

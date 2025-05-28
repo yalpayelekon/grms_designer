@@ -23,8 +23,8 @@ class Workgroup extends TreeNode {
     this.refreshPropsAfterAction = false,
     List<HelvarRouter>? routers,
     List<HelvarGroup>? groups,
-  })  : routers = routers ?? [],
-        groups = groups ?? [];
+  }) : routers = routers ?? [],
+       groups = groups ?? [];
 
   void addRouter(HelvarRouter router) {
     routers.add(router);
@@ -54,7 +54,8 @@ class Workgroup extends TreeNode {
       routers: (json['routers'] as List?)
           ?.map((routerJson) => HelvarRouter.fromJson(routerJson))
           .toList(),
-      groups: (json['groups'] as List?)
+      groups:
+          (json['groups'] as List?)
               ?.map((groupJson) => HelvarGroup.fromJson(groupJson))
               .toList() ??
           [],
@@ -70,9 +71,7 @@ class Workgroup extends TreeNode {
       'gatewayRouterIpAddress': gatewayRouterIpAddress,
       'refreshPropsAfterAction': refreshPropsAfterAction,
       'routers': routers.map((router) => router.toJson()).toList(),
-      'groups': groups
-          .map((group) => group.toJson())
-          .toList(), // Include groups in JSON
+      'groups': groups.map((group) => group.toJson()).toList(),
     };
   }
 }

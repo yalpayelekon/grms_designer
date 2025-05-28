@@ -1,4 +1,3 @@
-// lib/models/helvar_group.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 
@@ -32,8 +31,8 @@ class HelvarGroup extends TreeNode {
     this.lastMessage = '',
     this.lastMessageTime,
   }) : super(
-            content:
-                Text(description.isEmpty ? "Group $groupId" : description));
+         content: Text(description.isEmpty ? "Group $groupId" : description),
+       );
 
   @override
   bool operator ==(Object other) =>
@@ -52,7 +51,8 @@ class HelvarGroup extends TreeNode {
       description: json['description'] as String? ?? '',
       type: json['type'] as String? ?? 'Group',
       lsig: json['lsig'] as int?,
-      blockValues: (json['blockValues'] as List?)
+      blockValues:
+          (json['blockValues'] as List?)
               ?.map((e) => (e as num).toDouble())
               .toList() ??
           [],

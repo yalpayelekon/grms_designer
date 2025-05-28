@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/device_utils.dart';
 import '../../utils/general_ui.dart';
 import '../models/component.dart';
 import '../models/port.dart';
 import '../models/port_type.dart';
-import 'utils.dart';
 
 class SlotDragInfo {
   final String componentId;
@@ -79,7 +79,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                 width: widget.width,
                 decoration: BoxDecoration(
                   border: Border.all(
-                      color: Colors.black.withValues(alpha: .25 * 255)),
+                    color: Colors.black.withValues(alpha: .25 * 255),
+                  ),
                   color: Colors.white.withValues(alpha: 0.5 * 255),
                   borderRadius: BorderRadius.circular(3),
                 ),
@@ -88,16 +89,19 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   children: [
                     if (widget.component.properties.isNotEmpty)
                       ..._buildSectionHeader("Properties"),
-                    ...widget.component.properties
-                        .map((property) => _buildPropertyRow(property)),
+                    ...widget.component.properties.map(
+                      (property) => _buildPropertyRow(property),
+                    ),
                     if (widget.component.actions.isNotEmpty)
                       ..._buildSectionHeader("Actions"),
-                    ...widget.component.actions
-                        .map((action) => _buildActionRow(action)),
+                    ...widget.component.actions.map(
+                      (action) => _buildActionRow(action),
+                    ),
                     if (widget.component.topics.isNotEmpty)
                       ..._buildSectionHeader("Topics"),
-                    ...widget.component.topics
-                        .map((topic) => _buildTopicRow(topic)),
+                    ...widget.component.topics.map(
+                      (topic) => _buildTopicRow(topic),
+                    ),
                   ],
                 ),
               ),
@@ -203,7 +207,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
     return DragTarget<SlotDragInfo>(
       onAcceptWithDetails: (DragTargetDetails<SlotDragInfo> details) {
         widget.onSlotDragAccepted(
-            SlotDragInfo(widget.component.id, property.index));
+          SlotDragInfo(widget.component.id, property.index),
+        );
       },
       builder: (context, candidateData, rejectedData) {
         return LongPressDraggable<SlotDragInfo>(
@@ -215,10 +220,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               height: rowHeight,
               decoration: BoxDecoration(
                 color: Colors.indigo.withValues(alpha: 0.2 * 255),
-                border: Border.all(
-                  color: Colors.indigo,
-                  width: 1.0,
-                ),
+                border: Border.all(color: Colors.indigo, width: 1.0),
                 borderRadius: BorderRadius.circular(2.0),
               ),
               child: Center(
@@ -235,7 +237,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           ),
           onDragStarted: () {
             widget.onSlotDragStarted(
-                SlotDragInfo(widget.component.id, property.index));
+              SlotDragInfo(widget.component.id, property.index),
+            );
           },
           child: Container(
             height: rowHeight,
@@ -290,7 +293,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
     return DragTarget<SlotDragInfo>(
       onAcceptWithDetails: (DragTargetDetails<SlotDragInfo> details) {
         widget.onSlotDragAccepted(
-            SlotDragInfo(widget.component.id, action.index));
+          SlotDragInfo(widget.component.id, action.index),
+        );
       },
       builder: (context, candidateData, rejectedData) {
         return LongPressDraggable<SlotDragInfo>(
@@ -302,10 +306,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               height: rowHeight,
               decoration: BoxDecoration(
                 color: Colors.amber.withValues(alpha: 0.2 * 255),
-                border: Border.all(
-                  color: Colors.amber.shade800,
-                  width: 1.0,
-                ),
+                border: Border.all(color: Colors.amber.shade800, width: 1.0),
                 borderRadius: BorderRadius.circular(2.0),
               ),
               child: Center(
@@ -322,7 +323,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           ),
           onDragStarted: () {
             widget.onSlotDragStarted(
-                SlotDragInfo(widget.component.id, action.index));
+              SlotDragInfo(widget.component.id, action.index),
+            );
           },
           child: Container(
             height: rowHeight,
@@ -365,14 +367,22 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   ],
                 ),
                 IconButton(
-                  icon: Icon(Icons.play_arrow,
-                      size: 12, color: Colors.amber.shade800),
-                  constraints:
-                      const BoxConstraints.tightFor(width: 20, height: 20),
+                  icon: Icon(
+                    Icons.play_arrow,
+                    size: 12,
+                    color: Colors.amber.shade800,
+                  ),
+                  constraints: const BoxConstraints.tightFor(
+                    width: 20,
+                    height: 20,
+                  ),
                   padding: EdgeInsets.zero,
                   onPressed: () {
                     widget.onValueChanged(
-                        widget.component.id, action.index, null);
+                      widget.component.id,
+                      action.index,
+                      null,
+                    );
                   },
                 ),
               ],
@@ -388,8 +398,9 @@ class _ComponentWidgetState extends State<ComponentWidget> {
 
     return DragTarget<SlotDragInfo>(
       onAcceptWithDetails: (DragTargetDetails<SlotDragInfo> details) {
-        widget
-            .onSlotDragAccepted(SlotDragInfo(widget.component.id, topic.index));
+        widget.onSlotDragAccepted(
+          SlotDragInfo(widget.component.id, topic.index),
+        );
       },
       builder: (context, candidateData, rejectedData) {
         return LongPressDraggable<SlotDragInfo>(
@@ -401,10 +412,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               height: rowHeight,
               decoration: BoxDecoration(
                 color: Colors.green.withValues(alpha: 0.2 * 255),
-                border: Border.all(
-                  color: Colors.green.shade800,
-                  width: 1.0,
-                ),
+                border: Border.all(color: Colors.green.shade800, width: 1.0),
                 borderRadius: BorderRadius.circular(2.0),
               ),
               child: Center(
@@ -421,7 +429,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           ),
           onDragStarted: () {
             widget.onSlotDragStarted(
-                SlotDragInfo(widget.component.id, topic.index));
+              SlotDragInfo(widget.component.id, topic.index),
+            );
           },
           child: Container(
             height: rowHeight,
@@ -501,8 +510,11 @@ class _ComponentWidgetState extends State<ComponentWidget> {
         return GestureDetector(
           onTap: canEdit
               ? () {
-                  widget.onValueChanged(widget.component.id, property.index,
-                      !(property.value as bool));
+                  widget.onValueChanged(
+                    widget.component.id,
+                    property.index,
+                    !(property.value as bool),
+                  );
                 }
               : null,
           child: Row(
@@ -513,12 +525,10 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                 height: 14,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(7),
-                  color:
-                      property.value as bool ? Colors.green : Colors.red[300],
-                  border: Border.all(
-                    color: Colors.black45,
-                    width: 0.5,
-                  ),
+                  color: property.value as bool
+                      ? Colors.green
+                      : Colors.red[300],
+                  border: Border.all(color: Colors.black45, width: 0.5),
                 ),
                 child: AnimatedAlign(
                   duration: const Duration(milliseconds: 150),
@@ -531,10 +541,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white,
-                      border: Border.all(
-                        color: Colors.black45,
-                        width: 0.5,
-                      ),
+                      border: Border.all(color: Colors.black45, width: 0.5),
                     ),
                   ),
                 ),
@@ -592,33 +599,37 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           return Text(
             property.value as bool ? 'true' : 'false',
             style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple[800]),
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple[800],
+            ),
           );
         } else if (property.value is num) {
           return Text(
             (property.value as num).toStringAsFixed(1),
             style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple[800]),
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple[800],
+            ),
           );
         } else if (property.value is String) {
           return Text(
             '"${(property.value as String).length > 6 ? '${(property.value as String).substring(0, 6)}...' : property.value as String}"',
             style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple[800]),
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple[800],
+            ),
           );
         } else {
           return Text(
             "null",
             style: TextStyle(
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple[800]),
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple[800],
+            ),
           );
         }
     }

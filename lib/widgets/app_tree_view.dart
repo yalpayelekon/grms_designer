@@ -3,16 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:grms_designer/models/helvar_models/output_device.dart';
+import 'package:grms_designer/utils/device_utils.dart';
 import '../models/helvar_models/input_device.dart';
 import '../utils/device_icons.dart';
 import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/workgroup.dart';
-import '../niagara/home/utils.dart';
 import '../niagara/models/component_type.dart';
 import '../models/flowsheet.dart';
 import '../providers/flowsheet_provider.dart';
-import '../providers/tree_expansion_provider.dart'; // Add this import
+import '../providers/tree_expansion_provider.dart';
 import '../screens/actions.dart';
 import '../screens/dialogs/device_context_menu.dart';
 import '../screens/dialogs/flowsheet_actions.dart';
@@ -33,16 +33,19 @@ class AppTreeView extends ConsumerStatefulWidget {
   final Workgroup? selectedWorkgroup;
   final HelvarGroup? selectedGroup;
   final HelvarRouter? selectedRouter;
-  final Function(String,
-      {Workgroup? workgroup,
-      HelvarGroup? group,
-      HelvarRouter? router,
-      String? wiresheetId,
-      int? subnetNumber,
-      List<HelvarDevice>? subnetDevices,
-      HelvarDevice? device,
-      OutputPoint? outputPoint,
-      ButtonPoint? point}) setActiveNode;
+  final Function(
+    String, {
+    Workgroup? workgroup,
+    HelvarGroup? group,
+    HelvarRouter? router,
+    String? wiresheetId,
+    int? subnetNumber,
+    List<HelvarDevice>? subnetDevices,
+    HelvarDevice? device,
+    OutputPoint? outputPoint,
+    ButtonPoint? point,
+  })
+  setActiveNode;
 
   const AppTreeView({
     super.key,
@@ -97,152 +100,158 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          TreeView(treeController: _treeController, nodes: [
-            TreeNode(
-              content: GestureDetector(
-                onDoubleTap: () {
-                  widget.setActiveNode('project');
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    "Project",
-                    style: TextStyle(
-                      fontWeight: widget.showingProject
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: widget.showingProject ? Colors.blue : null,
-                    ),
-                  ),
-                ),
-              ),
-              children: [
-                TreeNode(
-                  content: GestureDetector(
-                    onDoubleTap: () {
-                      widget.setActiveNode('settings');
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "Settings",
-                        style: TextStyle(
-                          fontWeight: widget.openSettings
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: widget.openSettings ? Colors.blue : null,
-                        ),
+          TreeView(
+            treeController: _treeController,
+            nodes: [
+              TreeNode(
+                content: GestureDetector(
+                  onDoubleTap: () {
+                    widget.setActiveNode('project');
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      "Project",
+                      style: TextStyle(
+                        fontWeight: widget.showingProject
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: widget.showingProject ? Colors.blue : null,
                       ),
                     ),
                   ),
                 ),
-                TreeNode(
-                  content: GestureDetector(
-                    onDoubleTap: () {
-                      widget.setActiveNode('files');
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "Files",
-                        style: TextStyle(
-                          fontWeight: widget.currentFileDirectory != null &&
-                                  !widget.showingImages
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: widget.currentFileDirectory != null &&
-                                  !widget.showingImages
-                              ? Colors.blue
-                              : null,
+                children: [
+                  TreeNode(
+                    content: GestureDetector(
+                      onDoubleTap: () {
+                        widget.setActiveNode('settings');
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Settings",
+                          style: TextStyle(
+                            fontWeight: widget.openSettings
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: widget.openSettings ? Colors.blue : null,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  children: [
-                    TreeNode(
-                      content: GestureDetector(
-                        onDoubleTap: () {
-                          widget.setActiveNode('images');
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            "Images",
-                            style: TextStyle(
-                              fontWeight: widget.showingImages
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: widget.showingImages ? Colors.blue : null,
-                            ),
+                  TreeNode(
+                    content: GestureDetector(
+                      onDoubleTap: () {
+                        widget.setActiveNode('files');
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Files",
+                          style: TextStyle(
+                            fontWeight:
+                                widget.currentFileDirectory != null &&
+                                    !widget.showingImages
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color:
+                                widget.currentFileDirectory != null &&
+                                    !widget.showingImages
+                                ? Colors.blue
+                                : null,
                           ),
                         ),
                       ),
                     ),
-                    TreeNode(
-                      content: GestureDetector(
-                        onDoubleTap: () {
-                          widget.setActiveNode('graphics');
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text(
-                            "Graphics",
-                            style: TextStyle(
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                      children: [
-                        TreeNode(
-                          content: GestureDetector(
-                            onDoubleTap: () {
-                              widget.setActiveNode('graphicsDetail');
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text(
-                                "Graphics 1",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.normal,
-                                ),
+                    children: [
+                      TreeNode(
+                        content: GestureDetector(
+                          onDoubleTap: () {
+                            widget.setActiveNode('images');
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              "Images",
+                              style: TextStyle(
+                                fontWeight: widget.showingImages
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: widget.showingImages
+                                    ? Colors.blue
+                                    : null,
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                    TreeNode(
-                      content: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      ),
+                      TreeNode(
+                        content: GestureDetector(
+                          onDoubleTap: () {
+                            widget.setActiveNode('graphics');
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              "Graphics",
+                              style: TextStyle(fontWeight: FontWeight.normal),
+                            ),
+                          ),
+                        ),
                         children: [
-                          GestureDetector(
-                            onDoubleTap: () {
-                              widget.setActiveNode('wiresheets');
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                "Flowsheets",
-                                style: TextStyle(
-                                  fontWeight: widget.openWiresheet
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                  color:
-                                      widget.openWiresheet ? Colors.blue : null,
+                          TreeNode(
+                            content: GestureDetector(
+                              onDoubleTap: () {
+                                widget.setActiveNode('graphicsDetail');
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Graphics 1",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.normal,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add, size: 18),
-                            tooltip: 'Create New Flowsheet',
-                            onPressed: () => createNewFlowsheet(context, ref),
                           ),
                         ],
                       ),
-                      children: [
-                        ...widget.wiresheets.map((wiresheet) => TreeNode(
+                      TreeNode(
+                        content: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            GestureDetector(
+                              onDoubleTap: () {
+                                widget.setActiveNode('wiresheets');
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Flowsheets",
+                                  style: TextStyle(
+                                    fontWeight: widget.openWiresheet
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: widget.openWiresheet
+                                        ? Colors.blue
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 18),
+                              tooltip: 'Create New Flowsheet',
+                              onPressed: () => createNewFlowsheet(context, ref),
+                            ),
+                          ],
+                        ),
+                        children: [
+                          ...widget.wiresheets.map(
+                            (wiresheet) => TreeNode(
                               content: GestureDetector(
                                 onDoubleTap: () {
                                   final activeFlowsheetId = ref
@@ -256,8 +265,10 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                         .saveActiveFlowsheet();
                                   }
 
-                                  widget.setActiveNode('wiresheet',
-                                      wiresheetId: wiresheet.id);
+                                  widget.setActiveNode(
+                                    'wiresheet',
+                                    wiresheetId: wiresheet.id,
+                                  );
                                 },
                                 child: Row(
                                   mainAxisAlignment:
@@ -270,10 +281,11 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                         style: TextStyle(
                                           fontWeight:
                                               widget.selectedWiresheetId ==
-                                                      wiresheet.id
-                                                  ? FontWeight.bold
-                                                  : FontWeight.normal,
-                                          color: widget.selectedWiresheetId ==
+                                                  wiresheet.id
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color:
+                                              widget.selectedWiresheetId ==
                                                   wiresheet.id
                                               ? Colors.blue
                                               : null,
@@ -286,10 +298,11 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                       onPressed: () async {
                                         final result =
                                             await confirmDeleteFlowsheet(
-                                                context,
-                                                wiresheet.id,
-                                                wiresheet.name,
-                                                ref);
+                                              context,
+                                              wiresheet.id,
+                                              wiresheet.name,
+                                              ref,
+                                            );
 
                                         if (result && context.mounted) {
                                           if (widget.selectedWiresheetId ==
@@ -297,11 +310,14 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                             widget.setActiveNode('wiresheets');
                                           }
 
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             const SnackBar(
-                                                content:
-                                                    Text('Flowsheet deleted')),
+                                              content: Text(
+                                                'Flowsheet deleted',
+                                              ),
+                                            ),
                                           );
                                         }
                                       },
@@ -309,166 +325,101 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                   ],
                                 ),
                               ),
-                            )),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            TreeNode(
-              content: GestureDetector(
-                onDoubleTap: () {
-                  widget.setActiveNode('workgroups');
-                },
-                child: Row(
-                  children: [
-                    const Icon(Icons.group_work),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Workgroups',
-                        style: TextStyle(
-                          fontWeight: widget.openWorkGroups
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: widget.openWorkGroups ? Colors.blue : null,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              children: widget.workgroups
-                  .map(
-                    (workgroup) => TreeNode(
-                      content: GestureDetector(
-                        onDoubleTap: () {
-                          widget.setActiveNode('workgroupDetail',
-                              workgroup: workgroup);
-                        },
-                        child: Row(
-                          children: [
-                            const Icon(Icons.lan),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                workgroup.description,
-                                style: TextStyle(
-                                  fontWeight:
-                                      widget.selectedWorkgroup == workgroup &&
-                                              widget.showingWorkgroup
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                  color:
-                                      widget.selectedWorkgroup == workgroup &&
-                                              widget.showingWorkgroup
-                                          ? Colors.blue
-                                          : null,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      children: [
-                        TreeNode(
-                          content: GestureDetector(
-                            onDoubleTap: () {
-                              widget.setActiveNode(
-                                'groups',
-                                workgroup: workgroup,
-                              );
-                            },
-                            child: Row(
-                              children: [
-                                const Icon(Icons.group_work,
-                                    color: Colors.blue),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    "Groups",
-                                    style: TextStyle(
-                                      fontWeight: widget.selectedWorkgroup ==
-                                                  workgroup &&
-                                              widget.showingGroups
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      color: widget.selectedWorkgroup ==
-                                                  workgroup &&
-                                              widget.showingGroups
-                                          ? Colors.blue
-                                          : null,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-                          children: workgroup.groups
-                              .map(
-                                (group) => TreeNode(
-                                  content: GestureDetector(
-                                    onDoubleTap: () {
-                                      widget.setActiveNode('groupDetail',
-                                          workgroup: workgroup, group: group);
-                                    },
-                                    onSecondaryTap: () {
-                                      showGroupContextMenu(
-                                          context, group, workgroup);
-                                    },
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.group),
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text(
-                                            group.description.isEmpty
-                                                ? "Group ${group.groupId}"
-                                                : group.description,
-                                            style: TextStyle(
-                                              fontWeight:
-                                                  widget.selectedGroup == group
-                                                      ? FontWeight.bold
-                                                      : FontWeight.normal,
-                                              color:
-                                                  widget.selectedGroup == group
-                                                      ? Colors.blue
-                                                      : null,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              TreeNode(
+                content: GestureDetector(
+                  onDoubleTap: () {
+                    widget.setActiveNode('workgroups');
+                  },
+                  child: Row(
+                    children: [
+                      const Icon(Icons.group_work),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Workgroups',
+                          style: TextStyle(
+                            fontWeight: widget.openWorkGroups
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: widget.openWorkGroups ? Colors.blue : null,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                children: widget.workgroups
+                    .map(
+                      (workgroup) => TreeNode(
+                        content: GestureDetector(
+                          onDoubleTap: () {
+                            widget.setActiveNode(
+                              'workgroupDetail',
+                              workgroup: workgroup,
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.lan),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  workgroup.description,
+                                  style: TextStyle(
+                                    fontWeight:
+                                        widget.selectedWorkgroup == workgroup &&
+                                            widget.showingWorkgroup
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color:
+                                        widget.selectedWorkgroup == workgroup &&
+                                            widget.showingWorkgroup
+                                        ? Colors.blue
+                                        : null,
                                   ),
                                 ),
-                              )
-                              .toList(),
+                              ),
+                            ],
+                          ),
                         ),
-                        ...workgroup.routers.map(
-                          (router) => TreeNode(
+                        children: [
+                          TreeNode(
                             content: GestureDetector(
                               onDoubleTap: () {
-                                widget.setActiveNode('router',
-                                    workgroup: workgroup, router: router);
-                              },
-                              onSecondaryTap: () {
-                                widget.setActiveNode('router',
-                                    workgroup: workgroup, router: router);
+                                widget.setActiveNode(
+                                  'groups',
+                                  workgroup: workgroup,
+                                );
                               },
                               child: Row(
                                 children: [
-                                  const Icon(Icons.router),
+                                  const Icon(
+                                    Icons.group_work,
+                                    color: Colors.blue,
+                                  ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      router.description,
+                                      "Groups",
                                       style: TextStyle(
                                         fontWeight:
-                                            widget.selectedRouter == router
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                        color: widget.selectedRouter == router
+                                            widget.selectedWorkgroup ==
+                                                    workgroup &&
+                                                widget.showingGroups
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color:
+                                            widget.selectedWorkgroup ==
+                                                    workgroup &&
+                                                widget.showingGroups
                                             ? Colors.blue
                                             : null,
                                       ),
@@ -477,57 +428,153 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                 ],
                               ),
                             ),
-                            children: [
-                              ...router.devicesBySubnet.entries.map((entry) {
-                                final subnet = entry.key;
-                                final subnetDevices = entry.value;
-                                return TreeNode(
-                                  content: GestureDetector(
-                                    onDoubleTap: () {
-                                      widget.setActiveNode(
-                                        'subnetDetail',
-                                        workgroup: workgroup,
-                                        router: router,
-                                        subnetNumber: subnet,
-                                        subnetDevices: subnetDevices,
-                                      );
-                                    },
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.hub),
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text(
-                                              "Subnet $subnet (${subnetDevices.length} devices)"),
-                                        ),
-                                      ],
+                            children: workgroup.groups
+                                .map(
+                                  (group) => TreeNode(
+                                    content: GestureDetector(
+                                      onDoubleTap: () {
+                                        widget.setActiveNode(
+                                          'groupDetail',
+                                          workgroup: workgroup,
+                                          group: group,
+                                        );
+                                      },
+                                      onSecondaryTap: () {
+                                        showGroupContextMenu(
+                                          context,
+                                          group,
+                                          workgroup,
+                                        );
+                                      },
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.group),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              group.description.isEmpty
+                                                  ? "Group ${group.groupId}"
+                                                  : group.description,
+                                              style: TextStyle(
+                                                fontWeight:
+                                                    widget.selectedGroup ==
+                                                        group
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                color:
+                                                    widget.selectedGroup ==
+                                                        group
+                                                    ? Colors.blue
+                                                    : null,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                  children: subnetDevices
-                                      .map(
-                                        (device) => _buildDeviceTreeNode(
-                                            device, context, workgroup, router),
-                                      )
-                                      .toList(),
-                                );
-                              }),
-                            ],
+                                )
+                                .toList(),
                           ),
-                        )
-                      ],
-                    ),
-                  )
-                  .toList(),
-            ),
-            _buildLogicComponentsNode(context),
-          ]),
+                          ...workgroup.routers.map(
+                            (router) => TreeNode(
+                              content: GestureDetector(
+                                onDoubleTap: () {
+                                  widget.setActiveNode(
+                                    'router',
+                                    workgroup: workgroup,
+                                    router: router,
+                                  );
+                                },
+                                onSecondaryTap: () {
+                                  widget.setActiveNode(
+                                    'router',
+                                    workgroup: workgroup,
+                                    router: router,
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.router),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        router.description,
+                                        style: TextStyle(
+                                          fontWeight:
+                                              widget.selectedRouter == router
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: widget.selectedRouter == router
+                                              ? Colors.blue
+                                              : null,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              children: [
+                                ...router.devicesBySubnet.entries.map((entry) {
+                                  final subnet = entry.key;
+                                  final subnetDevices = entry.value;
+                                  return TreeNode(
+                                    content: GestureDetector(
+                                      onDoubleTap: () {
+                                        widget.setActiveNode(
+                                          'subnetDetail',
+                                          workgroup: workgroup,
+                                          router: router,
+                                          subnetNumber: subnet,
+                                          subnetDevices: subnetDevices,
+                                        );
+                                      },
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.hub),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              "Subnet $subnet (${subnetDevices.length} devices)",
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    children: subnetDevices
+                                        .map(
+                                          (device) => _buildDeviceTreeNode(
+                                            device,
+                                            context,
+                                            workgroup,
+                                            router,
+                                          ),
+                                        )
+                                        .toList(),
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .toList(),
+              ),
+              _buildLogicComponentsNode(context),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  TreeNode _buildDeviceTreeNode(HelvarDevice device, BuildContext context,
-      Workgroup workgroup, HelvarRouter router) {
+  TreeNode _buildDeviceTreeNode(
+    HelvarDevice device,
+    BuildContext context,
+    Workgroup workgroup,
+    HelvarRouter router,
+  ) {
     final deviceName = device.description.isEmpty
         ? "Device_${device.deviceId}"
         : device.description;
@@ -537,28 +584,30 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     if (device is HelvarDriverInputDevice &&
         device.isButtonDevice &&
         device.buttonPoints.isNotEmpty) {
-      deviceChildren.add(TreeNode(
-        content: GestureDetector(
-          onDoubleTap: () {
-            widget.setActiveNode(
-              'pointsDetail',
-              workgroup: workgroup,
-              router: router,
-              device: device,
-            );
-          },
-          child: const Row(
-            children: [
-              Icon(Icons.add_circle_outline, size: 18),
-              SizedBox(width: 4),
-              Text("Points"),
-            ],
+      deviceChildren.add(
+        TreeNode(
+          content: GestureDetector(
+            onDoubleTap: () {
+              widget.setActiveNode(
+                'pointsDetail',
+                workgroup: workgroup,
+                router: router,
+                device: device,
+              );
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.add_circle_outline, size: 18),
+                SizedBox(width: 4),
+                Text("Points"),
+              ],
+            ),
           ),
+          children: device.buttonPoints
+              .map((point) => _buildDraggableButtonPointNode(point, device))
+              .toList(),
         ),
-        children: device.buttonPoints
-            .map((point) => _buildDraggableButtonPointNode(point, device))
-            .toList(),
-      ));
+      );
     }
 
     if (device is HelvarDriverOutputDevice) {
@@ -567,58 +616,67 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
       }
 
       if (device.outputPoints.isNotEmpty) {
-        deviceChildren.add(TreeNode(
-          content: GestureDetector(
-            onDoubleTap: () {
-              widget.setActiveNode(
-                'outputPointsDetail',
-                workgroup: workgroup,
-                router: router,
-                device: device,
-              );
-              print('Output points tapped for ${device.address}');
-            },
-            child: const Row(
-              children: [
-                Icon(Icons.add_circle_outline, size: 18, color: Colors.orange),
-                SizedBox(width: 4),
-                Text("Points"),
-              ],
+        deviceChildren.add(
+          TreeNode(
+            content: GestureDetector(
+              onDoubleTap: () {
+                widget.setActiveNode(
+                  'outputPointsDetail',
+                  workgroup: workgroup,
+                  router: router,
+                  device: device,
+                );
+                print('Output points tapped for ${device.address}');
+              },
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.add_circle_outline,
+                    size: 18,
+                    color: Colors.orange,
+                  ),
+                  SizedBox(width: 4),
+                  Text("Points"),
+                ],
+              ),
             ),
+            children: device.outputPoints
+                .map((point) => _buildOutputPointNode(point, device))
+                .toList(),
           ),
-          children: device.outputPoints
-              .map((point) => _buildOutputPointNode(point, device))
-              .toList(),
-        ));
+        );
       }
     }
 
     if (device.helvarType == 'input' || device.emergency) {
-      deviceChildren.add(TreeNode(
-        content: const Row(
-          children: [
-            Icon(Icons.warning_amber, size: 18),
-            SizedBox(width: 4),
-            Text("Alarm Source Info"),
-          ],
-        ),
-        children: [
-          TreeNode(
-            content: Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: Text('State: ${device.state}'),
-            ),
+      deviceChildren.add(
+        TreeNode(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber, size: 18),
+              SizedBox(width: 4),
+              Text("Alarm Source Info"),
+            ],
           ),
-          if (device.deviceStateCode != null)
+          children: [
             TreeNode(
               content: Padding(
                 padding: const EdgeInsets.only(left: 16.0),
-                child: Text(
-                    'State Code: 0x${device.deviceStateCode!.toRadixString(16)}'),
+                child: Text('State: ${device.state}'),
               ),
             ),
-        ],
-      ));
+            if (device.deviceStateCode != null)
+              TreeNode(
+                content: Padding(
+                  padding: const EdgeInsets.only(left: 16.0),
+                  child: Text(
+                    'State Code: 0x${device.deviceStateCode!.toRadixString(16)}',
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
     }
 
     return TreeNode(
@@ -639,7 +697,9 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
   }
 
   TreeNode _buildOutputPointNode(
-      OutputPoint outputPoint, HelvarDevice parentDevice) {
+    OutputPoint outputPoint,
+    HelvarDevice parentDevice,
+  ) {
     return TreeNode(
       content: Row(
         children: [
@@ -717,7 +777,9 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
   }
 
   TreeNode _buildDraggableButtonPointNode(
-      ButtonPoint buttonPoint, HelvarDevice parentDevice) {
+    ButtonPoint buttonPoint,
+    HelvarDevice parentDevice,
+  ) {
     return TreeNode(
       content: GestureDetector(
         onDoubleTap: () {
@@ -757,7 +819,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
               "deviceAddress": parentDevice.address,
               "deviceId": parentDevice.deviceId,
               "isButtonPoint": true,
-            }
+            },
           },
           feedback: Material(
             elevation: 4.0,
@@ -840,9 +902,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
           padding: EdgeInsets.all(8.0),
           child: Text(
             "Components",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -850,90 +910,108 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text(
-              "Logic",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: Text("Logic", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           children: [
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.AND_GATE))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.AND_GATE),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.OR_GATE))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.OR_GATE),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.IS_GREATER_THAN))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.IS_GREATER_THAN),
+              ),
+            ),
           ],
         ),
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text(
-              "Math",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: Text("Math", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           children: [
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.ADD))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.ADD),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.SUBTRACT))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.SUBTRACT),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.MULTIPLY))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.MULTIPLY),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.DIVIDE))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.DIVIDE),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.MAX))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.MAX),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.MIN))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.MIN),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.POWER))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.POWER),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.ABS))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.ABS),
+              ),
+            ),
           ],
         ),
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text(
-              "UI",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: Text("UI", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           children: [
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType("Button"))),
+              content: _buildDraggableComponentItem(
+                const ComponentType("Button"),
+              ),
+            ),
             TreeNode(
-                content:
-                    _buildDraggableComponentItem(const ComponentType("Text"))),
+              content: _buildDraggableComponentItem(
+                const ComponentType("Text"),
+              ),
+            ),
           ],
         ),
         TreeNode(
           content: const Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text(
-              "Util",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: Text("Util", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           children: [
             TreeNode(
-                content:
-                    _buildDraggableComponentItem(const ComponentType("Ramp"))),
+              content: _buildDraggableComponentItem(
+                const ComponentType("Ramp"),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType("Toggle"))),
+              content: _buildDraggableComponentItem(
+                const ComponentType("Toggle"),
+              ),
+            ),
           ],
         ),
         TreeNode(
@@ -946,23 +1024,35 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
           ),
           children: [
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.BOOLEAN_POINT))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.BOOLEAN_POINT),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.BOOLEAN_WRITABLE))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.BOOLEAN_WRITABLE),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.STRING_POINT))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.STRING_POINT),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.STRING_WRITABLE))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.STRING_WRITABLE),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.NUMERIC_POINT))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.NUMERIC_POINT),
+              ),
+            ),
             TreeNode(
-                content: _buildDraggableComponentItem(
-                    const ComponentType(ComponentType.NUMERIC_WRITABLE))),
+              content: _buildDraggableComponentItem(
+                const ComponentType(ComponentType.NUMERIC_WRITABLE),
+              ),
+            ),
           ],
         ),
       ],
@@ -974,8 +1064,10 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
       children: [
         Icon(getIconForComponentType(type)),
         const SizedBox(height: 4.0),
-        Text(getNameForComponentType(type),
-            style: const TextStyle(fontSize: 12)),
+        Text(
+          getNameForComponentType(type),
+          style: const TextStyle(fontSize: 12),
+        ),
       ],
     );
     return Draggable<ComponentType>(
@@ -1025,7 +1117,10 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
   }
 
   Widget _buildDraggable(
-      String label, HelvarDevice? device, BuildContext context) {
+    String label,
+    HelvarDevice? device,
+    BuildContext context,
+  ) {
     return Draggable<Map<String, dynamic>>(
       data: {
         "componentType": label,
@@ -1035,7 +1130,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                 "deviceId": device.deviceId,
                 "deviceAddress": device.address,
                 "deviceType": device.helvarType,
-                "description": device.description
+                "description": device.description,
               }
             : null,
       },
@@ -1052,7 +1147,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
             children: [
               getDeviceIconWidget(device),
               const SizedBox(width: 8.0),
-              Text(label)
+              Text(label),
             ],
           ),
         ),
@@ -1061,14 +1156,14 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         children: [
           getDeviceIconWidget(device, size: 20.0),
           const SizedBox(width: 8.0),
-          Text(label, style: TextStyle(color: Colors.grey[600]))
+          Text(label, style: TextStyle(color: Colors.grey[600])),
         ],
       ),
       child: Row(
         children: [
           getDeviceIconWidget(device),
           const SizedBox(width: 8.0),
-          Text(label)
+          Text(label),
         ],
       ),
     );
