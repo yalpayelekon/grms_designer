@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,9 +56,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   final TransformationController _transformationController =
       TransformationController();
-  Size _canvasSize = const Size(2000, 2000);
-  Offset _canvasOffset = Offset.zero;
-  static const double _canvasPadding = 100.0;
+  final Size _canvasSize = const Size(2000, 2000);
 
   @override
   void initState() {
@@ -313,7 +309,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       type.type,
     );
 
-    Offset newPosition = clickPosition ?? _getDefaultPosition();
+    Offset newPosition =
+        clickPosition ?? getDefaultPosition(_canvasController, _editorState);
 
     Map<String, dynamic> state = {
       'position': newPosition,
@@ -939,80 +936,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     );
   }
 
-  void _handleCanvasDropAccept(dynamic data, Offset canvasPosition) {
-    if (data is ComponentType) {
-      _addNewComponent(data, clickPosition: canvasPosition);
-    } else if (data is Map<String, dynamic>) {
-      if (data.containsKey("buttonPoint") && data.containsKey("pointData")) {
-        _addNewButtonPointComponent(data, clickPosition: canvasPosition);
-      } else if (data.containsKey("device")) {
-        _addNewDeviceComponent(data, clickPosition: canvasPosition);
-      }
-    }
-  }
-
-  void _handleComponentDragEnd(Component component, DraggableDetails details) {
-    final RenderBox? viewerChildRenderBox =
-        _editorState.interactiveViewerChildKey.currentContext
-                ?.findRenderObject()
-            as RenderBox?;
-
-    if (viewerChildRenderBox != null) {
-      final Offset localOffset = viewerChildRenderBox.globalToLocal(
-        details.offset,
-      );
-
-      if (_dragManager.dragStartPosition != null &&
-          _dragManager.dragStartPosition != localOffset) {
-        setState(() {
-          if (_selectionManager.isComponentSelected(component) &&
-              _selectionManager.selectedComponents.length > 1) {
-            _handleMultiComponentDrag(localOffset);
-          } else {
-            _handleSingleComponentDrag(component, localOffset);
-          }
-
-          _dragManager.endComponentDrag();
-          _updateCanvasSize();
-        });
-      }
-    }
-  }
-
-  void _handleMultiComponentDrag(Offset localOffset) {
-    final offset = localOffset - _dragManager.dragStartPosition!;
-    final updatedPositions = _dragManager.moveComponentsByOffset(
-      _editorState.componentPositions,
-      _selectionManager.selectedComponents,
-      offset,
-    );
-
-    // Apply updated positions and save
-    for (var selectedComponent in _selectionManager.selectedComponents) {
-      final newPos = updatedPositions[selectedComponent.id]!;
-      final command = MoveComponentCommand(
-        selectedComponent.id,
-        newPos,
-        _editorState.getComponentPosition(selectedComponent.id),
-        _editorState.componentPositions,
-      );
-      _editorState.commandHistory.execute(command);
-      _persistenceHelper.saveComponentPosition(selectedComponent.id, newPos);
-    }
-  }
-
-  void _handleSingleComponentDrag(Component component, Offset localOffset) {
-    final command = MoveComponentCommand(
-      component.id,
-      localOffset,
-      _dragManager.dragStartPosition!,
-      _editorState.componentPositions,
-    );
-    _editorState.commandHistory.execute(command);
-    _persistenceHelper.saveComponentPosition(component.id, localOffset);
-    _selectionManager.selectComponent(component);
-  }
-
   void _showCanvasContextMenu(BuildContext context, Offset globalPosition) {
     final canvasBox =
         _editorState.canvasKey.currentContext?.findRenderObject() as RenderBox?;
@@ -1031,68 +954,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         Rect.fromPoints(globalPosition, globalPosition),
         Offset.zero & overlay.size,
       ),
-      items: [
-        PopupMenuItem(
-          value: 'paste',
-          enabled: !_clipboardManager.isEmpty,
-          child: Row(
-            children: [
-              Icon(
-                Icons.content_paste,
-                size: 18,
-                color: !_clipboardManager.isEmpty ? null : Colors.grey,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Paste',
-                style: TextStyle(
-                  color: !_clipboardManager.isEmpty ? null : Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'paste-special',
-          enabled: !_clipboardManager.isEmpty,
-          child: Row(
-            children: [
-              Icon(
-                Icons.copy_all,
-                size: 18,
-                color: !_clipboardManager.isEmpty ? null : Colors.grey,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Paste Special...',
-                style: TextStyle(
-                  color: !_clipboardManager.isEmpty ? null : Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'add-component',
-          child: Row(
-            children: [
-              Icon(Icons.add_box, size: 18),
-              SizedBox(width: 8),
-              Text('Add New Component...'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'select-all',
-          child: Row(
-            children: [
-              Icon(Icons.select_all, size: 18),
-              SizedBox(width: 8),
-              Text('Select All'),
-            ],
-          ),
-        ),
-      ],
+      items: [...canvasMenuOptions(_clipboardManager)],
     ).then((value) {
       if (value == null) return;
 
@@ -1117,257 +979,20 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     if (_clipboardManager.isEmpty) return;
 
     TextEditingController copiesController = TextEditingController(text: '1');
-    bool keepConnections = true;
+    ValueNotifier<bool> keepConnections = ValueNotifier<bool>(true);
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Paste Special'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  const Text('Number of copies:'),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 50,
-                    child: TextField(
-                      controller: copiesController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              StatefulBuilder(
-                builder: (context, setState) {
-                  return CheckboxListTile(
-                    title: const Text('Keep connections between copies'),
-                    value: keepConnections,
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    onChanged: (value) {
-                      setState(() {
-                        keepConnections = value ?? true;
-                      });
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                int copies = int.tryParse(copiesController.text) ?? 1;
-                copies = copies.clamp(1, 20);
-
-                _handlePasteSpecialComponent(
-                  pastePosition,
-                  copies,
-                  keepConnections,
-                );
-              },
-              child: const Text('Paste'),
-            ),
-          ],
+        return showPasteSpecialDialog(
+          context,
+          copiesController,
+          keepConnections,
+          _handlePasteSpecialComponent,
+          pastePosition,
         );
       },
     );
-  }
-
-  void _handlePasteSpecialComponent(
-    Offset position,
-    int numberOfCopies,
-    bool keepAllLinks,
-  ) {
-    if (_clipboardManager.isEmpty) return;
-
-    const double offsetX = 50.0;
-    const double offsetY = 50.0;
-
-    for (int copyIndex = 0; copyIndex < numberOfCopies; copyIndex++) {
-      final double baseOffsetX = copyIndex * offsetX;
-      final double baseOffsetY = copyIndex * offsetY;
-
-      Map<String, String> idMap = {};
-
-      final basePastePositions = _clipboardManager.calculatePastePositions(
-        Offset(position.dx + baseOffsetX, position.dy + baseOffsetY),
-      );
-
-      for (int i = 0; i < _clipboardManager.clipboardComponents.length; i++) {
-        var originalComponent = _clipboardManager.clipboardComponents[i];
-        var newPosition = basePastePositions[i];
-
-        String newName = '${originalComponent.id} (Copy)';
-        int counter = 1;
-        while (_editorState.flowManager.components.any(
-          (comp) => comp.id == newName,
-        )) {
-          counter++;
-          newName = '${originalComponent.id} (Copy $counter)';
-        }
-
-        Component newComponent = _editorState.flowManager.createComponentByType(
-          newName,
-          originalComponent.type.type,
-        );
-
-        for (var sourceProperty in originalComponent.properties) {
-          if (!originalComponent.inputConnections.containsKey(
-                sourceProperty.index,
-              ) ||
-              !keepAllLinks) {
-            for (var targetProperty in newComponent.properties) {
-              if (targetProperty.index == sourceProperty.index) {
-                targetProperty.value = sourceProperty.value;
-                break;
-              }
-            }
-          }
-        }
-
-        Map<String, dynamic> state = {
-          'position': newPosition,
-          'key': _editorState.getComponentKey(newComponent.id),
-          'positions': _editorState.componentPositions,
-          'keys': _editorState.componentKeys,
-        };
-
-        idMap[originalComponent.id] = newComponent.id;
-        final command = AddComponentCommand(
-          _editorState.flowManager,
-          newComponent,
-          state,
-        );
-        _editorState.commandHistory.execute(command);
-
-        _editorState.initializeComponentState(
-          newComponent,
-          position: newPosition,
-          width: 160.0,
-        );
-      }
-
-      if (keepAllLinks) {
-        for (var connection in _clipboardManager.clipboardConnections) {
-          String? newFromId = idMap[connection.fromComponentId];
-          String? newToId = idMap[connection.toComponentId];
-
-          if (newFromId != null && newToId != null) {
-            final command = CreateConnectionCommand(
-              _editorState.flowManager,
-              newFromId,
-              connection.fromPortIndex,
-              newToId,
-              connection.toPortIndex,
-            );
-            _editorState.commandHistory.execute(command);
-          }
-        }
-      }
-    }
-
-    setState(() {
-      _updateCanvasSize();
-    });
-  }
-
-  void _handlePasteComponent(Offset position) {
-    if (_clipboardManager.isEmpty) return;
-
-    final pastePositions = _clipboardManager.calculatePastePositions(position);
-
-    Map<String, String> idMap = {};
-
-    for (int i = 0; i < _clipboardManager.clipboardComponents.length; i++) {
-      var originalComponent = _clipboardManager.clipboardComponents[i];
-      var newPosition = pastePositions[i];
-
-      String newName = '${originalComponent.id} (Copy)';
-      int counter = 1;
-      while (_editorState.flowManager.components.any(
-        (comp) => comp.id == newName,
-      )) {
-        counter++;
-        newName = '${originalComponent.id} (Copy $counter)';
-      }
-
-      Component newComponent = _editorState.flowManager.createComponentByType(
-        newName,
-        originalComponent.type.type,
-      );
-
-      // Copy properties from original component
-      for (var sourceProperty in originalComponent.properties) {
-        if (!originalComponent.inputConnections.containsKey(
-          sourceProperty.index,
-        )) {
-          for (var targetProperty in newComponent.properties) {
-            if (targetProperty.index == sourceProperty.index) {
-              targetProperty.value = sourceProperty.value;
-              break;
-            }
-          }
-        }
-      }
-
-      Map<String, dynamic> state = {
-        'position': newPosition,
-        'key': _editorState.getComponentKey(newComponent.id),
-        'positions': _editorState.componentPositions,
-        'keys': _editorState.componentKeys,
-      };
-
-      idMap[originalComponent.id] = newComponent.id;
-      final command = AddComponentCommand(
-        _editorState.flowManager,
-        newComponent,
-        state,
-      );
-      _editorState.commandHistory.execute(command);
-
-      _editorState.initializeComponentState(
-        newComponent,
-        position: newPosition,
-        width: 160.0,
-      );
-    }
-
-    for (var connection in _clipboardManager.clipboardConnections) {
-      String? newFromId = idMap[connection.fromComponentId];
-      String? newToId = idMap[connection.toComponentId];
-
-      if (newFromId != null && newToId != null) {
-        final command = CreateConnectionCommand(
-          _editorState.flowManager,
-          newFromId,
-          connection.fromPortIndex,
-          newToId,
-          connection.toPortIndex,
-        );
-        _editorState.commandHistory.execute(command);
-      }
-    }
-
-    setState(() {
-      _updateCanvasSize();
-    });
   }
 
   void _showAddComponentDialogAtPosition(Offset position) {
@@ -1488,38 +1113,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         Rect.fromPoints(position, position),
         Offset.zero & overlay.size,
       ),
-      items: [
-        const PopupMenuItem(
-          value: 'copy',
-          child: Row(
-            children: [
-              Icon(Icons.copy, size: 18),
-              SizedBox(width: 8),
-              Text('Copy'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit, size: 18),
-              SizedBox(width: 8),
-              Text('Edit'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete, size: 18),
-              SizedBox(width: 8),
-              Text('Delete'),
-            ],
-          ),
-        ),
-      ],
+      items: showContextMenuOptions(_clipboardManager),
     ).then((value) {
       if (value == null) return;
 
@@ -1539,206 +1133,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
           break;
       }
     });
-  }
-
-  void _handleCopyComponent(Component component) {
-    final position = _editorState.getComponentPosition(component.id);
-    _clipboardManager.copyComponent(component, position);
-  }
-
-  void _handleEditComponent(BuildContext context, Component component) {
-    _flowHandlers.handleEditComponent(context, component);
-  }
-
-  void _handleDeleteComponent(Component component) {
-    final componentId = component.id;
-
-    final List<Connection> connectionsToDelete = [];
-    for (final comp in _editorState.flowManager.components) {
-      for (final entry in comp.inputConnections.entries) {
-        if (entry.value.componentId == componentId) {
-          connectionsToDelete.add(
-            Connection(
-              fromComponentId: entry.value.componentId,
-              fromPortIndex: entry.value.portIndex,
-              toComponentId: comp.id,
-              toPortIndex: entry.key,
-            ),
-          );
-        }
-      }
-    }
-
-    for (final entry in component.inputConnections.entries) {
-      connectionsToDelete.add(
-        Connection(
-          fromComponentId: entry.value.componentId,
-          fromPortIndex: entry.value.portIndex,
-          toComponentId: componentId,
-          toPortIndex: entry.key,
-        ),
-      );
-    }
-
-    _flowHandlers.handleDeleteComponent(component);
-
-    _persistenceHelper.saveRemoveComponent(componentId);
-
-    for (final connection in connectionsToDelete) {
-      _persistenceHelper.saveRemoveConnection(
-        connection.fromComponentId,
-        connection.fromPortIndex,
-        connection.toComponentId,
-        connection.toPortIndex,
-      );
-    }
-  }
-
-  void _addNewButtonPointComponent(
-    Map<String, dynamic> buttonPointData, {
-    Offset? clickPosition,
-  }) {
-    final ButtonPoint buttonPoint =
-        buttonPointData["buttonPoint"] as ButtonPoint;
-    final HelvarDevice parentDevice =
-        buttonPointData["parentDevice"] as HelvarDevice;
-    final Map<String, dynamic> pointData =
-        buttonPointData["pointData"] as Map<String, dynamic>;
-
-    String baseName = buttonPoint.name;
-    String componentId = baseName;
-    int counter = 1;
-
-    while (_editorState.flowManager.components.any(
-      (comp) => comp.id == componentId,
-    )) {
-      componentId = "${baseName}_$counter";
-      counter++;
-    }
-
-    Component newComponent = _editorState.flowManager.createComponentByType(
-      componentId,
-      ComponentType.BOOLEAN_POINT,
-    );
-
-    bool initialValue = _getInitialButtonPointValue(buttonPoint);
-
-    for (var property in newComponent.properties) {
-      if (!property.isInput && property.type.type == PortType.BOOLEAN) {
-        property.value = initialValue;
-        break;
-      }
-    }
-
-    _storeButtonPointMetadata(componentId, buttonPoint, parentDevice);
-
-    Offset newPosition = clickPosition ?? _getDefaultPosition();
-
-    Map<String, dynamic> state = {
-      'position': newPosition,
-      'key': _editorState.getComponentKey(newComponent.id),
-      'positions': _editorState.componentPositions,
-      'keys': _editorState.componentKeys,
-    };
-
-    setState(() {
-      final command = AddComponentCommand(
-        _editorState.flowManager,
-        newComponent,
-        state,
-      );
-      _editorState.commandHistory.execute(command);
-
-      _editorState.initializeComponentState(
-        newComponent,
-        position: newPosition,
-        width: 160.0,
-      );
-
-      _persistenceHelper.saveAddComponent(newComponent);
-      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
-      _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
-
-      _updateCanvasSize();
-    });
-  }
-
-  Offset _getDefaultPosition() {
-    final RenderBox? viewerChildRenderBox =
-        _editorState.interactiveViewerChildKey.currentContext
-                ?.findRenderObject()
-            as RenderBox?;
-
-    if (viewerChildRenderBox != null) {
-      final viewportSize = viewerChildRenderBox.size;
-      final viewportCenter = Offset(
-        viewportSize.width / 2,
-        viewportSize.height / 2,
-      );
-
-      return _canvasController.getCanvasPosition(
-            viewportCenter,
-            viewerChildRenderBox,
-          ) ??
-          Offset(
-            _canvasController.canvasSize.width / 2,
-            _canvasController.canvasSize.height / 2,
-          );
-    }
-
-    return Offset(
-      _canvasController.canvasSize.width / 2,
-      _canvasController.canvasSize.height / 2,
-    );
-  }
-
-  bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
-    if (buttonPoint.function.contains('Status') ||
-        buttonPoint.name.toLowerCase().contains('missing')) {
-      return false;
-    }
-
-    return false;
-  }
-
-  void _storeButtonPointMetadata(
-    String componentId,
-    ButtonPoint buttonPoint,
-    HelvarDevice parentDevice,
-  ) {
-    _buttonPointMetadata[componentId] = {
-      'buttonPoint': buttonPoint,
-      'parentDevice': parentDevice,
-      'deviceAddress': parentDevice.address,
-      'buttonId': buttonPoint.buttonId,
-      'function': buttonPoint.function,
-    };
-  }
-
-  void _handleCopyMultipleComponents() {
-    if (_selectionManager.selectedComponents.isEmpty) return;
-
-    _clipboardManager.copyMultipleComponents(
-      _selectionManager.selectedComponents,
-      _editorState.componentPositions,
-      _editorState.flowManager.connections,
-    );
-  }
-
-  void _handleMoveComponentDown(Component component) {
-    _flowHandlers.handleMoveComponentDown(component);
-  }
-
-  void _handleMoveComponentUp(Component component) {
-    _flowHandlers.handleMoveComponentUp(component);
-  }
-
-  void _handleMoveComponentLeft(Component component) {
-    _flowHandlers.handleMoveComponentLeft(component);
-  }
-
-  void _handleMoveComponentRight(Component component) {
-    _flowHandlers.handleMoveComponentRight(component);
   }
 
   void _addNewDeviceComponent(
@@ -1822,5 +1216,429 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       _updateCanvasSize();
     });
+  }
+
+  void _addNewButtonPointComponent(
+    Map<String, dynamic> buttonPointData, {
+    Offset? clickPosition,
+  }) {
+    final ButtonPoint buttonPoint =
+        buttonPointData["buttonPoint"] as ButtonPoint;
+    final HelvarDevice parentDevice =
+        buttonPointData["parentDevice"] as HelvarDevice;
+    final Map<String, dynamic> pointData =
+        buttonPointData["pointData"] as Map<String, dynamic>;
+
+    String baseName = buttonPoint.name;
+    String componentId = baseName;
+    int counter = 1;
+
+    while (_editorState.flowManager.components.any(
+      (comp) => comp.id == componentId,
+    )) {
+      componentId = "${baseName}_$counter";
+      counter++;
+    }
+
+    Component newComponent = _editorState.flowManager.createComponentByType(
+      componentId,
+      ComponentType.BOOLEAN_POINT,
+    );
+
+    bool initialValue = _getInitialButtonPointValue(buttonPoint);
+
+    for (var property in newComponent.properties) {
+      if (!property.isInput && property.type.type == PortType.BOOLEAN) {
+        property.value = initialValue;
+        break;
+      }
+    }
+
+    _storeButtonPointMetadata(componentId, buttonPoint, parentDevice);
+
+    Offset newPosition =
+        clickPosition ?? getDefaultPosition(_canvasController, _editorState);
+
+    Map<String, dynamic> state = {
+      'position': newPosition,
+      'key': _editorState.getComponentKey(newComponent.id),
+      'positions': _editorState.componentPositions,
+      'keys': _editorState.componentKeys,
+    };
+
+    setState(() {
+      final command = AddComponentCommand(
+        _editorState.flowManager,
+        newComponent,
+        state,
+      );
+      _editorState.commandHistory.execute(command);
+
+      _editorState.initializeComponentState(
+        newComponent,
+        position: newPosition,
+        width: 160.0,
+      );
+
+      _persistenceHelper.saveAddComponent(newComponent);
+      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
+      _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
+
+      _updateCanvasSize();
+    });
+  }
+
+  bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
+    if (buttonPoint.function.contains('Status') ||
+        buttonPoint.name.toLowerCase().contains('missing')) {
+      return false;
+    }
+
+    return false;
+  }
+
+  void _storeButtonPointMetadata(
+    String componentId,
+    ButtonPoint buttonPoint,
+    HelvarDevice parentDevice,
+  ) {
+    _buttonPointMetadata[componentId] = {
+      'buttonPoint': buttonPoint,
+      'parentDevice': parentDevice,
+      'deviceAddress': parentDevice.address,
+      'buttonId': buttonPoint.buttonId,
+      'function': buttonPoint.function,
+    };
+  }
+
+  void _handleCanvasDropAccept(dynamic data, Offset canvasPosition) {
+    if (data is ComponentType) {
+      _addNewComponent(data, clickPosition: canvasPosition);
+    } else if (data is Map<String, dynamic>) {
+      if (data.containsKey("buttonPoint") && data.containsKey("pointData")) {
+        _addNewButtonPointComponent(data, clickPosition: canvasPosition);
+      } else if (data.containsKey("device")) {
+        _addNewDeviceComponent(data, clickPosition: canvasPosition);
+      }
+    }
+  }
+
+  void _handleComponentDragEnd(Component component, DraggableDetails details) {
+    final RenderBox? viewerChildRenderBox =
+        _editorState.interactiveViewerChildKey.currentContext
+                ?.findRenderObject()
+            as RenderBox?;
+
+    if (viewerChildRenderBox != null) {
+      final Offset localOffset = viewerChildRenderBox.globalToLocal(
+        details.offset,
+      );
+
+      if (_dragManager.dragStartPosition != null &&
+          _dragManager.dragStartPosition != localOffset) {
+        setState(() {
+          if (_selectionManager.isComponentSelected(component) &&
+              _selectionManager.selectedComponents.length > 1) {
+            _handleMultiComponentDrag(localOffset);
+          } else {
+            _handleSingleComponentDrag(component, localOffset);
+          }
+
+          _dragManager.endComponentDrag();
+          _updateCanvasSize();
+        });
+      }
+    }
+  }
+
+  void _handleMultiComponentDrag(Offset localOffset) {
+    final offset = localOffset - _dragManager.dragStartPosition!;
+    final updatedPositions = _dragManager.moveComponentsByOffset(
+      _editorState.componentPositions,
+      _selectionManager.selectedComponents,
+      offset,
+    );
+
+    for (var selectedComponent in _selectionManager.selectedComponents) {
+      final newPos = updatedPositions[selectedComponent.id]!;
+      final command = MoveComponentCommand(
+        selectedComponent.id,
+        newPos,
+        _editorState.getComponentPosition(selectedComponent.id),
+        _editorState.componentPositions,
+      );
+      _editorState.commandHistory.execute(command);
+      _persistenceHelper.saveComponentPosition(selectedComponent.id, newPos);
+    }
+  }
+
+  void _handleSingleComponentDrag(Component component, Offset localOffset) {
+    final command = MoveComponentCommand(
+      component.id,
+      localOffset,
+      _dragManager.dragStartPosition!,
+      _editorState.componentPositions,
+    );
+    _editorState.commandHistory.execute(command);
+    _persistenceHelper.saveComponentPosition(component.id, localOffset);
+    _selectionManager.selectComponent(component);
+  }
+
+  void _handleCopyMultipleComponents() {
+    if (_selectionManager.selectedComponents.isEmpty) return;
+
+    _clipboardManager.copyMultipleComponents(
+      _selectionManager.selectedComponents,
+      _editorState.componentPositions,
+      _editorState.flowManager.connections,
+    );
+  }
+
+  void _handlePasteComponent(Offset position) {
+    if (_clipboardManager.isEmpty) return;
+
+    final pastePositions = _clipboardManager.calculatePastePositions(position);
+
+    Map<String, String> idMap = {};
+
+    for (int i = 0; i < _clipboardManager.clipboardComponents.length; i++) {
+      var originalComponent = _clipboardManager.clipboardComponents[i];
+      var newPosition = pastePositions[i];
+
+      String newName = '${originalComponent.id} (Copy)';
+      int counter = 1;
+      while (_editorState.flowManager.components.any(
+        (comp) => comp.id == newName,
+      )) {
+        counter++;
+        newName = '${originalComponent.id} (Copy $counter)';
+      }
+
+      Component newComponent = _editorState.flowManager.createComponentByType(
+        newName,
+        originalComponent.type.type,
+      );
+
+      for (var sourceProperty in originalComponent.properties) {
+        if (!originalComponent.inputConnections.containsKey(
+          sourceProperty.index,
+        )) {
+          for (var targetProperty in newComponent.properties) {
+            if (targetProperty.index == sourceProperty.index) {
+              targetProperty.value = sourceProperty.value;
+              break;
+            }
+          }
+        }
+      }
+
+      Map<String, dynamic> state = {
+        'position': newPosition,
+        'key': _editorState.getComponentKey(newComponent.id),
+        'positions': _editorState.componentPositions,
+        'keys': _editorState.componentKeys,
+      };
+
+      idMap[originalComponent.id] = newComponent.id;
+      final command = AddComponentCommand(
+        _editorState.flowManager,
+        newComponent,
+        state,
+      );
+      _editorState.commandHistory.execute(command);
+
+      _editorState.initializeComponentState(
+        newComponent,
+        position: newPosition,
+        width: 160.0,
+      );
+    }
+
+    for (var connection in _clipboardManager.clipboardConnections) {
+      String? newFromId = idMap[connection.fromComponentId];
+      String? newToId = idMap[connection.toComponentId];
+
+      if (newFromId != null && newToId != null) {
+        final command = CreateConnectionCommand(
+          _editorState.flowManager,
+          newFromId,
+          connection.fromPortIndex,
+          newToId,
+          connection.toPortIndex,
+        );
+        _editorState.commandHistory.execute(command);
+      }
+    }
+
+    setState(() {
+      _updateCanvasSize();
+    });
+  }
+
+  void _handlePasteSpecialComponent(
+    Offset position,
+    int numberOfCopies,
+    bool keepAllLinks,
+  ) {
+    if (_clipboardManager.isEmpty) return;
+
+    const double offsetX = 50.0;
+    const double offsetY = 50.0;
+
+    for (int copyIndex = 0; copyIndex < numberOfCopies; copyIndex++) {
+      final double baseOffsetX = copyIndex * offsetX;
+      final double baseOffsetY = copyIndex * offsetY;
+
+      Map<String, String> idMap = {};
+
+      final basePastePositions = _clipboardManager.calculatePastePositions(
+        Offset(position.dx + baseOffsetX, position.dy + baseOffsetY),
+      );
+
+      for (int i = 0; i < _clipboardManager.clipboardComponents.length; i++) {
+        var originalComponent = _clipboardManager.clipboardComponents[i];
+        var newPosition = basePastePositions[i];
+
+        String newName = '${originalComponent.id} (Copy)';
+        int counter = 1;
+        while (_editorState.flowManager.components.any(
+          (comp) => comp.id == newName,
+        )) {
+          counter++;
+          newName = '${originalComponent.id} (Copy $counter)';
+        }
+
+        Component newComponent = _editorState.flowManager.createComponentByType(
+          newName,
+          originalComponent.type.type,
+        );
+
+        for (var sourceProperty in originalComponent.properties) {
+          if (!originalComponent.inputConnections.containsKey(
+                sourceProperty.index,
+              ) ||
+              !keepAllLinks) {
+            for (var targetProperty in newComponent.properties) {
+              if (targetProperty.index == sourceProperty.index) {
+                targetProperty.value = sourceProperty.value;
+                break;
+              }
+            }
+          }
+        }
+
+        Map<String, dynamic> state = {
+          'position': newPosition,
+          'key': _editorState.getComponentKey(newComponent.id),
+          'positions': _editorState.componentPositions,
+          'keys': _editorState.componentKeys,
+        };
+
+        idMap[originalComponent.id] = newComponent.id;
+        final command = AddComponentCommand(
+          _editorState.flowManager,
+          newComponent,
+          state,
+        );
+        _editorState.commandHistory.execute(command);
+
+        _editorState.initializeComponentState(
+          newComponent,
+          position: newPosition,
+          width: 160.0,
+        );
+      }
+
+      if (keepAllLinks) {
+        for (var connection in _clipboardManager.clipboardConnections) {
+          String? newFromId = idMap[connection.fromComponentId];
+          String? newToId = idMap[connection.toComponentId];
+
+          if (newFromId != null && newToId != null) {
+            final command = CreateConnectionCommand(
+              _editorState.flowManager,
+              newFromId,
+              connection.fromPortIndex,
+              newToId,
+              connection.toPortIndex,
+            );
+            _editorState.commandHistory.execute(command);
+          }
+        }
+      }
+    }
+
+    setState(() {
+      _updateCanvasSize();
+    });
+  }
+
+  void _handleCopyComponent(Component component) {
+    final position = _editorState.getComponentPosition(component.id);
+    _clipboardManager.copyComponent(component, position);
+  }
+
+  void _handleEditComponent(BuildContext context, Component component) {
+    _flowHandlers.handleEditComponent(context, component);
+  }
+
+  void _handleDeleteComponent(Component component) {
+    final componentId = component.id;
+
+    final List<Connection> connectionsToDelete = [];
+    for (final comp in _editorState.flowManager.components) {
+      for (final entry in comp.inputConnections.entries) {
+        if (entry.value.componentId == componentId) {
+          connectionsToDelete.add(
+            Connection(
+              fromComponentId: entry.value.componentId,
+              fromPortIndex: entry.value.portIndex,
+              toComponentId: comp.id,
+              toPortIndex: entry.key,
+            ),
+          );
+        }
+      }
+    }
+
+    for (final entry in component.inputConnections.entries) {
+      connectionsToDelete.add(
+        Connection(
+          fromComponentId: entry.value.componentId,
+          fromPortIndex: entry.value.portIndex,
+          toComponentId: componentId,
+          toPortIndex: entry.key,
+        ),
+      );
+    }
+
+    _flowHandlers.handleDeleteComponent(component);
+
+    _persistenceHelper.saveRemoveComponent(componentId);
+
+    for (final connection in connectionsToDelete) {
+      _persistenceHelper.saveRemoveConnection(
+        connection.fromComponentId,
+        connection.fromPortIndex,
+        connection.toComponentId,
+        connection.toPortIndex,
+      );
+    }
+  }
+
+  void _handleMoveComponentDown(Component component) {
+    _flowHandlers.handleMoveComponentDown(component);
+  }
+
+  void _handleMoveComponentUp(Component component) {
+    _flowHandlers.handleMoveComponentUp(component);
+  }
+
+  void _handleMoveComponentLeft(Component component) {
+    _flowHandlers.handleMoveComponentLeft(component);
+  }
+
+  void _handleMoveComponentRight(Component component) {
+    _flowHandlers.handleMoveComponentRight(component);
   }
 }
