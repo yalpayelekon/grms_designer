@@ -10,7 +10,7 @@ Map<String, dynamic> parseResponse(String response) {
   if (parts.length != 2) {
     throw FormatException('Invalid response format: $response');
   }
-  final commandPart = parts[0].substring(1); // Remove the '?' or '!' prefix
+  final commandPart = parts[0].substring(1);
   final commandParams = commandPart.split(MessageType.delimiter);
   var dataPart = parts[1];
   if (dataPart.endsWith(MessageType.terminator)) {

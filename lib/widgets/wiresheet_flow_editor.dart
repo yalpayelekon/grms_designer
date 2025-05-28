@@ -12,6 +12,9 @@ import 'package:grms_designer/utils/logger.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/input_device.dart';
 import '../niagara/controllers/flow_editor_state.dart';
+import '../niagara/controllers/clipboard_manager.dart';
+import '../niagara/controllers/drag_operation_manager.dart';
+import '../niagara/controllers/canvas_interaction_controller.dart';
 import '../niagara/controllers/selection_manager.dart';
 import '../niagara/home/command.dart';
 import '../niagara/home/handlers.dart';
@@ -42,28 +45,22 @@ class WiresheetFlowEditor extends ConsumerStatefulWidget {
 }
 
 class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
-  // Replace individual state variables with FlowEditorState
   late FlowEditorState _editorState;
-
-  // Keep non-core state variables as they were
-  final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
-  late FlowHandlers _flowHandlers;
+  late ClipboardManager _clipboardManager;
   late PersistenceHelper _persistenceHelper;
   late FlowsheetStorageService _storageService;
   late SelectionManager _selectionManager;
-  SlotDragInfo? _currentDraggedPort;
-  Offset? _tempLineEndPoint;
-  Offset? _dragStartPosition;
-  Offset? _clipboardComponentPosition;
+  late FlowHandlers _flowHandlers;
+  late DragOperationManager _dragManager;
+  late CanvasInteractionController _canvasController;
+
+  final Map<String, Map<String, dynamic>> _buttonPointMetadata = {};
+
   final TransformationController _transformationController =
       TransformationController();
   Size _canvasSize = const Size(2000, 2000);
   Offset _canvasOffset = Offset.zero;
   static const double _canvasPadding = 100.0;
-
-  final List<Component> _clipboardComponents = [];
-  final List<Offset> _clipboardPositions = [];
-  final List<Connection> _clipboardConnections = [];
 
   @override
   void initState() {
@@ -73,8 +70,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   void _initializeState() {
     _transformationController.value = Matrix4.identity();
-
-    // Initialize FlowEditorState
+    _canvasController = CanvasInteractionController();
     final flowManager = FlowManager();
     final commandHistory = CommandHistory();
     _editorState = FlowEditorState(
@@ -82,10 +78,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       commandHistory: commandHistory,
     );
 
-    // Initialize SelectionManager with callback
     _selectionManager = SelectionManager();
     _selectionManager.setOnSelectionChanged(_onSelectionChanged);
 
+    _clipboardManager = ClipboardManager();
+    _dragManager = DragOperationManager();
     _storageService = ref.read(flowsheetStorageServiceProvider);
 
     _flowHandlers = FlowHandlers(
@@ -96,15 +93,12 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       componentWidths: _editorState.componentWidths,
       setState: setState,
       updateCanvasSize: _updateCanvasSize,
-      selectedComponents:
-          _selectionManager.selectedComponents, // Use SelectionManager
-      clipboardComponents: _clipboardComponents,
-      clipboardPositions: _clipboardPositions,
-      clipboardConnections: _clipboardConnections,
+      selectedComponents: _selectionManager.selectedComponents,
+      clipboardComponents: _clipboardManager.clipboardComponents,
+      clipboardPositions: _clipboardManager.clipboardPositions,
+      clipboardConnections: _clipboardManager.clipboardConnections,
       setClipboardComponentPosition: (position) {
-        setState(() {
-          _clipboardComponentPosition = position;
-        });
+        _clipboardManager.setClipboardReferencePosition(position);
       },
     );
 
@@ -180,14 +174,10 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     if (oldWidget.flowsheet.id != widget.flowsheet.id) {
       _saveStateSync();
 
-      // Clear and reinitialize state
       _editorState.clear();
       _selectionManager.clearSelection();
-      _clipboardComponents.clear();
-      _clipboardPositions.clear();
-      _clipboardConnections.clear();
+      _clipboardManager.clear();
 
-      // Reinitialize with new flowsheet
       _flowHandlers = FlowHandlers(
         flowManager: _editorState.flowManager,
         commandHistory: _editorState.commandHistory,
@@ -197,13 +187,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         setState: setState,
         updateCanvasSize: _updateCanvasSize,
         selectedComponents: _selectionManager.selectedComponents,
-        clipboardComponents: _clipboardComponents,
-        clipboardPositions: _clipboardPositions,
-        clipboardConnections: _clipboardConnections,
+        clipboardComponents: _clipboardManager.clipboardComponents,
+        clipboardPositions: _clipboardManager.clipboardPositions,
+        clipboardConnections: _clipboardManager.clipboardConnections,
         setClipboardComponentPosition: (position) {
-          setState(() {
-            _clipboardComponentPosition = position;
-          });
+          _clipboardManager.setClipboardReferencePosition(position);
         },
       );
 
@@ -228,117 +216,29 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _updateCanvasSize() {
-    if (_editorState.componentPositions.isEmpty) return;
-
-    double minX = double.infinity;
-    double minY = double.infinity;
-    double maxX = double.negativeInfinity;
-    double maxY = double.negativeInfinity;
-
-    for (var entry in _editorState.componentPositions.entries) {
-      final position = entry.value;
-
-      const estimatedWidth = 180.0; // 160 width + 20 padding
-      const estimatedHeight = 120.0;
-
-      minX = min(minX, position.dx);
-      minY = min(minY, position.dy);
-      maxX = max(maxX, position.dx + estimatedWidth);
-      maxY = max(maxY, position.dy + estimatedHeight);
-    }
-
-    bool needsUpdate = false;
-    Size newCanvasSize = _canvasSize;
-    Offset newCanvasOffset = _canvasOffset;
-
-    if (minX < _canvasPadding) {
-      double extraWidth = _canvasPadding - minX;
-      newCanvasSize = Size(
-        _canvasSize.width + extraWidth,
-        newCanvasSize.height,
-      );
-      newCanvasOffset = Offset(
-        _canvasOffset.dx - extraWidth,
-        newCanvasOffset.dy,
-      );
-
-      for (var id in _editorState.componentPositions.keys) {
-        _editorState.setComponentPosition(
-          id,
-          Offset(
-            _editorState.getComponentPosition(id).dx + extraWidth,
-            _editorState.getComponentPosition(id).dy,
-          ),
-        );
-      }
-      needsUpdate = true;
-    }
-
-    if (minY < _canvasPadding) {
-      double extraHeight = _canvasPadding - minY;
-      newCanvasSize = Size(
-        newCanvasSize.width,
-        _canvasSize.height + extraHeight,
-      );
-      newCanvasOffset = Offset(
-        newCanvasOffset.dx,
-        _canvasOffset.dy - extraHeight,
-      );
-
-      for (var id in _editorState.componentPositions.keys) {
-        _editorState.setComponentPosition(
-          id,
-          Offset(
-            _editorState.getComponentPosition(id).dx,
-            _editorState.getComponentPosition(id).dy + extraHeight,
-          ),
-        );
-      }
-      needsUpdate = true;
-    }
-
-    if (maxX > _canvasSize.width - _canvasPadding) {
-      double extraWidth = maxX - (_canvasSize.width - _canvasPadding);
-      newCanvasSize = Size(
-        _canvasSize.width + extraWidth,
-        newCanvasSize.height,
-      );
-      needsUpdate = true;
-    }
-
-    if (maxY > _canvasSize.height - _canvasPadding) {
-      double extraHeight = maxY - (_canvasSize.height - _canvasPadding);
-      newCanvasSize = Size(
-        newCanvasSize.width,
-        _canvasSize.height + extraHeight,
-      );
-      needsUpdate = true;
-    }
-
-    if (needsUpdate) {
-      setState(() {
-        _canvasSize = newCanvasSize;
-        _canvasOffset = newCanvasOffset;
-      });
-
-      _updateCanvasSizeAsync(newCanvasSize, newCanvasOffset);
+    if (_canvasController.updateCanvasSize(
+      _editorState.componentPositions,
+      _editorState.componentWidths,
+    )) {
+      setState(() {});
+      _updateCanvasSizeAsync();
     }
   }
 
-  Future<void> _updateCanvasSizeAsync(
-    Size newCanvasSize,
-    Offset newCanvasOffset,
-  ) async {
+  Future<void> _updateCanvasSizeAsync() async {
     Future.microtask(() async {
       if (!mounted) return;
 
       await ref
           .read(flowsheetsProvider.notifier)
-          .updateCanvasSize(widget.flowsheet.id, newCanvasSize);
+          .updateCanvasSize(widget.flowsheet.id, _canvasController.canvasSize);
 
       await ref
           .read(flowsheetsProvider.notifier)
-          .updateCanvasOffset(widget.flowsheet.id, newCanvasOffset);
+          .updateCanvasOffset(
+            widget.flowsheet.id,
+            _canvasController.canvasOffset,
+          );
 
       for (var id in _editorState.componentPositions.keys) {
         await _persistenceHelper.saveComponentPosition(
@@ -413,40 +313,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       type.type,
     );
 
-    Offset newPosition;
-    if (clickPosition != null) {
-      newPosition = clickPosition;
-    } else {
-      final RenderBox? viewerChildRenderBox =
-          _editorState.interactiveViewerChildKey.currentContext
-                  ?.findRenderObject()
-              as RenderBox?;
-
-      newPosition = Offset(_canvasSize.width / 2, _canvasSize.height / 2);
-
-      if (viewerChildRenderBox != null) {
-        final viewportSize = viewerChildRenderBox.size;
-        final viewportCenter = Offset(
-          viewportSize.width / 2,
-          viewportSize.height / 2,
-        );
-
-        final matrix = _transformationController.value;
-        final inverseMatrix = Matrix4.inverted(matrix);
-        final transformedCenter = MatrixUtils.transformPoint(
-          inverseMatrix,
-          viewportCenter,
-        );
-
-        final random = Random();
-        final randomOffset = Offset(
-          (random.nextDouble() * 200) - 100,
-          (random.nextDouble() * 200) - 100,
-        );
-
-        newPosition = transformedCenter + randomOffset;
-      }
-    }
+    Offset newPosition = clickPosition ?? _getDefaultPosition();
 
     Map<String, dynamic> state = {
       'position': newPosition,
@@ -468,7 +335,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         position: newPosition,
         width: 160.0,
       );
-
       _persistenceHelper.saveAddComponent(newComponent);
       _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
       _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
@@ -491,14 +357,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
   void _handlePortDragStarted(SlotDragInfo slotInfo) {
     setState(() {
-      _currentDraggedPort = slotInfo;
+      _dragManager.startPortDrag(slotInfo);
     });
   }
 
   void _handlePortDragAccepted(SlotDragInfo targetSlotInfo) {
-    if (_currentDraggedPort != null) {
+    if (_dragManager.currentDraggedPort != null) {
       Component? sourceComponent = _editorState.flowManager.findComponentById(
-        _currentDraggedPort!.componentId,
+        _dragManager.currentDraggedPort!.componentId,
       );
       Component? targetComponent = _editorState.flowManager.findComponentById(
         targetSlotInfo.componentId,
@@ -506,24 +372,24 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
 
       if (sourceComponent != null && targetComponent != null) {
         if (_editorState.flowManager.canCreateConnection(
-          _currentDraggedPort!.componentId,
-          _currentDraggedPort!.slotIndex,
+          _dragManager.currentDraggedPort!.componentId,
+          _dragManager.currentDraggedPort!.slotIndex,
           targetSlotInfo.componentId,
           targetSlotInfo.slotIndex,
         )) {
           setState(() {
             final command = CreateConnectionCommand(
               _editorState.flowManager,
-              _currentDraggedPort!.componentId,
-              _currentDraggedPort!.slotIndex,
+              _dragManager.currentDraggedPort!.componentId,
+              _dragManager.currentDraggedPort!.slotIndex,
               targetSlotInfo.componentId,
               targetSlotInfo.slotIndex,
             );
             _editorState.commandHistory.execute(command);
             _persistenceHelper.saveAddConnection(
               Connection(
-                fromComponentId: _currentDraggedPort!.componentId,
-                fromPortIndex: _currentDraggedPort!.slotIndex,
+                fromComponentId: _dragManager.currentDraggedPort!.componentId,
+                fromPortIndex: _dragManager.currentDraggedPort!.slotIndex,
                 toComponentId: targetSlotInfo.componentId,
                 toPortIndex: targetSlotInfo.slotIndex,
               ),
@@ -538,8 +404,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     }
 
     setState(() {
-      _currentDraggedPort = null;
-      _tempLineEndPoint = null;
+      _dragManager.endPortDrag();
     });
   }
 
@@ -656,11 +521,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
             ),
             PasteIntent: CallbackAction<PasteIntent>(
               onInvoke: (PasteIntent intent) {
-                if (_clipboardComponents.isNotEmpty) {
-                  if (_clipboardComponentPosition != null) {
+                if (!_clipboardManager.isEmpty) {
+                  if (_clipboardManager.clipboardReferencePosition != null) {
                     const double offsetAmount = 30.0;
                     final Offset pastePosition =
-                        _clipboardComponentPosition! +
+                        _clipboardManager.clipboardReferencePosition! +
                         const Offset(offsetAmount, offsetAmount);
 
                     _handlePasteComponent(pastePosition);
@@ -702,7 +567,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Center(
                       child: Text(
-                        'Canvas: ${_canvasSize.width.toInt()} × ${_canvasSize.height.toInt()}',
+                        'Canvas: ${_canvasController.canvasSize.width.toInt()} × ${_canvasController.canvasSize.height.toInt()}',
                         style: const TextStyle(fontSize: 14),
                       ),
                     ),
@@ -737,7 +602,8 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
               ),
               body: ClipRect(
                 child: InteractiveViewer(
-                  transformationController: _transformationController,
+                  transformationController:
+                      _canvasController.transformationController,
                   boundaryMargin: const EdgeInsets.all(1000),
                   minScale: 0.1,
                   constrained: false,
@@ -751,131 +617,138 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                       componentPositions: _editorState.componentPositions,
                       componentKeys: _editorState.componentKeys,
                       componentWidths: _editorState.componentWidths,
-                      tempLineStartInfo: _currentDraggedPort,
-                      tempLineEndPoint: _tempLineEndPoint,
+                      tempLineStartInfo: _dragManager.currentDraggedPort,
+                      tempLineEndPoint: _dragManager.tempLineEndPoint,
                     ),
                     child: GestureDetector(
                       onTapDown: (details) {
-                        Offset? canvasPosition = getPosition(
-                          details.globalPosition,
-                          _editorState.canvasKey,
-                          _transformationController,
-                        );
-                        if (canvasPosition != null) {
-                          _selectionManager.clearSelection();
+                        final canvasBox =
+                            _editorState.canvasKey.currentContext
+                                    ?.findRenderObject()
+                                as RenderBox?;
+                        if (canvasBox != null) {
+                          final canvasPosition = _canvasController
+                              .getCanvasPosition(
+                                details.globalPosition,
+                                canvasBox,
+                              );
+                          if (canvasPosition != null) {
+                            _selectionManager.clearSelection();
+                          }
                         }
                       },
                       onPanStart: (details) {
-                        Offset? canvasPosition = getPosition(
-                          details.globalPosition,
-                          _editorState.canvasKey,
-                          _transformationController,
-                        );
-                        if (canvasPosition != null) {
-                          bool isClickOnComponent = _editorState
-                              .isPointOverComponent(canvasPosition);
-
-                          if (!isClickOnComponent) {
-                            _selectionManager.startSelectionBox(canvasPosition);
+                        final canvasBox =
+                            _editorState.canvasKey.currentContext
+                                    ?.findRenderObject()
+                                as RenderBox?;
+                        if (canvasBox != null) {
+                          final canvasPosition = _canvasController
+                              .getCanvasPosition(
+                                details.globalPosition,
+                                canvasBox,
+                              );
+                          if (canvasPosition != null) {
+                            bool isClickOnComponent = _editorState
+                                .isPointOverComponent(canvasPosition);
+                            if (!isClickOnComponent) {
+                              _selectionManager.startSelectionBox(
+                                canvasPosition,
+                              );
+                            }
                           }
                         }
                       },
                       onPanUpdate: (details) {
-                        if (_selectionManager.isDraggingSelectionBox) {
-                          Offset? canvasPosition = getPosition(
-                            details.globalPosition,
-                            _editorState.canvasKey,
-                            _transformationController,
-                          );
-                          if (canvasPosition != null) {
-                            setState(() {
-                              _selectionManager.updateSelectionBox(
-                                canvasPosition,
+                        final canvasBox =
+                            _editorState.canvasKey.currentContext
+                                    ?.findRenderObject()
+                                as RenderBox?;
+                        if (canvasBox != null) {
+                          final canvasPosition = _canvasController
+                              .getCanvasPosition(
+                                details.globalPosition,
+                                canvasBox,
                               );
-                            });
+                          if (canvasPosition != null) {
+                            if (_selectionManager.isDraggingSelectionBox) {
+                              setState(() {
+                                _selectionManager.updateSelectionBox(
+                                  canvasPosition,
+                                );
+                              });
+                            } else if (_dragManager.isPortDragInProgress()) {
+                              setState(() {
+                                _dragManager.updatePortDragPosition(
+                                  canvasPosition,
+                                );
+                              });
+                            }
                           }
                         }
                       },
                       onPanEnd: (details) {
                         if (_selectionManager.isDraggingSelectionBox) {
                           setState(() {
-                            // Use SelectionManager with custom size calculation for better accuracy
                             _selectionManager.endSelectionBoxWithSizes(
                               _editorState.flowManager.components,
                               _editorState.componentPositions,
                               _editorState.componentWidths,
-                              150.0, // Default component height
+                              150.0,
                             );
                           });
                         }
                       },
                       onDoubleTapDown: (TapDownDetails details) {
-                        Offset? canvasPosition = getPosition(
-                          details.globalPosition,
-                          _editorState.canvasKey,
-                          _transformationController,
-                        );
-                        if (canvasPosition != null) {
-                          bool isClickOnComponent = _editorState
-                              .isPointOverComponent(canvasPosition);
-
-                          if (!isClickOnComponent) {
-                            _showCanvasContextMenu(
-                              context,
-                              details.globalPosition,
-                            );
+                        final canvasBox =
+                            _editorState.canvasKey.currentContext
+                                    ?.findRenderObject()
+                                as RenderBox?;
+                        if (canvasBox != null) {
+                          final canvasPosition = _canvasController
+                              .getCanvasPosition(
+                                details.globalPosition,
+                                canvasBox,
+                              );
+                          if (canvasPosition != null) {
+                            bool isClickOnComponent = _editorState
+                                .isPointOverComponent(canvasPosition);
+                            if (!isClickOnComponent) {
+                              _showCanvasContextMenu(
+                                context,
+                                details.globalPosition,
+                              );
+                            }
                           }
                         }
                       },
                       child: DragTarget<Object>(
                         onAcceptWithDetails:
                             (DragTargetDetails<dynamic> details) {
-                              final RenderBox? canvasBox =
+                              final canvasBox =
                                   _editorState.canvasKey.currentContext
                                           ?.findRenderObject()
                                       as RenderBox?;
-
                               if (canvasBox != null) {
-                                final Offset localPosition = canvasBox
-                                    .globalToLocal(details.offset);
-
-                                final matrix = _transformationController.value;
-                                final inverseMatrix = Matrix4.inverted(matrix);
-                                final canvasPosition =
-                                    MatrixUtils.transformPoint(
-                                      inverseMatrix,
-                                      localPosition,
+                                final canvasPosition = _canvasController
+                                    .getCanvasPosition(
+                                      details.offset,
+                                      canvasBox,
                                     );
 
-                                if (details.data is ComponentType) {
-                                  _addNewComponent(
+                                if (canvasPosition != null) {
+                                  _handleCanvasDropAccept(
                                     details.data,
-                                    clickPosition: canvasPosition,
+                                    canvasPosition,
                                   );
-                                } else if (details.data
-                                    is Map<String, dynamic>) {
-                                  Map<String, dynamic> dragData = details.data;
-
-                                  if (dragData.containsKey("buttonPoint") &&
-                                      dragData.containsKey("pointData")) {
-                                    _addNewButtonPointComponent(
-                                      dragData,
-                                      clickPosition: canvasPosition,
-                                    );
-                                  } else if (dragData.containsKey("device")) {
-                                    _addNewDeviceComponent(
-                                      dragData,
-                                      clickPosition: canvasPosition,
-                                    );
-                                  }
                                 }
                               }
                             },
                         builder: (context, candidateData, rejectedData) {
                           return Container(
                             key: _editorState.canvasKey,
-                            width: _canvasSize.width,
-                            height: _canvasSize.height,
+                            width: _canvasController.canvasSize.width,
+                            height: _canvasController.canvasSize.height,
                             color: Colors.grey[50],
                             child: Stack(
                               clipBehavior: Clip.none,
@@ -973,93 +846,17 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                                         ),
                                       ),
                                       onDragStarted: () {
-                                        _dragStartPosition = _editorState
-                                            .getComponentPosition(component.id);
+                                        _dragManager.startComponentDrag(
+                                          _editorState.getComponentPosition(
+                                            component.id,
+                                          ),
+                                        );
                                       },
                                       onDragEnd: (details) {
-                                        final RenderBox? viewerChildRenderBox =
-                                            _editorState
-                                                    .interactiveViewerChildKey
-                                                    .currentContext
-                                                    ?.findRenderObject()
-                                                as RenderBox?;
-
-                                        if (viewerChildRenderBox != null) {
-                                          final Offset localOffset =
-                                              viewerChildRenderBox
-                                                  .globalToLocal(
-                                                    details.offset,
-                                                  );
-
-                                          if (_dragStartPosition != null &&
-                                              _dragStartPosition !=
-                                                  localOffset) {
-                                            setState(() {
-                                              final offset =
-                                                  localOffset -
-                                                  _dragStartPosition!;
-
-                                              if (_selectionManager
-                                                      .isComponentSelected(
-                                                        component,
-                                                      ) &&
-                                                  _selectionManager
-                                                          .selectedComponents
-                                                          .length >
-                                                      1) {
-                                                for (var selectedComponent
-                                                    in _selectionManager
-                                                        .selectedComponents) {
-                                                  final currentPos =
-                                                      _editorState
-                                                          .getComponentPosition(
-                                                            selectedComponent
-                                                                .id,
-                                                          );
-                                                  final newPos =
-                                                      currentPos + offset;
-                                                  final command =
-                                                      MoveComponentCommand(
-                                                        selectedComponent.id,
-                                                        newPos,
-                                                        currentPos,
-                                                        _editorState
-                                                            .componentPositions,
-                                                      );
-                                                  _editorState.commandHistory
-                                                      .execute(command);
-                                                  _persistenceHelper
-                                                      .saveComponentPosition(
-                                                        selectedComponent.id,
-                                                        newPos,
-                                                      );
-                                                }
-                                              } else {
-                                                final command =
-                                                    MoveComponentCommand(
-                                                      component.id,
-                                                      localOffset,
-                                                      _dragStartPosition!,
-                                                      _editorState
-                                                          .componentPositions,
-                                                    );
-                                                _editorState.commandHistory
-                                                    .execute(command);
-                                                _persistenceHelper
-                                                    .saveComponentPosition(
-                                                      component.id,
-                                                      localOffset,
-                                                    );
-                                                _selectionManager
-                                                    .selectComponent(component);
-                                              }
-
-                                              _dragStartPosition = null;
-
-                                              _updateCanvasSize();
-                                            });
-                                          }
-                                        }
+                                        _handleComponentDragEnd(
+                                          component,
+                                          details,
+                                        );
                                       },
                                       child: GestureDetector(
                                         onSecondaryTapDown: (details) {
@@ -1127,7 +924,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                     mini: true,
                     onPressed: () {
                       setState(() {
-                        _transformationController.value = Matrix4.identity();
+                        _canvasController.resetView();
                       });
                     },
                     tooltip: 'Reset View',
@@ -1142,12 +939,88 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     );
   }
 
+  void _handleCanvasDropAccept(dynamic data, Offset canvasPosition) {
+    if (data is ComponentType) {
+      _addNewComponent(data, clickPosition: canvasPosition);
+    } else if (data is Map<String, dynamic>) {
+      if (data.containsKey("buttonPoint") && data.containsKey("pointData")) {
+        _addNewButtonPointComponent(data, clickPosition: canvasPosition);
+      } else if (data.containsKey("device")) {
+        _addNewDeviceComponent(data, clickPosition: canvasPosition);
+      }
+    }
+  }
+
+  void _handleComponentDragEnd(Component component, DraggableDetails details) {
+    final RenderBox? viewerChildRenderBox =
+        _editorState.interactiveViewerChildKey.currentContext
+                ?.findRenderObject()
+            as RenderBox?;
+
+    if (viewerChildRenderBox != null) {
+      final Offset localOffset = viewerChildRenderBox.globalToLocal(
+        details.offset,
+      );
+
+      if (_dragManager.dragStartPosition != null &&
+          _dragManager.dragStartPosition != localOffset) {
+        setState(() {
+          if (_selectionManager.isComponentSelected(component) &&
+              _selectionManager.selectedComponents.length > 1) {
+            _handleMultiComponentDrag(localOffset);
+          } else {
+            _handleSingleComponentDrag(component, localOffset);
+          }
+
+          _dragManager.endComponentDrag();
+          _updateCanvasSize();
+        });
+      }
+    }
+  }
+
+  void _handleMultiComponentDrag(Offset localOffset) {
+    final offset = localOffset - _dragManager.dragStartPosition!;
+    final updatedPositions = _dragManager.moveComponentsByOffset(
+      _editorState.componentPositions,
+      _selectionManager.selectedComponents,
+      offset,
+    );
+
+    // Apply updated positions and save
+    for (var selectedComponent in _selectionManager.selectedComponents) {
+      final newPos = updatedPositions[selectedComponent.id]!;
+      final command = MoveComponentCommand(
+        selectedComponent.id,
+        newPos,
+        _editorState.getComponentPosition(selectedComponent.id),
+        _editorState.componentPositions,
+      );
+      _editorState.commandHistory.execute(command);
+      _persistenceHelper.saveComponentPosition(selectedComponent.id, newPos);
+    }
+  }
+
+  void _handleSingleComponentDrag(Component component, Offset localOffset) {
+    final command = MoveComponentCommand(
+      component.id,
+      localOffset,
+      _dragManager.dragStartPosition!,
+      _editorState.componentPositions,
+    );
+    _editorState.commandHistory.execute(command);
+    _persistenceHelper.saveComponentPosition(component.id, localOffset);
+    _selectionManager.selectComponent(component);
+  }
+
   void _showCanvasContextMenu(BuildContext context, Offset globalPosition) {
-    Offset canvasPosition = getPosition(
-      globalPosition,
-      _editorState.canvasKey,
-      _transformationController,
-    )!;
+    final canvasBox =
+        _editorState.canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    final canvasPosition = canvasBox != null
+        ? _canvasController.getCanvasPosition(globalPosition, canvasBox)
+        : null;
+
+    if (canvasPosition == null) return;
 
     final RenderBox overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -1161,19 +1034,19 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       items: [
         PopupMenuItem(
           value: 'paste',
-          enabled: _clipboardComponents.isNotEmpty,
+          enabled: !_clipboardManager.isEmpty,
           child: Row(
             children: [
               Icon(
                 Icons.content_paste,
                 size: 18,
-                color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+                color: !_clipboardManager.isEmpty ? null : Colors.grey,
               ),
               const SizedBox(width: 8),
               Text(
                 'Paste',
                 style: TextStyle(
-                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+                  color: !_clipboardManager.isEmpty ? null : Colors.grey,
                 ),
               ),
             ],
@@ -1181,19 +1054,19 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         ),
         PopupMenuItem(
           value: 'paste-special',
-          enabled: _clipboardComponents.isNotEmpty,
+          enabled: !_clipboardManager.isEmpty,
           child: Row(
             children: [
               Icon(
                 Icons.copy_all,
                 size: 18,
-                color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+                color: !_clipboardManager.isEmpty ? null : Colors.grey,
               ),
               const SizedBox(width: 8),
               Text(
                 'Paste Special...',
                 style: TextStyle(
-                  color: _clipboardComponents.isNotEmpty ? null : Colors.grey,
+                  color: !_clipboardManager.isEmpty ? null : Colors.grey,
                 ),
               ),
             ],
@@ -1241,7 +1114,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _showPasteSpecialDialog(Offset pastePosition) {
-    if (_clipboardComponents.isEmpty) return;
+    if (_clipboardManager.isEmpty) return;
 
     TextEditingController copiesController = TextEditingController(text: '1');
     bool keepConnections = true;
@@ -1303,7 +1176,7 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
                 int copies = int.tryParse(copiesController.text) ?? 1;
                 copies = copies.clamp(1, 20);
 
-                _flowHandlers.handlePasteSpecialComponent(
+                _handlePasteSpecialComponent(
                   pastePosition,
                   copies,
                   keepConnections,
@@ -1317,8 +1190,184 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     );
   }
 
+  void _handlePasteSpecialComponent(
+    Offset position,
+    int numberOfCopies,
+    bool keepAllLinks,
+  ) {
+    if (_clipboardManager.isEmpty) return;
+
+    const double offsetX = 50.0;
+    const double offsetY = 50.0;
+
+    for (int copyIndex = 0; copyIndex < numberOfCopies; copyIndex++) {
+      final double baseOffsetX = copyIndex * offsetX;
+      final double baseOffsetY = copyIndex * offsetY;
+
+      Map<String, String> idMap = {};
+
+      final basePastePositions = _clipboardManager.calculatePastePositions(
+        Offset(position.dx + baseOffsetX, position.dy + baseOffsetY),
+      );
+
+      for (int i = 0; i < _clipboardManager.clipboardComponents.length; i++) {
+        var originalComponent = _clipboardManager.clipboardComponents[i];
+        var newPosition = basePastePositions[i];
+
+        String newName = '${originalComponent.id} (Copy)';
+        int counter = 1;
+        while (_editorState.flowManager.components.any(
+          (comp) => comp.id == newName,
+        )) {
+          counter++;
+          newName = '${originalComponent.id} (Copy $counter)';
+        }
+
+        Component newComponent = _editorState.flowManager.createComponentByType(
+          newName,
+          originalComponent.type.type,
+        );
+
+        for (var sourceProperty in originalComponent.properties) {
+          if (!originalComponent.inputConnections.containsKey(
+                sourceProperty.index,
+              ) ||
+              !keepAllLinks) {
+            for (var targetProperty in newComponent.properties) {
+              if (targetProperty.index == sourceProperty.index) {
+                targetProperty.value = sourceProperty.value;
+                break;
+              }
+            }
+          }
+        }
+
+        Map<String, dynamic> state = {
+          'position': newPosition,
+          'key': _editorState.getComponentKey(newComponent.id),
+          'positions': _editorState.componentPositions,
+          'keys': _editorState.componentKeys,
+        };
+
+        idMap[originalComponent.id] = newComponent.id;
+        final command = AddComponentCommand(
+          _editorState.flowManager,
+          newComponent,
+          state,
+        );
+        _editorState.commandHistory.execute(command);
+
+        _editorState.initializeComponentState(
+          newComponent,
+          position: newPosition,
+          width: 160.0,
+        );
+      }
+
+      if (keepAllLinks) {
+        for (var connection in _clipboardManager.clipboardConnections) {
+          String? newFromId = idMap[connection.fromComponentId];
+          String? newToId = idMap[connection.toComponentId];
+
+          if (newFromId != null && newToId != null) {
+            final command = CreateConnectionCommand(
+              _editorState.flowManager,
+              newFromId,
+              connection.fromPortIndex,
+              newToId,
+              connection.toPortIndex,
+            );
+            _editorState.commandHistory.execute(command);
+          }
+        }
+      }
+    }
+
+    setState(() {
+      _updateCanvasSize();
+    });
+  }
+
   void _handlePasteComponent(Offset position) {
-    _flowHandlers.handlePasteComponent(position);
+    if (_clipboardManager.isEmpty) return;
+
+    final pastePositions = _clipboardManager.calculatePastePositions(position);
+
+    Map<String, String> idMap = {};
+
+    for (int i = 0; i < _clipboardManager.clipboardComponents.length; i++) {
+      var originalComponent = _clipboardManager.clipboardComponents[i];
+      var newPosition = pastePositions[i];
+
+      String newName = '${originalComponent.id} (Copy)';
+      int counter = 1;
+      while (_editorState.flowManager.components.any(
+        (comp) => comp.id == newName,
+      )) {
+        counter++;
+        newName = '${originalComponent.id} (Copy $counter)';
+      }
+
+      Component newComponent = _editorState.flowManager.createComponentByType(
+        newName,
+        originalComponent.type.type,
+      );
+
+      // Copy properties from original component
+      for (var sourceProperty in originalComponent.properties) {
+        if (!originalComponent.inputConnections.containsKey(
+          sourceProperty.index,
+        )) {
+          for (var targetProperty in newComponent.properties) {
+            if (targetProperty.index == sourceProperty.index) {
+              targetProperty.value = sourceProperty.value;
+              break;
+            }
+          }
+        }
+      }
+
+      Map<String, dynamic> state = {
+        'position': newPosition,
+        'key': _editorState.getComponentKey(newComponent.id),
+        'positions': _editorState.componentPositions,
+        'keys': _editorState.componentKeys,
+      };
+
+      idMap[originalComponent.id] = newComponent.id;
+      final command = AddComponentCommand(
+        _editorState.flowManager,
+        newComponent,
+        state,
+      );
+      _editorState.commandHistory.execute(command);
+
+      _editorState.initializeComponentState(
+        newComponent,
+        position: newPosition,
+        width: 160.0,
+      );
+    }
+
+    for (var connection in _clipboardManager.clipboardConnections) {
+      String? newFromId = idMap[connection.fromComponentId];
+      String? newToId = idMap[connection.toComponentId];
+
+      if (newFromId != null && newToId != null) {
+        final command = CreateConnectionCommand(
+          _editorState.flowManager,
+          newFromId,
+          connection.fromPortIndex,
+          newToId,
+          connection.toPortIndex,
+        );
+        _editorState.commandHistory.execute(command);
+      }
+    }
+
+    setState(() {
+      _updateCanvasSize();
+    });
   }
 
   void _showAddComponentDialogAtPosition(Offset position) {
@@ -1492,6 +1541,11 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     });
   }
 
+  void _handleCopyComponent(Component component) {
+    final position = _editorState.getComponentPosition(component.id);
+    _clipboardManager.copyComponent(component, position);
+  }
+
   void _handleEditComponent(BuildContext context, Component component) {
     _flowHandlers.handleEditComponent(context, component);
   }
@@ -1622,17 +1676,20 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
         viewportSize.height / 2,
       );
 
-      final matrix = _transformationController.value;
-      final inverseMatrix = Matrix4.inverted(matrix);
-      final transformedCenter = MatrixUtils.transformPoint(
-        inverseMatrix,
-        viewportCenter,
-      );
-
-      return transformedCenter;
+      return _canvasController.getCanvasPosition(
+            viewportCenter,
+            viewerChildRenderBox,
+          ) ??
+          Offset(
+            _canvasController.canvasSize.width / 2,
+            _canvasController.canvasSize.height / 2,
+          );
     }
 
-    return Offset(_canvasSize.width / 2, _canvasSize.height / 2);
+    return Offset(
+      _canvasController.canvasSize.width / 2,
+      _canvasController.canvasSize.height / 2,
+    );
   }
 
   bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
@@ -1658,12 +1715,14 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     };
   }
 
-  void _handleCopyComponent(Component component) {
-    _flowHandlers.handleCopyComponent(component);
-  }
-
   void _handleCopyMultipleComponents() {
-    _flowHandlers.handleCopyMultipleComponents();
+    if (_selectionManager.selectedComponents.isEmpty) return;
+
+    _clipboardManager.copyMultipleComponents(
+      _selectionManager.selectedComponents,
+      _editorState.componentPositions,
+      _editorState.flowManager.connections,
+    );
   }
 
   void _handleMoveComponentDown(Component component) {

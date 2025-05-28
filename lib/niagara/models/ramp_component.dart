@@ -1,4 +1,3 @@
-// ramp_component.dart
 import 'dart:async';
 import 'dart:math';
 import 'component.dart';
@@ -16,23 +15,21 @@ class RampComponent extends Component {
   final double _max = 100.0;
   bool _running = false;
 
-  RampComponent({
-    required super.id,
-  }) : super(
-          type: const ComponentType(RAMP),
-        ) {
+  RampComponent({required super.id}) : super(type: const ComponentType(RAMP)) {
     _setupPorts();
     _startRamping();
   }
 
   void _setupPorts() {
-    properties.add(Property(
-      name: "Output",
-      index: 0,
-      isInput: false,
-      type: const PortType(PortType.NUMERIC),
-      value: 0.0,
-    ));
+    properties.add(
+      Property(
+        name: "Output",
+        index: 0,
+        isInput: false,
+        type: const PortType(PortType.NUMERIC),
+        value: 0.0,
+      ),
+    );
   }
 
   @override
