@@ -1,4 +1,4 @@
-lib/
+.
 ├── comm
 │   ├── command_executor.dart
 │   ├── command_queue_controller.dart
@@ -77,8 +77,13 @@ lib/
 ├── screens
 │   ├── actions.dart
 │   ├── details
+│   │   ├── device_detail_screen.dart
 │   │   ├── group_detail_screen.dart
+│   │   ├── output_points_detail_screen.dart
+│   │   ├── point_detail_screen.dart
+│   │   ├── points_detail_screen.dart
 │   │   ├── router_detail_screen.dart
+│   │   ├── subnet_detail_screen.dart
 │   │   └── workgroup_detail_screen.dart
 │   ├── dialogs
 │   │   ├── action_dialogs.dart
@@ -104,6 +109,7 @@ lib/
 │   ├── app_initialization.dart
 │   ├── command_history_service.dart
 │   ├── connection_service.dart
+│   ├── device_query_service.dart
 │   ├── discovery_service.dart
 │   ├── file_storage_service.dart
 │   ├── flowsheet_storage_service.dart
@@ -125,4 +131,4 @@ lib/
     ├── command_monitor.dart
     └── wiresheet_flow_editor.dart
 
-22 directories, 103 files
+22 directories, 109 files
