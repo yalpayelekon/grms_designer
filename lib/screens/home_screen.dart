@@ -33,7 +33,6 @@ import 'project_screens/project_files_screen.dart';
 import '../screens/details/subnet_detail_screen.dart';
 import '../screens/details/points_detail_screen.dart';
 import '../screens/details/point_detail_screen.dart';
-import '../models/helvar_models/input_device.dart';
 import '../screens/details/output_points_detail_screen.dart';
 import '../models/helvar_models/output_device.dart';
 
@@ -80,21 +79,21 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     final wiresheets = ref.watch(flowsheetsProvider);
     final projectName = ref.watch(projectNameProvider);
     connectionStream = ref.watch(routerConnectionStatusStreamProvider);
-    ref.listen<AsyncValue<QueuedCommand>>(
-      commandStatusStreamProvider,
-      (previous, next) {
-        next.whenData((command) {
-          final list = _liveQueues.putIfAbsent(command.routerIp, () => []);
+    ref.listen<AsyncValue<QueuedCommand>>(commandStatusStreamProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((command) {
+        final list = _liveQueues.putIfAbsent(command.routerIp, () => []);
 
-          final index = list.indexWhere((c) => c.id == command.id);
-          if (index != -1) {
-            list[index] = command;
-          } else {
-            list.add(command);
-          }
-        });
-      },
-    );
+        final index = list.indexWhere((c) => c.id == command.id);
+        if (index != -1) {
+          list[index] = command;
+        } else {
+          list.add(command);
+        }
+      });
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -115,9 +114,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const LogPanelScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const LogPanelScreen()),
               );
             },
           ),
@@ -126,9 +123,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             tooltip: 'Settings',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -171,7 +166,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 setState(() {
                   _leftPanelWidth += details.delta.dx;
                   _leftPanelWidth = _leftPanelWidth.clamp(
-                      200, MediaQuery.of(context).size.width * 0.7);
+                    200,
+                    MediaQuery.of(context).size.width * 0.7,
+                  );
                 });
               },
               onPanEnd: (details) {
@@ -183,9 +180,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
-          Expanded(
-            child: _buildMainContent(),
-          ),
+          Expanded(child: _buildMainContent()),
         ],
       ),
     );
@@ -202,21 +197,18 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       return const WorkgroupListScreen();
     }
     if (showingGroups) {
-      return GroupsListScreen(
-        workgroup: selectedWorkgroup!,
-      );
+      return GroupsListScreen(workgroup: selectedWorkgroup!);
     }
     if (showingImages) {
       return const ProjectFilesScreen(
-          directoryName: AppDirectoryService.imagesDir);
+        directoryName: AppDirectoryService.imagesDir,
+      );
     }
     if (openWiresheet) {
       return const FlowsheetListScreen();
     }
     if (selectedWiresheetId != null) {
-      return FlowScreen(
-        flowsheetId: selectedWiresheetId!,
-      );
+      return FlowScreen(flowsheetId: selectedWiresheetId!);
     }
     if (selectedWorkgroup != null) {
       if (showingDeviceDetail &&
@@ -302,22 +294,40 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Router Connections',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Router Connections',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildStatCard(context, 'Total', stats['total']),
                 _buildStatCard(
-                    context, 'Connected', stats['connected'], Colors.green),
+                  context,
+                  'Connected',
+                  stats['connected'],
+                  Colors.green,
+                ),
                 _buildStatCard(
-                    context, 'Connecting', stats['connecting'], Colors.blue),
-                _buildStatCard(context, 'Reconnecting', stats['reconnecting'],
-                    Colors.orange),
+                  context,
+                  'Connecting',
+                  stats['connecting'],
+                  Colors.blue,
+                ),
+                _buildStatCard(
+                  context,
+                  'Reconnecting',
+                  stats['reconnecting'],
+                  Colors.orange,
+                ),
                 _buildStatCard(context, 'Failed', stats['failed'], Colors.red),
-                _buildStatCard(context, 'Disconnected', stats['disconnected'],
-                    Colors.grey),
+                _buildStatCard(
+                  context,
+                  'Disconnected',
+                  stats['disconnected'],
+                  Colors.grey,
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -332,7 +342,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       itemCount: statuses.length,
                       itemBuilder: (context, index) {
                         return _buildConnectionStatusItem(
-                            context, statuses[index]);
+                          context,
+                          statuses[index],
+                        );
                       },
                     ),
                   ),
@@ -398,14 +410,20 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (mounted) {
         Navigator.of(context).pop();
-        showSnackBarMsg(context,
-            'Connected to ${result.successCount} routers (${result.failureCount} failed)');
+        showSnackBarMsg(
+          context,
+          'Connected to ${result.successCount} routers (${result.failureCount} failed)',
+        );
       }
     }
   }
 
-  Widget _buildStatCard(BuildContext context, String label, int value,
-      [Color? color]) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String label,
+    int value, [
+    Color? color,
+  ]) {
     return Card(
       color: color?.withValues(alpha: 0.1 * 255),
       child: Padding(
@@ -415,9 +433,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               value.toString(),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(label),
           ],
@@ -427,7 +445,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildConnectionStatusItem(
-      BuildContext context, RouterConnectionStatus status) {
+    BuildContext context,
+    RouterConnectionStatus status,
+  ) {
     IconData icon;
     Color color;
 
@@ -482,13 +502,15 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: commands
-                      .map((cmd) => Text(
-                            '• [${cmd.status.name}] ${cmd.command}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: getStatusColor(cmd.status),
-                            ),
-                          ))
+                      .map(
+                        (cmd) => Text(
+                          '• [${cmd.status.name}] ${cmd.command}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: getStatusColor(cmd.status),
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -498,16 +520,18 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _setActiveNode(String nodeName,
-      {Workgroup? workgroup,
-      HelvarGroup? group,
-      HelvarRouter? router,
-      String? wiresheetId,
-      int? subnetNumber,
-      List<HelvarDevice>? subnetDevices,
-      HelvarDevice? device,
-      ButtonPoint? point,
-      OutputPoint? outputPoint}) {
+  void _setActiveNode(
+    String nodeName, {
+    Workgroup? workgroup,
+    HelvarGroup? group,
+    HelvarRouter? router,
+    String? wiresheetId,
+    int? subnetNumber,
+    List<HelvarDevice>? subnetDevices,
+    HelvarDevice? device,
+    ButtonPoint? point,
+    OutputPoint? outputPoint,
+  }) {
     setState(() {
       showingPointsDetail = false;
       showingPointDetail = false;
