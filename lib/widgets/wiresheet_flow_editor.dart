@@ -284,127 +284,6 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     _editorState.commandHistory.clear();
   }
 
-  void _handleComponentResize(String componentId, double newWidth) {
-    _flowHandlers.handleComponentResize(componentId, newWidth);
-    _editorState.setComponentWidth(componentId, newWidth);
-
-    _persistenceHelper.saveComponentWidth(componentId, newWidth);
-    _updateCanvasSize();
-  }
-
-  void _addNewComponent(ComponentType type, {Offset? clickPosition}) {
-    String baseName = getNameForComponentType(type);
-    int counter = 1;
-    String newName = '$baseName $counter';
-
-    while (_editorState.flowManager.components.any(
-      (comp) => comp.id == newName,
-    )) {
-      counter++;
-      newName = '$baseName $counter';
-    }
-
-    Component newComponent = _editorState.flowManager.createComponentByType(
-      newName,
-      type.type,
-    );
-
-    Offset newPosition =
-        clickPosition ?? getDefaultPosition(_canvasController, _editorState);
-
-    Map<String, dynamic> state = {
-      'position': newPosition,
-      'key': _editorState.getComponentKey(newComponent.id),
-      'positions': _editorState.componentPositions,
-      'keys': _editorState.componentKeys,
-    };
-
-    setState(() {
-      final command = AddComponentCommand(
-        _editorState.flowManager,
-        newComponent,
-        state,
-      );
-      _editorState.commandHistory.execute(command);
-
-      _editorState.initializeComponentState(
-        newComponent,
-        position: newPosition,
-        width: 160.0,
-      );
-      _persistenceHelper.saveAddComponent(newComponent);
-      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
-      _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
-      _updateCanvasSize();
-    });
-  }
-
-  void _handleValueChanged(
-    String componentId,
-    int slotIndex,
-    dynamic newValue,
-  ) {
-    _flowHandlers.handleValueChanged(componentId, slotIndex, newValue);
-    final comp = _editorState.flowManager.findComponentById(componentId);
-    if (comp != null) {
-      _persistenceHelper.savePortValue(componentId, slotIndex, newValue);
-      _persistenceHelper.saveUpdateComponent(componentId, comp);
-    }
-  }
-
-  void _handlePortDragStarted(SlotDragInfo slotInfo) {
-    setState(() {
-      _dragManager.startPortDrag(slotInfo);
-    });
-  }
-
-  void _handlePortDragAccepted(SlotDragInfo targetSlotInfo) {
-    if (_dragManager.currentDraggedPort != null) {
-      Component? sourceComponent = _editorState.flowManager.findComponentById(
-        _dragManager.currentDraggedPort!.componentId,
-      );
-      Component? targetComponent = _editorState.flowManager.findComponentById(
-        targetSlotInfo.componentId,
-      );
-
-      if (sourceComponent != null && targetComponent != null) {
-        if (_editorState.flowManager.canCreateConnection(
-          _dragManager.currentDraggedPort!.componentId,
-          _dragManager.currentDraggedPort!.slotIndex,
-          targetSlotInfo.componentId,
-          targetSlotInfo.slotIndex,
-        )) {
-          setState(() {
-            final command = CreateConnectionCommand(
-              _editorState.flowManager,
-              _dragManager.currentDraggedPort!.componentId,
-              _dragManager.currentDraggedPort!.slotIndex,
-              targetSlotInfo.componentId,
-              targetSlotInfo.slotIndex,
-            );
-            _editorState.commandHistory.execute(command);
-            _persistenceHelper.saveAddConnection(
-              Connection(
-                fromComponentId: _dragManager.currentDraggedPort!.componentId,
-                fromPortIndex: _dragManager.currentDraggedPort!.slotIndex,
-                toComponentId: targetSlotInfo.componentId,
-                toPortIndex: targetSlotInfo.slotIndex,
-              ),
-            );
-          });
-        } else {
-          logWarning(
-            'Cannot connect these slots - type mismatch or invalid connection',
-          );
-        }
-      }
-    }
-
-    setState(() {
-      _dragManager.endPortDrag();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -995,6 +874,53 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     );
   }
 
+  void _addNewComponent(ComponentType type, {Offset? clickPosition}) {
+    String baseName = getNameForComponentType(type);
+    int counter = 1;
+    String newName = '$baseName $counter';
+
+    while (_editorState.flowManager.components.any(
+      (comp) => comp.id == newName,
+    )) {
+      counter++;
+      newName = '$baseName $counter';
+    }
+
+    Component newComponent = _editorState.flowManager.createComponentByType(
+      newName,
+      type.type,
+    );
+
+    Offset newPosition =
+        clickPosition ?? getDefaultPosition(_canvasController, _editorState);
+
+    Map<String, dynamic> state = {
+      'position': newPosition,
+      'key': _editorState.getComponentKey(newComponent.id),
+      'positions': _editorState.componentPositions,
+      'keys': _editorState.componentKeys,
+    };
+
+    setState(() {
+      final command = AddComponentCommand(
+        _editorState.flowManager,
+        newComponent,
+        state,
+      );
+      _editorState.commandHistory.execute(command);
+
+      _editorState.initializeComponentState(
+        newComponent,
+        position: newPosition,
+        width: 160.0,
+      );
+      _persistenceHelper.saveAddComponent(newComponent);
+      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
+      _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
+      _updateCanvasSize();
+    });
+  }
+
   void _showAddComponentDialogAtPosition(Offset position) {
     showDialog(
       context: context,
@@ -1309,6 +1235,80 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
       'buttonId': buttonPoint.buttonId,
       'function': buttonPoint.function,
     };
+  }
+
+  void _handleComponentResize(String componentId, double newWidth) {
+    _flowHandlers.handleComponentResize(componentId, newWidth);
+    _editorState.setComponentWidth(componentId, newWidth);
+
+    _persistenceHelper.saveComponentWidth(componentId, newWidth);
+    _updateCanvasSize();
+  }
+
+  void _handleValueChanged(
+    String componentId,
+    int slotIndex,
+    dynamic newValue,
+  ) {
+    _flowHandlers.handleValueChanged(componentId, slotIndex, newValue);
+    final comp = _editorState.flowManager.findComponentById(componentId);
+    if (comp != null) {
+      _persistenceHelper.savePortValue(componentId, slotIndex, newValue);
+      _persistenceHelper.saveUpdateComponent(componentId, comp);
+    }
+  }
+
+  void _handlePortDragStarted(SlotDragInfo slotInfo) {
+    setState(() {
+      _dragManager.startPortDrag(slotInfo);
+    });
+  }
+
+  void _handlePortDragAccepted(SlotDragInfo targetSlotInfo) {
+    if (_dragManager.currentDraggedPort != null) {
+      Component? sourceComponent = _editorState.flowManager.findComponentById(
+        _dragManager.currentDraggedPort!.componentId,
+      );
+      Component? targetComponent = _editorState.flowManager.findComponentById(
+        targetSlotInfo.componentId,
+      );
+
+      if (sourceComponent != null && targetComponent != null) {
+        if (_editorState.flowManager.canCreateConnection(
+          _dragManager.currentDraggedPort!.componentId,
+          _dragManager.currentDraggedPort!.slotIndex,
+          targetSlotInfo.componentId,
+          targetSlotInfo.slotIndex,
+        )) {
+          setState(() {
+            final command = CreateConnectionCommand(
+              _editorState.flowManager,
+              _dragManager.currentDraggedPort!.componentId,
+              _dragManager.currentDraggedPort!.slotIndex,
+              targetSlotInfo.componentId,
+              targetSlotInfo.slotIndex,
+            );
+            _editorState.commandHistory.execute(command);
+            _persistenceHelper.saveAddConnection(
+              Connection(
+                fromComponentId: _dragManager.currentDraggedPort!.componentId,
+                fromPortIndex: _dragManager.currentDraggedPort!.slotIndex,
+                toComponentId: targetSlotInfo.componentId,
+                toPortIndex: targetSlotInfo.slotIndex,
+              ),
+            );
+          });
+        } else {
+          logWarning(
+            'Cannot connect these slots - type mismatch or invalid connection',
+          );
+        }
+      }
+    }
+
+    setState(() {
+      _dragManager.endPortDrag();
+    });
   }
 
   void _handleCanvasDropAccept(dynamic data, Offset canvasPosition) {
