@@ -45,16 +45,17 @@ class DeviceQueryService {
       final result = await commandService.sendCommand(routerIpAddress, command);
 
       if (result.success && result.response != null) {
-        final stateValue =
-            ProtocolParser.extractResponseValue(result.response!);
+        final stateValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
         if (stateValue != null) {
           final stateCode = int.tryParse(stateValue) ?? 0;
           final isNormal = stateCode == 0;
-          await device.updatePointValue(
-              1, !isNormal); // Invert because point represents "issue state"
+          await device.updatePointValue(1, isNormal);
 
           logInfo(
-              'Device ${device.address} state: $stateCode (Normal: $isNormal)');
+            'Device ${device.address} state: $stateCode (Normal: $isNormal)',
+          );
         }
       }
     } catch (e) {
@@ -71,8 +72,9 @@ class DeviceQueryService {
       final result = await commandService.sendCommand(routerIpAddress, command);
 
       if (result.success && result.response != null) {
-        final failureValue =
-            ProtocolParser.extractResponseValue(result.response!);
+        final failureValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
         if (failureValue != null) {
           final hasFailure =
               failureValue == '1' || failureValue.toLowerCase() == 'true';
@@ -95,8 +97,9 @@ class DeviceQueryService {
       final result = await commandService.sendCommand(routerIpAddress, command);
 
       if (result.success && result.response != null) {
-        final missingValue =
-            ProtocolParser.extractResponseValue(result.response!);
+        final missingValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
         if (missingValue != null) {
           final isMissing =
               missingValue == '1' || missingValue.toLowerCase() == 'true';
@@ -119,8 +122,9 @@ class DeviceQueryService {
       final result = await commandService.sendCommand(routerIpAddress, command);
 
       if (result.success && result.response != null) {
-        final faultyValue =
-            ProtocolParser.extractResponseValue(result.response!);
+        final faultyValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
         if (faultyValue != null) {
           final isFaulty =
               faultyValue == '1' || faultyValue.toLowerCase() == 'true';
@@ -144,8 +148,9 @@ class DeviceQueryService {
       final result = await commandService.sendCommand(routerIpAddress, command);
 
       if (result.success && result.response != null) {
-        final levelValue =
-            ProtocolParser.extractResponseValue(result.response!);
+        final levelValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
         if (levelValue != null) {
           final level = double.tryParse(levelValue) ?? 0.0;
           await device.updatePointValue(5, level);
@@ -171,8 +176,9 @@ class DeviceQueryService {
       final result = await commandService.sendCommand(routerIpAddress, command);
 
       if (result.success && result.response != null) {
-        final powerValue =
-            ProtocolParser.extractResponseValue(result.response!);
+        final powerValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
         if (powerValue != null) {
           final power = double.tryParse(powerValue) ?? 0.0;
           await device.updatePointValue(6, power);

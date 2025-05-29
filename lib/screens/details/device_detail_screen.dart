@@ -7,16 +7,24 @@ import '../../models/helvar_models/input_device.dart';
 import '../../models/helvar_models/output_device.dart';
 import '../../utils/device_icons.dart';
 import '../../utils/general_ui.dart';
+import '../../protocol/query_commands.dart';
+import '../../protocol/protocol_parser.dart';
+import '../../protocol/protocol_constants.dart';
+import '../../providers/router_connection_provider.dart';
+import '../../utils/logger.dart';
 
 class DeviceDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
   final HelvarRouter router;
   final HelvarDevice device;
-  final Function(String,
-      {Workgroup? workgroup,
-      HelvarRouter? router,
-      HelvarDevice? device,
-      ButtonPoint? point})? onNavigate;
+  final Function(
+    String, {
+    Workgroup? workgroup,
+    HelvarRouter? router,
+    HelvarDevice? device,
+    ButtonPoint? point,
+  })?
+  onNavigate;
 
   const DeviceDetailScreen({
     super.key,
@@ -81,8 +89,9 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundImage:
-                      AssetImage(getDeviceIconAsset(widget.device)),
+                  backgroundImage: AssetImage(
+                    getDeviceIconAsset(widget.device),
+                  ),
                   backgroundColor: Colors.transparent,
                   radius: 20,
                 ),
@@ -111,8 +120,10 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             _buildInfoRow('Type', widget.device.helvarType),
             _buildInfoRow('Props', widget.device.props),
             if (widget.device.deviceTypeCode != null)
-              _buildInfoRow('Type Code',
-                  '0x${widget.device.deviceTypeCode!.toRadixString(16)}'),
+              _buildInfoRow(
+                'Type Code',
+                '0x${widget.device.deviceTypeCode!.toRadixString(16)}',
+              ),
             _buildInfoRow('Emergency', widget.device.emergency ? 'Yes' : 'No'),
             _buildInfoRow('Block ID', widget.device.blockId),
             if (widget.device.sceneId.isNotEmpty)
@@ -151,18 +162,100 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             if (widget.device.state.isNotEmpty)
               _buildInfoRow('State', widget.device.state),
             if (widget.device.deviceStateCode != null)
-              _buildInfoRow('State Code',
-                  '0x${widget.device.deviceStateCode!.toRadixString(16)}'),
+              _buildInfoRow(
+                'State Code',
+                '0x${widget.device.deviceStateCode!.toRadixString(16)}',
+              ),
             _buildInfoRow(
-                'Button Device', widget.device.isButtonDevice ? 'Yes' : 'No'),
+              'Button Device',
+              widget.device.isButtonDevice ? 'Yes' : 'No',
+            ),
             _buildInfoRow(
-                'Multisensor', widget.device.isMultisensor ? 'Yes' : 'No'),
+              'Multisensor',
+              widget.device.isMultisensor ? 'Yes' : 'No',
+            ),
             _buildInfoRow(
-                'Points Created', widget.device.pointsCreated ? 'Yes' : 'No'),
+              'Points Created',
+              widget.device.pointsCreated ? 'Yes' : 'No',
+            ),
+
+            if (widget.device is HelvarDriverOutputDevice)
+              ..._buildOutputDeviceStatus(),
+
+            if (widget.device is HelvarDriverInputDevice)
+              ..._buildInputDeviceStatus(),
+
+            _buildInfoRow('Last Updated', _getLastUpdateTime()),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildOutputDeviceStatus() {
+    final outputDevice = widget.device as HelvarDriverOutputDevice;
+    return [
+      const SizedBox(height: 8),
+      Text(
+        'Output Status',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Colors.blue[700],
+        ),
+      ),
+      const SizedBox(height: 4),
+      _buildInfoRow('Current Level', '${outputDevice.level}%'),
+      _buildInfoRow('Proportion', '${outputDevice.proportion}'),
+      _buildInfoRow(
+        'Missing',
+        outputDevice.missing.isEmpty ? 'No' : outputDevice.missing,
+      ),
+      _buildInfoRow(
+        'Faulty',
+        outputDevice.faulty.isEmpty ? 'No' : outputDevice.faulty,
+      ),
+    ];
+  }
+
+  List<Widget> _buildInputDeviceStatus() {
+    final inputDevice = widget.device as HelvarDriverInputDevice;
+    List<Widget> widgets = [];
+
+    widgets.add(const SizedBox(height: 8));
+    widgets.add(
+      Text(
+        'Input Status',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: Colors.green[700],
+        ),
+      ),
+    );
+    widgets.add(const SizedBox(height: 4));
+
+    if (inputDevice.isButtonDevice) {
+      widgets.add(
+        _buildInfoRow('Button Points', '${inputDevice.buttonPoints.length}'),
+      );
+    }
+
+    if (inputDevice.isMultisensor) {
+      widgets.add(
+        _buildInfoRow(
+          'Sensor Capabilities',
+          '${inputDevice.sensorInfo.length}',
+        ),
+      );
+      inputDevice.sensorInfo.forEach((key, value) {
+        widgets.add(_buildInfoRow('  $key', value.toString()));
+      });
+    }
+
+    return widgets;
+  }
+
+  String _getLastUpdateTime() {
+    return DateTime.now().toString().substring(11, 19); // HH:MM:SS format
   }
 
   Widget _buildOutputControlsCard() {
@@ -181,15 +274,56 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const Divider(),
-            _buildInfoRow('Current Level', '${outputDevice.level}%'),
-            _buildInfoRow('Proportion', '${outputDevice.proportion}'),
-            _buildInfoRow('Missing',
-                outputDevice.missing.isEmpty ? 'No' : outputDevice.missing),
-            _buildInfoRow('Faulty',
-                outputDevice.faulty.isEmpty ? 'No' : outputDevice.faulty),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusIndicator(
+                    'Current Level',
+                    '${outputDevice.level}%',
+                    _getLevelColor(outputDevice.level),
+                    Icons.tune,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatusIndicator(
+                    'Proportion',
+                    '${outputDevice.proportion}',
+                    Colors.blue,
+                    Icons.percent,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusFlag(
+                    'Missing',
+                    outputDevice.missing.isEmpty,
+                    Icons.help_outline,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatusFlag(
+                    'Faulty',
+                    outputDevice.faulty.isEmpty,
+                    Icons.warning,
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 16),
+
             Wrap(
               spacing: 8,
+              runSpacing: 8,
               children: [
                 ElevatedButton.icon(
                   icon: const Icon(Icons.lightbulb_outline),
@@ -206,12 +340,108 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
                   label: const Text('Recall Scene'),
                   onPressed: () => _showRecallSceneDialog(),
                 ),
+                // Add link to output points detail
+                if (outputDevice.outputPoints.isNotEmpty)
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.list, size: 16),
+                    label: const Text('View Points Detail'),
+                    onPressed: () => _navigateToOutputPointsDetail(),
+                  ),
               ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildStatusIndicator(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1 * 255),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3 * 255)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusFlag(String label, bool isNormal, IconData icon) {
+    final color = isNormal ? Colors.green : Colors.red;
+    final status = isNormal ? 'OK' : 'ERROR';
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1 * 255),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3 * 255)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              ),
+              Text(
+                status,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getLevelColor(int level) {
+    if (level == 0) return Colors.grey;
+    if (level < 30) return Colors.orange;
+    if (level < 70) return Colors.blue;
+    return Colors.green;
+  }
+
+  void _navigateToOutputPointsDetail() {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'outputPointsDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: widget.device,
+      );
+    } else {
+      showSnackBarMsg(context, 'Output Points Detail navigation not available');
+    }
   }
 
   Widget _buildPointsCard() {
@@ -240,7 +470,9 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             if (inputDevice.buttonPoints.isEmpty)
               const Text('No points available')
             else
-              ...inputDevice.buttonPoints.take(3).map(
+              ...inputDevice.buttonPoints
+                  .take(3)
+                  .map(
                     (point) => ListTile(
                       leading: Icon(_getPointIcon(point)),
                       title: Text(point.name),
@@ -254,7 +486,8 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
                 child: TextButton(
                   onPressed: () => _navigateToPointsDetail(),
                   child: Text(
-                      'View ${inputDevice.buttonPoints.length - 3} more points'),
+                    'View ${inputDevice.buttonPoints.length - 3} more points',
+                  ),
                 ),
               ),
           ],
@@ -279,7 +512,8 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               const Text('No sensor data available')
             else
               ...widget.device.sensorInfo.entries.map(
-                  (entry) => _buildInfoRow(entry.key, entry.value.toString())),
+                (entry) => _buildInfoRow(entry.key, entry.value.toString()),
+              ),
           ],
         ),
       ),
@@ -334,9 +568,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -369,14 +601,128 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              showSnackBarMsg(context,
-                  'Real-time query functionality will be implemented later');
+              _queryRealTimeStatus();
             },
             child: const Text('Query Status'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _queryRealTimeStatus() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Querying device status...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      if (widget.device is HelvarDriverOutputDevice) {
+        await _queryOutputDevice();
+      } else if (widget.device is HelvarDriverInputDevice) {
+        await _queryInputDevice();
+      } else {
+        await _queryBasicDeviceStatus();
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        setState(() {}); // Refresh the UI with new data
+        showSnackBarMsg(context, 'Device status updated successfully');
+      }
+    } catch (e) {
+      logError('Error querying device status: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+        showSnackBarMsg(context, 'Error querying device status: $e');
+      }
+    }
+  }
+
+  Future<void> _queryOutputDevice() async {
+    final deviceQueryService = ref.read(deviceQueryServiceProvider);
+    final outputDevice = widget.device as HelvarDriverOutputDevice;
+
+    final success = await deviceQueryService.queryOutputDevicePoints(
+      widget.router.ipAddress,
+      outputDevice,
+    );
+
+    if (!success) {
+      throw Exception('Failed to query output device points');
+    }
+
+    logInfo('Successfully queried output device: ${widget.device.address}');
+  }
+
+  Future<void> _queryInputDevice() async {
+    await _queryBasicDeviceStatus();
+
+    final inputDevice = widget.device as HelvarDriverInputDevice;
+    logInfo('Successfully queried input device: ${inputDevice.address}');
+
+    if (inputDevice.isButtonDevice) {
+      logInfo('Button device detected - button points available');
+    }
+
+    if (inputDevice.isMultisensor) {
+      logInfo('Multisensor detected - sensor data available');
+    }
+  }
+
+  Future<void> _queryBasicDeviceStatus() async {
+    final commandService = ref.read(routerCommandServiceProvider);
+
+    final stateCommand = HelvarNetCommands.queryDeviceState(
+      widget.device.address,
+    );
+    final stateResult = await commandService.sendCommand(
+      widget.router.ipAddress,
+      stateCommand,
+    );
+
+    if (stateResult.success && stateResult.response != null) {
+      final stateValue = ProtocolParser.extractResponseValue(
+        stateResult.response!,
+      );
+      if (stateValue != null) {
+        final stateCode = int.tryParse(stateValue) ?? 0;
+        widget.device.deviceStateCode = stateCode;
+        widget.device.state = getStateFlagsDescription(stateCode);
+        logInfo('Device ${widget.device.address} state updated: $stateCode');
+      }
+    }
+
+    if (widget.device.deviceTypeCode == null) {
+      final typeCommand = HelvarNetCommands.queryDeviceType(
+        widget.device.address,
+      );
+      final typeResult = await commandService.sendCommand(
+        widget.router.ipAddress,
+        typeCommand,
+      );
+
+      if (typeResult.success && typeResult.response != null) {
+        final typeValue = ProtocolParser.extractResponseValue(
+          typeResult.response!,
+        );
+        if (typeValue != null) {
+          final typeCode = int.tryParse(typeValue) ?? 0;
+          widget.device.deviceTypeCode = typeCode;
+          logInfo('Device ${widget.device.address} type updated: $typeCode');
+        }
+      }
+    }
   }
 
   void _navigateToPointsDetail() {
