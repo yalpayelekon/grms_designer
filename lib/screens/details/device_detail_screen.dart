@@ -6,8 +6,10 @@ import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/input_device.dart';
 import '../../models/helvar_models/output_device.dart';
+import '../../models/helvar_models/output_point.dart';
 import '../../utils/device_icons.dart';
 import '../../utils/general_ui.dart';
+import '../../utils/treeview_utils.dart';
 import '../../protocol/query_commands.dart';
 import '../../protocol/protocol_parser.dart';
 import '../../protocol/protocol_constants.dart';
@@ -42,6 +44,7 @@ class DeviceDetailScreen extends ConsumerStatefulWidget {
 class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   late TextEditingController _deviceIdController;
   late TextEditingController _addressController;
+  final Map<int, bool> _expandedPoints = {};
 
   @override
   void initState() {
@@ -50,6 +53,14 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       text: widget.device.deviceId.toString(),
     );
     _addressController = TextEditingController(text: widget.device.address);
+
+    // Initialize output points if this is an output device
+    if (widget.device is HelvarDriverOutputDevice) {
+      final outputDevice = widget.device as HelvarDriverOutputDevice;
+      if (outputDevice.outputPoints.isEmpty) {
+        outputDevice.generateOutputPoints();
+      }
+    }
   }
 
   @override
@@ -85,6 +96,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             const SizedBox(height: 16),
             _buildStaticStatusCard(),
             const SizedBox(height: 16),
+            _buildPointsCard(),
           ],
         ),
       ),
@@ -197,25 +209,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     );
   }
 
-  void _updateDeviceId(String val) {
-    final id = int.tryParse(val);
-    if (id != null && id > 0) {
-      setState(() {
-        widget.device.deviceId = id;
-      });
-      logInfo("Device ID updated");
-    } else {
-      showSnackBarMsg(context, "Invalid Device ID");
-    }
-  }
-
-  void _updateDeviceAddress(String val) {
-    setState(() {
-      widget.device.address = val;
-    });
-    logInfo("Address updated");
-  }
-
   Widget _buildStaticStatusCard() {
     return Card(
       child: Padding(
@@ -260,6 +253,247 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildPointsCard() {
+    // Determine if device has points to show
+    bool hasPoints = false;
+    int pointCount = 0;
+
+    if (widget.device is HelvarDriverInputDevice) {
+      final inputDevice = widget.device as HelvarDriverInputDevice;
+      hasPoints = inputDevice.buttonPoints.isNotEmpty;
+      pointCount = inputDevice.buttonPoints.length;
+    } else if (widget.device is HelvarDriverOutputDevice) {
+      final outputDevice = widget.device as HelvarDriverOutputDevice;
+      hasPoints = outputDevice.outputPoints.isNotEmpty;
+      pointCount = outputDevice.outputPoints.length;
+    }
+
+    if (!hasPoints) {
+      return const SizedBox.shrink(); // Don't show card if no points
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Points ($pointCount)',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Icon(
+                  Icons.radio_button_checked,
+                  color: widget.device is HelvarDriverInputDevice
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ],
+            ),
+            const Divider(),
+            if (widget.device is HelvarDriverInputDevice)
+              ..._buildInputPointsList(),
+            if (widget.device is HelvarDriverOutputDevice)
+              ..._buildOutputPointsList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildInputPointsList() {
+    final inputDevice = widget.device as HelvarDriverInputDevice;
+    return inputDevice.buttonPoints
+        .map((point) => _buildInputPointTile(point))
+        .toList();
+  }
+
+  List<Widget> _buildOutputPointsList() {
+    final outputDevice = widget.device as HelvarDriverOutputDevice;
+    return outputDevice.outputPoints
+        .map((point) => _buildOutputPointTile(point))
+        .toList();
+  }
+
+  Widget _buildInputPointTile(ButtonPoint point) {
+    final isExpanded = _expandedPoints[point.buttonId] ?? false;
+    final inputDevice = widget.device as HelvarDriverInputDevice;
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundColor: _getInputPointColor(
+              point,
+            ).withValues(alpha: 0.2 * 255),
+            radius: 16,
+            child: Icon(
+              getButtonPointIcon(point),
+              color: _getInputPointColor(point),
+              size: 16,
+            ),
+          ),
+          title: Text(
+            point.name,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          subtitle: Text('Function: ${point.function} • ID: ${point.buttonId}'),
+          trailing: IconButton(
+            icon: Icon(
+              isExpanded ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+            ),
+            onPressed: () => _togglePointExpansion(point.buttonId),
+          ),
+        ),
+        if (isExpanded) _buildInputPointDetails(point),
+        if (inputDevice.buttonPoints.last != point) const Divider(height: 1),
+      ],
+    );
+  }
+
+  Widget _buildOutputPointTile(OutputPoint point) {
+    final isExpanded = _expandedPoints[point.pointId] ?? false;
+
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundColor: _getOutputPointColor(
+              point,
+            ).withValues(alpha: 0.2 * 255),
+            radius: 16,
+            child: Icon(
+              getOutputPointIcon(point),
+              color: _getOutputPointColor(point),
+              size: 16,
+            ),
+          ),
+          title: Text(
+            point.function,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          subtitle: Row(
+            children: [
+              Text('Type: ${point.pointType} • ID: ${point.pointId}'),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: getOutputPointValueColor(point),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  formatOutputPointValue(point),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          trailing: IconButton(
+            icon: Icon(
+              isExpanded ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+            ),
+            onPressed: () => _togglePointExpansion(point.pointId),
+          ),
+        ),
+        if (isExpanded) _buildOutputPointDetails(point),
+        if ((widget.device as HelvarDriverOutputDevice).outputPoints.last !=
+            point)
+          const Divider(height: 1),
+      ],
+    );
+  }
+
+  Widget _buildInputPointDetails(ButtonPoint point) {
+    return Container(
+      padding: const EdgeInsets.only(left: 48, right: 16, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          buildInfoRow('Point Name', point.name),
+          buildInfoRow('Function Type', point.function),
+          buildInfoRow('Button ID', point.buttonId.toString()),
+          buildInfoRow('Point Type', _getInputPointTypeDescription(point)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOutputPointDetails(OutputPoint point) {
+    return Container(
+      padding: const EdgeInsets.only(left: 48, right: 16, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          buildInfoRow('Point Name', point.name),
+          buildInfoRow('Function', point.function),
+          buildInfoRow('Point ID', point.pointId.toString()),
+          buildInfoRow('Point Type', point.pointType),
+          buildInfoRow('Current Value', formatOutputPointValue(point)),
+        ],
+      ),
+    );
+  }
+
+  Color _getInputPointColor(ButtonPoint point) {
+    if (point.function.contains('Status') || point.name.contains('Missing')) {
+      return Colors.orange;
+    } else if (point.function.contains('IR')) {
+      return Colors.purple;
+    } else if (point.function.contains('Button')) {
+      return Colors.blue;
+    } else {
+      return Colors.grey;
+    }
+  }
+
+  Color _getOutputPointColor(OutputPoint point) {
+    switch (point.pointId) {
+      case 1: // Device State
+        return Colors.blue;
+      case 2: // Lamp Failure
+        return Colors.red;
+      case 3: // Missing
+        return Colors.orange;
+      case 4: // Faulty
+        return Colors.red;
+      case 5: // Output Level
+        return Colors.green;
+      case 6: // Power Consumption
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getInputPointTypeDescription(ButtonPoint point) {
+    if (point.function.contains('Status') || point.name.contains('Missing')) {
+      return 'Status Point';
+    } else if (point.function.contains('IR')) {
+      return 'IR Receiver';
+    } else if (point.function.contains('Button')) {
+      return 'Button Input';
+    } else {
+      return 'Generic Point';
+    }
+  }
+
+  void _togglePointExpansion(int pointId) {
+    setState(() {
+      _expandedPoints[pointId] = !(_expandedPoints[pointId] ?? false);
+    });
   }
 
   List<Widget> _buildOutputDeviceStatus() {
@@ -323,6 +557,25 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     }
 
     return widgets;
+  }
+
+  void _updateDeviceId(String val) {
+    final id = int.tryParse(val);
+    if (id != null && id > 0) {
+      setState(() {
+        widget.device.deviceId = id;
+      });
+      logInfo("Device ID updated");
+    } else {
+      showSnackBarMsg(context, "Invalid Device ID");
+    }
+  }
+
+  void _updateDeviceAddress(String val) {
+    setState(() {
+      widget.device.address = val;
+    });
+    logInfo("Address updated");
   }
 
   Future<void> _queryRealTimeStatus() async {

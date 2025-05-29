@@ -276,7 +276,6 @@ class OutputPointsDetailScreenState
   Color _getValueColor(OutputPoint point) {
     if (point.pointType == 'boolean') {
       final value = point.value as bool? ?? false;
-      // For error states (Device State, Lamp Failure, Missing, Faulty)
       if ([1, 2, 3, 4].contains(point.pointId)) {
         return value ? Colors.red : Colors.green;
       }
