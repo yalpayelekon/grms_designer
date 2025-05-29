@@ -38,6 +38,10 @@ class AppTreeView extends ConsumerStatefulWidget {
   final bool showingDeviceDetail;
   final bool showingPointsDetail;
   final bool showingOutputPointsDetail;
+  final bool showingPointDetail;
+  final bool showingOutputPointDetail;
+  final ButtonPoint? selectedPoint;
+  final OutputPoint? selectedOutputPoint;
   final Function(
     String, {
     Workgroup? workgroup,
@@ -57,9 +61,13 @@ class AppTreeView extends ConsumerStatefulWidget {
     this.selectedSubnetNumber,
     required this.showingSubnetDetail,
     required this.showingOutputPointsDetail,
+    required this.showingOutputPointDetail,
     required this.showingDeviceDetail,
     required this.showingPointsDetail,
+    required this.showingPointDetail,
     required this.selectedDevice,
+    required this.selectedPoint,
+    required this.selectedOutputPoint,
     required this.wiresheets,
     required this.workgroups,
     required this.showingProject,
@@ -547,29 +555,87 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     OutputPoint outputPoint,
     HelvarDevice parentDevice,
   ) {
+    // Check if this output point is currently selected
+    final bool isOutputPointSelected =
+        widget.selectedWorkgroup != null &&
+        widget.selectedRouter != null &&
+        widget.selectedDevice == parentDevice &&
+        widget.selectedOutputPoint == outputPoint &&
+        widget.showingOutputPointDetail;
+
     return TreeNode(
-      content: Row(
-        children: [
-          Icon(getOutputPointIcon(outputPoint), size: 16, color: Colors.orange),
-          const SizedBox(width: 4),
-          Text(outputPoint.function),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: getOutputPointValueColor(outputPoint),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              formatOutputPointValue(outputPoint),
-              style: const TextStyle(
-                fontSize: 10,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+      content: GestureDetector(
+        onDoubleTap: () {
+          Workgroup? workgroup;
+          HelvarRouter? router;
+
+          for (final wg in widget.workgroups) {
+            for (final r in wg.routers) {
+              if (r.devices.any((d) => d.address == parentDevice.address)) {
+                workgroup = wg;
+                router = r;
+                break;
+              }
+            }
+            if (workgroup != null) break;
+          }
+
+          if (workgroup != null && router != null) {
+            widget.setActiveNode(
+              'outputPointDetail',
+              workgroup: workgroup,
+              router: router,
+              device: parentDevice,
+              outputPoint: outputPoint,
+            );
+          }
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isOutputPointSelected
+                ? Colors.blue.withValues(alpha: 0.1)
+                : null,
+            borderRadius: BorderRadius.circular(4),
+            border: isOutputPointSelected
+                ? Border.all(color: Colors.blue, width: 1)
+                : null,
           ),
-        ],
+          child: Row(
+            children: [
+              Icon(
+                getOutputPointIcon(outputPoint),
+                size: 16,
+                color: isOutputPointSelected ? Colors.blue : Colors.orange,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                outputPoint.function,
+                style: TextStyle(
+                  color: isOutputPointSelected ? Colors.blue : null,
+                  fontWeight: isOutputPointSelected
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: getOutputPointValueColor(outputPoint),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  formatOutputPointValue(outputPoint),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -578,6 +644,13 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     ButtonPoint buttonPoint,
     HelvarDevice parentDevice,
   ) {
+    final bool isPointSelected =
+        widget.selectedWorkgroup != null &&
+        widget.selectedRouter != null &&
+        widget.selectedDevice == parentDevice &&
+        widget.selectedPoint == buttonPoint &&
+        widget.showingPointDetail;
+
     return TreeNode(
       content: GestureDetector(
         onDoubleTap: () {
@@ -605,70 +678,87 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
             );
           }
         },
-        child: Draggable<Map<String, dynamic>>(
-          data: {
-            "componentType": "BooleanPoint",
-            "buttonPoint": buttonPoint,
-            "parentDevice": parentDevice,
-            "pointData": {
-              "name": buttonPoint.name,
-              "function": buttonPoint.function,
-              "buttonId": buttonPoint.buttonId,
-              "deviceAddress": parentDevice.address,
-              "deviceId": parentDevice.deviceId,
-              "isButtonPoint": true,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isPointSelected ? Colors.blue.withValues(alpha: 0.1) : null,
+            borderRadius: BorderRadius.circular(4),
+            border: isPointSelected
+                ? Border.all(color: Colors.blue, width: 1)
+                : null,
+          ),
+          child: Draggable<Map<String, dynamic>>(
+            data: {
+              "componentType": "BooleanPoint",
+              "buttonPoint": buttonPoint,
+              "parentDevice": parentDevice,
+              "pointData": {
+                "name": buttonPoint.name,
+                "function": buttonPoint.function,
+                "buttonId": buttonPoint.buttonId,
+                "deviceAddress": parentDevice.address,
+                "deviceId": parentDevice.deviceId,
+                "isButtonPoint": true,
+              },
             },
-          },
-          feedback: Material(
-            elevation: 4.0,
-            child: Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.green[100],
-                borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(color: Colors.green),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    getButtonPointIcon(buttonPoint),
-                    color: Colors.green,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8.0),
-                  Text(
-                    getButtonPointDisplayName(buttonPoint),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
+            feedback: Material(
+              elevation: 4.0,
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Colors.green[100],
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: Colors.green),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      getButtonPointIcon(buttonPoint),
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8.0),
+                    Text(
+                      getButtonPointDisplayName(buttonPoint),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          childWhenDragging: Row(
-            children: [
-              Icon(
-                getButtonPointIcon(buttonPoint),
-                size: 16,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                getButtonPointDisplayName(buttonPoint),
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(
-                getButtonPointIcon(buttonPoint),
-                size: 16,
-                color: Colors.green,
-              ),
-              const SizedBox(width: 4),
-              Text(getButtonPointDisplayName(buttonPoint)),
-            ],
+            childWhenDragging: Row(
+              children: [
+                Icon(
+                  getButtonPointIcon(buttonPoint),
+                  size: 16,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  getButtonPointDisplayName(buttonPoint),
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  getButtonPointIcon(buttonPoint),
+                  size: 16,
+                  color: isPointSelected ? Colors.blue : Colors.green,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  getButtonPointDisplayName(buttonPoint),
+                  style: TextStyle(
+                    color: isPointSelected ? Colors.blue : null,
+                    fontWeight: isPointSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

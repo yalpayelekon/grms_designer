@@ -5,6 +5,7 @@ import 'package:grms_designer/models/helvar_models/input_device.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 import 'package:grms_designer/screens/details/device_detail_screen.dart';
+import 'package:grms_designer/screens/details/output_point_detail_screen.dart';
 import 'package:grms_designer/utils/date_utils.dart';
 
 import '../comm/models/command_models.dart';
@@ -67,6 +68,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   List<HelvarDevice>? selectedSubnetDevices;
   bool showingPointsDetail = false;
   bool showingPointDetail = false;
+  bool showingOutputPointDetail = false;
   ButtonPoint? selectedPoint;
   double _leftPanelWidth = 500;
   bool _isDragging = false;
@@ -143,12 +145,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 showingOutputPointsDetail: showingOutputPointsDetail,
                 showingDeviceDetail: showingDeviceDetail,
                 showingPointsDetail: showingPointsDetail,
+                selectedOutputPoint: selectedOutputPoint,
+                showingOutputPointDetail: showingOutputPointDetail,
                 selectedDevice: selectedDevice,
                 wiresheets: wiresheets,
                 workgroups: workgroups,
                 showingProject: showingProject,
                 openSettings: openSettings,
+                selectedPoint: selectedPoint,
                 openWorkGroups: openWorkGroups,
+                showingPointDetail: showingPointDetail,
                 showingWorkgroup: showingWorkgroup,
                 openWiresheet: openWiresheet,
                 showingImages: showingImages,
@@ -236,6 +242,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           router: selectedRouter!,
           device: selectedDevice!,
           point: selectedPoint!,
+        );
+      }
+      if (showingOutputPointDetail &&
+          selectedRouter != null &&
+          selectedDevice != null &&
+          selectedOutputPoint != null) {
+        return OutputPointDetailScreen(
+          workgroup: selectedWorkgroup!,
+          router: selectedRouter!,
+          device: selectedDevice!,
+          point: selectedOutputPoint!,
         );
       }
       if (showingPointsDetail &&
@@ -543,6 +560,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       showingPointsDetail = false;
       showingPointDetail = false;
       showingOutputPointsDetail = false;
+      showingOutputPointDetail = false;
       selectedPoint = null;
       selectedOutputPoint = null;
       openWorkGroups = false;
@@ -638,7 +656,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedDevice = device;
           break;
         case 'outputPointDetail':
-          showingOutputPointsDetail = true;
+          showingOutputPointDetail = true;
           selectedWorkgroup = workgroup;
           selectedRouter = router;
           selectedDevice = device;
