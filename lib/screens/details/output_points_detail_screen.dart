@@ -14,11 +14,14 @@ class OutputPointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
   final HelvarRouter router;
   final HelvarDevice device;
-  final Function(String,
-      {Workgroup? workgroup,
-      HelvarRouter? router,
-      HelvarDevice? device,
-      OutputPoint? outputPoint})? onNavigate;
+  final Function(
+    String, {
+    Workgroup? workgroup,
+    HelvarRouter? router,
+    HelvarDevice? device,
+    OutputPoint? outputPoint,
+  })?
+  onNavigate;
 
   const OutputPointsDetailScreen({
     super.key,
@@ -43,7 +46,6 @@ class OutputPointsDetailScreenState
   @override
   void initState() {
     super.initState();
-    // Generate points if they don't exist
     if (widget.device is HelvarDriverOutputDevice) {
       final outputDevice = widget.device as HelvarDriverOutputDevice;
       if (outputDevice.outputPoints.isEmpty) {
@@ -146,8 +148,9 @@ class OutputPointsDetailScreenState
         children: [
           ListTile(
             leading: CircleAvatar(
-              backgroundColor:
-                  _getPointColor(point).withValues(alpha: 0.2 * 255),
+              backgroundColor: _getPointColor(
+                point,
+              ).withValues(alpha: 0.2 * 255),
               child: Icon(
                 _getPointIcon(point),
                 color: _getPointColor(point),
@@ -168,10 +171,13 @@ class OutputPointsDetailScreenState
                     const Text('Value: '),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color:
-                            _getValueColor(point).withValues(alpha: 0.2 * 255),
+                        color: _getValueColor(
+                          point,
+                        ).withValues(alpha: 0.2 * 255),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -217,9 +223,7 @@ class OutputPointsDetailScreenState
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,8 +238,10 @@ class OutputPointsDetailScreenState
                     _buildInfoRow('Function', point.function),
                     _buildInfoRow('Point ID', point.pointId.toString()),
                     _buildInfoRow('Point Type', point.pointType),
-                    _buildInfoRow('Description',
-                        DeviceQueryService.getPointDescription(point.pointId)),
+                    _buildInfoRow(
+                      'Description',
+                      DeviceQueryService.getPointDescription(point.pointId),
+                    ),
                     _buildInfoRow('Current Value', _formatValue(point)),
                   ],
                 ),
@@ -282,9 +288,7 @@ class OutputPointsDetailScreenState
               style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
             ),
           ),
-          Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 12)),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 12))),
         ],
       ),
     );
@@ -515,14 +519,16 @@ class OutputPointsDetailScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Description: ${DeviceQueryService.getPointDescription(point.pointId)}'),
+              'Description: ${DeviceQueryService.getPointDescription(point.pointId)}',
+            ),
             const SizedBox(height: 8),
             Text('Point Type: ${point.pointType}'),
             Text('Current Value: ${_formatValue(point)}'),
             const SizedBox(height: 8),
             if (point.pointType == 'boolean')
               const Text(
-                  'Boolean points represent on/off or true/false states.')
+                'Boolean points represent on/off or true/false states.',
+              )
             else
               const Text('Numeric points represent measurable values.'),
           ],

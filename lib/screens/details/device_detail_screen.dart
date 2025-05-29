@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/date_utils.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
@@ -49,13 +50,12 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       appBar: AppBar(
         title: Text('${widget.device.address} - $deviceName'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Query Real-time Status',
-            onPressed: () => _showQueryDialog(),
-          ),
-        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+      floatingActionButton: ElevatedButton.icon(
+        onPressed: () => _queryRealTimeStatus(),
+        icon: const Icon(Icons.refresh, size: 16),
+        label: const Text('Query Live Status'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -144,11 +144,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
                   'Device Status',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                ElevatedButton.icon(
-                  onPressed: () => _showQueryDialog(),
-                  icon: const Icon(Icons.cloud_download, size: 16),
-                  label: const Text('Query Live Status'),
-                ),
               ],
             ),
             const Divider(),
@@ -174,7 +169,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             if (widget.device is HelvarDriverInputDevice)
               ..._buildInputDeviceStatus(),
 
-            _buildInfoRow('Last Updated', _getLastUpdateTime()),
+            _buildInfoRow('Last Updated', getLastUpdateTime()),
           ],
         ),
       ),
@@ -203,6 +198,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         'Faulty',
         outputDevice.faulty.isEmpty ? 'No' : outputDevice.faulty,
       ),
+      _buildInfoRow('Power Consumption', "20"), // update to use real value
     ];
   }
 
@@ -243,10 +239,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     return widgets;
   }
 
-  String _getLastUpdateTime() {
-    return DateTime.now().toString().substring(11, 19);
-  }
-
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -266,48 +258,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     );
   }
 
-  void _showQueryDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Query Real-time Status'),
-        content: const Text(
-          'This will query the router for current device status. '
-          'This may take a few seconds and requires an active connection to the router.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _queryRealTimeStatus();
-            },
-            child: const Text('Query Status'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _queryRealTimeStatus() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Querying device status...'),
-          ],
-        ),
-      ),
-    );
-
     try {
       if (widget.device is HelvarDriverOutputDevice) {
         await _queryOutputDevice();
@@ -318,14 +269,12 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       }
 
       if (mounted) {
-        Navigator.of(context).pop();
         setState(() {});
         showSnackBarMsg(context, 'Device status updated successfully');
       }
     } catch (e) {
       logError('Error querying device status: $e');
       if (mounted) {
-        Navigator.of(context).pop();
         showSnackBarMsg(context, 'Error querying device status: $e');
       }
     }

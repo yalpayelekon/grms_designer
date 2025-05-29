@@ -43,6 +43,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   String faulty;
   int level;
   int proportion;
+  double powerConsumption;
   List<OutputPoint> outputPoints;
 
   HelvarDriverOutputDevice({
@@ -70,6 +71,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     this.faulty = "",
     this.level = 100,
     this.proportion = 0,
+    this.powerConsumption = 0,
     List<OutputPoint>? outputPoints,
   }) : outputPoints = outputPoints ?? [];
 

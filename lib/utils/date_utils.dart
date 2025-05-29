@@ -12,3 +12,7 @@ String formatDateTime(DateTime dateTime) {
     return '${difference.inDays}d ago';
   }
 }
+
+String getLastUpdateTime() {
+  return DateTime.now().toString().substring(11, 19);
+}
