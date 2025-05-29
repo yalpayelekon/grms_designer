@@ -134,11 +134,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
   }
 
   @override
-  void updatePoints() {}
-
-  @override
   void started() {
-    createOutputPoints(address, getName());
     generateOutputPoints();
   }
 
@@ -256,10 +252,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
       return null;
     }
   }
-
-  void createOutputPoints(String deviceAddress, String name) {}
-
-  void queryLoadLevel() {}
 
   @override
   Map<String, dynamic> toJson() {

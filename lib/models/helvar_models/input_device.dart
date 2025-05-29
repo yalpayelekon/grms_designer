@@ -48,9 +48,6 @@ class HelvarDriverInputDevice extends HelvarDevice {
   }
 
   @override
-  void updatePoints() {}
-
-  @override
   void started() {
     createInputPoints(address, props, addressingScheme);
 

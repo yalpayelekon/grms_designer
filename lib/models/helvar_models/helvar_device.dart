@@ -173,7 +173,6 @@ abstract class HelvarDevice extends TreeNode {
     }
   }
 
-  void updatePoints();
   void started();
   void stopped();
   void recallScene(String sceneParams);

@@ -167,9 +167,6 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
   }
 
   @override
-  void updatePoints() {}
-
-  @override
   void started() {
     createOutputEmergencyPoints(address, "name");
   }
