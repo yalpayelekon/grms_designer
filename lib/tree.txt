@@ -28,6 +28,7 @@
 │   │   ├── helvar_router.dart
 │   │   ├── input_device.dart
 │   │   ├── output_device.dart
+│   │   ├── output_point.dart
 │   │   └── workgroup.dart
 │   └── project_settings.dart
 ├── niagara
@@ -81,8 +82,9 @@
 │   ├── details
 │   │   ├── device_detail_screen.dart
 │   │   ├── group_detail_screen.dart
+│   │   ├── input_point_detail_screen.dart
+│   │   ├── output_point_detail_screen.dart
 │   │   ├── output_points_detail_screen.dart
-│   │   ├── point_detail_screen.dart
 │   │   ├── points_detail_screen.dart
 │   │   ├── router_detail_screen.dart
 │   │   ├── subnet_detail_screen.dart
@@ -137,8 +139,9 @@
 └── widgets
     ├── app_tree_view.dart
     ├── command_monitor.dart
+    ├── draggable_function_node.dart
     ├── logics_treenode.dart
     ├── project_treenode.dart
     └── wiresheet_flow_editor.dart
 
-20 directories, 121 files
+20 directories, 124 files
