@@ -7,6 +7,33 @@ import 'package:flutter/material.dart';
 import 'package:grms_designer/niagara/models/port_type.dart';
 import 'package:grms_designer/niagara/models/ramp_component.dart';
 import 'package:grms_designer/niagara/models/rectangle.dart';
+import '../models/helvar_models/input_device.dart';
+
+List<ButtonPoint> generateStandardButtonPoints(String deviceName) {
+  final points = <ButtonPoint>[];
+  points.add(
+    ButtonPoint(name: '${deviceName}_Missing', function: 'Status', buttonId: 0),
+  );
+  for (int i = 1; i <= 7; i++) {
+    points.add(
+      ButtonPoint(
+        name: '${deviceName}_Button$i',
+        function: 'Button',
+        buttonId: i,
+      ),
+    );
+  }
+  for (int i = 1; i <= 7; i++) {
+    points.add(
+      ButtonPoint(
+        name: '${deviceName}_IR$i',
+        function: 'IR Receiver',
+        buttonId: i + 100,
+      ),
+    );
+  }
+  return points;
+}
 
 Widget buildTypeIndicator(PortType type) {
   IconData icon;

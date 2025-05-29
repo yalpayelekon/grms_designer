@@ -1,3 +1,5 @@
+import 'package:grms_designer/utils/device_utils.dart';
+
 import '../../utils/logger.dart';
 import 'device_action.dart';
 import 'helvar_device.dart';
@@ -86,38 +88,13 @@ class HelvarDriverInputDevice extends HelvarDevice {
 
   void generateButtonPoints() {
     if (!isButtonDevice) return;
-
-    buttonPoints.clear();
-
-    final deviceName = description.isEmpty ? "Device_$deviceId" : description;
-
-    buttonPoints.add(
-      ButtonPoint(
-        name: '${deviceName}_Missing',
-        function: 'Status',
-        buttonId: 0,
-      ),
-    );
-
-    for (int i = 1; i <= 7; i++) {
-      buttonPoints.add(
-        ButtonPoint(
-          name: '${deviceName}_Button$i',
-          function: 'Button',
-          buttonId: i,
+    buttonPoints
+      ..clear()
+      ..addAll(
+        generateStandardButtonPoints(
+          description.isEmpty ? "Device_$deviceId" : description,
         ),
       );
-    }
-
-    for (int i = 1; i <= 7; i++) {
-      buttonPoints.add(
-        ButtonPoint(
-          name: '${deviceName}_IR$i',
-          function: 'IR Receiver',
-          buttonId: i + 100, // Using offset for IR receivers
-        ),
-      );
-    }
   }
 
   @override

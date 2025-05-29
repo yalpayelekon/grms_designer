@@ -1,3 +1,5 @@
+import 'package:grms_designer/utils/device_utils.dart';
+
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/input_device.dart';
 import '../models/helvar_models/output_device.dart';
@@ -60,31 +62,7 @@ class HelvarDeviceFactory {
   }
 
   static List<ButtonPoint> generateButtonPoints(String deviceName) {
-    final points = <ButtonPoint>[];
-
-    points.add(ButtonPoint(
-      name: '${deviceName}_Missing',
-      function: 'Status',
-      buttonId: 0,
-    ));
-
-    for (int i = 1; i <= 7; i++) {
-      points.add(ButtonPoint(
-        name: '${deviceName}_Button$i',
-        function: 'Button',
-        buttonId: i,
-      ));
-    }
-
-    for (int i = 1; i <= 7; i++) {
-      points.add(ButtonPoint(
-        name: '${deviceName}_IR$i',
-        function: 'IR Receiver',
-        buttonId: i + 100, // Using offset for IR receivers
-      ));
-    }
-
-    return points;
+    return generateStandardButtonPoints(deviceName);
   }
 
   static HelvarDevice createBasicDevice({
