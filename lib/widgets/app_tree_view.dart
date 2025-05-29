@@ -31,6 +31,11 @@ class AppTreeView extends ConsumerStatefulWidget {
   final Workgroup? selectedWorkgroup;
   final HelvarGroup? selectedGroup;
   final HelvarRouter? selectedRouter;
+  final HelvarDevice? selectedDevice;
+  final int? selectedSubnetNumber;
+  final bool showingSubnetDetail;
+  final bool showingDeviceDetail;
+  final bool showingPointsDetail;
   final Function(
     String, {
     Workgroup? workgroup,
@@ -45,7 +50,12 @@ class AppTreeView extends ConsumerStatefulWidget {
   })
   setActiveNode;
 
-  const AppTreeView({
+  const AppTreeView(
+    this.selectedDevice,
+    this.selectedSubnetNumber,
+    this.showingSubnetDetail,
+    this.showingDeviceDetail,
+    this.showingPointsDetail, {
     super.key,
     required this.wiresheets,
     required this.workgroups,
@@ -300,11 +310,47 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                       },
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.hub),
+                                          Icon(
+                                            Icons.hub,
+                                            color:
+                                                widget.selectedWorkgroup ==
+                                                        workgroup &&
+                                                    widget.selectedRouter ==
+                                                        router &&
+                                                    widget.selectedSubnetNumber ==
+                                                        subnet &&
+                                                    widget.showingSubnetDetail
+                                                ? Colors.blue
+                                                : null,
+                                          ),
                                           Padding(
                                             padding: const EdgeInsets.all(8.0),
                                             child: Text(
                                               "Subnet $subnet (${subnetDevices.length} devices)",
+                                              style: TextStyle(
+                                                fontWeight:
+                                                    widget.selectedWorkgroup ==
+                                                            workgroup &&
+                                                        widget.selectedRouter ==
+                                                            router &&
+                                                        widget.selectedSubnetNumber ==
+                                                            subnet &&
+                                                        widget
+                                                            .showingSubnetDetail
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                color:
+                                                    widget.selectedWorkgroup ==
+                                                            workgroup &&
+                                                        widget.selectedRouter ==
+                                                            router &&
+                                                        widget.selectedSubnetNumber ==
+                                                            subnet &&
+                                                        widget
+                                                            .showingSubnetDetail
+                                                    ? Colors.blue
+                                                    : null,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -348,11 +394,19 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         ? "Device_${device.deviceId}"
         : device.description;
 
+    final bool isSelectedDevice =
+        widget.selectedWorkgroup == workgroup &&
+        widget.selectedRouter == router &&
+        widget.selectedDevice == device;
+
     final List<TreeNode> deviceChildren = [];
 
     if (device is HelvarDriverInputDevice &&
         device.isButtonDevice &&
         device.buttonPoints.isNotEmpty) {
+      final bool isPointsSelected =
+          isSelectedDevice && widget.showingPointsDetail;
+
       deviceChildren.add(
         TreeNode(
           content: GestureDetector(
@@ -364,11 +418,23 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                 device: device,
               );
             },
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.add_circle_outline, size: 18),
-                SizedBox(width: 4),
-                Text("Points"),
+                Icon(
+                  Icons.add_circle_outline,
+                  size: 18,
+                  color: isPointsSelected ? Colors.blue : null,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  "Points",
+                  style: TextStyle(
+                    fontWeight: isPointsSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: isPointsSelected ? Colors.blue : null,
+                  ),
+                ),
               ],
             ),
           ),
