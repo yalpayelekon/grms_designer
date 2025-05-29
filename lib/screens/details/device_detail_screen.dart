@@ -66,13 +66,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             const SizedBox(height: 16),
             _buildStaticStatusCard(),
             const SizedBox(height: 16),
-            if (widget.device.helvarType == 'output')
-              _buildOutputControlsCard(),
-            if (widget.device is HelvarDriverInputDevice &&
-                (widget.device as HelvarDriverInputDevice).isButtonDevice)
-              _buildPointsCard(),
-            if (widget.device.isMultisensor) _buildSensorCard(),
-            if (widget.device.emergency) _buildEmergencyCard(),
           ],
         ),
       ),
@@ -255,304 +248,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   }
 
   String _getLastUpdateTime() {
-    return DateTime.now().toString().substring(11, 19); // HH:MM:SS format
-  }
-
-  Widget _buildOutputControlsCard() {
-    if (widget.device.helvarType != 'output') return const SizedBox.shrink();
-
-    final outputDevice = widget.device as HelvarDriverOutputDevice;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Output Controls',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const Divider(),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatusIndicator(
-                    'Current Level',
-                    '${outputDevice.level}%',
-                    _getLevelColor(outputDevice.level),
-                    Icons.tune,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildStatusIndicator(
-                    'Proportion',
-                    '${outputDevice.proportion}',
-                    Colors.blue,
-                    Icons.percent,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatusFlag(
-                    'Missing',
-                    outputDevice.missing.isEmpty,
-                    Icons.help_outline,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildStatusFlag(
-                    'Faulty',
-                    outputDevice.faulty.isEmpty,
-                    Icons.warning,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.lightbulb_outline),
-                  label: const Text('Direct Level'),
-                  onPressed: () => _showDirectLevelDialog(),
-                ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.tune),
-                  label: const Text('Direct Proportion'),
-                  onPressed: () => _showDirectProportionDialog(),
-                ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.movie_creation),
-                  label: const Text('Recall Scene'),
-                  onPressed: () => _showRecallSceneDialog(),
-                ),
-                // Add link to output points detail
-                if (outputDevice.outputPoints.isNotEmpty)
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.list, size: 16),
-                    label: const Text('View Points Detail'),
-                    onPressed: () => _navigateToOutputPointsDetail(),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusIndicator(
-    String label,
-    String value,
-    Color color,
-    IconData icon,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1 * 255),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3 * 255)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusFlag(String label, bool isNormal, IconData icon) {
-    final color = isNormal ? Colors.green : Colors.red;
-    final status = isNormal ? 'OK' : 'ERROR';
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1 * 255),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3 * 255)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 6),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-              ),
-              Text(
-                status,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getLevelColor(int level) {
-    if (level == 0) return Colors.grey;
-    if (level < 30) return Colors.orange;
-    if (level < 70) return Colors.blue;
-    return Colors.green;
-  }
-
-  void _navigateToOutputPointsDetail() {
-    if (widget.onNavigate != null) {
-      widget.onNavigate!(
-        'outputPointsDetail',
-        workgroup: widget.workgroup,
-        router: widget.router,
-        device: widget.device,
-      );
-    } else {
-      showSnackBarMsg(context, 'Output Points Detail navigation not available');
-    }
-  }
-
-  Widget _buildPointsCard() {
-    final inputDevice = widget.device as HelvarDriverInputDevice;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Points (${inputDevice.buttonPoints.length})',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                TextButton(
-                  onPressed: () => _navigateToPointsDetail(),
-                  child: const Text('View All'),
-                ),
-              ],
-            ),
-            const Divider(),
-            if (inputDevice.buttonPoints.isEmpty)
-              const Text('No points available')
-            else
-              ...inputDevice.buttonPoints
-                  .take(3)
-                  .map(
-                    (point) => ListTile(
-                      leading: Icon(_getPointIcon(point)),
-                      title: Text(point.name),
-                      subtitle: Text(point.function),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _navigateToPointDetail(point),
-                    ),
-                  ),
-            if (inputDevice.buttonPoints.length > 3)
-              Center(
-                child: TextButton(
-                  onPressed: () => _navigateToPointsDetail(),
-                  child: Text(
-                    'View ${inputDevice.buttonPoints.length - 3} more points',
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSensorCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Sensor Information',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const Divider(),
-            if (widget.device.sensorInfo.isEmpty)
-              const Text('No sensor data available')
-            else
-              ...widget.device.sensorInfo.entries.map(
-                (entry) => _buildInfoRow(entry.key, entry.value.toString()),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmergencyCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Emergency Information',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const Divider(),
-            _buildInfoRow('Emergency Device', 'Yes'),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.warning),
-                  label: const Text('Function Test'),
-                  onPressed: () => _performEmergencyFunctionTest(),
-                ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.timer),
-                  label: const Text('Duration Test'),
-                  onPressed: () => _performEmergencyDurationTest(),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    return DateTime.now().toString().substring(11, 19);
   }
 
   Widget _buildInfoRow(String label, String value) {
@@ -572,16 +268,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         ],
       ),
     );
-  }
-
-  IconData _getPointIcon(ButtonPoint point) {
-    if (point.function.contains('Status') || point.name.contains('Missing')) {
-      return Icons.info_outline;
-    } else if (point.function.contains('IR')) {
-      return Icons.settings_remote;
-    } else {
-      return Icons.touch_app;
-    }
   }
 
   void _showQueryDialog() {
@@ -636,14 +322,14 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       }
 
       if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
-        setState(() {}); // Refresh the UI with new data
+        Navigator.of(context).pop();
+        setState(() {});
         showSnackBarMsg(context, 'Device status updated successfully');
       }
     } catch (e) {
       logError('Error querying device status: $e');
       if (mounted) {
-        Navigator.of(context).pop(); // Close loading dialog
+        Navigator.of(context).pop();
         showSnackBarMsg(context, 'Error querying device status: $e');
       }
     }
@@ -723,52 +409,5 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         }
       }
     }
-  }
-
-  void _navigateToPointsDetail() {
-    if (widget.onNavigate != null) {
-      widget.onNavigate!(
-        'pointsDetail',
-        workgroup: widget.workgroup,
-        router: widget.router,
-        device: widget.device,
-      );
-    } else {
-      showSnackBarMsg(context, 'Points Detail navigation not available');
-    }
-  }
-
-  void _navigateToPointDetail(ButtonPoint point) {
-    if (widget.onNavigate != null) {
-      widget.onNavigate!(
-        'pointDetail',
-        workgroup: widget.workgroup,
-        router: widget.router,
-        device: widget.device,
-        point: point,
-      );
-    } else {
-      showSnackBarMsg(context, 'Point Detail navigation not available');
-    }
-  }
-
-  void _showDirectLevelDialog() {
-    showSnackBarMsg(context, 'Direct Level control coming soon');
-  }
-
-  void _showDirectProportionDialog() {
-    showSnackBarMsg(context, 'Direct Proportion control coming soon');
-  }
-
-  void _showRecallSceneDialog() {
-    showSnackBarMsg(context, 'Recall Scene control coming soon');
-  }
-
-  void _performEmergencyFunctionTest() {
-    showSnackBarMsg(context, 'Emergency Function Test coming soon');
-  }
-
-  void _performEmergencyDurationTest() {
-    showSnackBarMsg(context, 'Emergency Duration Test coming soon');
   }
 }
