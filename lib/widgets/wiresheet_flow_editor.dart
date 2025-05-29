@@ -5,7 +5,7 @@ import 'package:grms_designer/models/flowsheet.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 import 'package:grms_designer/utils/logger.dart';
 
-import 'package:grms_designer/utils/dialog_utils.dart' as dialog_utils;
+import 'package:grms_designer/utils/canvas_dialog_utils.dart' as dialog_utils;
 import 'package:grms_designer/utils/component_factory.dart'
     as component_factory;
 import '../niagara/controllers/flow_editor_state.dart';
