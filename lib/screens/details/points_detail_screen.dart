@@ -1,22 +1,22 @@
-// File: lib/screens/details/points_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/input_device.dart';
-import '../../utils/general_ui.dart';
-import '../../utils/logger.dart';
 
 class PointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
   final HelvarRouter router;
   final HelvarDevice device;
-  final Function(String,
-      {Workgroup? workgroup,
-      HelvarRouter? router,
-      HelvarDevice? device,
-      ButtonPoint? point})? onNavigate;
+  final Function(
+    String, {
+    Workgroup? workgroup,
+    HelvarRouter? router,
+    HelvarDevice? device,
+    ButtonPoint? point,
+  })?
+  onNavigate;
 
   const PointsDetailScreen({
     super.key,
@@ -32,7 +32,6 @@ class PointsDetailScreen extends ConsumerStatefulWidget {
 
 class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
   final Map<int, bool> _expandedPoints = {};
-  bool _isMonitoringAll = false;
   final Map<int, String> _pointStates = {};
 
   @override
@@ -60,12 +59,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
         title: Text('Points - $deviceName'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Icon(_isMonitoringAll ? Icons.stop : Icons.play_arrow),
-            tooltip:
-                _isMonitoringAll ? 'Stop All Monitoring' : 'Monitor All Points',
-            onPressed: _toggleMonitoringAll,
-          ),
           PopupMenuButton<String>(
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
@@ -128,8 +121,9 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
         children: [
           ListTile(
             leading: CircleAvatar(
-              backgroundColor:
-                  _getPointColor(point).withValues(alpha: 0.2 * 255),
+              backgroundColor: _getPointColor(
+                point,
+              ).withValues(alpha: 0.2 * 255),
               child: Icon(
                 _getPointIcon(point),
                 color: _getPointColor(point),
@@ -150,10 +144,13 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
                     const Text('State: '),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: _getStateColor(currentState)
-                            .withValues(alpha: 0.2 * 255),
+                        color: _getStateColor(
+                          currentState,
+                        ).withValues(alpha: 0.2 * 255),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -173,11 +170,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.launch, size: 20),
-                  tooltip: 'Open Point Detail',
-                  onPressed: () => _navigateToPointDetail(point),
-                ),
-                IconButton(
                   icon: Icon(
                     isExpanded ? Icons.expand_less : Icons.expand_more,
                   ),
@@ -186,7 +178,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
               ],
             ),
             isThreeLine: true,
-            onTap: () => _navigateToPointDetail(point),
           ),
           if (isExpanded) _buildExpandedPointContent(point),
         ],
@@ -199,9 +190,7 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        border: Border(
-          top: BorderSide(color: Colors.grey[300]!),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,37 +205,11 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
                     _buildInfoRow('Function Type', point.function),
                     _buildInfoRow('Button ID', point.buttonId.toString()),
                     _buildInfoRow(
-                        'Point Type', _getPointTypeDescription(point)),
+                      'Point Type',
+                      _getPointTypeDescription(point),
+                    ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.launch, size: 16),
-                label: const Text('Open Detail'),
-                onPressed: () => _navigateToPointDetail(point),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Query State'),
-                onPressed: () => _queryPointState(point),
-              ),
-              if (_isPointControllable(point))
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.touch_app, size: 16),
-                  label: const Text('Test'),
-                  onPressed: () => _testPoint(point),
-                ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.visibility, size: 16),
-                label: const Text('Monitor'),
-                onPressed: () => _monitorPoint(point),
               ),
             ],
           ),
@@ -268,9 +231,7 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
               style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
             ),
           ),
-          Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 12)),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 12))),
         ],
       ),
     );
@@ -331,133 +292,20 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
     }
   }
 
-  bool _isPointControllable(ButtonPoint point) {
-    return point.function.contains('Button') &&
-        !point.function.contains('Status') &&
-        !point.name.contains('Missing');
-  }
-
   void _togglePointExpansion(int buttonId) {
     setState(() {
       _expandedPoints[buttonId] = !(_expandedPoints[buttonId] ?? false);
     });
   }
 
-  void _toggleMonitoringAll() {
-    setState(() {
-      _isMonitoringAll = !_isMonitoringAll;
-    });
-
-    if (_isMonitoringAll) {
-      showSnackBarMsg(context, 'Started monitoring all points');
-      _startMonitoringAll();
-    } else {
-      showSnackBarMsg(context, 'Stopped monitoring all points');
-      _stopMonitoringAll();
-    }
-  }
-
-  void _startMonitoringAll() {
-    // TODO: Implement actual monitoring for all points
-    logInfo(
-        'Started monitoring all points for device: ${widget.device.address}');
-  }
-
-  void _stopMonitoringAll() {
-    // TODO: Stop monitoring for all points
-    logInfo(
-        'Stopped monitoring all points for device: ${widget.device.address}');
-  }
-
   void _handleMenuAction(String action) {
     switch (action) {
       case 'refresh_all':
-        _refreshAllStates();
         break;
       case 'export_config':
-        _exportPointConfiguration();
         break;
       case 'clear_all_history':
-        _clearAllHistory();
         break;
     }
-  }
-
-  void _refreshAllStates() {
-    showSnackBarMsg(context, 'Refreshing all point states...');
-    // TODO: Implement actual state refresh using query commands
-
-    // Simulate state updates
-    final inputDevice = widget.device as HelvarDriverInputDevice;
-    for (final point in inputDevice.buttonPoints) {
-      Future.delayed(Duration(milliseconds: 100 * point.buttonId), () {
-        if (mounted) {
-          setState(() {
-            _pointStates[point.buttonId] =
-                ['Active', 'Inactive', 'Unknown'][point.buttonId % 3];
-          });
-        }
-      });
-    }
-  }
-
-  void _exportPointConfiguration() {
-    showSnackBarMsg(context, 'Export configuration feature coming soon');
-  }
-
-  void _clearAllHistory() {
-    showSnackBarMsg(context, 'Cleared all event history');
-  }
-
-  void _navigateToPointDetail(ButtonPoint point) {
-    if (widget.onNavigate != null) {
-      widget.onNavigate!(
-        'pointDetail',
-        workgroup: widget.workgroup,
-        router: widget.router,
-        device: widget.device,
-        point: point,
-      );
-    } else {
-      showSnackBarMsg(context, 'Point Detail navigation not available');
-    }
-  }
-
-  void _queryPointState(ButtonPoint point) {
-    showSnackBarMsg(context, 'Querying state for ${point.name}...');
-
-    // TODO: Implement actual query using protocol commands
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {
-          _pointStates[point.buttonId] = 'Active';
-        });
-        showSnackBarMsg(context, 'State updated for ${point.name}');
-      }
-    });
-  }
-
-  void _testPoint(ButtonPoint point) {
-    if (!_isPointControllable(point)) return;
-
-    showSnackBarMsg(context, 'Testing ${point.name}...');
-
-    // Simulate test action
-    setState(() {
-      _pointStates[point.buttonId] = 'Active';
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _pointStates[point.buttonId] = 'Inactive';
-        });
-      }
-    });
-  }
-
-  void _monitorPoint(ButtonPoint point) {
-    showSnackBarMsg(context, 'Started monitoring ${point.name}');
-    // TODO: Implement individual point monitoring
   }
 }

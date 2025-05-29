@@ -6,10 +6,8 @@ import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/output_device.dart';
-import '../../providers/router_connection_provider.dart';
 import '../../services/device_query_service.dart';
 import '../../utils/general_ui.dart';
-import '../../utils/logger.dart';
 
 class OutputPointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -40,7 +38,6 @@ class OutputPointsDetailScreen extends ConsumerStatefulWidget {
 class OutputPointsDetailScreenState
     extends ConsumerState<OutputPointsDetailScreen> {
   final Map<int, bool> _expandedPoints = {};
-  bool _isQueryingAll = false;
   bool _autoRefresh = false;
   Timer? _refreshTimer;
 
@@ -116,16 +113,6 @@ class OutputPointsDetailScreenState
               ),
             )
           : _buildPointsList(outputDevice),
-      floatingActionButton: _isQueryingAll
-          ? const FloatingActionButton(
-              onPressed: null,
-              child: CircularProgressIndicator(color: Colors.white),
-            )
-          : FloatingActionButton(
-              onPressed: _queryAllPoints,
-              tooltip: 'Query All Points',
-              child: const Icon(Icons.cloud_download),
-            ),
     );
   }
 
@@ -198,11 +185,6 @@ class OutputPointsDetailScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.launch, size: 20),
-                  tooltip: 'Open Point Detail',
-                  onPressed: () => _navigateToPointDetail(point),
-                ),
-                IconButton(
                   icon: Icon(
                     isExpanded ? Icons.expand_less : Icons.expand_more,
                   ),
@@ -211,7 +193,6 @@ class OutputPointsDetailScreenState
               ],
             ),
             isThreeLine: true,
-            onTap: () => _navigateToPointDetail(point),
           ),
           if (isExpanded) _buildExpandedPointContent(point),
         ],
@@ -246,28 +227,6 @@ class OutputPointsDetailScreenState
                     _buildInfoRow('Current Value', _formatValue(point)),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ElevatedButton.icon(
-                icon: const Icon(Icons.launch, size: 16),
-                label: const Text('Open Detail'),
-                onPressed: () => _navigateToPointDetail(point),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Query Value'),
-                onPressed: () => _queryPoint(point),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.info, size: 16),
-                label: const Text('Point Info'),
-                onPressed: () => _showPointInfo(point),
               ),
             ],
           ),
@@ -386,161 +345,18 @@ class OutputPointsDetailScreenState
     }
   }
 
-  void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted && !_isQueryingAll) {
-        _queryAllPoints();
-      }
-    });
-  }
+  void _startAutoRefresh() {}
 
-  void _stopAutoRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = null;
-  }
+  void _stopAutoRefresh() {}
 
   void _handleMenuAction(String action) {
     switch (action) {
       case 'query_all':
-        _queryAllPoints();
         break;
       case 'export_config':
-        _exportPointConfiguration();
         break;
       case 'reset_values':
-        _resetAllValues();
         break;
     }
-  }
-
-  Future<void> _queryAllPoints() async {
-    if (_isQueryingAll) return;
-
-    setState(() {
-      _isQueryingAll = true;
-    });
-
-    showSnackBarMsg(context, 'Querying all output points...');
-
-    try {
-      final deviceQueryService = ref.read(deviceQueryServiceProvider);
-      final outputDevice = widget.device as HelvarDriverOutputDevice;
-
-      final success = await deviceQueryService.queryOutputDevicePoints(
-        widget.router.ipAddress,
-        outputDevice,
-      );
-
-      if (success && mounted) {
-        setState(() {}); // Refresh UI with new values
-        showSnackBarMsg(context, 'Successfully updated all points');
-      } else if (mounted) {
-        showSnackBarMsg(context, 'Failed to query some points');
-      }
-    } catch (e) {
-      logError('Error querying all points: $e');
-      if (mounted) {
-        showSnackBarMsg(context, 'Error querying points: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isQueryingAll = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _queryPoint(OutputPoint point) async {
-    showSnackBarMsg(context, 'Querying ${point.function}...');
-
-    try {
-      final deviceQueryService = ref.read(deviceQueryServiceProvider);
-      final outputDevice = widget.device as HelvarDriverOutputDevice;
-
-      final success = await deviceQueryService.queryOutputDevicePoint(
-        widget.router.ipAddress,
-        outputDevice,
-        point.pointId,
-      );
-
-      if (success && mounted) {
-        setState(() {}); // Refresh UI
-        showSnackBarMsg(context, 'Updated ${point.function}');
-      } else if (mounted) {
-        showSnackBarMsg(context, 'Failed to query ${point.function}');
-      }
-    } catch (e) {
-      logError('Error querying point: $e');
-      if (mounted) {
-        showSnackBarMsg(context, 'Error querying point: $e');
-      }
-    }
-  }
-
-  void _exportPointConfiguration() {
-    showSnackBarMsg(context, 'Export configuration feature coming soon');
-  }
-
-  void _resetAllValues() {
-    final outputDevice = widget.device as HelvarDriverOutputDevice;
-    setState(() {
-      for (final point in outputDevice.outputPoints) {
-        if (point.pointType == 'boolean') {
-          point.value = false;
-        } else {
-          point.value = 0.0;
-        }
-      }
-    });
-    showSnackBarMsg(context, 'Reset all point values');
-  }
-
-  void _navigateToPointDetail(OutputPoint point) {
-    if (widget.onNavigate != null) {
-      widget.onNavigate!(
-        'outputPointDetail',
-        workgroup: widget.workgroup,
-        router: widget.router,
-        device: widget.device,
-        outputPoint: point,
-      );
-    } else {
-      showSnackBarMsg(context, 'Point Detail navigation not available');
-    }
-  }
-
-  void _showPointInfo(OutputPoint point) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(point.function),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Description: ${DeviceQueryService.getPointDescription(point.pointId)}',
-            ),
-            const SizedBox(height: 8),
-            Text('Point Type: ${point.pointType}'),
-            Text('Current Value: ${_formatValue(point)}'),
-            const SizedBox(height: 8),
-            if (point.pointType == 'boolean')
-              const Text(
-                'Boolean points represent on/off or true/false states.',
-              )
-            else
-              const Text('Numeric points represent measurable values.'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
   }
 }
