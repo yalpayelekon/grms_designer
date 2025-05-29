@@ -216,39 +216,20 @@ class OutputPointsDetailScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow('Point Name', point.name),
-                    _buildInfoRow('Function', point.function),
-                    _buildInfoRow('Point ID', point.pointId.toString()),
-                    _buildInfoRow('Point Type', point.pointType),
-                    _buildInfoRow(
+                    buildInfoRow('Point Name', point.name),
+                    buildInfoRow('Function', point.function),
+                    buildInfoRow('Point ID', point.pointId.toString()),
+                    buildInfoRow('Point Type', point.pointType),
+                    buildInfoRow(
                       'Description',
                       DeviceQueryService.getPointDescription(point.pointId),
                     ),
-                    _buildInfoRow('Current Value', _formatValue(point)),
+                    buildInfoRow('Current Value', _formatValue(point)),
                   ],
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-            ),
-          ),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 12))),
         ],
       ),
     );

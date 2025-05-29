@@ -180,17 +180,17 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               ],
             ),
             const Divider(),
-            _buildInfoRow('Type', widget.device.helvarType),
-            _buildInfoRow('Props', widget.device.props),
+            buildInfoRow('Type', widget.device.helvarType),
+            buildInfoRow('Props', widget.device.props),
             if (widget.device.deviceTypeCode != null)
-              _buildInfoRow(
+              buildInfoRow(
                 'Type Code',
                 '0x${widget.device.deviceTypeCode!.toRadixString(16)}',
               ),
-            _buildInfoRow('Emergency', widget.device.emergency ? 'Yes' : 'No'),
-            _buildInfoRow('Block ID', widget.device.blockId),
+            buildInfoRow('Emergency', widget.device.emergency ? 'Yes' : 'No'),
+            buildInfoRow('Block ID', widget.device.blockId),
             if (widget.device.sceneId.isNotEmpty)
-              _buildInfoRow('Scene ID', widget.device.sceneId),
+              buildInfoRow('Scene ID', widget.device.sceneId),
           ],
         ),
       ),
@@ -234,17 +234,17 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             ),
             const Divider(),
             if (widget.device.state.isNotEmpty)
-              _buildInfoRow('State', widget.device.state),
+              buildInfoRow('State', widget.device.state),
             if (widget.device.deviceStateCode != null)
-              _buildInfoRow(
+              buildInfoRow(
                 'State Code',
                 '0x${widget.device.deviceStateCode!.toRadixString(16)}',
               ),
-            _buildInfoRow(
+            buildInfoRow(
               'Button Device',
               widget.device.isButtonDevice ? 'Yes' : 'No',
             ),
-            _buildInfoRow(
+            buildInfoRow(
               'Multisensor',
               widget.device.isMultisensor ? 'Yes' : 'No',
             ),
@@ -255,7 +255,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             if (widget.device is HelvarDriverInputDevice)
               ..._buildInputDeviceStatus(),
 
-            _buildInfoRow('Last Updated', getLastUpdateTime()),
+            buildInfoRow('Last Updated', getLastUpdateTime()),
           ],
         ),
       ),
@@ -274,17 +274,17 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         ),
       ),
       const SizedBox(height: 4),
-      _buildInfoRow('Current Level', '${outputDevice.level}%'),
-      _buildInfoRow('Proportion', '${outputDevice.proportion}'),
-      _buildInfoRow(
+      buildInfoRow('Current Level', '${outputDevice.level}%'),
+      buildInfoRow('Proportion', '${outputDevice.proportion}'),
+      buildInfoRow(
         'Missing',
         outputDevice.missing.isEmpty ? 'No' : outputDevice.missing,
       ),
-      _buildInfoRow(
+      buildInfoRow(
         'Faulty',
         outputDevice.faulty.isEmpty ? 'No' : outputDevice.faulty,
       ),
-      _buildInfoRow(
+      buildInfoRow(
         'Power Consumption',
         '${outputDevice.powerConsumption.toStringAsFixed(1)}W',
       ),
@@ -309,42 +309,20 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
 
     if (inputDevice.isButtonDevice) {
       widgets.add(
-        _buildInfoRow('Button Points', '${inputDevice.buttonPoints.length}'),
+        buildInfoRow('Button Points', '${inputDevice.buttonPoints.length}'),
       );
     }
 
     if (inputDevice.isMultisensor) {
       widgets.add(
-        _buildInfoRow(
-          'Sensor Capabilities',
-          '${inputDevice.sensorInfo.length}',
-        ),
+        buildInfoRow('Sensor Capabilities', '${inputDevice.sensorInfo.length}'),
       );
       inputDevice.sensorInfo.forEach((key, value) {
-        widgets.add(_buildInfoRow('  $key', value.toString()));
+        widgets.add(buildInfoRow('  $key', value.toString()));
       });
     }
 
     return widgets;
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 220,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
   }
 
   Future<void> _queryRealTimeStatus() async {

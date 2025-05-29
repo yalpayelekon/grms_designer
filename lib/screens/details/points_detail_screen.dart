@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/general_ui.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
@@ -201,37 +202,15 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow('Point Name', point.name),
-                    _buildInfoRow('Function Type', point.function),
-                    _buildInfoRow('Button ID', point.buttonId.toString()),
-                    _buildInfoRow(
-                      'Point Type',
-                      _getPointTypeDescription(point),
-                    ),
+                    buildInfoRow('Point Name', point.name),
+                    buildInfoRow('Function Type', point.function),
+                    buildInfoRow('Button ID', point.buttonId.toString()),
+                    buildInfoRow('Point Type', _getPointTypeDescription(point)),
                   ],
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-            ),
-          ),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 12))),
         ],
       ),
     );

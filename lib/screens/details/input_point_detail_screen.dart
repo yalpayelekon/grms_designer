@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/general_ui.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
@@ -71,38 +72,19 @@ class InputPointDetailScreenState
               ],
             ),
             const Divider(),
-            _buildInfoRow('Point Name', widget.point.name),
-            _buildInfoRow('Function', widget.point.function),
-            _buildInfoRow('Button ID', widget.point.buttonId.toString()),
-            _buildInfoRow(
+            buildInfoRow('Point Name', widget.point.name),
+            buildInfoRow('Function', widget.point.function),
+            buildInfoRow('Button ID', widget.point.buttonId.toString()),
+            buildInfoRow(
               'Parent Device',
               widget.device.description.isEmpty
                   ? 'Device ${widget.device.deviceId}'
                   : widget.device.description,
             ),
-            _buildInfoRow('Device Address', widget.device.address),
-            _buildInfoRow('Point Type', _getPointTypeDescription()),
+            buildInfoRow('Device Address', widget.device.address),
+            buildInfoRow('Point Type', _getPointTypeDescription()),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
       ),
     );
   }

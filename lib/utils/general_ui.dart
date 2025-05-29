@@ -181,8 +181,25 @@ IconData getIconForComponentType(ComponentType type) {
 }
 
 void showSnackBarMsg(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
+
+Widget buildInfoRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4.0),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 220,
+          child: Text(
+            '$label:',
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
+        Expanded(child: Text(value)),
+      ],
+    ),
   );
 }
 
