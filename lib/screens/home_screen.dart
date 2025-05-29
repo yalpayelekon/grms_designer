@@ -34,7 +34,7 @@ import 'project_screens/project_settings_screen.dart';
 import 'project_screens/project_files_screen.dart';
 import '../screens/details/subnet_detail_screen.dart';
 import '../screens/details/points_detail_screen.dart';
-import '../screens/details/point_detail_screen.dart';
+import 'details/input_point_detail_screen.dart';
 import '../screens/details/output_points_detail_screen.dart';
 import '../models/helvar_models/output_device.dart';
 
@@ -237,7 +237,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedRouter != null &&
           selectedDevice != null &&
           selectedPoint != null) {
-        return PointDetailScreen(
+        return InputPointDetailScreen(
           workgroup: selectedWorkgroup!,
           router: selectedRouter!,
           device: selectedDevice!,
