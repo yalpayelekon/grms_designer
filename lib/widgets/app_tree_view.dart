@@ -5,6 +5,7 @@ import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:grms_designer/models/helvar_models/output_device.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
 import 'package:grms_designer/utils/treeview_utils.dart';
+import 'package:grms_designer/widgets/draggable_function_node.dart';
 import 'package:grms_designer/widgets/logics_treenode.dart';
 import 'package:grms_designer/widgets/project_treenode.dart';
 import '../models/helvar_models/input_device.dart';
@@ -36,6 +37,7 @@ class AppTreeView extends ConsumerStatefulWidget {
   final bool showingSubnetDetail;
   final bool showingDeviceDetail;
   final bool showingPointsDetail;
+  final bool showingOutputPointsDetail;
   final Function(
     String, {
     Workgroup? workgroup,
@@ -50,13 +52,14 @@ class AppTreeView extends ConsumerStatefulWidget {
   })
   setActiveNode;
 
-  const AppTreeView(
-    this.selectedDevice,
-    this.selectedSubnetNumber,
-    this.showingSubnetDetail,
-    this.showingDeviceDetail,
-    this.showingPointsDetail, {
+  const AppTreeView({
     super.key,
+    this.selectedSubnetNumber,
+    required this.showingSubnetDetail,
+    required this.showingOutputPointsDetail,
+    required this.showingDeviceDetail,
+    required this.showingPointsDetail,
+    required this.selectedDevice,
     required this.wiresheets,
     required this.workgroups,
     required this.showingProject,
@@ -297,6 +300,11 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                 ...router.devicesBySubnet.entries.map((entry) {
                                   final subnet = entry.key;
                                   final subnetDevices = entry.value;
+                                  final bool isSubnetSelected =
+                                      widget.selectedWorkgroup == workgroup &&
+                                      widget.selectedRouter == router &&
+                                      widget.selectedSubnetNumber == subnet &&
+                                      widget.showingSubnetDetail;
                                   return TreeNode(
                                     content: GestureDetector(
                                       onDoubleTap: () {
@@ -312,14 +320,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                         children: [
                                           Icon(
                                             Icons.hub,
-                                            color:
-                                                widget.selectedWorkgroup ==
-                                                        workgroup &&
-                                                    widget.selectedRouter ==
-                                                        router &&
-                                                    widget.selectedSubnetNumber ==
-                                                        subnet &&
-                                                    widget.showingSubnetDetail
+                                            color: isSubnetSelected
                                                 ? Colors.blue
                                                 : null,
                                           ),
@@ -328,26 +329,10 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                             child: Text(
                                               "Subnet $subnet (${subnetDevices.length} devices)",
                                               style: TextStyle(
-                                                fontWeight:
-                                                    widget.selectedWorkgroup ==
-                                                            workgroup &&
-                                                        widget.selectedRouter ==
-                                                            router &&
-                                                        widget.selectedSubnetNumber ==
-                                                            subnet &&
-                                                        widget
-                                                            .showingSubnetDetail
+                                                fontWeight: isSubnetSelected
                                                     ? FontWeight.bold
                                                     : FontWeight.normal,
-                                                color:
-                                                    widget.selectedWorkgroup ==
-                                                            workgroup &&
-                                                        widget.selectedRouter ==
-                                                            router &&
-                                                        widget.selectedSubnetNumber ==
-                                                            subnet &&
-                                                        widget
-                                                            .showingSubnetDetail
+                                                color: isSubnetSelected
                                                     ? Colors.blue
                                                     : null,
                                               ),
@@ -397,7 +382,8 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     final bool isSelectedDevice =
         widget.selectedWorkgroup == workgroup &&
         widget.selectedRouter == router &&
-        widget.selectedDevice == device;
+        widget.selectedDevice == device &&
+        widget.showingDeviceDetail;
 
     final List<TreeNode> deviceChildren = [];
 
@@ -405,7 +391,10 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         device.isButtonDevice &&
         device.buttonPoints.isNotEmpty) {
       final bool isPointsSelected =
-          isSelectedDevice && widget.showingPointsDetail;
+          widget.selectedWorkgroup == workgroup &&
+          widget.selectedRouter == router &&
+          widget.selectedDevice == device &&
+          widget.showingPointsDetail;
 
       deviceChildren.add(
         TreeNode(
@@ -451,6 +440,12 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
       }
 
       if (device.outputPoints.isNotEmpty) {
+        final bool isOutputPointsSelected =
+            widget.selectedWorkgroup == workgroup &&
+            widget.selectedRouter == router &&
+            widget.selectedDevice == device &&
+            widget.showingOutputPointsDetail;
+
         deviceChildren.add(
           TreeNode(
             content: GestureDetector(
@@ -463,15 +458,23 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                 );
                 print('Output points tapped for ${device.address}');
               },
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(
                     Icons.add_circle_outline,
                     size: 18,
-                    color: Colors.orange,
+                    color: isOutputPointsSelected ? Colors.blue : Colors.orange,
                   ),
-                  SizedBox(width: 4),
-                  Text("Points"),
+                  const SizedBox(width: 4),
+                  Text(
+                    "Points",
+                    style: TextStyle(
+                      fontWeight: isOutputPointsSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isOutputPointsSelected ? Colors.blue : null,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -525,7 +528,16 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
           );
         },
         onSecondaryTap: () => showDeviceContextMenu(context, device),
-        child: buildDraggable(deviceName, device, context),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelectedDevice ? Colors.blue.withValues(alpha: 0.1) : null,
+            borderRadius: BorderRadius.circular(4),
+            border: isSelectedDevice
+                ? Border.all(color: Colors.blue, width: 1)
+                : null,
+          ),
+          child: buildDraggable(deviceName, device, context),
+        ),
       ),
       children: deviceChildren.isEmpty ? null : deviceChildren,
     );

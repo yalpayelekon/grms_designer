@@ -138,11 +138,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             child: Container(
               color: Colors.grey[400],
               child: AppTreeView(
-                selectedDevice,
-                selectedSubnetNumber,
-                showingSubnetDetail,
-                showingDeviceDetail,
-                showingPointsDetail,
+                selectedSubnetNumber: selectedSubnetNumber,
+                showingSubnetDetail: showingSubnetDetail,
+                showingOutputPointsDetail: showingOutputPointsDetail,
+                showingDeviceDetail: showingDeviceDetail,
+                showingPointsDetail: showingPointsDetail,
+                selectedDevice: selectedDevice,
                 wiresheets: wiresheets,
                 workgroups: workgroups,
                 showingProject: showingProject,
