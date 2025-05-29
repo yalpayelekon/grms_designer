@@ -3,15 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/flowsheet.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
-import 'package:grms_designer/utils/canvas_utils.dart';
-import 'package:grms_designer/utils/device_utils.dart';
 import 'package:grms_designer/utils/logger.dart';
 
 import 'package:grms_designer/utils/dialog_utils.dart' as dialog_utils;
 import 'package:grms_designer/utils/component_factory.dart'
     as component_factory;
-import '../models/helvar_models/helvar_device.dart';
-import '../models/helvar_models/input_device.dart';
 import '../niagara/controllers/flow_editor_state.dart';
 import '../niagara/controllers/clipboard_manager.dart';
 import '../niagara/controllers/drag_operation_manager.dart';
@@ -29,9 +25,6 @@ import '../niagara/home/selection_box_painter.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
-import '../niagara/models/port_type.dart';
-import '../niagara/models/ramp_component.dart';
-import '../niagara/models/rectangle.dart';
 import '../services/flowsheet_storage_service.dart';
 import '../utils/general_ui.dart';
 import '../utils/persistent_helper.dart';
@@ -819,212 +812,47 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
   }
 
   void _showCanvasContextMenu(BuildContext context, Offset globalPosition) {
-    final canvasBox =
-        _editorState.canvasKey.currentContext?.findRenderObject() as RenderBox?;
-    final canvasPosition = canvasBox != null
-        ? _canvasController.getCanvasPosition(globalPosition, canvasBox)
-        : null;
-
-    if (canvasPosition == null) return;
-
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
-
-    showMenu(
-      context: context,
-      position: RelativeRect.fromRect(
-        Rect.fromPoints(globalPosition, globalPosition),
-        Offset.zero & overlay.size,
-      ),
-      items: [...canvasMenuOptions(_clipboardManager)],
-    ).then((value) {
-      if (value == null) return;
-
-      switch (value) {
-        case 'add-component':
-          _showAddComponentDialogAtPosition(canvasPosition);
-          break;
-        case 'paste':
-          _handlePasteComponent(canvasPosition);
-          break;
-        case 'paste-special':
-          _showPasteSpecialDialog(canvasPosition);
-          break;
-        case 'select-all':
-          _selectionManager.selectAll(_editorState.flowManager.components);
-          break;
-      }
-    });
+    dialog_utils.showCanvasContextMenu(
+      context,
+      globalPosition,
+      _editorState.canvasKey,
+      _clipboardManager,
+      _canvasController,
+      _handlePasteComponent,
+      _showAddComponentDialogAtPosition,
+      _showPasteSpecialDialog,
+      () => _selectionManager.selectAll(_editorState.flowManager.components),
+    );
   }
 
   void _showPasteSpecialDialog(Offset pastePosition) {
-    if (_clipboardManager.isEmpty) return;
-
-    TextEditingController copiesController = TextEditingController(text: '1');
-    ValueNotifier<bool> keepConnections = ValueNotifier<bool>(true);
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return showPasteSpecialDialog(
-          context,
-          copiesController,
-          keepConnections,
-          _handlePasteSpecialComponent,
-          pastePosition,
-        );
-      },
+    dialog_utils.showPasteSpecialDialog(
+      context,
+      _clipboardManager,
+      pastePosition,
+      _handlePasteSpecialComponent,
     );
   }
 
   void _addNewComponent(ComponentType type, {Offset? clickPosition}) {
-    String baseName = getNameForComponentType(type);
-    int counter = 1;
-    String newName = '$baseName $counter';
-
-    while (_editorState.flowManager.components.any(
-      (comp) => comp.id == newName,
-    )) {
-      counter++;
-      newName = '$baseName $counter';
-    }
-
-    Component newComponent = _editorState.flowManager.createComponentByType(
-      newName,
-      type.type,
-    );
-
-    Offset newPosition =
-        clickPosition ?? getDefaultPosition(_canvasController, _editorState);
-
-    Map<String, dynamic> state = {
-      'position': newPosition,
-      'key': _editorState.getComponentKey(newComponent.id),
-      'positions': _editorState.componentPositions,
-      'keys': _editorState.componentKeys,
-    };
-
     setState(() {
-      final command = AddComponentCommand(
+      component_factory.addNewComponent(
+        type,
         _editorState.flowManager,
-        newComponent,
-        state,
+        _editorState,
+        _persistenceHelper,
+        _canvasController,
+        _updateCanvasSize,
+        clickPosition: clickPosition,
       );
-      _editorState.commandHistory.execute(command);
-
-      _editorState.initializeComponentState(
-        newComponent,
-        position: newPosition,
-        width: 160.0,
-      );
-      _persistenceHelper.saveAddComponent(newComponent);
-      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
-      _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
-      _updateCanvasSize();
     });
   }
 
   void _showAddComponentDialogAtPosition(Offset position) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add Component'),
-          content: SizedBox(
-            width: 300,
-            height: 400,
-            child: ListView(
-              children: [
-                _buildComponentCategorySection('Custom Components', [
-                  RectangleComponent.RECTANGLE,
-                  RampComponent.RAMP,
-                ], position),
-                _buildComponentCategorySection('Logic Gates', [
-                  ComponentType.AND_GATE,
-                  ComponentType.OR_GATE,
-                  ComponentType.XOR_GATE,
-                  ComponentType.NOT_GATE,
-                ], position),
-                _buildComponentCategorySection('Math Operations', [
-                  ComponentType.ADD,
-                  ComponentType.SUBTRACT,
-                  ComponentType.MULTIPLY,
-                  ComponentType.DIVIDE,
-                  ComponentType.MAX,
-                  ComponentType.MIN,
-                  ComponentType.POWER,
-                  ComponentType.ABS,
-                ], position),
-                _buildComponentCategorySection('Comparisons', [
-                  ComponentType.IS_GREATER_THAN,
-                  ComponentType.IS_LESS_THAN,
-                  ComponentType.IS_EQUAL,
-                ], position),
-                _buildComponentCategorySection('Writable Points', [
-                  ComponentType.BOOLEAN_WRITABLE,
-                  ComponentType.NUMERIC_WRITABLE,
-                  ComponentType.STRING_WRITABLE,
-                ], position),
-                _buildComponentCategorySection('Read-Only Points', [
-                  ComponentType.BOOLEAN_POINT,
-                  ComponentType.NUMERIC_POINT,
-                  ComponentType.STRING_POINT,
-                ], position),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildComponentCategorySection(
-    String title,
-    List<String> typeStrings,
-    Offset position,
-  ) {
-    List<ComponentType> types = typeStrings
-        .map((t) => ComponentType(t))
-        .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 12.0, bottom: 6.0),
-          child: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ),
-        const Divider(),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children: types.map((type) {
-            return InkWell(
-              onTap: () {
-                _addNewComponent(type, clickPosition: position);
-                Navigator.pop(context);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4.0),
-                ),
-                child: Column(
-                  children: [
-                    Icon(getIconForComponentType(type)),
-                    const SizedBox(height: 4.0),
-                    Text(getNameForComponentType(type)),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+    dialog_utils.showAddComponentDialogAtPosition(
+      context,
+      position,
+      _addNewComponent,
     );
   }
 
@@ -1033,117 +861,33 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     Offset position,
     Component component,
   ) {
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
-
-    showMenu(
-      context: context,
-      position: RelativeRect.fromRect(
-        Rect.fromPoints(position, position),
-        Offset.zero & overlay.size,
-      ),
-      items: showContextMenuOptions(_clipboardManager),
-    ).then((value) {
-      if (value == null) return;
-
-      switch (value) {
-        case 'copy':
-          if (_selectionManager.selectedComponents.length == 1) {
-            _handleCopyComponent(_selectionManager.selectedComponents.first);
-          } else if (_selectionManager.selectedComponents.isNotEmpty) {
-            _handleCopyMultipleComponents();
-          }
-          break;
-        case 'edit':
-          _handleEditComponent(context, component);
-          break;
-        case 'delete':
-          _handleDeleteComponent(component);
-          break;
-      }
-    });
+    dialog_utils.showComponentContextMenu(
+      context,
+      position,
+      component,
+      _clipboardManager,
+      _handleCopyComponent,
+      _handleEditComponent,
+      _handleDeleteComponent,
+      _handleCopyMultipleComponents,
+      _selectionManager.selectedComponents.length > 1,
+    );
   }
 
   void _addNewDeviceComponent(
     Map<String, dynamic> deviceData, {
     Offset? clickPosition,
   }) {
-    HelvarDevice? device = deviceData["device"] as HelvarDevice?;
-
-    if (device == null) {
-      logError('Invalid device data');
-      return;
-    }
-
-    String deviceName = device.description.isEmpty
-        ? "Device_${device.deviceId}"
-        : device.description;
-
-    int counter = 1;
-    String componentId = deviceName;
-    while (_editorState.flowManager.components.any(
-      (comp) => comp.id == componentId,
-    )) {
-      counter++;
-      componentId = "${deviceName}_$counter";
-    }
-
-    Component newComponent = createComponentFromDevice(componentId, device);
-
-    Offset newPosition;
-    if (clickPosition != null) {
-      newPosition = clickPosition;
-    } else {
-      final RenderBox? viewerChildRenderBox =
-          _editorState.interactiveViewerChildKey.currentContext
-                  ?.findRenderObject()
-              as RenderBox?;
-
-      newPosition = Offset(_canvasSize.width / 2, _canvasSize.height / 2);
-
-      if (viewerChildRenderBox != null) {
-        final viewportSize = viewerChildRenderBox.size;
-        final viewportCenter = Offset(
-          viewportSize.width / 2,
-          viewportSize.height / 2,
-        );
-        final matrix = _transformationController.value;
-        final inverseMatrix = Matrix4.inverted(matrix);
-        final transformedCenter = MatrixUtils.transformPoint(
-          inverseMatrix,
-          viewportCenter,
-        );
-
-        newPosition = transformedCenter;
-      }
-    }
-
-    Map<String, dynamic> state = {
-      'position': newPosition,
-      'key': _editorState.getComponentKey(newComponent.id),
-      'positions': _editorState.componentPositions,
-      'keys': _editorState.componentKeys,
-    };
-
     setState(() {
-      final command = AddComponentCommand(
+      component_factory.addNewDeviceComponent(
+        deviceData,
         _editorState.flowManager,
-        newComponent,
-        state,
+        _editorState,
+        _persistenceHelper,
+        _canvasController,
+        _updateCanvasSize,
+        clickPosition: clickPosition,
       );
-      _editorState.commandHistory.execute(command);
-
-      _editorState.initializeComponentState(
-        newComponent,
-        position: newPosition,
-        width: 180.0,
-      );
-
-      _persistenceHelper.saveAddComponent(newComponent);
-      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
-      _persistenceHelper.saveComponentWidth(newComponent.id, 180.0);
-
-      _updateCanvasSize();
     });
   }
 
@@ -1151,93 +895,18 @@ class WiresheetFlowEditorState extends ConsumerState<WiresheetFlowEditor> {
     Map<String, dynamic> buttonPointData, {
     Offset? clickPosition,
   }) {
-    final ButtonPoint buttonPoint =
-        buttonPointData["buttonPoint"] as ButtonPoint;
-    final HelvarDevice parentDevice =
-        buttonPointData["parentDevice"] as HelvarDevice;
-    final Map<String, dynamic> pointData =
-        buttonPointData["pointData"] as Map<String, dynamic>;
-
-    String baseName = buttonPoint.name;
-    String componentId = baseName;
-    int counter = 1;
-
-    while (_editorState.flowManager.components.any(
-      (comp) => comp.id == componentId,
-    )) {
-      componentId = "${baseName}_$counter";
-      counter++;
-    }
-
-    Component newComponent = _editorState.flowManager.createComponentByType(
-      componentId,
-      ComponentType.BOOLEAN_POINT,
-    );
-
-    bool initialValue = _getInitialButtonPointValue(buttonPoint);
-
-    for (var property in newComponent.properties) {
-      if (!property.isInput && property.type.type == PortType.BOOLEAN) {
-        property.value = initialValue;
-        break;
-      }
-    }
-
-    _storeButtonPointMetadata(componentId, buttonPoint, parentDevice);
-
-    Offset newPosition =
-        clickPosition ?? getDefaultPosition(_canvasController, _editorState);
-
-    Map<String, dynamic> state = {
-      'position': newPosition,
-      'key': _editorState.getComponentKey(newComponent.id),
-      'positions': _editorState.componentPositions,
-      'keys': _editorState.componentKeys,
-    };
-
     setState(() {
-      final command = AddComponentCommand(
+      component_factory.addNewButtonPointComponent(
+        buttonPointData,
         _editorState.flowManager,
-        newComponent,
-        state,
+        _editorState,
+        _persistenceHelper,
+        _canvasController,
+        _updateCanvasSize,
+        clickPosition: clickPosition,
+        buttonPointMetadata: _buttonPointMetadata,
       );
-      _editorState.commandHistory.execute(command);
-
-      _editorState.initializeComponentState(
-        newComponent,
-        position: newPosition,
-        width: 160.0,
-      );
-
-      _persistenceHelper.saveAddComponent(newComponent);
-      _persistenceHelper.saveComponentPosition(newComponent.id, newPosition);
-      _persistenceHelper.saveComponentWidth(newComponent.id, 160.0);
-
-      _updateCanvasSize();
     });
-  }
-
-  bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
-    if (buttonPoint.function.contains('Status') ||
-        buttonPoint.name.toLowerCase().contains('missing')) {
-      return false;
-    }
-
-    return false;
-  }
-
-  void _storeButtonPointMetadata(
-    String componentId,
-    ButtonPoint buttonPoint,
-    HelvarDevice parentDevice,
-  ) {
-    _buttonPointMetadata[componentId] = {
-      'buttonPoint': buttonPoint,
-      'parentDevice': parentDevice,
-      'deviceAddress': parentDevice.address,
-      'buttonId': buttonPoint.buttonId,
-      'function': buttonPoint.function,
-    };
   }
 
   void _handleComponentResize(String componentId, double newWidth) {

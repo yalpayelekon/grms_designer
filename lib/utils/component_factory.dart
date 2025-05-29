@@ -145,7 +145,6 @@ void addNewButtonPointComponent(
     ComponentType.BOOLEAN_POINT,
   );
 
-  // Set initial value for button point
   bool initialValue = _getInitialButtonPointValue(buttonPoint);
 
   for (var property in newComponent.properties) {
@@ -155,7 +154,6 @@ void addNewButtonPointComponent(
     }
   }
 
-  // Store metadata if provided
   if (buttonPointMetadata != null) {
     buttonPointMetadata[componentId] = {
       'buttonPoint': buttonPoint,
@@ -199,8 +197,6 @@ bool _getInitialButtonPointValue(ButtonPoint buttonPoint) {
   }
   return false;
 }
-
-// Additional utility functions for component creation
 
 String generateUniqueComponentName(String baseName, FlowManager flowManager) {
   int counter = 1;

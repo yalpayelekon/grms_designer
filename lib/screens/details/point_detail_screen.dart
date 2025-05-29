@@ -27,7 +27,7 @@ class PointDetailScreen extends ConsumerStatefulWidget {
 
 class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
   bool _isMonitoring = false;
-  List<String> _eventHistory = [];
+  final List<String> _eventHistory = [];
   String? _lastEventTime;
   String? _currentValue;
 
@@ -96,10 +96,11 @@ class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
             _buildInfoRow('Function', widget.point.function),
             _buildInfoRow('Button ID', widget.point.buttonId.toString()),
             _buildInfoRow(
-                'Parent Device',
-                widget.device.description.isEmpty
-                    ? 'Device ${widget.device.deviceId}'
-                    : widget.device.description),
+              'Parent Device',
+              widget.device.description.isEmpty
+                  ? 'Device ${widget.device.deviceId}'
+                  : widget.device.description,
+            ),
             _buildInfoRow('Device Address', widget.device.address),
             _buildInfoRow('Point Type', _getPointTypeDescription()),
           ],
@@ -123,8 +124,10 @@ class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: _isMonitoring ? Colors.green[100] : Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
@@ -188,7 +191,8 @@ class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
                 ElevatedButton.icon(
                   icon: Icon(_isMonitoring ? Icons.stop : Icons.play_arrow),
                   label: Text(
-                      _isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'),
+                    _isMonitoring ? 'Stop Monitoring' : 'Start Monitoring',
+                  ),
                   onPressed: _toggleMonitoring,
                 ),
                 ElevatedButton.icon(
@@ -246,8 +250,10 @@ class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
                       Icon(Icons.history, size: 48, color: Colors.grey),
                       SizedBox(height: 8),
                       Text('No events recorded yet'),
-                      Text('Start monitoring to capture point events',
-                          style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Text(
+                        'Start monitoring to capture point events',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -264,8 +270,10 @@ class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
                       leading: CircleAvatar(
                         radius: 12,
                         backgroundColor: Colors.blue[100],
-                        child: Text('${index + 1}',
-                            style: const TextStyle(fontSize: 10)),
+                        child: Text(
+                          '${index + 1}',
+                          style: const TextStyle(fontSize: 10),
+                        ),
                       ),
                       title: Text(event),
                       dense: true,
@@ -292,9 +300,7 @@ class PointDetailScreenState extends ConsumerState<PointDetailScreen> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );

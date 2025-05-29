@@ -6,8 +6,10 @@ final output = File('minified_project.txt');
 void main() async {
   final buffer = StringBuffer();
 
-  await for (var entity
-      in projectRoot.list(recursive: true, followLinks: false)) {
+  await for (var entity in projectRoot.list(
+    recursive: true,
+    followLinks: false,
+  )) {
     if (entity is File &&
         entity.path.endsWith('.dart') &&
         !entity.path.contains('minify.dart')) {
@@ -31,7 +33,7 @@ void main() async {
         // Remove empty lines
         if (trimmed.isEmpty) continue;
 
-        buffer.write(trimmed + ' ');
+        buffer.write('$trimmed ');
       }
 
       buffer.writeln('\n');
