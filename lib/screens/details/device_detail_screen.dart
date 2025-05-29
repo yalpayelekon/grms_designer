@@ -40,6 +40,25 @@ class DeviceDetailScreen extends ConsumerStatefulWidget {
 }
 
 class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
+  late TextEditingController _deviceIdController;
+  late TextEditingController _addressController;
+
+  @override
+  void initState() {
+    super.initState();
+    _deviceIdController = TextEditingController(
+      text: widget.device.deviceId.toString(),
+    );
+    _addressController = TextEditingController(text: widget.device.address);
+  }
+
+  @override
+  void dispose() {
+    _deviceIdController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final deviceName = widget.device.description.isEmpty
@@ -93,15 +112,67 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.device.description.isEmpty
-                            ? 'Device ${widget.device.deviceId}'
-                            : widget.device.description,
-                        style: Theme.of(context).textTheme.titleLarge,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 120,
+                              child: Text(
+                                'Device ID:',
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _deviceIdController,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onFieldSubmitted: (val) => _updateDeviceId(val),
+                                onChanged: (val) {},
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      Text(
-                        'Address: ${widget.device.address}',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 120,
+                              child: Text(
+                                'Address:',
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _addressController,
+                                decoration: const InputDecoration(
+                                  isDense: true,
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                onFieldSubmitted: (val) =>
+                                    _updateDeviceAddress(val),
+                                onChanged: (val) {},
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -109,7 +180,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               ],
             ),
             const Divider(),
-            _buildInfoRow('Device ID', widget.device.deviceId.toString()),
             _buildInfoRow('Type', widget.device.helvarType),
             _buildInfoRow('Props', widget.device.props),
             if (widget.device.deviceTypeCode != null)
@@ -121,12 +191,29 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             _buildInfoRow('Block ID', widget.device.blockId),
             if (widget.device.sceneId.isNotEmpty)
               _buildInfoRow('Scene ID', widget.device.sceneId),
-            if (widget.device.hexId.isNotEmpty)
-              _buildInfoRow('Hex ID', widget.device.hexId),
           ],
         ),
       ),
     );
+  }
+
+  void _updateDeviceId(String val) {
+    final id = int.tryParse(val);
+    if (id != null && id > 0) {
+      setState(() {
+        widget.device.deviceId = id;
+      });
+      showSnackBarMsg(context, "Device ID updated");
+    } else {
+      showSnackBarMsg(context, "Invalid Device ID");
+    }
+  }
+
+  void _updateDeviceAddress(String val) {
+    setState(() {
+      widget.device.address = val;
+    });
+    showSnackBarMsg(context, "Address updated");
   }
 
   Widget _buildStaticStatusCard() {
@@ -245,7 +332,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 220,
             child: Text(
               '$label:',
               style: const TextStyle(fontWeight: FontWeight.w500),
