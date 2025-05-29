@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:grms_designer/models/helvar_models/input_device.dart';
 import 'package:grms_designer/models/helvar_models/output_device.dart';
+import 'package:grms_designer/models/helvar_models/output_point.dart';
 
 Color getOutputPointValueColor(OutputPoint outputPoint) {
   if (outputPoint.pointType == 'boolean') {

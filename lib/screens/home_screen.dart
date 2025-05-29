@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:grms_designer/models/helvar_models/input_device.dart';
+import 'package:grms_designer/models/helvar_models/output_point.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 import 'package:grms_designer/screens/details/device_detail_screen.dart';
 import 'package:grms_designer/utils/date_utils.dart';
