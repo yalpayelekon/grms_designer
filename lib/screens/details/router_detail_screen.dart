@@ -144,6 +144,10 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                 value: 'add_emergency',
                 child: Text('Add Emergency Device'),
               ),
+              const PopupMenuItem(
+                value: 'delete_all',
+                child: Text('Delete All Devices'),
+              ),
             ],
           ),
         ],
@@ -275,7 +279,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       );
     }
 
-    // Create the main device expansion tile
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ExpansionTile(
@@ -366,6 +369,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         break;
       case 'add_emergency':
         _addEmergencyDevice();
+        break;
+      case 'delete_all':
+        _deleteAllDevices();
         break;
     }
   }
@@ -752,5 +758,16 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _deleteAllDevices() {
+    showDialog(
+      context: context,
+      builder: (context) => const AlertDialog(
+        title: Text('Delete All Devices'),
+        content: Text('Are you sure you want to delete all devices?'),
+        actions: [],
+      ),
+    );
   }
 }
