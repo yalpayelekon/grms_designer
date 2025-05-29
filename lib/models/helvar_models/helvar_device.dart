@@ -25,7 +25,6 @@ abstract class HelvarDevice extends TreeNode {
   int fadeTime;
   String out;
   String helvarType;
-  bool pointsCreated;
 
   int? deviceTypeCode;
   int? deviceStateCode;
@@ -56,7 +55,6 @@ abstract class HelvarDevice extends TreeNode {
     this.fadeTime = 700,
     this.out = "",
     this.helvarType = "output",
-    this.pointsCreated = false,
     this.deviceTypeCode,
     this.deviceStateCode,
     this.isButtonDevice = false,
@@ -108,7 +106,6 @@ abstract class HelvarDevice extends TreeNode {
         fadeTime: json['fadeTime'] as int? ?? 700,
         out: json['out'] as String? ?? '',
         helvarType: json['helvarType'] as String? ?? 'input',
-        pointsCreated: json['pointsCreated'] as bool? ?? false,
         deviceTypeCode: json['deviceTypeCode'] as int?,
         deviceStateCode: json['deviceStateCode'] as int?,
         isButtonDevice: json['isButtonDevice'] as bool? ?? false,
@@ -141,7 +138,6 @@ abstract class HelvarDevice extends TreeNode {
         fadeTime: json['fadeTime'] as int? ?? 700,
         out: json['out'] as String? ?? '',
         helvarType: json['helvarType'] as String? ?? 'output',
-        pointsCreated: json['pointsCreated'] as bool? ?? false,
         missing: json['missing'] as String? ?? '',
         faulty: json['faulty'] as String? ?? '',
         level: json['level'] as int? ?? 100,
@@ -170,7 +166,6 @@ abstract class HelvarDevice extends TreeNode {
         fadeTime: json['fadeTime'] as int? ?? 700,
         out: json['out'] as String? ?? '',
         helvarType: json['helvarType'] as String? ?? 'emergency',
-        pointsCreated: json['pointsCreated'] as bool? ?? false,
         missing: json['missing'] as String? ?? '',
         faulty: json['faulty'] as String? ?? '',
         deviceTypeCode: json['deviceTypeCode'] as int?,
@@ -209,7 +204,6 @@ abstract class HelvarDevice extends TreeNode {
       'fadeTime': fadeTime,
       'out': out,
       'helvarType': helvarType,
-      'pointsCreated': pointsCreated,
       'deviceTypeCode': deviceTypeCode,
       'deviceStateCode': deviceStateCode,
       'isButtonDevice': isButtonDevice,

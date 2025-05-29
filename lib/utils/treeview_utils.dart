@@ -5,7 +5,7 @@ import 'package:grms_designer/models/helvar_models/output_device.dart';
 Color getOutputPointValueColor(OutputPoint outputPoint) {
   if (outputPoint.pointType == 'boolean') {
     final value = outputPoint.value as bool? ?? false;
-    return value ? Colors.red : Colors.green;
+    return value ? Colors.green : Colors.red;
   } else {
     final value = (outputPoint.value as num?)?.toDouble() ?? 0.0;
     if (value == 0) return Colors.grey;
@@ -16,7 +16,7 @@ Color getOutputPointValueColor(OutputPoint outputPoint) {
 String formatOutputPointValue(OutputPoint outputPoint) {
   if (outputPoint.pointType == 'boolean') {
     final value = outputPoint.value as bool? ?? false;
-    return value ? 'ON' : 'OFF';
+    return value ? 'true' : 'false';
   } else {
     final value = (outputPoint.value as num?)?.toDouble() ?? 0.0;
     if (outputPoint.pointId == 5) {

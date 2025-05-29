@@ -20,7 +20,6 @@ class HelvarDriverInputDevice extends HelvarDevice {
     super.fadeTime,
     super.out,
     super.helvarType = "input",
-    super.pointsCreated,
     super.deviceTypeCode,
     super.deviceStateCode,
     super.isButtonDevice,
@@ -54,22 +53,18 @@ class HelvarDriverInputDevice extends HelvarDevice {
 
   @override
   void started() {
-    if (!pointsCreated) {
-      createInputPoints(address, props, addressingScheme);
+    createInputPoints(address, props, addressingScheme);
 
-      if (isButtonDevice && buttonPoints.isEmpty) {
-        generateButtonPoints();
-      }
+    if (isButtonDevice && buttonPoints.isEmpty) {
+      generateButtonPoints();
+    }
 
-      if (isMultisensor && sensorInfo.isEmpty) {
-        sensorInfo = {
-          'hasPresence': true,
-          'hasLightLevel': true,
-          'hasTemperature': false,
-        };
-      }
-
-      pointsCreated = true;
+    if (isMultisensor && sensorInfo.isEmpty) {
+      sensorInfo = {
+        'hasPresence': true,
+        'hasLightLevel': true,
+        'hasTemperature': false,
+      };
     }
   }
 

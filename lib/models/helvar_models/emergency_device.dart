@@ -21,7 +21,6 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
     super.fadeTime,
     super.out,
     super.helvarType = "emergency",
-    super.pointsCreated,
     super.deviceTypeCode,
     super.deviceStateCode,
     super.isButtonDevice,
@@ -173,10 +172,7 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
 
   @override
   void started() {
-    if (!pointsCreated) {
-      createOutputEmergencyPoints(address, "name");
-      pointsCreated = true;
-    }
+    createOutputEmergencyPoints(address, "name");
   }
 
   @override

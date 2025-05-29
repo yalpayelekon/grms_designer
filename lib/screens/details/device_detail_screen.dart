@@ -167,10 +167,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               'Multisensor',
               widget.device.isMultisensor ? 'Yes' : 'No',
             ),
-            _buildInfoRow(
-              'Points Created',
-              widget.device.pointsCreated ? 'Yes' : 'No',
-            ),
 
             if (widget.device is HelvarDriverOutputDevice)
               ..._buildOutputDeviceStatus(),

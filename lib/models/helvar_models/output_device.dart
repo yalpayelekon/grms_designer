@@ -60,7 +60,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     super.fadeTime,
     super.out,
     super.helvarType = "output",
-    super.pointsCreated,
     super.deviceTypeCode,
     super.deviceStateCode,
     super.isButtonDevice,
@@ -138,11 +137,8 @@ class HelvarDriverOutputDevice extends HelvarDevice {
 
   @override
   void started() {
-    if (!pointsCreated) {
-      createOutputPoints(address, getName());
-      generateOutputPoints();
-      pointsCreated = true;
-    }
+    createOutputPoints(address, getName());
+    generateOutputPoints();
   }
 
   String getName() {
