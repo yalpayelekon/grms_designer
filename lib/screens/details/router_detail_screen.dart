@@ -763,11 +763,95 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
   void _deleteAllDevices() {
     showDialog(
       context: context,
-      builder: (context) => const AlertDialog(
-        title: Text('Delete All Devices'),
-        content: Text('Are you sure you want to delete all devices?'),
-        actions: [],
+      builder: (context) => AlertDialog(
+        title: const Text('Delete All Devices'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Are you sure you want to delete all devices?'),
+            const SizedBox(height: 8),
+            Text(
+              'This will permanently remove all ${_devices.length} devices from this router.',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'This action cannot be undone.',
+              style: TextStyle(color: Colors.red),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete All'),
+          ),
+        ],
       ),
-    );
+    ).then((confirmed) async {
+      if (confirmed == true) {
+        await _performDeleteAllDevices();
+      }
+    });
+  }
+
+  Future<void> _performDeleteAllDevices() async {
+    if (_devices.isEmpty) {
+      showSnackBarMsg(context, 'No devices to delete');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final devicesToDelete = List<HelvarDevice>.from(_devices);
+
+      for (final device in devicesToDelete) {
+        await ref
+            .read(workgroupsProvider.notifier)
+            .removeDeviceFromRouter(
+              widget.workgroup.id,
+              widget.router.address,
+              device,
+            );
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _devices.clear();
+        _devicesBySubnet.clear();
+        _isLoading = false;
+      });
+
+      showSnackBarMsg(
+        context,
+        'Successfully deleted ${devicesToDelete.length} devices',
+      );
+
+      logInfo(
+        'Deleted all ${devicesToDelete.length} devices from router ${widget.router.address}',
+      );
+    } catch (e) {
+      logError('Error deleting all devices: $e');
+
+      if (!mounted) return;
+
+      showSnackBarMsg(context, 'Error deleting devices: $e');
+
+      setState(() {
+        _isLoading = false;
+        _devices = widget.router.devices;
+        _organizeDevicesBySubnet();
+      });
+    }
   }
 }
