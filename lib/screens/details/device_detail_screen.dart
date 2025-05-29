@@ -203,7 +203,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       setState(() {
         widget.device.deviceId = id;
       });
-      showSnackBarMsg(context, "Device ID updated");
+      logInfo("Device ID updated");
     } else {
       showSnackBarMsg(context, "Invalid Device ID");
     }
@@ -213,7 +213,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     setState(() {
       widget.device.address = val;
     });
-    showSnackBarMsg(context, "Address updated");
+    logInfo("Address updated");
   }
 
   Widget _buildStaticStatusCard() {
@@ -284,7 +284,10 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         'Faulty',
         outputDevice.faulty.isEmpty ? 'No' : outputDevice.faulty,
       ),
-      _buildInfoRow('Power Consumption', "20"), // update to use real value
+      _buildInfoRow(
+        'Power Consumption',
+        '${outputDevice.powerConsumption.toStringAsFixed(1)}W',
+      ),
     ];
   }
 
@@ -356,7 +359,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
 
       if (mounted) {
         setState(() {});
-        showSnackBarMsg(context, 'Device status updated successfully');
+        logInfo('Device status updated successfully');
       }
     } catch (e) {
       logError('Error querying device status: $e');

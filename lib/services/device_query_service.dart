@@ -138,7 +138,6 @@ class DeviceQueryService {
     }
   }
 
-  /// Query output level (load level)
   Future<void> _queryOutputLevel(
     String routerIpAddress,
     HelvarDriverOutputDevice device,
@@ -155,7 +154,6 @@ class DeviceQueryService {
           final level = double.tryParse(levelValue) ?? 0.0;
           await device.updatePointValue(5, level);
 
-          // Also update the device's level property
           device.level = level.round();
 
           logInfo('Device ${device.address} output level: $level%');
@@ -166,7 +164,6 @@ class DeviceQueryService {
     }
   }
 
-  /// Query power consumption
   Future<void> _queryPowerConsumption(
     String routerIpAddress,
     HelvarDriverOutputDevice device,
@@ -182,7 +179,7 @@ class DeviceQueryService {
         if (powerValue != null) {
           final power = double.tryParse(powerValue) ?? 0.0;
           await device.updatePointValue(6, power);
-
+          device.powerConsumption = power;
           logInfo('Device ${device.address} power consumption: ${power}W');
         }
       }
@@ -191,7 +188,6 @@ class DeviceQueryService {
     }
   }
 
-  /// Query a single point by ID
   Future<bool> queryOutputDevicePoint(
     String routerIpAddress,
     HelvarDriverOutputDevice device,
@@ -228,7 +224,6 @@ class DeviceQueryService {
     }
   }
 
-  /// Get a description of what each point represents
   static String getPointDescription(int pointId) {
     switch (pointId) {
       case 1:
