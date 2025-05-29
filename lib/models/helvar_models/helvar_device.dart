@@ -22,7 +22,6 @@ abstract class HelvarDevice extends TreeNode {
   bool emergency;
   String blockId;
   String sceneId;
-  int fadeTime;
   String out;
   String helvarType;
 
@@ -52,7 +51,6 @@ abstract class HelvarDevice extends TreeNode {
     this.emergency = false,
     this.blockId = "1",
     this.sceneId = "",
-    this.fadeTime = 700,
     this.out = "",
     this.helvarType = "output",
     this.deviceTypeCode,
@@ -103,7 +101,6 @@ abstract class HelvarDevice extends TreeNode {
         emergency: json['emergency'] as bool? ?? false,
         blockId: json['blockId'] as String? ?? '1',
         sceneId: json['sceneId'] as String? ?? '',
-        fadeTime: json['fadeTime'] as int? ?? 700,
         out: json['out'] as String? ?? '',
         helvarType: json['helvarType'] as String? ?? 'input',
         deviceTypeCode: json['deviceTypeCode'] as int?,
@@ -135,7 +132,6 @@ abstract class HelvarDevice extends TreeNode {
         emergency: json['emergency'] as bool? ?? false,
         blockId: json['blockId'] as String? ?? '1',
         sceneId: json['sceneId'] as String? ?? '',
-        fadeTime: json['fadeTime'] as int? ?? 700,
         out: json['out'] as String? ?? '',
         helvarType: json['helvarType'] as String? ?? 'output',
         missing: json['missing'] as String? ?? '',
@@ -163,7 +159,6 @@ abstract class HelvarDevice extends TreeNode {
         emergency: json['emergency'] as bool? ?? true,
         blockId: json['blockId'] as String? ?? '1',
         sceneId: json['sceneId'] as String? ?? '',
-        fadeTime: json['fadeTime'] as int? ?? 700,
         out: json['out'] as String? ?? '',
         helvarType: json['helvarType'] as String? ?? 'emergency',
         missing: json['missing'] as String? ?? '',
@@ -201,7 +196,6 @@ abstract class HelvarDevice extends TreeNode {
       'emergency': emergency,
       'blockId': blockId,
       'sceneId': sceneId,
-      'fadeTime': fadeTime,
       'out': out,
       'helvarType': helvarType,
       'deviceTypeCode': deviceTypeCode,

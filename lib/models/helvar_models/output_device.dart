@@ -58,7 +58,6 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     super.emergency,
     super.blockId,
     super.sceneId,
-    super.fadeTime,
     super.out,
     super.helvarType = "output",
     super.deviceTypeCode,

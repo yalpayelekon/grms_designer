@@ -18,7 +18,6 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
     super.emergency = true,
     super.blockId,
     super.sceneId,
-    super.fadeTime,
     super.out,
     super.helvarType = "emergency",
     super.deviceTypeCode,

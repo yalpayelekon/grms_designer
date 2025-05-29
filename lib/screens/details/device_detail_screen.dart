@@ -121,7 +121,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             _buildInfoRow('Block ID', widget.device.blockId),
             if (widget.device.sceneId.isNotEmpty)
               _buildInfoRow('Scene ID', widget.device.sceneId),
-            _buildInfoRow('Fade Time', '${widget.device.fadeTime}ms'),
             if (widget.device.hexId.isNotEmpty)
               _buildInfoRow('Hex ID', widget.device.hexId),
           ],

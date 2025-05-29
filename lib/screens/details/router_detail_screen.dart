@@ -80,7 +80,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     );
 
     if (device != null) {
-      await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
+      await ref
+          .read(workgroupsProvider.notifier)
+          .addDeviceToRouter(
             widget.workgroup.id,
             widget.router.address,
             device,
@@ -107,7 +109,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             icon: const Icon(Icons.wifi),
             tooltip: 'Connect',
             onPressed: () {
-              ref.read(workgroupsProvider.notifier).getRouterConnection(
+              ref
+                  .read(workgroupsProvider.notifier)
+                  .getRouterConnection(
                     widget.workgroup.id,
                     widget.router.address,
                   );
@@ -156,11 +160,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.device_unknown,
-                  size: 64,
-                  color: Colors.grey,
-                ),
+                const Icon(Icons.device_unknown, size: 64, color: Colors.grey),
                 const SizedBox(height: 16),
                 const Text(
                   'No devices found for this router',
@@ -189,8 +189,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         : ListView.builder(
             itemCount: widget.router.devicesBySubnet.length,
             itemBuilder: (context, index) {
-              final subnet =
-                  widget.router.devicesBySubnet.keys.elementAt(index);
+              final subnet = widget.router.devicesBySubnet.keys.elementAt(
+                index,
+              );
               final subnetDevices = widget.router.devicesBySubnet[subnet] ?? [];
 
               return ExpansionTile(
@@ -211,31 +212,35 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
     final List<Widget> subItems = [];
 
-    subItems.add(ListTile(
-      leading: const Icon(Icons.warning_amber, size: 20),
-      title: const Text('Alarm Source Info'),
-      contentPadding: const EdgeInsets.only(left: 56),
-      dense: true,
-      onTap: () => _showDeviceAlarmInfo(device),
-    ));
+    subItems.add(
+      ListTile(
+        leading: const Icon(Icons.warning_amber, size: 20),
+        title: const Text('Alarm Source Info'),
+        contentPadding: const EdgeInsets.only(left: 56),
+        dense: true,
+        onTap: () => _showDeviceAlarmInfo(device),
+      ),
+    );
 
     if (device is HelvarDriverInputDevice &&
         device.isButtonDevice &&
         device.buttonPoints.isNotEmpty) {
-      subItems.add(ExpansionTile(
-        title: const Text('Points'),
-        leading: const Icon(Icons.add_circle_outline),
-        childrenPadding: const EdgeInsets.only(left: 20),
-        tilePadding: const EdgeInsets.only(left: 40),
-        children: device.buttonPoints
-            .map((point) => ListTile(
+      subItems.add(
+        ExpansionTile(
+          title: const Text('Points'),
+          leading: const Icon(Icons.add_circle_outline),
+          childrenPadding: const EdgeInsets.only(left: 20),
+          tilePadding: const EdgeInsets.only(left: 40),
+          children: device.buttonPoints
+              .map(
+                (point) => ListTile(
                   leading: Icon(
                     point.function.contains('Status') ||
                             point.name.contains('Missing')
                         ? Icons.info_outline
                         : point.function.contains('IR')
-                            ? Icons.settings_remote
-                            : Icons.touch_app,
+                        ? Icons.settings_remote
+                        : Icons.touch_app,
                     size: 20,
                     color: Colors.green,
                   ),
@@ -243,25 +248,31 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                   subtitle: Text(point.function),
                   contentPadding: const EdgeInsets.only(left: 16),
                   dense: true,
-                ))
-            .toList(),
-      ));
+                ),
+              )
+              .toList(),
+        ),
+      );
     }
 
     // Add sensor info for multisensors
     if (device.isMultisensor) {
-      subItems.add(ExpansionTile(
-        title: const Text('Sensor Data'),
-        leading: const Icon(Icons.sensors),
-        childrenPadding: const EdgeInsets.only(left: 20),
-        tilePadding: const EdgeInsets.only(left: 40),
-        children: device.sensorInfo.entries
-            .map((entry) => ListTile(
+      subItems.add(
+        ExpansionTile(
+          title: const Text('Sensor Data'),
+          leading: const Icon(Icons.sensors),
+          childrenPadding: const EdgeInsets.only(left: 20),
+          tilePadding: const EdgeInsets.only(left: 40),
+          children: device.sensorInfo.entries
+              .map(
+                (entry) => ListTile(
                   title: Text('${entry.key}: ${entry.value}'),
                   dense: true,
-                ))
-            .toList(),
-      ));
+                ),
+              )
+              .toList(),
+        ),
+      );
     }
 
     // Create the main device expansion tile
@@ -320,7 +331,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             Text('State: ${device.state}'),
             if (device.deviceStateCode != null)
               Text(
-                  'State Code: 0x${device.deviceStateCode!.toRadixString(16)}'),
+                'State Code: 0x${device.deviceStateCode!.toRadixString(16)}',
+              ),
             const SizedBox(height: 8),
             const Text('No active alarms'),
           ],
@@ -375,7 +387,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Import Devices'),
           content: Text(
-              'Found ${devices.length} devices. Do you want to merge with existing devices or replace them?'),
+            'Found ${devices.length} devices. Do you want to merge with existing devices or replace them?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -396,14 +409,17 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         return;
       }
       if (merge) {
-        final existingAddresses =
-            widget.router.devices.map((d) => d.address).toSet();
+        final existingAddresses = widget.router.devices
+            .map((d) => d.address)
+            .toSet();
         final newDevices = devices
             .where((d) => !existingAddresses.contains(d.address))
             .toList();
 
         for (final device in newDevices) {
-          await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
+          await ref
+              .read(workgroupsProvider.notifier)
+              .addDeviceToRouter(
                 widget.workgroup.id,
                 widget.router.address,
                 device,
@@ -414,14 +430,18 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         widget.router.devices.clear();
 
         for (final device in devices) {
-          await ref.read(workgroupsProvider.notifier).addDeviceToRouter(
+          await ref
+              .read(workgroupsProvider.notifier)
+              .addDeviceToRouter(
                 widget.workgroup.id,
                 widget.router.address,
                 device,
               );
         }
         showSnackBarMsg(
-            context, 'Replaced with ${devices.length} imported devices');
+          context,
+          'Replaced with ${devices.length} imported devices',
+        );
       }
       setState(() {
         _devices = widget.router.devices;
@@ -443,8 +463,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         return;
       }
 
-      final filePath =
-          await FileDialogHelper.pickJsonFileToSave("helvarnet_devices.json");
+      final filePath = await FileDialogHelper.pickJsonFileToSave(
+        "helvarnet_devices.json",
+      );
       if (filePath == null) return;
 
       setState(() {
@@ -456,7 +477,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
       if (!mounted) return;
       showSnackBarMsg(
-          context, 'Exported ${_devices.length} devices to $filePath');
+        context,
+        'Exported ${_devices.length} devices to $filePath',
+      );
 
       setState(() {
         _isLoading = false;
@@ -489,17 +512,16 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
 
     if (result == true) {
-      await ref.read(workgroupsProvider.notifier).removeDeviceFromRouter(
+      await ref
+          .read(workgroupsProvider.notifier)
+          .removeDeviceFromRouter(
             widget.workgroup.id,
             widget.router.address,
             device,
@@ -532,13 +554,14 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
               _buildDetailRow('Type', device.props),
               _buildDetailRow('ID', device.deviceId.toString()),
               if (device.deviceTypeCode != null)
-                _buildDetailRow('Type Code',
-                    '0x${device.deviceTypeCode!.toRadixString(16)}'),
+                _buildDetailRow(
+                  'Type Code',
+                  '0x${device.deviceTypeCode!.toRadixString(16)}',
+                ),
               _buildDetailRow('Device Type', device.helvarType),
               _buildDetailRow('Emergency', device.emergency.toString()),
               _buildDetailRow('Block ID', device.blockId),
               _buildDetailRow('Scene ID', device.sceneId),
-              _buildDetailRow('Fade Time', '${device.fadeTime}ms'),
               if (device.state.isNotEmpty)
                 _buildDetailRow('State', device.state),
               if (device.hexId.isNotEmpty)
@@ -550,23 +573,31 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                   device.isButtonDevice &&
                   device.buttonPoints.isNotEmpty) ...[
                 const Divider(),
-                const Text('Button Points:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Button Points:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                ...device.buttonPoints.map((point) => Padding(
-                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                      child: Text('${point.name} (${point.function})'),
-                    )),
+                ...device.buttonPoints.map(
+                  (point) => Padding(
+                    padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                    child: Text('${point.name} (${point.function})'),
+                  ),
+                ),
               ],
               if (device.isMultisensor) ...[
                 const Divider(),
-                const Text('Sensor Capabilities:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Sensor Capabilities:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                ...device.sensorInfo.entries.map((entry) => Padding(
-                      padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                      child: Text('${entry.key}: ${entry.value}'),
-                    )),
+                ...device.sensorInfo.entries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
+                    child: Text('${entry.key}: ${entry.value}'),
+                  ),
+                ),
               ],
             ],
           ),
@@ -612,9 +643,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -632,7 +661,8 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
 
     try {
       logInfo(
-          'Starting device discovery for router: ${widget.router.ipAddress}');
+        'Starting device discovery for router: ${widget.router.ipAddress}',
+      );
 
       final discoveryService = ref.watch(discoveryServiceProvider);
 
@@ -661,12 +691,14 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       logInfo('Found ${discoveredDevices.length} devices');
 
       if (!mounted) return;
-      final shouldAdd = await showDialog<bool>(
+      final shouldAdd =
+          await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
               title: const Text('Devices Discovered'),
               content: Text(
-                  'Found ${discoveredDevices.length} devices. Do you want to add them?'),
+                'Found ${discoveredDevices.length} devices. Do you want to add them?',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -696,7 +728,9 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       logInfo('Adding ${newDevices.length} new devices');
 
       if (newDevices.isNotEmpty) {
-        await ref.read(workgroupsProvider.notifier).addMultipleDevicesToRouter(
+        await ref
+            .read(workgroupsProvider.notifier)
+            .addMultipleDevicesToRouter(
               widget.workgroup.id,
               widget.router.address,
               newDevices,
