@@ -152,15 +152,19 @@ class SceneQueryService {
   }
 
   List<int> buildSceneTable(Map<int, int?> sceneData) {
-    final sceneTable = <int>[];
+    final sceneSet = <int>{};
 
     for (final entry in sceneData.entries) {
-      if (entry.value != null) {
-        sceneTable.add(entry.value!);
+      if (entry.value != null && entry.value! > 0) {
+        sceneSet.add(entry.value!);
       }
     }
 
-    logInfo('Built scene table: $sceneTable');
+    final sceneTable = sceneSet.toList()..sort();
+
+    logInfo(
+      'Built scene table with ${sceneTable.length} distinct scenes: $sceneTable',
+    );
     return sceneTable;
   }
 }
