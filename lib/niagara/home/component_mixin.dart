@@ -1,6 +1,6 @@
 import 'package:grms_designer/niagara/models/port.dart';
 
-mixin SlotLookupMixin {
+mixin ComponentMixin {
   List<Property> get properties;
   List<ActionSlot> get actions;
   List<Topic> get topics;

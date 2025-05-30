@@ -59,11 +59,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             tooltip: 'Query Scene Data',
             onPressed: _isLoading ? null : _querySceneData,
           ),
-          IconButton(
-            icon: const Icon(Icons.science),
-            tooltip: 'Test Scene Queries',
-            onPressed: _isLoading ? null : _testSceneQueries,
-          ),
         ],
       ),
       body: _isLoading
@@ -754,102 +749,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     } catch (e) {
       logError('Error recalling scene: $e');
       showSnackBarMsg(context, 'Error recalling scene: $e');
-    }
-  }
-
-  Future<void> _testSceneQueries() async {
-    if (widget.workgroup.routers.isEmpty) {
-      showSnackBarMsg(context, 'No routers available for testing');
-      return;
-    }
-
-    final router = widget.workgroup.routers.first;
-    final groupIdInt = int.tryParse(widget.group.groupId);
-
-    if (groupIdInt == null) {
-      showSnackBarMsg(context, 'Invalid group ID for testing');
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final sceneQueryService = ref.read(sceneQueryServiceProvider);
-
-      logInfo(
-        '=== Testing Scene Queries for Group ${widget.group.groupId} ===',
-      );
-
-      // Test queryLastSceneInGroup
-      await _testSceneQueryCommand('Query Last Scene In Group', () async {
-        return await sceneQueryService.queryLastSceneInGroup(
-          router.ipAddress,
-          groupIdInt,
-        );
-      });
-
-      // Test each block using queryLastSceneInBlock
-      for (int block = 1; block <= 4; block++) {
-        await _testSceneQueryCommand(
-          'Query Last Scene In Block $block',
-          () async {
-            return await sceneQueryService.queryLastSceneInBlock(
-              router.ipAddress,
-              groupIdInt,
-              block,
-            );
-          },
-        );
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-
-      // Test querySceneNames
-      await _testSceneQueryCommand('Query Scene Names', () async {
-        return await sceneQueryService.querySceneNames(router.ipAddress);
-      });
-
-      // Test exploreGroupScenes
-      await _testSceneQueryCommand('Explore Group Scenes', () async {
-        return await sceneQueryService.exploreGroupScenes(
-          router.ipAddress,
-          groupIdInt,
-        );
-      });
-
-      if (mounted) {
-        showSnackBarMsg(
-          context,
-          'Scene query tests completed. Check logs for detailed results.',
-        );
-      }
-    } catch (e) {
-      logError('Error during scene query testing: $e');
-      if (mounted) {
-        showSnackBarMsg(context, 'Error during testing: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _testSceneQueryCommand(
-    String testName,
-    Future<dynamic> Function() commandFunction,
-  ) async {
-    try {
-      logInfo('--- $testName ---');
-      final result = await commandFunction();
-
-      logInfo('Command executed successfully');
-      logInfo('Result: $result');
-    } catch (e) {
-      logError('$testName failed: $e');
     }
   }
 

@@ -1,12 +1,17 @@
+import 'package:grms_designer/niagara/home/component_mixin.dart';
+
 import 'port.dart';
 import 'connection.dart';
 import 'component_type.dart';
 
-abstract class Component {
+abstract class Component with ComponentMixin {
   String id;
   final ComponentType type;
+  @override
   final List<Property> properties;
+  @override
   final List<ActionSlot> actions;
+  @override
   final List<Topic> topics;
   Map<int, ConnectionEndpoint> inputConnections = {};
 
@@ -26,40 +31,6 @@ abstract class Component {
     slots.addAll(actions);
     slots.addAll(topics);
     return slots;
-  }
-
-  Property? getPropertyByIndex(int index) {
-    try {
-      return properties.firstWhere((prop) => prop.index == index);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  ActionSlot? getActionByIndex(int index) {
-    try {
-      return actions.firstWhere((action) => action.index == index);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Topic? getTopicByIndex(int index) {
-    try {
-      return topics.firstWhere((topic) => topic.index == index);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Slot? getSlotByIndex(int index) {
-    Property? property = getPropertyByIndex(index);
-    if (property != null) return property;
-
-    ActionSlot? action = getActionByIndex(index);
-    if (action != null) return action;
-
-    return getTopicByIndex(index);
   }
 
   void addInputConnection(int slotIndex, ConnectionEndpoint endpoint) {
