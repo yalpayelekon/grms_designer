@@ -88,9 +88,11 @@ class FlowHandlers {
 
   void handleDeleteComponent(Component component) {
     final affectedConnections = flowManager.connections
-        .where((connection) =>
-            connection.fromComponentId == component.id ||
-            connection.toComponentId == component.id)
+        .where(
+          (connection) =>
+              connection.fromComponentId == component.id ||
+              connection.toComponentId == component.id,
+        )
         .toList();
 
     setState(() {
@@ -111,21 +113,25 @@ class FlowHandlers {
   }
 
   void handleEditComponent(BuildContext context, Component component) {
-    TextEditingController nameController =
-        TextEditingController(text: component.id);
+    TextEditingController nameController = TextEditingController(
+      text: component.id,
+    );
 
     Map<int, TextEditingController> propertyControllers = {};
     List<Property> editableProperties = component.properties
-        .where((prop) =>
-            !prop.isInput &&
-            !component.inputConnections.containsKey(prop.index))
+        .where(
+          (prop) =>
+              !prop.isInput &&
+              !component.inputConnections.containsKey(prop.index),
+        )
         .toList();
 
     for (var property in editableProperties) {
       if (property.type.type != PortType.BOOLEAN) {
         String valueText = property.value?.toString() ?? '';
-        propertyControllers[property.index] =
-            TextEditingController(text: valueText);
+        propertyControllers[property.index] = TextEditingController(
+          text: valueText,
+        );
       }
     }
 
@@ -142,8 +148,9 @@ class FlowHandlers {
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration:
-                        const InputDecoration(labelText: 'Component Name'),
+                    decoration: const InputDecoration(
+                      labelText: 'Component Name',
+                    ),
                     autofocus: true,
                   ),
                   const SizedBox(height: 16),
@@ -207,7 +214,10 @@ class FlowHandlers {
 
                       if (newValue != property.value) {
                         handleValueChanged(
-                            component.id, property.index, newValue);
+                          component.id,
+                          property.index,
+                          newValue,
+                        );
                       }
                     }
                   }
@@ -222,17 +232,6 @@ class FlowHandlers {
         },
       ),
     );
-  }
-
-  void handleCopyComponent(Component component) {
-    clipboardComponents.clear();
-    clipboardPositions.clear();
-    clipboardConnections.clear();
-
-    clipboardComponents.add(component);
-    clipboardPositions.add(componentPositions[component.id] ?? Offset.zero);
-    setClipboardComponentPosition(
-        componentPositions[component.id] ?? Offset.zero);
   }
 
   void handleCopyMultipleComponents() {
@@ -252,8 +251,9 @@ class FlowHandlers {
     }
 
     for (var connection in flowManager.connections) {
-      bool fromSelected =
-          componentIndexMap.containsKey(connection.fromComponentId);
+      bool fromSelected = componentIndexMap.containsKey(
+        connection.fromComponentId,
+      );
       bool toSelected = componentIndexMap.containsKey(connection.toComponentId);
 
       if (fromSelected && toSelected) {
@@ -286,11 +286,14 @@ class FlowHandlers {
       }
 
       Component newComponent = flowManager.createComponentByType(
-          newName, originalComponent.type.type);
+        newName,
+        originalComponent.type.type,
+      );
 
       for (var sourceProperty in originalComponent.properties) {
-        if (!originalComponent.inputConnections
-            .containsKey(sourceProperty.index)) {
+        if (!originalComponent.inputConnections.containsKey(
+          sourceProperty.index,
+        )) {
           for (var targetProperty in newComponent.properties) {
             if (targetProperty.index == sourceProperty.index) {
               targetProperty.value = sourceProperty.value;
@@ -339,7 +342,10 @@ class FlowHandlers {
   }
 
   void handlePasteSpecialComponent(
-      Offset position, int numberOfCopies, bool keepAllLinks) {
+    Offset position,
+    int numberOfCopies,
+    bool keepAllLinks,
+  ) {
     if (clipboardComponents.isEmpty) return;
 
     const double offsetX = 50.0;
@@ -370,11 +376,14 @@ class FlowHandlers {
         }
 
         Component newComponent = flowManager.createComponentByType(
-            newName, originalComponent.type.type);
+          newName,
+          originalComponent.type.type,
+        );
 
         for (var sourceProperty in originalComponent.properties) {
-          if (!originalComponent.inputConnections
-                  .containsKey(sourceProperty.index) ||
+          if (!originalComponent.inputConnections.containsKey(
+                sourceProperty.index,
+              ) ||
               !keepAllLinks) {
             for (var targetProperty in newComponent.properties) {
               if (targetProperty.index == sourceProperty.index) {
