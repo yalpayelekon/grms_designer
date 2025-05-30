@@ -1,4 +1,4 @@
-.
+lib/
 ├── comm
 │   ├── command_executor.dart
 │   ├── command_queue_controller.dart
@@ -11,7 +11,6 @@
 │   ├── router_connection.dart
 │   ├── router_connection_manager.dart
 │   └── router_socket_handler.dart
-├── contents.txt
 ├── extensions
 │   ├── device_address_extensions.dart
 │   └── group_extensions.dart
@@ -40,6 +39,7 @@
 │   │   └── selection_manager.dart
 │   ├── home
 │   │   ├── command.dart
+│   │   ├── component_mixin.dart
 │   │   ├── component_widget.dart
 │   │   ├── connection_painter.dart
 │   │   ├── grid_painter.dart
@@ -120,7 +120,8 @@
 │   ├── file_storage_service.dart
 │   ├── flowsheet_storage_service.dart
 │   ├── log_service.dart
-│   └── router_storage_service.dart
+│   ├── router_storage_service.dart
+│   └── scene_query_service.dart
 ├── tree.txt
 ├── utils
 │   ├── canvas_dialog_utils.dart
@@ -129,12 +130,14 @@
 │   ├── date_utils.dart
 │   ├── device_icons.dart
 │   ├── device_utils.dart
+│   ├── dialog_utils.dart
 │   ├── file_dialog_helper.dart
 │   ├── general_ui.dart
 │   ├── helpers.dart
 │   ├── logger.dart
 │   ├── network_utils.dart
 │   ├── persistent_helper.dart
+│   ├── scene_utils.dart
 │   └── treeview_utils.dart
 └── widgets
     ├── app_tree_view.dart
@@ -144,4 +147,4 @@
     ├── project_treenode.dart
     └── wiresheet_flow_editor.dart
 
-20 directories, 124 files
+20 directories, 127 files
