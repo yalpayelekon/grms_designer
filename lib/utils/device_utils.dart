@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:grms_designer/niagara/models/port_type.dart';
 import 'package:grms_designer/niagara/models/ramp_component.dart';
 import 'package:grms_designer/niagara/models/rectangle.dart';
+import 'package:grms_designer/utils/logger.dart';
 import '../models/helvar_models/input_device.dart';
 
 List<ButtonPoint> generateStandardButtonPoints(String deviceName) {
@@ -33,6 +34,22 @@ List<ButtonPoint> generateStandardButtonPoints(String deviceName) {
     );
   }
   return points;
+}
+
+String handleRecallScene(String sceneParams, {bool logInfoOutput = false}) {
+  if (sceneParams.isNotEmpty) {
+    List<String> temp = sceneParams.split(',');
+    String timestamp = DateTime.now().toString();
+    String s =
+        "Success ($timestamp) Recalled Scene: ${temp.length > 1 ? temp[1] : temp[0]}";
+    if (logInfoOutput) {
+      logInfo(s);
+    }
+    return s;
+  } else {
+    logWarning("Please pass a valid scene number!");
+    return "Please pass a valid scene number!";
+  }
 }
 
 Widget buildTypeIndicator(PortType type) {

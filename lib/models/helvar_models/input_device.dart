@@ -32,21 +32,7 @@ class HelvarDriverInputDevice extends HelvarDevice {
 
   @override
   void recallScene(String sceneParams) {
-    try {
-      if (sceneParams.isNotEmpty) {
-        List<String> temp = sceneParams.split(',');
-
-        String timestamp = DateTime.now().toString();
-        String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
-        out = s;
-      } else {
-        logWarning("Please pass a valid scene number!");
-        out = "Please pass a valid scene number!";
-      }
-    } catch (e) {
-      logError(e.toString());
-      out = e.toString();
-    }
+    out = handleRecallScene(sceneParams, logInfoOutput: false);
   }
 
   @override

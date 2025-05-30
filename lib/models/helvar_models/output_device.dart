@@ -1,4 +1,5 @@
 import 'package:grms_designer/models/helvar_models/output_point.dart';
+import 'package:grms_designer/utils/device_utils.dart';
 
 import '../../utils/logger.dart';
 import 'device_action.dart';
@@ -42,22 +43,7 @@ class HelvarDriverOutputDevice extends HelvarDevice {
 
   @override
   void recallScene(String sceneParams) {
-    logInfo("Recalling scene with params: $sceneParams");
-    try {
-      if (sceneParams.isNotEmpty) {
-        List<String> temp = sceneParams.split(',');
-        String timestamp = DateTime.now().toString();
-        String s = "Success ($timestamp) Recalled Scene: ${temp[1]}";
-        logInfo(s);
-        out = s;
-      } else {
-        logWarning("Please pass a valid scene number!");
-        out = "Please pass a valid scene number!";
-      }
-    } catch (e) {
-      logError(e.toString());
-      out = e.toString();
-    }
+    out = handleRecallScene(sceneParams, logInfoOutput: true);
   }
 
   void directLevel(String levelParams) {
