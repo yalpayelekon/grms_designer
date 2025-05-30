@@ -7,7 +7,6 @@ class Workgroup extends TreeNode {
   final String id;
   final String description;
   final String networkInterface;
-  final int groupPowerPollingMinutes;
   final String gatewayRouterIpAddress;
   final bool refreshPropsAfterAction;
 
@@ -18,7 +17,6 @@ class Workgroup extends TreeNode {
     required this.id,
     this.description = '',
     required this.networkInterface,
-    this.groupPowerPollingMinutes = 15,
     this.gatewayRouterIpAddress = '',
     this.refreshPropsAfterAction = false,
     List<HelvarRouter>? routers,
@@ -47,7 +45,6 @@ class Workgroup extends TreeNode {
       id: json['id'] as String,
       description: json['description'] as String? ?? '',
       networkInterface: json['networkInterface'] as String,
-      groupPowerPollingMinutes: json['groupPowerPollingMinutes'] as int? ?? 15,
       gatewayRouterIpAddress: json['gatewayRouterIpAddress'] as String? ?? '',
       refreshPropsAfterAction:
           json['refreshPropsAfterAction'] as bool? ?? false,
@@ -67,7 +64,6 @@ class Workgroup extends TreeNode {
       'id': id,
       'description': description,
       'networkInterface': networkInterface,
-      'groupPowerPollingMinutes': groupPowerPollingMinutes,
       'gatewayRouterIpAddress': gatewayRouterIpAddress,
       'refreshPropsAfterAction': refreshPropsAfterAction,
       'routers': routers.map((router) => router.toJson()).toList(),
