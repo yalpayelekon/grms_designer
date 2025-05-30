@@ -50,7 +50,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     _sceneTableController = TextEditingController(
       text: widget.group.sceneTable.join(', '),
     );
-    print(widget.group.toJson().toString());
   }
 
   @override
@@ -102,9 +101,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     );
   }
 
-  // Replace the existing _querySceneData method and add these three methods to group_detail_screen.dart
-
-  // Main method called by the refresh button
   Future<void> _getLatestData() async {
     if (widget.workgroup.routers.isEmpty) {
       showSnackBarMsg(context, 'No routers available');
@@ -116,7 +112,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     });
 
     try {
-      logInfo('Getting latest data for group ${widget.group.groupId}');
+      final group = currentGroup;
+      logInfo('Getting latest data for group ${group.groupId}');
 
       await Future.wait([_querySceneData(), _queryPowerConsumption()]);
 
@@ -124,9 +121,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         showSnackBarMsg(context, 'Group data updated successfully');
       }
 
-      logInfo(
-        'Successfully updated all data for group ${widget.group.groupId}',
-      );
+      logInfo('Successfully updated all data for group ${group.groupId}');
     } catch (e) {
       logError('Error getting latest group data: $e');
       if (mounted) {
@@ -143,15 +138,16 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
   Future<void> _querySceneData() async {
     try {
+      final group = currentGroup;
       final router = widget.workgroup.routers.first;
       final sceneQueryService = ref.read(sceneQueryServiceProvider);
       final groupIdInt = int.tryParse(widget.group.groupId);
 
       if (groupIdInt == null) {
-        throw Exception('Invalid group ID: ${widget.group.groupId}');
+        throw Exception('Invalid group ID: ${group.groupId}');
       }
 
-      logInfo('Querying scene data for group ${widget.group.groupId}');
+      logInfo('Querying scene data for group ${group.groupId}');
 
       final sceneData = await sceneQueryService.exploreGroupScenes(
         router.ipAddress,
@@ -168,15 +164,13 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           : allScenes;
 
       _sceneTableController.text = scenesToShow.join(', ');
-      final updatedGroup = widget.group.copyWith(sceneTable: scenesToShow);
+      final updatedGroup = group.copyWith(sceneTable: scenesToShow);
 
       await ref
           .read(workgroupsProvider.notifier)
           .updateGroup(widget.workgroup.id, updatedGroup);
 
-      logInfo(
-        'Updated scene table for group ${widget.group.groupId}: $scenesToShow',
-      );
+      logInfo('Updated scene table for group ${group.groupId}: $scenesToShow');
     } catch (e) {
       logError('Error querying scene data: $e');
       rethrow;
@@ -187,13 +181,13 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     try {
       final router = widget.workgroup.routers.first;
       final commandService = ref.read(routerCommandServiceProvider);
-      final groupIdInt = int.tryParse(widget.group.groupId);
+      final groupIdInt = int.tryParse(currentGroup.groupId);
 
       if (groupIdInt == null) {
-        throw Exception('Invalid group ID: ${widget.group.groupId}');
+        throw Exception('Invalid group ID: ${currentGroup.groupId}');
       }
 
-      logInfo('Querying power consumption for group ${widget.group.groupId}');
+      logInfo('Querying power consumption for group ${currentGroup.groupId}');
 
       final powerCommand = HelvarNetCommands.queryGroupPowerConsumption(
         groupIdInt,
@@ -211,7 +205,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         if (powerValue != null) {
           final powerConsumption = double.tryParse(powerValue) ?? 0.0;
 
-          final updatedGroup = widget.group.copyWith(
+          final updatedGroup = currentGroup.copyWith(
             powerConsumption: powerConsumption,
           );
 
@@ -220,7 +214,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               .updateGroup(widget.workgroup.id, updatedGroup);
 
           logInfo(
-            'Updated power consumption for group ${widget.group.groupId}: ${powerConsumption}W',
+            'Updated power consumption for group ${currentGroup.groupId}: ${powerConsumption}W',
           );
         } else {
           logWarning('Empty power consumption value received');
@@ -560,7 +554,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
       final uniqueScenes = sceneNumbers.toSet().toList()..sort();
 
-      final updatedGroup = widget.group.copyWith(sceneTable: uniqueScenes);
+      final updatedGroup = currentGroup.copyWith(sceneTable: uniqueScenes);
 
       ref
           .read(workgroupsProvider.notifier)
@@ -582,21 +576,20 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   void _clearSceneTable() {
     _sceneTableController.clear();
 
-    final updatedGroup = widget.group.copyWith(sceneTable: []);
+    final updatedGroup = currentGroup.copyWith(sceneTable: []);
 
     ref
         .read(workgroupsProvider.notifier)
         .updateGroup(widget.workgroup.id, updatedGroup);
 
-    showSnackBarMsg(context, 'Scene table cleared');
-    logInfo('Scene table cleared for group ${widget.group.groupId}');
+    logInfo('Scene table cleared for group ${currentGroup.groupId}');
   }
 
   void _removeSceneFromTable(int sceneNumber) {
-    final currentScenes = widget.group.sceneTable.toList();
+    final currentScenes = currentGroup.sceneTable.toList();
     currentScenes.remove(sceneNumber);
 
-    final updatedGroup = widget.group.copyWith(sceneTable: currentScenes);
+    final updatedGroup = currentGroup.copyWith(sceneTable: currentScenes);
 
     ref
         .read(workgroupsProvider.notifier)
@@ -604,11 +597,11 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
     _sceneTableController.text = currentScenes.join(', ');
     showSnackBarMsg(context, 'Removed scene $sceneNumber');
-    logInfo('Removed scene $sceneNumber from group ${widget.group.groupId}');
+    logInfo('Removed scene $sceneNumber from group ${currentGroup.groupId}');
   }
 
   void _showRecallSceneDialog() {
-    if (widget.group.sceneTable.isEmpty) {
+    if (currentGroup.sceneTable.isEmpty) {
       showSnackBarMsg(context, 'No scenes available to recall');
       return;
     }
@@ -625,7 +618,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             Wrap(
               spacing: 8.0,
               runSpacing: 8.0,
-              children: widget.group.sceneTable.map((scene) {
+              children: currentGroup.sceneTable.map((scene) {
                 return ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -702,7 +695,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     try {
       final router = widget.workgroup.routers.first;
       final commandService = ref.read(routerCommandServiceProvider);
-      final groupIdInt = int.tryParse(widget.group.groupId);
+      final groupIdInt = int.tryParse(currentGroup.groupId);
 
       if (groupIdInt == null) {
         throw Exception('Invalid group ID');
@@ -720,9 +713,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       );
 
       if (result.success) {
-        showSnackBarMsg(context, 'Scene $sceneNumber recalled successfully');
         logInfo(
-          'Recalled scene $sceneNumber for group ${widget.group.groupId}',
+          'Recalled scene $sceneNumber for group ${currentGroup.groupId}',
         );
       } else {
         throw Exception('Command failed: ${result.response}');
@@ -742,7 +734,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     try {
       final router = widget.workgroup.routers.first;
       final commandService = ref.read(routerCommandServiceProvider);
-      final groupIdInt = int.tryParse(widget.group.groupId);
+      final groupIdInt = int.tryParse(currentGroup.groupId);
 
       if (groupIdInt == null) {
         throw Exception('Invalid group ID');
@@ -760,12 +752,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       );
 
       if (result.success) {
-        showSnackBarMsg(
-          context,
-          'Scene $sceneNumber stored in block $blockNumber successfully',
-        );
         logInfo(
-          'Stored scene $sceneNumber in block $blockNumber for group ${widget.group.groupId}',
+          'Stored scene $sceneNumber in block $blockNumber for group ${currentGroup.groupId}',
         );
 
         await Future.delayed(const Duration(milliseconds: 500));
