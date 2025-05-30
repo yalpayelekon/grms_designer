@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/providers/workgroups_provider.dart';
 import 'package:grms_designer/utils/dialog_utils.dart';
+import 'package:grms_designer/utils/scene_utils.dart';
 import 'package:intl/intl.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
@@ -94,8 +95,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   _buildInfoCard(context, group),
                   const SizedBox(height: 24),
                   _buildSceneTableCard(context, group),
-                  const SizedBox(height: 24),
-                  _buildDevicesSection(context),
                 ],
               ),
             ),
@@ -447,8 +446,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                 runSpacing: 4.0,
                 children: group.sceneTable.map((scene) {
                   return Chip(
-                    label: Text(_getSceneDisplayName(scene)),
-                    backgroundColor: _getSceneChipColor(scene),
+                    label: Text(getSceneDisplayName(scene)),
+                    backgroundColor: getSceneChipColor(scene),
                     onDeleted: () => _removeSceneFromTable(scene),
                     deleteIcon: const Icon(Icons.close, size: 16),
                   );
@@ -473,80 +472,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                 ),
               ),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getSceneDisplayName(int scene) {
-    switch (scene) {
-      case 128:
-        return 'Scene $scene (Off)';
-      case 129:
-        return 'Scene $scene (Min Level)';
-      case 130:
-        return 'Scene $scene (Max Level)';
-      case 137:
-        return 'Scene $scene (0%)';
-      case 138:
-        return 'Scene $scene (1%)';
-      case 237:
-        return 'Scene $scene (100%)';
-      default:
-        if (scene >= 137 && scene <= 237) {
-          final percentage = scene - 137;
-          return 'Scene $scene ($percentage%)';
-        }
-        return 'Scene $scene';
-    }
-  }
-
-  Color _getSceneChipColor(int scene) {
-    switch (scene) {
-      case 128: // Off
-        return Colors.red.withOpacity(0.1);
-      case 129: // Min Level
-        return Colors.orange.withOpacity(0.1);
-      case 130: // Max Level
-        return Colors.green.withOpacity(0.1);
-      default:
-        if (scene >= 137 && scene <= 237) {
-          // Percentage scenes
-          return Colors.purple.withOpacity(0.1);
-        }
-        return Colors.blue.withOpacity(0.1);
-    }
-  }
-
-  Widget _buildDevicesSection(BuildContext context) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.devices, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  'Devices in this Group',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
-            const Divider(),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(
-                child: Text(
-                  'No devices information available for this group',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ),
-            ),
           ],
         ),
       ),
