@@ -30,12 +30,25 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   late TextEditingController _sceneTableController;
   bool _isLoading = false;
 
+  HelvarGroup get currentGroup {
+    final workgroups = ref.watch(workgroupsProvider);
+    final currentWorkgroup = workgroups.firstWhere(
+      (wg) => wg.id == widget.workgroup.id,
+      orElse: () => widget.workgroup,
+    );
+    return currentWorkgroup.groups.firstWhere(
+      (g) => g.id == widget.group.id,
+      orElse: () => widget.group,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     _sceneTableController = TextEditingController(
       text: widget.group.sceneTable.join(', '),
     );
+    print(widget.group.toJson().toString());
   }
 
   @override
@@ -46,12 +59,21 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final group = currentGroup;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentSceneTable = group.sceneTable.join(', ');
+      if (_sceneTableController.text != currentSceneTable) {
+        _sceneTableController.text = currentSceneTable;
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.group.description.isEmpty
-              ? 'Group ${widget.group.groupId}'
-              : widget.group.description,
+          group.description.isEmpty
+              ? 'Group ${group.groupId}'
+              : group.description,
         ),
         centerTitle: true,
         actions: [
@@ -69,9 +91,9 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoCard(context),
+                  _buildInfoCard(context, group),
                   const SizedBox(height: 24),
-                  _buildSceneTableCard(context),
+                  _buildSceneTableCard(context, group),
                   const SizedBox(height: 24),
                   _buildDevicesSection(context),
                 ],
@@ -225,24 +247,27 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
       logInfo('Querying scene data for group ${widget.group.groupId}');
 
-      // Use SceneQueryService to explore group scenes
       final sceneData = await sceneQueryService.exploreGroupScenes(
         router.ipAddress,
         groupIdInt,
       );
 
-      // Build scene table using SceneQueryService, but filter out special scenes
       final allScenes = sceneQueryService.buildSceneTable(sceneData);
       final meaningfulScenes = allScenes.where((scene) {
-        // Filter out common system scenes that appear in all blocks
-        return scene !=
-            129; // Min level appears in all blocks, probably not meaningful
+        return scene != 129;
       }).toList();
 
       final scenesToShow = meaningfulScenes.isNotEmpty
           ? meaningfulScenes
           : allScenes;
+
       _sceneTableController.text = scenesToShow.join(', ');
+
+      final updatedGroup = widget.group.copyWith(sceneTable: scenesToShow);
+
+      await ref
+          .read(workgroupsProvider.notifier)
+          .updateGroup(widget.workgroup.id, updatedGroup);
 
       if (mounted) {
         if (meaningfulScenes.isEmpty && allScenes.isNotEmpty) {
@@ -257,6 +282,10 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           );
         }
       }
+
+      logInfo(
+        'Updated group ${widget.group.groupId} with scene table: $scenesToShow',
+      );
     } catch (e) {
       logError('Error querying scene data: $e');
       if (mounted) {
@@ -271,7 +300,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     }
   }
 
-  Widget _buildInfoCard(BuildContext context) {
+  Widget _buildInfoCard(BuildContext context, HelvarGroup group) {
     return Card(
       elevation: 2,
       child: Padding(
@@ -290,44 +319,40 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               ],
             ),
             const Divider(),
-            buildInfoRow('ID', widget.group.groupId),
-            buildInfoRow('Description', widget.group.description),
-            buildInfoRow('Type', widget.group.type),
-            if (widget.group.lsig != null)
-              buildInfoRow('LSIG', widget.group.lsig.toString()),
-            if (widget.group.lsib1 != null)
-              buildInfoRow('LSIB1', widget.group.lsib1.toString()),
-            if (widget.group.lsib2 != null)
-              buildInfoRow('LSIB2', widget.group.lsib2.toString()),
-            for (int i = 0; i < widget.group.blockValues.length; i++)
-              buildInfoRow(
-                'Block${i + 1}',
-                widget.group.blockValues[i].toString(),
-              ),
+            buildInfoRow('ID', group.groupId),
+            buildInfoRow('Description', group.description),
+            buildInfoRow('Type', group.type),
+            if (group.lsig != null) buildInfoRow('LSIG', group.lsig.toString()),
+            if (group.lsib1 != null)
+              buildInfoRow('LSIB1', group.lsib1.toString()),
+            if (group.lsib2 != null)
+              buildInfoRow('LSIB2', group.lsib2.toString()),
+            for (int i = 0; i < group.blockValues.length; i++)
+              buildInfoRow('Block${i + 1}', group.blockValues[i].toString()),
             buildInfoRow(
               'Power Consumption',
-              '${widget.group.powerConsumption} W',
+              '${group.powerConsumption} W',
               width: 280,
             ),
             buildInfoRow(
               'Power Polling',
-              '${widget.group.powerPollingMinutes} minutes',
+              '${group.powerPollingMinutes} minutes',
             ),
-            buildInfoRow('Gateway Router', widget.group.gatewayRouterIpAddress),
+            buildInfoRow('Gateway Router', group.gatewayRouterIpAddress),
             buildInfoRow(
               'Refresh Props After Action',
-              widget.group.refreshPropsAfterAction.toString(),
+              group.refreshPropsAfterAction.toString(),
             ),
-            if (widget.group.actionResult.isNotEmpty)
-              buildInfoRow('Action Result', widget.group.actionResult),
-            if (widget.group.lastMessage.isNotEmpty)
-              buildInfoRow('Last Message', widget.group.lastMessage),
-            if (widget.group.lastMessageTime != null)
+            if (group.actionResult.isNotEmpty)
+              buildInfoRow('Action Result', group.actionResult),
+            if (group.lastMessage.isNotEmpty)
+              buildInfoRow('Last Message', group.lastMessage),
+            if (group.lastMessageTime != null)
               buildInfoRow(
                 'Message Time',
                 DateFormat(
                   'MMM d, yyyy h:mm:ss a',
-                ).format(widget.group.lastMessageTime!),
+                ).format(group.lastMessageTime!),
               ),
             buildInfoRow('Workgroup', widget.workgroup.description),
           ],
@@ -336,7 +361,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     );
   }
 
-  Widget _buildSceneTableCard(BuildContext context) {
+  Widget _buildSceneTableCard(BuildContext context, HelvarGroup group) {
     return Card(
       elevation: 2,
       child: Padding(
@@ -411,16 +436,16 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               minLines: 1,
             ),
             const SizedBox(height: 8),
-            if (widget.group.sceneTable.isNotEmpty) ...[
+            if (group.sceneTable.isNotEmpty) ...[
               Text(
-                'Current Scenes: ${widget.group.sceneTable.length} scenes',
+                'Current Scenes: ${group.sceneTable.length} scenes',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8.0,
                 runSpacing: 4.0,
-                children: widget.group.sceneTable.map((scene) {
+                children: group.sceneTable.map((scene) {
                   return Chip(
                     label: Text(_getSceneDisplayName(scene)),
                     backgroundColor: _getSceneChipColor(scene),
