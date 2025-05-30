@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/logger.dart';
 import '../providers/group_polling_provider.dart';
 import '../providers/workgroups_provider.dart';
-import '../models/helvar_models/workgroup.dart';
 import 'app_directory_service.dart';
 
 class AppInitializationService {
@@ -60,16 +58,6 @@ class AppInitializationService {
       logError('Error initializing polling: $e');
       // Don't rethrow - polling failure shouldn't prevent app startup
     }
-  }
-
-  static void setupPollingListener(WidgetRef ref) {
-    ref.listen<List<Workgroup>>(workgroupsProvider, (previous, next) {
-      if ((previous == null || previous.isEmpty) && next.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          initializePolling(ref);
-        });
-      }
-    });
   }
 
   static Future<void> handleInitializationFailure(dynamic error) async {

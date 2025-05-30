@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/models/helvar_models/workgroup.dart';
+import 'package:grms_designer/providers/group_polling_provider.dart';
+import 'package:grms_designer/providers/workgroups_provider.dart';
 import 'screens/home_screen.dart';
 
 import 'providers/settings_provider.dart';
@@ -48,19 +51,22 @@ class HelvarNetApp extends ConsumerStatefulWidget {
 }
 
 class HelvarNetAppState extends ConsumerState<HelvarNetApp> {
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppInitializationService.setupPollingListener(ref);
-      logInfo('Polling listener setup completed', tag: 'App');
-    });
-  }
+  bool _pollingListenerInitialized = false;
 
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+
+    if (!_pollingListenerInitialized) {
+      ref.listen<List<Workgroup>>(workgroupsProvider, (previous, next) {
+        if ((previous == null || previous.isEmpty) && next.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(pollingStateProvider.notifier).initializePolling();
+          });
+        }
+      });
+      _pollingListenerInitialized = true;
+    }
 
     return MaterialApp(
       title: 'HelvarNet Manager',
