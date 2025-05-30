@@ -18,26 +18,35 @@ class DiscoveryService {
   DiscoveryService(this.commandService);
 
   Future<HelvarDevice?> _createDeviceFromDiscovery(
-      HelvarRouter router, int subnet, int deviceId, int typeCode) async {
+    HelvarRouter router,
+    int subnet,
+    int deviceId,
+    int typeCode,
+  ) async {
     final routerIpAddress = router.ipAddress;
     final deviceAddress =
         '${router.clusterId}.${router.clusterMemberId}.$subnet.$deviceId';
 
-    final descResponse = await commandService.sendCommand(routerIpAddress,
-        HelvarNetCommands.queryDescriptionDevice(deviceAddress));
+    final descResponse = await commandService.sendCommand(
+      routerIpAddress,
+      HelvarNetCommands.queryDescriptionDevice(deviceAddress),
+    );
     final description = descResponse.success && descResponse.response != null
         ? ProtocolParser.extractResponseValue(descResponse.response!) ??
-            'Device $deviceId'
+              'Device $deviceId'
         : 'Device $deviceId';
 
     final deviceStateResponse = await commandService.sendCommand(
-        routerIpAddress, HelvarNetCommands.queryDeviceState(deviceAddress));
+      routerIpAddress,
+      HelvarNetCommands.queryDeviceState(deviceAddress),
+    );
 
     int? deviceStateCode;
     String deviceState = '';
     if (deviceStateResponse.success && deviceStateResponse.response != null) {
-      final deviceStateValue =
-          ProtocolParser.extractResponseValue(deviceStateResponse.response!);
+      final deviceStateValue = ProtocolParser.extractResponseValue(
+        deviceStateResponse.response!,
+      );
       deviceStateCode = int.tryParse(deviceStateValue!) ?? 0;
       deviceState = getStateFlagsDescription(deviceStateCode);
       logInfo('  State: $deviceStateCode ($deviceState)');
@@ -47,10 +56,13 @@ class DiscoveryService {
     if (typeCode == 1 || typeCode == 1025 || typeCode == 1537) {
       try {
         final levelResponse = await commandService.sendCommand(
-            routerIpAddress, HelvarNetCommands.queryLoadLevel(deviceAddress));
+          routerIpAddress,
+          HelvarNetCommands.queryLoadLevel(deviceAddress),
+        );
         if (levelResponse.success && levelResponse.response != null) {
-          final levelValue =
-              ProtocolParser.extractResponseValue(levelResponse.response!);
+          final levelValue = ProtocolParser.extractResponseValue(
+            levelResponse.response!,
+          );
           loadLevel = int.tryParse(levelValue!) ?? 0;
         }
       } catch (e) {
@@ -76,28 +88,149 @@ class DiscoveryService {
     );
   }
 
+  Future<HelvarGroup> discoverGroupScenes(
+    String routerIpAddress,
+    HelvarGroup group,
+  ) async {
+    try {
+      logInfo('Discovering scenes for group: ${group.groupId}');
+
+      final groupIdInt = int.tryParse(group.groupId);
+      if (groupIdInt == null) {
+        logError('Invalid group ID: ${group.groupId}');
+        return group;
+      }
+
+      final sceneData = <int, int?>{};
+
+      for (int block = 1; block <= 8; block++) {
+        try {
+          final command = HelvarNetCommands.queryLastSceneInBlock(
+            groupIdInt,
+            block,
+          );
+          final result = await commandService.sendCommand(
+            routerIpAddress,
+            command,
+          );
+
+          if (result.success && result.response != null) {
+            final sceneValue = ProtocolParser.extractResponseValue(
+              result.response!,
+            );
+            if (sceneValue != null) {
+              final sceneNumber = int.tryParse(sceneValue);
+              sceneData[block] = sceneNumber;
+              logInfo('Block $block - Last scene: $sceneNumber');
+            }
+          }
+
+          await Future.delayed(const Duration(milliseconds: 50));
+        } catch (e) {
+          logWarning('Error querying block $block: $e');
+        }
+      }
+
+      int? lsig;
+      int? lsib1;
+      int? lsib2;
+
+      try {
+        final lsigCommand = HelvarNetCommands.queryLastSceneInGroup(groupIdInt);
+        final lsigResult = await commandService.sendCommand(
+          routerIpAddress,
+          lsigCommand,
+        );
+
+        if (lsigResult.success && lsigResult.response != null) {
+          final lsigValue = ProtocolParser.extractResponseValue(
+            lsigResult.response!,
+          );
+          if (lsigValue != null) {
+            lsig = int.tryParse(lsigValue);
+            logInfo('LSIG for group ${group.groupId}: $lsig');
+          }
+        }
+      } catch (e) {
+        logWarning('Error querying LSIG: $e');
+      }
+
+      // TODO: Explore LSIB1 and LSIB2 commands when we understand the protocol better
+      // For now, we'll leave them as null
+
+      final sceneTable = <int>[];
+      for (final entry in sceneData.entries) {
+        if (entry.value != null && entry.value! > 0) {
+          sceneTable.add(entry.value!);
+        }
+      }
+
+      final updatedGroup = group.copyWith(
+        lsig: lsig,
+        lsib1: lsib1, // Will explore later
+        lsib2: lsib2, // Will explore later
+        sceneTable: sceneTable,
+      );
+
+      logInfo(
+        'Scene discovery complete for group ${group.groupId}. Scene table: $sceneTable',
+      );
+      return updatedGroup;
+    } catch (e) {
+      logError('Error discovering group scenes: $e');
+      return group;
+    }
+  }
+
+  Future<List<HelvarGroup>> discoverScenesForGroups(
+    String routerIpAddress,
+    List<HelvarGroup> groups,
+  ) async {
+    final updatedGroups = <HelvarGroup>[];
+
+    for (final group in groups) {
+      try {
+        final updatedGroup = await discoverGroupScenes(routerIpAddress, group);
+        updatedGroups.add(updatedGroup);
+
+        await Future.delayed(const Duration(milliseconds: 200));
+      } catch (e) {
+        logError('Error discovering scenes for group ${group.groupId}: $e');
+        updatedGroups.add(group);
+      }
+    }
+
+    return updatedGroups;
+  }
+
   Future<List<HelvarDevice>> _discoverSubnetDevices(
-      HelvarRouter router, int subnet) async {
+    HelvarRouter router,
+    int subnet,
+  ) async {
     final routerIpAddress = router.ipAddress;
     final subnetAddress =
         '${router.clusterId}.${router.clusterMemberId}.$subnet';
 
-    final devicesResponse = await commandService.sendCommand(routerIpAddress,
-        HelvarNetCommands.queryDeviceTypesAndAddresses(subnetAddress));
+    final devicesResponse = await commandService.sendCommand(
+      routerIpAddress,
+      HelvarNetCommands.queryDeviceTypesAndAddresses(subnetAddress),
+    );
 
     if (!devicesResponse.success || devicesResponse.response == null) {
       return [];
     }
 
-    final devicesValue =
-        ProtocolParser.extractResponseValue(devicesResponse.response!);
+    final devicesValue = ProtocolParser.extractResponseValue(
+      devicesResponse.response!,
+    );
     if (devicesValue == null || devicesValue.isEmpty) {
       logWarning('No devices found on subnet $subnet');
       return [];
     }
 
-    final deviceAddressTypes =
-        ProtocolParser.parseDeviceAddressesAndTypes(devicesValue);
+    final deviceAddressTypes = ProtocolParser.parseDeviceAddressesAndTypes(
+      devicesValue,
+    );
     final subnetDevices = <HelvarDevice>[];
 
     for (final entry in deviceAddressTypes.entries) {
@@ -109,8 +242,12 @@ class DiscoveryService {
         continue;
       }
 
-      final device =
-          await _createDeviceFromDiscovery(router, subnet, deviceId, typeCode);
+      final device = await _createDeviceFromDiscovery(
+        router,
+        subnet,
+        deviceId,
+        typeCode,
+      );
 
       if (device != null) {
         subnetDevices.add(device);
@@ -125,12 +262,15 @@ class DiscoveryService {
     final routerAddress = "${router.clusterId}.${router.clusterMemberId}";
 
     final typeResponse = await commandService.sendCommand(
-        routerIpAddress, HelvarNetCommands.queryDeviceType(routerAddress),
-        priority: CommandPriority.high);
+      routerIpAddress,
+      HelvarNetCommands.queryDeviceType(routerAddress),
+      priority: CommandPriority.high,
+    );
 
     if (typeResponse.success && typeResponse.response != null) {
-      final typeValue =
-          ProtocolParser.extractResponseValue(typeResponse.response!);
+      final typeValue = ProtocolParser.extractResponseValue(
+        typeResponse.response!,
+      );
       if (typeValue != null) {
         final typeCode = int.tryParse(typeValue) ?? 0;
         router.deviceTypeCode = typeCode;
@@ -140,12 +280,15 @@ class DiscoveryService {
       logDebug('Failed to get router type: $typeResponse');
     }
 
-    final descResponse = await commandService.sendCommand(routerIpAddress,
-        HelvarNetCommands.queryDescriptionDevice(routerAddress));
+    final descResponse = await commandService.sendCommand(
+      routerIpAddress,
+      HelvarNetCommands.queryDescriptionDevice(routerAddress),
+    );
 
     if (descResponse.success && descResponse.response != null) {
-      final descValue =
-          ProtocolParser.extractResponseValue(descResponse.response!);
+      final descValue = ProtocolParser.extractResponseValue(
+        descResponse.response!,
+      );
       if (descValue != null) {
         router.description = descValue;
       } else {
@@ -154,11 +297,14 @@ class DiscoveryService {
     }
 
     final stateResponse = await commandService.sendCommand(
-        routerIpAddress, HelvarNetCommands.queryDeviceState(routerAddress));
+      routerIpAddress,
+      HelvarNetCommands.queryDeviceState(routerAddress),
+    );
 
     if (stateResponse.success && stateResponse.response != null) {
-      final stateValue =
-          ProtocolParser.extractResponseValue(stateResponse.response!);
+      final stateValue = ProtocolParser.extractResponseValue(
+        stateResponse.response!,
+      );
       if (stateValue != null) {
         final stateCode = int.tryParse(stateValue) ?? 0;
         router.deviceStateCode = stateCode;
@@ -169,24 +315,28 @@ class DiscoveryService {
     }
 
     final typesAndAddressesResponse = await commandService.sendCommand(
-        routerIpAddress,
-        HelvarNetCommands.queryDeviceTypesAndAddresses(router.address));
+      routerIpAddress,
+      HelvarNetCommands.queryDeviceTypesAndAddresses(router.address),
+    );
 
     if (typesAndAddressesResponse.success &&
         typesAndAddressesResponse.response != null) {
       final addressesValue = ProtocolParser.extractResponseValue(
-          typesAndAddressesResponse.response!);
+        typesAndAddressesResponse.response!,
+      );
       if (addressesValue != null) {
         router.deviceAddresses = addressesValue.split(',');
       } else {
         logDebug(
-            'Failed to get device types and addresses: $typesAndAddressesResponse');
+          'Failed to get device types and addresses: $typesAndAddressesResponse',
+        );
       }
     }
   }
 
   Future<HelvarRouter?> discoverRouterWithPersistentConnection(
-      String routerIpAddress) async {
+    String routerIpAddress,
+  ) async {
     try {
       bool connected = await commandService.ensureConnection(routerIpAddress);
       if (!connected) {
@@ -264,8 +414,9 @@ class DiscoveryService {
         priority: CommandPriority.high,
       );
 
-      final groupsValue =
-          ProtocolParser.extractResponseValue(groupsResponse.response ?? '');
+      final groupsValue = ProtocolParser.extractResponseValue(
+        groupsResponse.response ?? '',
+      );
 
       if (groupsValue != null && groupsValue.isNotEmpty) {
         final groupIds = groupsValue.split(',');
@@ -280,18 +431,22 @@ class DiscoveryService {
               priority: CommandPriority.high,
             );
 
-            final description = ProtocolParser.extractResponseValue(
-                    descResponse.response ?? '') ??
+            final description =
+                ProtocolParser.extractResponseValue(
+                  descResponse.response ?? '',
+                ) ??
                 'Group $groupId';
 
-            groups.add(HelvarGroup(
-              id: const Uuid().v4(),
-              groupId: groupId,
-              description: description,
-              type: 'Group',
-              powerPollingMinutes: 15,
-              gatewayRouterIpAddress: routerIpAddress,
-            ));
+            groups.add(
+              HelvarGroup(
+                id: const Uuid().v4(),
+                groupId: groupId,
+                description: description,
+                type: 'Group',
+                powerPollingMinutes: 15,
+                gatewayRouterIpAddress: routerIpAddress,
+              ),
+            );
           } catch (e) {
             logError('Error processing group $groupId: $e');
           }
@@ -306,7 +461,8 @@ class DiscoveryService {
   }
 
   Future<List<HelvarRouter>> discoverWorkgroup(
-      List<String> routerIpAddresses) async {
+    List<String> routerIpAddresses,
+  ) async {
     final routers = <HelvarRouter>[];
 
     for (final ipAddress in routerIpAddresses) {

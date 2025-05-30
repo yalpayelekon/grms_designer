@@ -7,7 +7,10 @@ class HelvarGroup extends TreeNode {
   final String description;
   final String type;
   final int? lsig;
+  final int? lsib1;
+  final int? lsib2;
   final List<double> blockValues;
+  final List<int> sceneTable;
   final double powerConsumption;
   final int powerPollingMinutes;
   final String gatewayRouterIpAddress;
@@ -22,7 +25,10 @@ class HelvarGroup extends TreeNode {
     this.description = '',
     this.type = 'Group',
     this.lsig,
+    this.lsib1,
+    this.lsib2,
     this.blockValues = const [],
+    this.sceneTable = const [],
     this.powerConsumption = 0.0,
     this.powerPollingMinutes = 15,
     this.gatewayRouterIpAddress = '',
@@ -51,11 +57,15 @@ class HelvarGroup extends TreeNode {
       description: json['description'] as String? ?? '',
       type: json['type'] as String? ?? 'Group',
       lsig: json['lsig'] as int?,
+      lsib1: json['lsib1'] as int?,
+      lsib2: json['lsib2'] as int?,
       blockValues:
           (json['blockValues'] as List?)
               ?.map((e) => (e as num).toDouble())
               .toList() ??
           [],
+      sceneTable:
+          (json['sceneTable'] as List?)?.map((e) => e as int).toList() ?? [],
       powerConsumption: (json['powerConsumption'] as num?)?.toDouble() ?? 0.0,
       powerPollingMinutes: json['powerPollingMinutes'] as int? ?? 15,
       gatewayRouterIpAddress: json['gatewayRouterIpAddress'] as String? ?? '',
@@ -76,7 +86,10 @@ class HelvarGroup extends TreeNode {
       'description': description,
       'type': type,
       'lsig': lsig,
+      'lsib1': lsib1,
+      'lsib2': lsib2,
       'blockValues': blockValues,
+      'sceneTable': sceneTable,
       'powerConsumption': powerConsumption,
       'powerPollingMinutes': powerPollingMinutes,
       'gatewayRouterIpAddress': gatewayRouterIpAddress,
@@ -93,7 +106,10 @@ class HelvarGroup extends TreeNode {
     String? description,
     String? type,
     int? lsig,
+    int? lsib1,
+    int? lsib2,
     List<double>? blockValues,
+    List<int>? sceneTable,
     double? powerConsumption,
     int? powerPollingMinutes,
     String? gatewayRouterIpAddress,
@@ -108,7 +124,10 @@ class HelvarGroup extends TreeNode {
       description: description ?? this.description,
       type: type ?? this.type,
       lsig: lsig ?? this.lsig,
+      lsib1: lsib1 ?? this.lsib1,
+      lsib2: lsib2 ?? this.lsib2,
       blockValues: blockValues ?? this.blockValues,
+      sceneTable: sceneTable ?? this.sceneTable,
       powerConsumption: powerConsumption ?? this.powerConsumption,
       powerPollingMinutes: powerPollingMinutes ?? this.powerPollingMinutes,
       gatewayRouterIpAddress:
