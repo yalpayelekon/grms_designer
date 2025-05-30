@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/protocol/protocol_parser.dart';
 import 'package:grms_designer/providers/workgroups_provider.dart';
 import 'package:grms_designer/utils/dialog_utils.dart';
 import 'package:grms_designer/utils/scene_utils.dart';
@@ -80,8 +81,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Query Scene Data',
-            onPressed: _isLoading ? null : _querySceneData,
+            tooltip: 'Update Data',
+            onPressed: _isLoading ? null : _getLatestData,
           ),
         ],
       ),
@@ -99,6 +100,139 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               ),
             ),
     );
+  }
+
+  // Replace the existing _querySceneData method and add these three methods to group_detail_screen.dart
+
+  // Main method called by the refresh button
+  Future<void> _getLatestData() async {
+    if (widget.workgroup.routers.isEmpty) {
+      showSnackBarMsg(context, 'No routers available');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      logInfo('Getting latest data for group ${widget.group.groupId}');
+
+      await Future.wait([_querySceneData(), _queryPowerConsumption()]);
+
+      if (mounted) {
+        showSnackBarMsg(context, 'Group data updated successfully');
+      }
+
+      logInfo(
+        'Successfully updated all data for group ${widget.group.groupId}',
+      );
+    } catch (e) {
+      logError('Error getting latest group data: $e');
+      if (mounted) {
+        showSnackBarMsg(context, 'Error updating group data: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _querySceneData() async {
+    try {
+      final router = widget.workgroup.routers.first;
+      final sceneQueryService = ref.read(sceneQueryServiceProvider);
+      final groupIdInt = int.tryParse(widget.group.groupId);
+
+      if (groupIdInt == null) {
+        throw Exception('Invalid group ID: ${widget.group.groupId}');
+      }
+
+      logInfo('Querying scene data for group ${widget.group.groupId}');
+
+      final sceneData = await sceneQueryService.exploreGroupScenes(
+        router.ipAddress,
+        groupIdInt,
+      );
+
+      final allScenes = sceneQueryService.buildSceneTable(sceneData);
+      final meaningfulScenes = allScenes.where((scene) {
+        return scene != 129;
+      }).toList();
+
+      final scenesToShow = meaningfulScenes.isNotEmpty
+          ? meaningfulScenes
+          : allScenes;
+
+      _sceneTableController.text = scenesToShow.join(', ');
+      final updatedGroup = widget.group.copyWith(sceneTable: scenesToShow);
+
+      await ref
+          .read(workgroupsProvider.notifier)
+          .updateGroup(widget.workgroup.id, updatedGroup);
+
+      logInfo(
+        'Updated scene table for group ${widget.group.groupId}: $scenesToShow',
+      );
+    } catch (e) {
+      logError('Error querying scene data: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _queryPowerConsumption() async {
+    try {
+      final router = widget.workgroup.routers.first;
+      final commandService = ref.read(routerCommandServiceProvider);
+      final groupIdInt = int.tryParse(widget.group.groupId);
+
+      if (groupIdInt == null) {
+        throw Exception('Invalid group ID: ${widget.group.groupId}');
+      }
+
+      logInfo('Querying power consumption for group ${widget.group.groupId}');
+
+      final powerCommand = HelvarNetCommands.queryGroupPowerConsumption(
+        groupIdInt,
+      );
+      final powerResult = await commandService.sendCommand(
+        router.ipAddress,
+        powerCommand,
+      );
+
+      if (powerResult.success && powerResult.response != null) {
+        final powerValue = ProtocolParser.extractResponseValue(
+          powerResult.response!,
+        );
+
+        if (powerValue != null) {
+          final powerConsumption = double.tryParse(powerValue) ?? 0.0;
+
+          final updatedGroup = widget.group.copyWith(
+            powerConsumption: powerConsumption,
+          );
+
+          await ref
+              .read(workgroupsProvider.notifier)
+              .updateGroup(widget.workgroup.id, updatedGroup);
+
+          logInfo(
+            'Updated power consumption for group ${widget.group.groupId}: ${powerConsumption}W',
+          );
+        } else {
+          logWarning('Empty power consumption value received');
+        }
+      } else {
+        logWarning(
+          'Failed to query power consumption: ${powerResult.response}',
+        );
+      }
+    } catch (e) {
+      logError('Error querying power consumption: $e');
+    }
   }
 
   void _handleSceneAction(String action) {
@@ -206,7 +340,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   }
 
   Widget? _parseSceneNameInfo(String sceneName) {
-    // Parse scene names like "[@24.1.1:Group 24 Scene 1.1]"
     if (sceneName.startsWith('[@') && sceneName.contains(':')) {
       try {
         final parts = sceneName.substring(2, sceneName.length - 1).split(':');
@@ -223,80 +356,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       }
     }
     return null;
-  }
-
-  Future<void> _querySceneData() async {
-    if (widget.workgroup.routers.isEmpty) {
-      showSnackBarMsg(context, 'No routers available');
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final router = widget.workgroup.routers.first;
-      final sceneQueryService = ref.read(sceneQueryServiceProvider);
-      final groupIdInt = int.tryParse(widget.group.groupId);
-
-      if (groupIdInt == null) {
-        throw Exception('Invalid group ID: ${widget.group.groupId}');
-      }
-
-      logInfo('Querying scene data for group ${widget.group.groupId}');
-
-      final sceneData = await sceneQueryService.exploreGroupScenes(
-        router.ipAddress,
-        groupIdInt,
-      );
-
-      final allScenes = sceneQueryService.buildSceneTable(sceneData);
-      final meaningfulScenes = allScenes.where((scene) {
-        return scene != 129;
-      }).toList();
-
-      final scenesToShow = meaningfulScenes.isNotEmpty
-          ? meaningfulScenes
-          : allScenes;
-
-      _sceneTableController.text = scenesToShow.join(', ');
-
-      final updatedGroup = widget.group.copyWith(sceneTable: scenesToShow);
-
-      await ref
-          .read(workgroupsProvider.notifier)
-          .updateGroup(widget.workgroup.id, updatedGroup);
-
-      if (mounted) {
-        if (meaningfulScenes.isEmpty && allScenes.isNotEmpty) {
-          showSnackBarMsg(
-            context,
-            'Found ${allScenes.length} system scenes: ${allScenes.join(', ')} (showing all)',
-          );
-        } else {
-          showSnackBarMsg(
-            context,
-            'Found ${scenesToShow.length} scenes: ${scenesToShow.join(', ')}',
-          );
-        }
-      }
-
-      logInfo(
-        'Updated group ${widget.group.groupId} with scene table: $scenesToShow',
-      );
-    } catch (e) {
-      logError('Error querying scene data: $e');
-      if (mounted) {
-        showSnackBarMsg(context, 'Error querying scenes: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   Widget _buildInfoCard(BuildContext context, HelvarGroup group) {
