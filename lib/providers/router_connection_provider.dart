@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/services/device_query_service.dart';
+import 'package:grms_designer/services/scene_query_service.dart';
 import '../comm/models/command_models.dart';
 import '../comm/models/connection_config.dart';
 import '../comm/router_command_service.dart';
@@ -15,8 +16,9 @@ final connectionConfigProvider = Provider<ConnectionConfig>((ref) {
   return ConnectionConfig.fromProjectSettings(settings);
 });
 
-final routerConnectionManagerProvider =
-    Provider<RouterConnectionManager>((ref) {
+final routerConnectionManagerProvider = Provider<RouterConnectionManager>((
+  ref,
+) {
   final config = ref.watch(connectionConfigProvider);
   return RouterConnectionManager(config);
 });
@@ -27,17 +29,18 @@ final routerCommandServiceProvider = Provider<RouterCommandService>((ref) {
   return RouterCommandService(connectionManager, config);
 });
 
-final routerConnectionsProvider =
-    Provider<Map<String, RouterConnection>>((ref) {
+final routerConnectionsProvider = Provider<Map<String, RouterConnection>>((
+  ref,
+) {
   final manager = ref.watch(routerConnectionManagerProvider);
   return manager.connections;
 });
 
 final routerConnectionStatusStreamProvider =
     StreamProvider<RouterConnectionStatus>((ref) {
-  final manager = ref.watch(routerConnectionManagerProvider);
-  return manager.connectionStatusStream;
-});
+      final manager = ref.watch(routerConnectionManagerProvider);
+      return manager.connectionStatusStream;
+    });
 
 final commandHistoryProvider = Provider<List<QueuedCommand>>((ref) {
   final service = ref.watch(routerCommandServiceProvider);
@@ -57,4 +60,9 @@ final connectionServiceProvider = Provider<ConnectionService>((ref) {
 final deviceQueryServiceProvider = Provider<DeviceQueryService>((ref) {
   final commandService = ref.watch(routerCommandServiceProvider);
   return DeviceQueryService(commandService);
+});
+
+final sceneQueryServiceProvider = Provider<SceneQueryService>((ref) {
+  final commandService = ref.watch(routerCommandServiceProvider);
+  return SceneQueryService(commandService);
 });

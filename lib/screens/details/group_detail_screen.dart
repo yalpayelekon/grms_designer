@@ -341,7 +341,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
     try {
       final router = widget.workgroup.routers.first;
-      final commandService = ref.read(routerCommandServiceProvider);
+      final sceneQueryService = ref.read(sceneQueryServiceProvider);
       final groupIdInt = int.tryParse(widget.group.groupId);
 
       if (groupIdInt == null) {
@@ -350,47 +350,12 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
       logInfo('Querying scene data for group ${widget.group.groupId}');
 
-      // Query scenes from different blocks
-      final sceneNumbers = <int>{};
+      final sceneData = await sceneQueryService.exploreGroupScenes(
+        router.ipAddress,
+        groupIdInt,
+      );
 
-      for (int block = 1; block <= 8; block++) {
-        try {
-          final command = HelvarNetCommands.queryLastSceneInBlock(
-            groupIdInt,
-            block,
-          );
-          final result = await commandService.sendCommand(
-            router.ipAddress,
-            command,
-          );
-
-          if (result.success && result.response != null) {
-            final responseData = result.response!;
-            logInfo('Block $block response: $responseData');
-
-            // Try to extract scene number from response
-            if (responseData.contains('=')) {
-              final parts = responseData.split('=');
-              if (parts.length > 1) {
-                final sceneStr = parts[1].replaceAll('#', '').trim();
-                final sceneNum = int.tryParse(sceneStr);
-                if (sceneNum != null && sceneNum > 0) {
-                  sceneNumbers.add(sceneNum);
-                  logInfo('Found scene $sceneNum in block $block');
-                }
-              }
-            }
-          }
-
-          // Small delay between queries
-          await Future.delayed(const Duration(milliseconds: 100));
-        } catch (e) {
-          logWarning('Error querying block $block: $e');
-        }
-      }
-
-      // Update the scene table with discovered scenes
-      final newSceneTable = sceneNumbers.toList()..sort();
+      final newSceneTable = sceneQueryService.buildSceneTable(sceneData);
       _sceneTableController.text = newSceneTable.join(', ');
 
       if (mounted) {
@@ -622,33 +587,46 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     });
 
     try {
-      final commandService = ref.read(routerCommandServiceProvider);
+      final sceneQueryService = ref.read(sceneQueryServiceProvider);
 
       logInfo(
         '=== Testing Scene Queries for Group ${widget.group.groupId} ===',
       );
 
-      // Test different query commands and log responses
-      await _testCommand('Query Last Scene In Group', () async {
-        final command = HelvarNetCommands.queryLastSceneInGroup(groupIdInt);
-        return await commandService.sendCommand(router.ipAddress, command);
+      // Test queryLastSceneInGroup
+      await _testSceneQueryCommand('Query Last Scene In Group', () async {
+        return await sceneQueryService.queryLastSceneInGroup(
+          router.ipAddress,
+          groupIdInt,
+        );
       });
 
-      // Test each block
+      // Test each block using queryLastSceneInBlock
       for (int block = 1; block <= 4; block++) {
-        await _testCommand('Query Last Scene In Block $block', () async {
-          final command = HelvarNetCommands.queryLastSceneInBlock(
-            groupIdInt,
-            block,
-          );
-          return await commandService.sendCommand(router.ipAddress, command);
-        });
+        await _testSceneQueryCommand(
+          'Query Last Scene In Block $block',
+          () async {
+            return await sceneQueryService.queryLastSceneInBlock(
+              router.ipAddress,
+              groupIdInt,
+              block,
+            );
+          },
+        );
         await Future.delayed(const Duration(milliseconds: 100));
       }
 
-      await _testCommand('Query Scene Names', () async {
-        final command = HelvarNetCommands.querySceneNames();
-        return await commandService.sendCommand(router.ipAddress, command);
+      // Test querySceneNames
+      await _testSceneQueryCommand('Query Scene Names', () async {
+        return await sceneQueryService.querySceneNames(router.ipAddress);
+      });
+
+      // Test exploreGroupScenes
+      await _testSceneQueryCommand('Explore Group Scenes', () async {
+        return await sceneQueryService.exploreGroupScenes(
+          router.ipAddress,
+          groupIdInt,
+        );
       });
 
       if (mounted) {
@@ -671,7 +649,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     }
   }
 
-  Future<void> _testCommand(
+  Future<void> _testSceneQueryCommand(
     String testName,
     Future<dynamic> Function() commandFunction,
   ) async {
@@ -679,16 +657,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       logInfo('--- $testName ---');
       final result = await commandFunction();
 
-      logInfo('Command sent successfully');
-      logInfo('Success: ${result.success}');
-      logInfo('Response: ${result.response}');
-
-      if (result.success && result.response != null) {
-        final extractedValue = result.response!.contains('=')
-            ? result.response!.split('=').last.replaceAll('#', '').trim()
-            : null;
-        logInfo('Extracted value: $extractedValue');
-      }
+      logInfo('Command executed successfully');
+      logInfo('Result: $result');
     } catch (e) {
       logError('$testName failed: $e');
     }

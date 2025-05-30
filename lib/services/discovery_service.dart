@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:grms_designer/services/scene_query_service.dart';
 import 'package:uuid/uuid.dart';
 import '../comm/models/command_models.dart';
 import '../models/helvar_models/helvar_device.dart';
@@ -91,6 +92,7 @@ class DiscoveryService {
   Future<HelvarGroup> discoverGroupScenes(
     String routerIpAddress,
     HelvarGroup group,
+    SceneQueryService sceneQueryService,
   ) async {
     try {
       logInfo('Discovering scenes for group: ${group.groupId}');
@@ -101,69 +103,22 @@ class DiscoveryService {
         return group;
       }
 
-      final sceneData = <int, int?>{};
+      final sceneData = await sceneQueryService.exploreGroupScenes(
+        routerIpAddress,
+        groupIdInt,
+      );
 
-      for (int block = 1; block <= 8; block++) {
-        try {
-          final command = HelvarNetCommands.queryLastSceneInBlock(
-            groupIdInt,
-            block,
-          );
-          final result = await commandService.sendCommand(
-            routerIpAddress,
-            command,
-          );
-
-          if (result.success && result.response != null) {
-            final sceneValue = ProtocolParser.extractResponseValue(
-              result.response!,
-            );
-            if (sceneValue != null) {
-              final sceneNumber = int.tryParse(sceneValue);
-              sceneData[block] = sceneNumber;
-              logInfo('Block $block - Last scene: $sceneNumber');
-            }
-          }
-
-          await Future.delayed(const Duration(milliseconds: 50));
-        } catch (e) {
-          logWarning('Error querying block $block: $e');
-        }
-      }
-
-      int? lsig;
-      int? lsib1;
-      int? lsib2;
-
-      try {
-        final lsigCommand = HelvarNetCommands.queryLastSceneInGroup(groupIdInt);
-        final lsigResult = await commandService.sendCommand(
-          routerIpAddress,
-          lsigCommand,
-        );
-
-        if (lsigResult.success && lsigResult.response != null) {
-          final lsigValue = ProtocolParser.extractResponseValue(
-            lsigResult.response!,
-          );
-          if (lsigValue != null) {
-            lsig = int.tryParse(lsigValue);
-            logInfo('LSIG for group ${group.groupId}: $lsig');
-          }
-        }
-      } catch (e) {
-        logWarning('Error querying LSIG: $e');
-      }
+      final lsig = await sceneQueryService.queryLastSceneInGroup(
+        routerIpAddress,
+        groupIdInt,
+      );
 
       // TODO: Explore LSIB1 and LSIB2 commands when we understand the protocol better
       // For now, we'll leave them as null
+      int? lsib1;
+      int? lsib2;
 
-      final sceneTable = <int>[];
-      for (final entry in sceneData.entries) {
-        if (entry.value != null && entry.value! > 0) {
-          sceneTable.add(entry.value!);
-        }
-      }
+      final sceneTable = sceneQueryService.buildSceneTable(sceneData);
 
       final updatedGroup = group.copyWith(
         lsig: lsig,
@@ -185,12 +140,17 @@ class DiscoveryService {
   Future<List<HelvarGroup>> discoverScenesForGroups(
     String routerIpAddress,
     List<HelvarGroup> groups,
+    SceneQueryService sceneQueryService,
   ) async {
     final updatedGroups = <HelvarGroup>[];
 
     for (final group in groups) {
       try {
-        final updatedGroup = await discoverGroupScenes(routerIpAddress, group);
+        final updatedGroup = await discoverGroupScenes(
+          routerIpAddress,
+          group,
+          sceneQueryService,
+        );
         updatedGroups.add(updatedGroup);
 
         await Future.delayed(const Duration(milliseconds: 200));

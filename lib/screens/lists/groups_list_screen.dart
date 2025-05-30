@@ -10,10 +10,7 @@ import '../details/group_detail_screen.dart';
 class GroupsListScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
 
-  const GroupsListScreen({
-    super.key,
-    required this.workgroup,
-  });
+  const GroupsListScreen({super.key, required this.workgroup});
 
   @override
   GroupsListScreenState createState() => GroupsListScreenState();
@@ -46,9 +43,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildGroupsSection(context),
-                ],
+                children: [_buildGroupsSection(context)],
               ),
             ),
     );
@@ -63,16 +58,14 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
           children: [
             const Text(
               'Groups',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             Row(
               children: [
                 IconButton(
                   icon: Icon(
-                      _showGroups ? Icons.visibility : Icons.visibility_off),
+                    _showGroups ? Icons.visibility : Icons.visibility_off,
+                  ),
                   tooltip: _showGroups ? 'Hide Groups' : 'Show Groups',
                   onPressed: () {
                     setState(() {
@@ -128,11 +121,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.group_work,
-                    size: 48,
-                    color: Colors.grey,
-                  ),
+                  const Icon(Icons.group_work, size: 48, color: Colors.grey),
                   const SizedBox(height: 16),
                   const Text(
                     'No groups found for this workgroup',
@@ -176,10 +165,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
             subtitle: Text('Group ID: ${group.groupId}'),
             leading: const CircleAvatar(
               backgroundColor: Colors.green,
-              child: Icon(
-                Icons.layers,
-                color: Colors.white,
-              ),
+              child: Icon(Icons.layers, color: Colors.white),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -214,8 +200,10 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
           ),
           if (isExpanded)
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -223,12 +211,18 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
                   if (group.lsig != null)
                     _buildDetailRow('LSIG', group.lsig.toString()),
                   _buildDetailRow(
-                      'Power Polling', '${group.powerPollingMinutes} minutes'),
+                    'Power Polling',
+                    '${group.powerPollingMinutes} minutes',
+                  ),
                   if (group.gatewayRouterIpAddress.isNotEmpty)
                     _buildDetailRow(
-                        'Gateway Router', group.gatewayRouterIpAddress),
-                  _buildDetailRow('Refresh Props After Action',
-                      group.refreshPropsAfterAction.toString()),
+                      'Gateway Router',
+                      group.gatewayRouterIpAddress,
+                    ),
+                  _buildDetailRow(
+                    'Refresh Props After Action',
+                    group.refreshPropsAfterAction.toString(),
+                  ),
                   OverflowBar(
                     alignment: MainAxisAlignment.end,
                     children: [
@@ -259,9 +253,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Expanded(
-            child: Text(value),
-          ),
+          Expanded(child: Text(value)),
         ],
       ),
     );
@@ -275,16 +267,16 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GroupDetailScreen(
-          group: group,
-          workgroup: widget.workgroup,
-        ),
+        builder: (context) =>
+            GroupDetailScreen(group: group, workgroup: widget.workgroup),
       ),
     );
   }
 
   Future<void> _confirmDeleteGroup(
-      BuildContext context, HelvarGroup group) async {
+    BuildContext context,
+    HelvarGroup group,
+  ) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -299,20 +291,16 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
 
     if (result == true) {
-      await ref.read(workgroupsProvider.notifier).removeGroupFromWorkgroup(
-            widget.workgroup.id,
-            group,
-          );
+      await ref
+          .read(workgroupsProvider.notifier)
+          .removeGroupFromWorkgroup(widget.workgroup.id, group);
 
       if (!mounted) return;
       showSnackBarMsg(context, 'Group deleted');
@@ -332,8 +320,9 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     try {
       final router = widget.workgroup.routers.first;
       final discoveryService = ref.watch(discoveryServiceProvider);
-      final discoveredGroups =
-          await discoveryService.discoverGroups(router.ipAddress);
+      final discoveredGroups = await discoveryService.discoverGroups(
+        router.ipAddress,
+      );
 
       if (discoveredGroups.isEmpty) {
         if (!mounted) return;
@@ -345,12 +334,14 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       }
 
       if (!mounted) return;
-      final shouldAdd = await showDialog<bool>(
+      final shouldAdd =
+          await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
               title: const Text('Groups Discovered'),
               content: Text(
-                  'Found ${discoveredGroups.length} groups. Do you want to add them?'),
+                'Found ${discoveredGroups.length} groups. Do you want to add them?',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -372,17 +363,17 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
         return;
       }
 
-      final existingGroupIds =
-          widget.workgroup.groups.map((g) => g.groupId).toSet();
+      final existingGroupIds = widget.workgroup.groups
+          .map((g) => g.groupId)
+          .toSet();
       final newGroups = discoveredGroups
           .where((g) => !existingGroupIds.contains(g.groupId))
           .toList();
 
       for (final group in newGroups) {
-        await ref.read(workgroupsProvider.notifier).addGroupToWorkgroup(
-              widget.workgroup.id,
-              group,
-            );
+        await ref
+            .read(workgroupsProvider.notifier)
+            .addGroupToWorkgroup(widget.workgroup.id, group);
       }
 
       if (!mounted) return;
