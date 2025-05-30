@@ -31,17 +31,16 @@ class GroupDetailScreen extends ConsumerStatefulWidget {
 class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   late TextEditingController _sceneTableController;
   bool _isLoading = false;
-
   HelvarGroup get currentGroup {
     final workgroups = ref.watch(workgroupsProvider);
     final currentWorkgroup = workgroups.firstWhere(
       (wg) => wg.id == widget.workgroup.id,
-      orElse: () => widget.workgroup,
     );
-    return currentWorkgroup.groups.firstWhere(
+    final group = currentWorkgroup.groups.firstWhere(
       (g) => g.id == widget.group.id,
-      orElse: () => widget.group,
     );
+
+    return group;
   }
 
   @override
@@ -92,9 +91,9 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoCard(context, group),
+                  _buildInfoCard(context),
                   const SizedBox(height: 24),
-                  _buildSceneTableCard(context, group),
+                  _buildSceneTableCard(context),
                 ],
               ),
             ),
@@ -138,16 +137,15 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
   Future<void> _querySceneData() async {
     try {
-      final group = currentGroup;
       final router = widget.workgroup.routers.first;
       final sceneQueryService = ref.read(sceneQueryServiceProvider);
       final groupIdInt = int.tryParse(widget.group.groupId);
 
       if (groupIdInt == null) {
-        throw Exception('Invalid group ID: ${group.groupId}');
+        throw Exception('Invalid group ID: ${currentGroup.groupId}');
       }
 
-      logInfo('Querying scene data for group ${group.groupId}');
+      logInfo('Querying scene data for group ${currentGroup.groupId}');
 
       final sceneData = await sceneQueryService.exploreGroupScenes(
         router.ipAddress,
@@ -164,13 +162,17 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           : allScenes;
 
       _sceneTableController.text = scenesToShow.join(', ');
-      final updatedGroup = group.copyWith(sceneTable: scenesToShow);
+
+      final currentGroupData = currentGroup;
+      final updatedGroup = currentGroupData.copyWith(sceneTable: scenesToShow);
 
       await ref
           .read(workgroupsProvider.notifier)
           .updateGroup(widget.workgroup.id, updatedGroup);
 
-      logInfo('Updated scene table for group ${group.groupId}: $scenesToShow');
+      logInfo(
+        'Updated scene table for group ${currentGroupData.groupId}: $scenesToShow',
+      );
     } catch (e) {
       logError('Error querying scene data: $e');
       rethrow;
@@ -215,6 +217,12 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
           logInfo(
             'Updated power consumption for group ${currentGroup.groupId}: ${powerConsumption}W',
+          );
+          logDebug(
+            'DEBUG: Group model updated. New power: ${updatedGroup.powerConsumption}W',
+          );
+          logDebug(
+            'DEBUG: Current group power after update: ${currentGroup.powerConsumption}W',
           );
         } else {
           logWarning('Empty power consumption value received');
@@ -352,7 +360,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     return null;
   }
 
-  Widget _buildInfoCard(BuildContext context, HelvarGroup group) {
+  Widget _buildInfoCard(BuildContext context) {
+    final group = currentGroup;
     return Card(
       elevation: 2,
       child: Padding(
@@ -413,7 +422,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     );
   }
 
-  Widget _buildSceneTableCard(BuildContext context, HelvarGroup group) {
+  Widget _buildSceneTableCard(BuildContext context) {
+    final group = currentGroup;
     return Card(
       elevation: 2,
       child: Padding(

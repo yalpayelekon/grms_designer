@@ -3,13 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum LogLevel {
-  verbose,
-  debug,
-  info,
-  warning,
-  error,
-}
+enum LogLevel { verbose, debug, info, warning, error }
 
 class LogEntry {
   final String message;
@@ -69,19 +63,21 @@ class LogService extends StateNotifier<List<LogEntry>> {
       switch (level) {
         case LogLevel.error:
           debugPrint(
-              '❌ ${entry.formattedTime} - ${entry.levelName}: ${entry.message}');
+            '❌ ${entry.formattedTime} - ${entry.levelName}: ${entry.message}',
+          );
           break;
         case LogLevel.warning:
           debugPrint(
-              '⚠️ ${entry.formattedTime} - ${entry.levelName}: ${entry.message}');
+            '⚠️ ${entry.formattedTime} - ${entry.levelName}: ${entry.message}',
+          );
           break;
         default:
           debugPrint(
-              '${entry.formattedTime} - ${entry.levelName}: ${entry.message}');
+            '${entry.formattedTime} - ${entry.levelName}: ${entry.message}',
+          );
       }
     }
 
-    state = [entry, ...state];
     if (state.length > _maxLogEntries) {
       state = state.sublist(0, _maxLogEntries);
     }
@@ -122,14 +118,17 @@ class LogService extends StateNotifier<List<LogEntry>> {
   List<LogEntry> searchLogs(String query) {
     final lowercaseQuery = query.toLowerCase();
     return state
-        .where((entry) =>
-            entry.message.toLowerCase().contains(lowercaseQuery) ||
-            (entry.tag?.toLowerCase().contains(lowercaseQuery) ?? false))
+        .where(
+          (entry) =>
+              entry.message.toLowerCase().contains(lowercaseQuery) ||
+              (entry.tag?.toLowerCase().contains(lowercaseQuery) ?? false),
+        )
         .toList();
   }
 }
 
-final logServiceProvider =
-    StateNotifierProvider<LogService, List<LogEntry>>((ref) {
+final logServiceProvider = StateNotifierProvider<LogService, List<LogEntry>>((
+  ref,
+) {
   return LogService();
 });
