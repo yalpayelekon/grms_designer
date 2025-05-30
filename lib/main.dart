@@ -40,11 +40,26 @@ void main() async {
   }
 }
 
-class HelvarNetApp extends ConsumerWidget {
+class HelvarNetApp extends ConsumerStatefulWidget {
   const HelvarNetApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  HelvarNetAppState createState() => HelvarNetAppState();
+}
+
+class HelvarNetAppState extends ConsumerState<HelvarNetApp> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppInitializationService.setupPollingListener(ref);
+      logInfo('Polling listener setup completed', tag: 'App');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
