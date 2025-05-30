@@ -18,6 +18,7 @@ class HelvarGroup extends TreeNode {
   final String actionResult;
   final String lastMessage;
   final DateTime? lastMessageTime;
+  final DateTime? lastPowerUpdateTime;
 
   HelvarGroup({
     required this.id,
@@ -36,6 +37,7 @@ class HelvarGroup extends TreeNode {
     this.actionResult = '',
     this.lastMessage = '',
     this.lastMessageTime,
+    this.lastPowerUpdateTime,
   }) : super(
          content: Text(description.isEmpty ? "Group $groupId" : description),
        );
@@ -76,6 +78,9 @@ class HelvarGroup extends TreeNode {
       lastMessageTime: json['lastMessageTime'] != null
           ? DateTime.parse(json['lastMessageTime'] as String)
           : null,
+      lastPowerUpdateTime: json['lastPowerUpdateTime'] != null
+          ? DateTime.parse(json['lastPowerUpdateTime'] as String)
+          : null,
     );
   }
 
@@ -97,6 +102,7 @@ class HelvarGroup extends TreeNode {
       'actionResult': actionResult,
       'lastMessage': lastMessage,
       'lastMessageTime': lastMessageTime?.toIso8601String(),
+      'lastPowerUpdateTime': lastPowerUpdateTime?.toIso8601String(),
     };
   }
 
@@ -117,6 +123,7 @@ class HelvarGroup extends TreeNode {
     String? actionResult,
     String? lastMessage,
     DateTime? lastMessageTime,
+    DateTime? lastPowerUpdateTime,
   }) {
     return HelvarGroup(
       id: id ?? this.id,
@@ -137,6 +144,7 @@ class HelvarGroup extends TreeNode {
       actionResult: actionResult ?? this.actionResult,
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
+      lastPowerUpdateTime: lastPowerUpdateTime ?? this.lastPowerUpdateTime,
     );
   }
 }

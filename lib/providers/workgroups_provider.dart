@@ -25,11 +25,11 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     required RouterStorageService routerStorageService,
     required RouterCommandService commandService,
     required Ref ref,
-  })  : _fileStorageService = fileStorageService,
-        _routerStorageService = routerStorageService,
-        _commandService = commandService,
-        _ref = ref,
-        super([]) {
+  }) : _fileStorageService = fileStorageService,
+       _routerStorageService = routerStorageService,
+       _commandService = commandService,
+       _ref = ref,
+       super([]) {
     _initializeData();
   }
 
@@ -60,7 +60,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             router.devices.addAll(devices);
           } catch (e) {
             logError(
-                'Error loading devices for router ${router.description}: $e');
+              'Error loading devices for router ${router.description}: $e',
+            );
           }
         }
       }
@@ -75,11 +76,14 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 
   Future<RouterConnection?> getRouterConnection(
-      String workgroupId, String routerAddress) async {
+    String workgroupId,
+    String routerAddress,
+  ) async {
     try {
       final workgroup = state.firstWhere((wg) => wg.id == workgroupId);
-      final router =
-          workgroup.routers.firstWhere((r) => r.address == routerAddress);
+      final router = workgroup.routers.firstWhere(
+        (r) => r.address == routerAddress,
+      );
 
       if (router.ipAddress.isEmpty) {
         return null;
@@ -101,8 +105,9 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }) async {
     try {
       final workgroup = state.firstWhere((wg) => wg.id == workgroupId);
-      final router =
-          workgroup.routers.firstWhere((r) => r.address == routerAddress);
+      final router = workgroup.routers.firstWhere(
+        (r) => r.address == routerAddress,
+      );
 
       if (router.ipAddress.isEmpty) {
         return CommandResult.failure('Router has no IP address', 0);
@@ -139,7 +144,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             if (_disposed) return;
           } catch (e) {
             logError(
-                'Error saving devices for router ${router.description}: $e');
+              'Error saving devices for router ${router.description}: $e',
+            );
           }
         }
       }
@@ -149,14 +155,18 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 
   Future<void> addDeviceToRouter(
-      String workgroupId, String routerAddress, HelvarDevice device) async {
+    String workgroupId,
+    String routerAddress,
+    HelvarDevice device,
+  ) async {
     final newState = [...state];
     final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
 
     if (workgroupIndex >= 0) {
       final workgroup = newState[workgroupIndex];
-      final routerIndex = workgroup.routers
-          .indexWhere((router) => router.address == routerAddress);
+      final routerIndex = workgroup.routers.indexWhere(
+        (router) => router.address == routerAddress,
+      );
 
       if (routerIndex >= 0) {
         final router = workgroup.routers[routerIndex];
@@ -165,9 +175,9 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         final deviceNodeId =
             '${workgroupId}_${routerAddress}_${device.address}';
 
-        _ref
-            .read(treeExpansionProvider.notifier)
-            .markNodesAsNewlyAdded([deviceNodeId]);
+        _ref.read(treeExpansionProvider.notifier).markNodesAsNewlyAdded([
+          deviceNodeId,
+        ]);
 
         state = newState;
         try {
@@ -188,22 +198,27 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
-  Future<void> addMultipleDevicesToRouter(String workgroupId,
-      String routerAddress, List<HelvarDevice> devices) async {
+  Future<void> addMultipleDevicesToRouter(
+    String workgroupId,
+    String routerAddress,
+    List<HelvarDevice> devices,
+  ) async {
     final newState = [...state];
     final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
 
     if (workgroupIndex >= 0) {
       final workgroup = newState[workgroupIndex];
-      final routerIndex = workgroup.routers
-          .indexWhere((router) => router.address == routerAddress);
+      final routerIndex = workgroup.routers.indexWhere(
+        (router) => router.address == routerAddress,
+      );
 
       if (routerIndex >= 0) {
         final router = workgroup.routers[routerIndex];
 
         final newDeviceNodeIds = devices
             .map(
-                (device) => '${workgroupId}_${routerAddress}_${device.address}')
+              (device) => '${workgroupId}_${routerAddress}_${device.address}',
+            )
             .toList();
 
         for (final device in devices) {
@@ -256,14 +271,18 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 
   Future<void> removeDeviceFromRouter(
-      String workgroupId, String routerAddress, HelvarDevice device) async {
+    String workgroupId,
+    String routerAddress,
+    HelvarDevice device,
+  ) async {
     final newState = [...state];
     final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
 
     if (workgroupIndex >= 0) {
       final workgroup = newState[workgroupIndex];
-      final routerIndex = workgroup.routers
-          .indexWhere((router) => router.address == routerAddress);
+      final routerIndex = workgroup.routers.indexWhere(
+        (router) => router.address == routerAddress,
+      );
 
       if (routerIndex >= 0) {
         final router = workgroup.routers[routerIndex];
@@ -288,15 +307,20 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     }
   }
 
-  Future<void> updateDeviceInRouter(String workgroupId, String routerAddress,
-      HelvarDevice oldDevice, HelvarDevice updatedDevice) async {
+  Future<void> updateDeviceInRouter(
+    String workgroupId,
+    String routerAddress,
+    HelvarDevice oldDevice,
+    HelvarDevice updatedDevice,
+  ) async {
     final newState = [...state];
     final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
 
     if (workgroupIndex >= 0) {
       final workgroup = newState[workgroupIndex];
-      final routerIndex = workgroup.routers
-          .indexWhere((router) => router.address == routerAddress);
+      final routerIndex = workgroup.routers.indexWhere(
+        (router) => router.address == routerAddress,
+      );
 
       if (routerIndex >= 0) {
         final router = workgroup.routers[routerIndex];
@@ -314,7 +338,8 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
             );
           } catch (e) {
             logError(
-                'Error saving devices for router ${router.description}: $e');
+              'Error saving devices for router ${router.description}: $e',
+            );
           }
           try {
             await _fileStorageService.saveWorkgroups(state);
@@ -327,7 +352,9 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 
   Future<void> addGroupToWorkgroup(
-      String workgroupId, HelvarGroup group) async {
+    String workgroupId,
+    HelvarGroup group,
+  ) async {
     final index = state.indexWhere((wg) => wg.id == workgroupId);
 
     if (index >= 0) {
@@ -341,7 +368,9 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 
   Future<void> removeGroupFromWorkgroup(
-      String workgroupId, HelvarGroup group) async {
+    String workgroupId,
+    HelvarGroup group,
+  ) async {
     final index = state.indexWhere((wg) => wg.id == workgroupId);
 
     if (index >= 0) {
@@ -359,14 +388,16 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
   }
 
   Future<void> importWorkgroups(String filePath, {bool merge = false}) async {
-    final importedWorkgroups =
-        await _fileStorageService.importWorkgroups(filePath);
+    final importedWorkgroups = await _fileStorageService.importWorkgroups(
+      filePath,
+    );
 
     if (merge) {
       final List<Workgroup> newState = [...state];
       for (final importedWg in importedWorkgroups) {
-        final existingIndex =
-            newState.indexWhere((wg) => wg.id == importedWg.id);
+        final existingIndex = newState.indexWhere(
+          (wg) => wg.id == importedWg.id,
+        );
 
         if (existingIndex >= 0) {
           newState[existingIndex] = importedWg;
@@ -406,8 +437,9 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
       final updatedState = List<Workgroup>.from(state);
       final workgroup = updatedState[index];
 
-      final groupIndex =
-          workgroup.groups.indexWhere((g) => g.id == updatedGroup.id);
+      final groupIndex = workgroup.groups.indexWhere(
+        (g) => g.id == updatedGroup.id,
+      );
 
       if (groupIndex >= 0) {
         workgroup.groups[groupIndex] = updatedGroup;
@@ -415,6 +447,71 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
         state = updatedState;
         await _saveToStorage();
       }
+    }
+  }
+
+  Future<void> updateGroupFromPolling(HelvarGroup updatedGroup) async {
+    if (_disposed) return;
+
+    try {
+      final newState = [...state];
+      bool groupFound = false;
+
+      for (
+        int workgroupIndex = 0;
+        workgroupIndex < newState.length;
+        workgroupIndex++
+      ) {
+        final workgroup = newState[workgroupIndex];
+        final groupIndex = workgroup.groups.indexWhere(
+          (g) => g.id == updatedGroup.id,
+        );
+
+        if (groupIndex >= 0) {
+          workgroup.groups[groupIndex] = updatedGroup;
+          groupFound = true;
+          break;
+        }
+      }
+
+      if (groupFound) {
+        state = newState;
+        logDebug(
+          'Updated group ${updatedGroup.groupId} from polling: ${updatedGroup.powerConsumption}W',
+        );
+      } else {
+        logWarning(
+          'Group ${updatedGroup.groupId} not found for polling update',
+        );
+      }
+    } catch (e) {
+      logError('Error updating group from polling: $e');
+    }
+  }
+
+  Future<void> toggleWorkgroupPolling(String workgroupId, bool enabled) async {
+    if (_disposed) return;
+
+    try {
+      final newState = [...state];
+      final workgroupIndex = newState.indexWhere((wg) => wg.id == workgroupId);
+
+      if (workgroupIndex >= 0) {
+        final updatedWorkgroup = newState[workgroupIndex].copyWith(
+          pollEnabled: enabled,
+          lastPollTime: enabled ? DateTime.now() : null,
+        );
+        newState[workgroupIndex] = updatedWorkgroup;
+
+        state = newState;
+        await _saveToStorage();
+
+        logInfo(
+          '${enabled ? 'Enabled' : 'Disabled'} polling for workgroup: ${updatedWorkgroup.description}',
+        );
+      }
+    } catch (e) {
+      logError('Error toggling workgroup polling: $e');
     }
   }
 }
@@ -428,10 +525,10 @@ final routerStorageServiceProvider = Provider<RouterStorageService>((ref) {
 });
 final workgroupsProvider =
     StateNotifierProvider<WorkgroupsNotifier, List<Workgroup>>((ref) {
-  return WorkgroupsNotifier(
-    fileStorageService: ref.watch(fileStorageServiceProvider),
-    routerStorageService: ref.watch(routerStorageServiceProvider),
-    commandService: ref.watch(routerCommandServiceProvider),
-    ref: ref,
-  );
-});
+      return WorkgroupsNotifier(
+        fileStorageService: ref.watch(fileStorageServiceProvider),
+        routerStorageService: ref.watch(routerStorageServiceProvider),
+        commandService: ref.watch(routerCommandServiceProvider),
+        ref: ref,
+      );
+    });
