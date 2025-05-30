@@ -184,14 +184,14 @@ void showSnackBarMsg(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
-Widget buildInfoRow(String label, String value) {
+Widget buildInfoRow(String label, String value, {double? width}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 4.0),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 220,
+          width: width ?? 220,
           child: Text(
             '$label:',
             style: const TextStyle(fontWeight: FontWeight.w500),

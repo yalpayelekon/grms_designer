@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/providers/workgroups_provider.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import 'package:intl/intl.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
@@ -289,48 +290,46 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               ],
             ),
             const Divider(),
-            _buildDetailRow('ID', widget.group.groupId),
-            _buildDetailRow('Description', widget.group.description),
-            _buildDetailRow('Type', widget.group.type),
+            buildInfoRow('ID', widget.group.groupId),
+            buildInfoRow('Description', widget.group.description),
+            buildInfoRow('Type', widget.group.type),
             if (widget.group.lsig != null)
-              _buildDetailRow('LSIG', widget.group.lsig.toString()),
+              buildInfoRow('LSIG', widget.group.lsig.toString()),
             if (widget.group.lsib1 != null)
-              _buildDetailRow('LSIB1', widget.group.lsib1.toString()),
+              buildInfoRow('LSIB1', widget.group.lsib1.toString()),
             if (widget.group.lsib2 != null)
-              _buildDetailRow('LSIB2', widget.group.lsib2.toString()),
+              buildInfoRow('LSIB2', widget.group.lsib2.toString()),
             for (int i = 0; i < widget.group.blockValues.length; i++)
-              _buildDetailRow(
+              buildInfoRow(
                 'Block${i + 1}',
                 widget.group.blockValues[i].toString(),
               ),
-            _buildDetailRow(
+            buildInfoRow(
               'Power Consumption',
               '${widget.group.powerConsumption} W',
+              width: 280,
             ),
-            _buildDetailRow(
+            buildInfoRow(
               'Power Polling',
               '${widget.group.powerPollingMinutes} minutes',
             ),
-            _buildDetailRow(
-              'Gateway Router',
-              widget.group.gatewayRouterIpAddress,
-            ),
-            _buildDetailRow(
+            buildInfoRow('Gateway Router', widget.group.gatewayRouterIpAddress),
+            buildInfoRow(
               'Refresh Props After Action',
               widget.group.refreshPropsAfterAction.toString(),
             ),
             if (widget.group.actionResult.isNotEmpty)
-              _buildDetailRow('Action Result', widget.group.actionResult),
+              buildInfoRow('Action Result', widget.group.actionResult),
             if (widget.group.lastMessage.isNotEmpty)
-              _buildDetailRow('Last Message', widget.group.lastMessage),
+              buildInfoRow('Last Message', widget.group.lastMessage),
             if (widget.group.lastMessageTime != null)
-              _buildDetailRow(
+              buildInfoRow(
                 'Message Time',
                 DateFormat(
                   'MMM d, yyyy h:mm:ss a',
                 ).format(widget.group.lastMessageTime!),
               ),
-            _buildDetailRow('Workgroup', widget.workgroup.description),
+            buildInfoRow('Workgroup', widget.workgroup.description),
           ],
         ),
       ),
@@ -529,25 +528,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
   void _saveSceneTable() {
     try {
       final text = _sceneTableController.text.trim();
@@ -648,12 +628,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
+        actions: [cancelAction(context)],
       ),
     );
   }
@@ -689,10 +664,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           ElevatedButton(
             onPressed: () {
               final scene = int.tryParse(sceneController.text);
