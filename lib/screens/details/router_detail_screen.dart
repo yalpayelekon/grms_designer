@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/input_device.dart';
@@ -340,12 +341,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
             const Text('No active alarms'),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+        actions: [closeAction(context)],
       ),
     );
   }
@@ -512,10 +508,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           'Are you sure you want to delete the device "${device.description.isEmpty ? 'Device ${device.deviceId}' : device.description}"?',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -609,10 +602,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
+          closeAction(context),
           if (device.helvarType == 'output')
             ElevatedButton(
               onPressed: () => _controlOutputDevice(device),
@@ -706,10 +696,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
                 'Found ${discoveredDevices.length} devices. Do you want to add them?',
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
+                cancelAction(context),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
                   child: const Text('Add Devices'),
@@ -783,10 +770,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),

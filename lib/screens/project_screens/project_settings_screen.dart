@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../../providers/project_settings_provider.dart';
 import '../../providers/settings_provider.dart';
 
@@ -12,9 +13,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
     final discoveryTimeout = ref.watch(discoveryTimeoutProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Project Settings'),
-      ),
+      appBar: AppBar(title: const Text('Project Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -27,10 +26,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 children: [
                   const Text(
                     'Project',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   ListTile(
@@ -38,7 +34,10 @@ class ProjectSettingsScreen extends ConsumerWidget {
                     subtitle: Text(projectSettings.projectName),
                     trailing: const Icon(Icons.edit),
                     onTap: () => _showProjectNameDialog(
-                        context, ref, projectSettings.projectName),
+                      context,
+                      ref,
+                      projectSettings.projectName,
+                    ),
                   ),
                 ],
               ),
@@ -53,26 +52,30 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 children: [
                   const Text(
                     'Router Connection',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   ListTile(
                     title: const Text('Socket Timeout'),
                     subtitle: Text(
-                        '${projectSettings.socketTimeoutMs / 1000} seconds'),
+                      '${projectSettings.socketTimeoutMs / 1000} seconds',
+                    ),
                     trailing: const Icon(Icons.timer),
                     onTap: () => _showSocketTimeoutDialog(
-                        context, ref, projectSettings.socketTimeoutMs),
+                      context,
+                      ref,
+                      projectSettings.socketTimeoutMs,
+                    ),
                   ),
                   ListTile(
                     title: const Text('Discovery Timeout'),
                     subtitle: Text('${discoveryTimeout / 1000} seconds'),
                     trailing: const Icon(Icons.timer_outlined),
                     onTap: () => _showDiscoveryTimeoutDialog(
-                        context, ref, discoveryTimeout),
+                      context,
+                      ref,
+                      discoveryTimeout,
+                    ),
                   ),
                 ],
               ),
@@ -87,10 +90,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 children: [
                   const Text(
                     'Auto Save',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   SwitchListTile(
@@ -105,12 +105,16 @@ class ProjectSettingsScreen extends ConsumerWidget {
                   ListTile(
                     title: const Text('Auto Save Interval'),
                     subtitle: Text(
-                        '${projectSettings.autoSaveIntervalMinutes} minutes'),
+                      '${projectSettings.autoSaveIntervalMinutes} minutes',
+                    ),
                     trailing: const Icon(Icons.timelapse),
                     enabled: projectSettings.autoSave,
                     onTap: projectSettings.autoSave
-                        ? () => _showAutoSaveIntervalDialog(context, ref,
-                            projectSettings.autoSaveIntervalMinutes)
+                        ? () => _showAutoSaveIntervalDialog(
+                            context,
+                            ref,
+                            projectSettings.autoSaveIntervalMinutes,
+                          )
                         : null,
                   ),
                   ListTile(
@@ -118,7 +122,10 @@ class ProjectSettingsScreen extends ConsumerWidget {
                     subtitle: Text('${projectSettings.protocolVersion}'),
                     trailing: const Icon(Icons.sync),
                     onTap: () => _showProtocolVersionDialog(
-                        context, ref, projectSettings.protocolVersion),
+                      context,
+                      ref,
+                      projectSettings.protocolVersion,
+                    ),
                   ),
                 ],
               ),
@@ -133,50 +140,66 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 children: [
                   const Text(
                     'Command Settings',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   ListTile(
                     title: const Text('Command Timeout'),
                     subtitle: Text(
-                        '${projectSettings.commandTimeoutMs / 1000} seconds'),
+                      '${projectSettings.commandTimeoutMs / 1000} seconds',
+                    ),
                     trailing: const Icon(Icons.timer),
                     onTap: () => _showCommandTimeoutDialog(
-                        context, ref, projectSettings.commandTimeoutMs),
+                      context,
+                      ref,
+                      projectSettings.commandTimeoutMs,
+                    ),
                   ),
                   ListTile(
                     title: const Text('Heartbeat Interval'),
                     subtitle: Text(
-                        '${projectSettings.heartbeatIntervalSeconds} seconds'),
+                      '${projectSettings.heartbeatIntervalSeconds} seconds',
+                    ),
                     trailing: const Icon(Icons.favorite),
                     onTap: () => _showHeartbeatIntervalDialog(
-                        context, ref, projectSettings.heartbeatIntervalSeconds),
+                      context,
+                      ref,
+                      projectSettings.heartbeatIntervalSeconds,
+                    ),
                   ),
                   ListTile(
                     title: const Text('Max Command Retries'),
                     subtitle: Text('${projectSettings.maxCommandRetries}'),
                     trailing: const Icon(Icons.replay),
                     onTap: () => _showMaxRetriesDialog(
-                        context, ref, projectSettings.maxCommandRetries),
+                      context,
+                      ref,
+                      projectSettings.maxCommandRetries,
+                    ),
                   ),
                   ListTile(
                     title: const Text('Max Concurrent Commands'),
                     subtitle: Text(
-                        '${projectSettings.maxConcurrentCommandsPerRouter}'),
+                      '${projectSettings.maxConcurrentCommandsPerRouter}',
+                    ),
                     trailing: const Icon(Icons.call_split),
-                    onTap: () => _showMaxConcurrentCommandsDialog(context, ref,
-                        projectSettings.maxConcurrentCommandsPerRouter),
+                    onTap: () => _showMaxConcurrentCommandsDialog(
+                      context,
+                      ref,
+                      projectSettings.maxConcurrentCommandsPerRouter,
+                    ),
                   ),
                   ListTile(
                     title: const Text('Command History Size'),
-                    subtitle:
-                        Text('${projectSettings.commandHistorySize} entries'),
+                    subtitle: Text(
+                      '${projectSettings.commandHistorySize} entries',
+                    ),
                     trailing: const Icon(Icons.history),
                     onTap: () => _showCommandHistorySizeDialog(
-                        context, ref, projectSettings.commandHistorySize),
+                      context,
+                      ref,
+                      projectSettings.commandHistorySize,
+                    ),
                   ),
                 ],
               ),
@@ -188,7 +211,10 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showProtocolVersionDialog(
-      BuildContext context, WidgetRef ref, int currentVersion) {
+    BuildContext context,
+    WidgetRef ref,
+    int currentVersion,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -237,18 +263,16 @@ class ProjectSettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
+        actions: [cancelAction(context)],
       ),
     );
   }
 
   void _showCommandTimeoutDialog(
-      BuildContext context, WidgetRef ref, int currentTimeout) {
+    BuildContext context,
+    WidgetRef ref,
+    int currentTimeout,
+  ) {
     double timeoutInSec = currentTimeout / 1000;
 
     showDialog(
@@ -280,10 +304,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
+                cancelAction(context),
                 TextButton(
                   onPressed: () {
                     final timeoutMs = (timeoutInSec * 1000).round();
@@ -303,7 +324,10 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showDiscoveryTimeoutDialog(
-      BuildContext context, WidgetRef ref, int currentTimeout) {
+    BuildContext context,
+    WidgetRef ref,
+    int currentTimeout,
+  ) {
     double timeoutInSec = currentTimeout / 1000;
 
     showDialog(
@@ -335,10 +359,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
+                cancelAction(context),
                 TextButton(
                   onPressed: () {
                     final timeoutMs = (timeoutInSec * 1000).round();
@@ -358,7 +379,10 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showProjectNameDialog(
-      BuildContext context, WidgetRef ref, String currentName) {
+    BuildContext context,
+    WidgetRef ref,
+    String currentName,
+  ) {
     final nameController = TextEditingController(text: currentName);
 
     showDialog(
@@ -375,10 +399,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
             autofocus: true,
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
+            cancelAction(context),
             TextButton(
               onPressed: () {
                 final newName = nameController.text.trim();
@@ -398,7 +419,10 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showSocketTimeoutDialog(
-      BuildContext context, WidgetRef ref, int currentTimeout) {
+    BuildContext context,
+    WidgetRef ref,
+    int currentTimeout,
+  ) {
     double timeoutInSec = currentTimeout / 1000;
 
     showDialog(
@@ -430,10 +454,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
+                cancelAction(context),
                 TextButton(
                   onPressed: () {
                     final timeoutMs = (timeoutInSec * 1000).round();
@@ -453,9 +474,13 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showAutoSaveIntervalDialog(
-      BuildContext context, WidgetRef ref, int currentInterval) {
-    final intervalController =
-        TextEditingController(text: currentInterval.toString());
+    BuildContext context,
+    WidgetRef ref,
+    int currentInterval,
+  ) {
+    final intervalController = TextEditingController(
+      text: currentInterval.toString(),
+    );
 
     showDialog(
       context: context,
@@ -472,10 +497,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
             autofocus: true,
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
+            cancelAction(context),
             TextButton(
               onPressed: () {
                 final String text = intervalController.text.trim();
@@ -496,7 +518,10 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showHeartbeatIntervalDialog(
-      BuildContext context, WidgetRef ref, int heartbeatIntervalSeconds) {
+    BuildContext context,
+    WidgetRef ref,
+    int heartbeatIntervalSeconds,
+  ) {
     double intervalInSec = heartbeatIntervalSeconds.toDouble();
 
     showDialog(
@@ -528,10 +553,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
                 ],
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
+                cancelAction(context),
                 TextButton(
                   onPressed: () {
                     final interval = intervalInSec.round();
@@ -551,9 +573,13 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showMaxRetriesDialog(
-      BuildContext context, WidgetRef ref, int maxCommandRetries) {
-    final retriesController =
-        TextEditingController(text: maxCommandRetries.toString());
+    BuildContext context,
+    WidgetRef ref,
+    int maxCommandRetries,
+  ) {
+    final retriesController = TextEditingController(
+      text: maxCommandRetries.toString(),
+    );
 
     showDialog(
       context: context,
@@ -580,10 +606,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
+            cancelAction(context),
             TextButton(
               onPressed: () {
                 final String text = retriesController.text.trim();
@@ -604,9 +627,13 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showMaxConcurrentCommandsDialog(
-      BuildContext context, WidgetRef ref, int maxConcurrentCommandsPerRouter) {
-    final commandsController =
-        TextEditingController(text: maxConcurrentCommandsPerRouter.toString());
+    BuildContext context,
+    WidgetRef ref,
+    int maxConcurrentCommandsPerRouter,
+  ) {
+    final commandsController = TextEditingController(
+      text: maxConcurrentCommandsPerRouter.toString(),
+    );
 
     showDialog(
       context: context,
@@ -633,10 +660,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
+            cancelAction(context),
             TextButton(
               onPressed: () {
                 final String text = commandsController.text.trim();
@@ -657,9 +681,13 @@ class ProjectSettingsScreen extends ConsumerWidget {
   }
 
   void _showCommandHistorySizeDialog(
-      BuildContext context, WidgetRef ref, int commandHistorySize) {
-    final historySizeController =
-        TextEditingController(text: commandHistorySize.toString());
+    BuildContext context,
+    WidgetRef ref,
+    int commandHistorySize,
+  ) {
+    final historySizeController = TextEditingController(
+      text: commandHistorySize.toString(),
+    );
 
     showDialog(
       context: context,
@@ -686,10 +714,7 @@ class ProjectSettingsScreen extends ConsumerWidget {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
+            cancelAction(context),
             TextButton(
               onPressed: () {
                 final String text = historySizeController.text.trim();

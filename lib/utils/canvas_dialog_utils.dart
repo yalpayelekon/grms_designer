@@ -7,6 +7,7 @@ import 'package:grms_designer/niagara/models/ramp_component.dart';
 import 'package:grms_designer/niagara/models/rectangle.dart';
 import 'package:grms_designer/utils/canvas_utils.dart';
 import 'package:grms_designer/utils/device_utils.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import 'package:grms_designer/utils/general_ui.dart';
 
 void showAddComponentDialogAtPosition(
@@ -240,10 +241,7 @@ void showPasteSpecialDialog(
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () {
               int copies = int.tryParse(copiesController.text) ?? 1;

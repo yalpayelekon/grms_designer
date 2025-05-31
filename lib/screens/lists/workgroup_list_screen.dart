@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/screens/details/workgroup_detail_screen.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import 'package:grms_designer/utils/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:grms_designer/utils/network_utils.dart';
@@ -35,7 +36,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
   }
 
   Future<List<Map<String, String>>> _performRouterDiscovery(
-      NetworkInterfaceDetails interfaceResult) async {
+    NetworkInterfaceDetails interfaceResult,
+  ) async {
     setState(() {
       isDiscovering = true;
     });
@@ -47,8 +49,10 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         interfaceResult.ipv4!,
         interfaceResult.subnetMask!,
       );
-      await discoveryManager!
-          .sendDiscoveryRequest(discoveryTimeout, broadcastAddress);
+      await discoveryManager!.sendDiscoveryRequest(
+        discoveryTimeout,
+        broadcastAddress,
+      );
       return discoveryManager!.getDiscoveredRouters();
     } catch (e) {
       _showErrorMessage('Discovery error: ${e.toString()}');
@@ -74,8 +78,9 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Discovery Result'),
-            content:
-                const Text('No Helvar routers were discovered on the network.'),
+            content: const Text(
+              'No Helvar routers were discovered on the network.',
+            ),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -116,13 +121,17 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     final existingRouterIps = workgroup.routers.map((r) => r.ipAddress).toSet();
 
     return discoveredRouters
-        .where((router) =>
-            router['workgroup'] == workgroup.description &&
-            !existingRouterIps.contains(router['ip']))
-        .map((router) => HelvarRouter(
-              ipAddress: router['ip'] ?? '',
-              description: '${router['workgroup']} Router',
-            ))
+        .where(
+          (router) =>
+              router['workgroup'] == workgroup.description &&
+              !existingRouterIps.contains(router['ip']),
+        )
+        .map(
+          (router) => HelvarRouter(
+            ipAddress: router['ip'] ?? '',
+            description: '${router['workgroup']} Router',
+          ),
+        )
         .toList();
   }
 
@@ -133,13 +142,14 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     return discoveredRouters
         .where((router) => router['workgroup'] == workgroupName)
         .map((router) {
-      final ipParts = router['ip']!.split('.');
-      return HelvarRouter(
-        address: '@${ipParts[2]}.${ipParts[3]}',
-        ipAddress: router['ip'] ?? '',
-        description: '${router['workgroup']} Router',
-      );
-    }).toList();
+          final ipParts = router['ip']!.split('.');
+          return HelvarRouter(
+            address: '@${ipParts[2]}.${ipParts[3]}',
+            ipAddress: router['ip'] ?? '',
+            description: '${router['workgroup']} Router',
+          );
+        })
+        .toList();
   }
 
   void _updateExistingWorkgroup(
@@ -156,8 +166,10 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     ref.read(workgroupsProvider.notifier).updateWorkgroup(updated);
 
     if (mounted) {
-      showSnackBarMsg(context,
-          'Updated workgroup: ${existing.description} with ${newRouters.length} new routers');
+      showSnackBarMsg(
+        context,
+        'Updated workgroup: ${existing.description} with ${newRouters.length} new routers',
+      );
     }
   }
 
@@ -180,28 +192,38 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     }
   }
 
-  void _createWorkgroup(String workgroupName, String networkInterfaceName,
-      List<Map<String, String>> discoveredRouters) {
+  void _createWorkgroup(
+    String workgroupName,
+    String networkInterfaceName,
+    List<Map<String, String>> discoveredRouters,
+  ) {
     final existingWorkgroups = ref.read(workgroupsProvider);
-    final existingWorkgroup = existingWorkgroups
-        .firstWhereOrNull((wg) => wg.description == workgroupName);
+    final existingWorkgroup = existingWorkgroups.firstWhereOrNull(
+      (wg) => wg.description == workgroupName,
+    );
 
     if (existingWorkgroup != null) {
       final newRouters = _buildNewRoutersForExistingWorkgroup(
-          existingWorkgroup, discoveredRouters);
+        existingWorkgroup,
+        discoveredRouters,
+      );
 
       if (newRouters.isNotEmpty) {
         _updateExistingWorkgroup(existingWorkgroup, newRouters);
       } else if (mounted) {
-        showSnackBarMsg(context,
-            'No new routers found for existing workgroup: $workgroupName');
+        showSnackBarMsg(
+          context,
+          'No new routers found for existing workgroup: $workgroupName',
+        );
       }
 
       return;
     }
 
-    final newRouters =
-        _buildRoutersForNewWorkgroup(discoveredRouters, workgroupName);
+    final newRouters = _buildRoutersForNewWorkgroup(
+      discoveredRouters,
+      workgroupName,
+    );
 
     if (newRouters.isNotEmpty) {
       _createNewWorkgroup(workgroupName, networkInterfaceName, newRouters);
@@ -220,8 +242,9 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     final interfaceResult = await selectNetworkInterface(context);
     if (interfaceResult == null) return;
 
-    List<Map<String, String>> discoveredRouters =
-        await _performRouterDiscovery(interfaceResult);
+    List<Map<String, String>> discoveredRouters = await _performRouterDiscovery(
+      interfaceResult,
+    );
 
     List<String> workgroupNames = discoveredRouters
         .map((router) => router['workgroup'] ?? 'Unknown')
@@ -234,7 +257,10 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     if (selectedResult == '__ADD_ALL__') {
       for (String workgroupName in workgroupNames) {
         _createWorkgroup(
-            workgroupName, interfaceResult.name, discoveredRouters);
+          workgroupName,
+          interfaceResult.name,
+          discoveredRouters,
+        );
       }
 
       if (mounted) {
@@ -324,8 +350,9 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                           ListTile(
                             title: Text(
                               workgroup.description,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             subtitle: Text(
                               'Network: ${workgroup.networkInterface}\n'
@@ -375,7 +402,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
   Future<void> _exportWorkgroups(BuildContext context) async {
     try {
       final filePath = await FileDialogHelper.pickJsonFileToSave(
-          'helvarnet_workgroups.json');
+        'helvarnet_workgroups.json',
+      );
       if (filePath != null) {
         await ref.read(workgroupsProvider.notifier).exportWorkgroups(filePath);
 
@@ -400,7 +428,8 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             builder: (context) => AlertDialog(
               title: const Text('Import Workgroups'),
               content: const Text(
-                  'Do you want to merge with existing workgroups or replace them?'),
+                'Do you want to merge with existing workgroups or replace them?',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -414,14 +443,15 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             ),
           );
           if (result != null) {
-            await ref.read(workgroupsProvider.notifier).importWorkgroups(
-                  filePath,
-                  merge: result,
-                );
+            await ref
+                .read(workgroupsProvider.notifier)
+                .importWorkgroups(filePath, merge: result);
 
             if (mounted) {
-              showSnackBarMsg(context,
-                  'Workgroups ${result ? 'merged' : 'imported'} from $filePath');
+              showSnackBarMsg(
+                context,
+                'Workgroups ${result ? 'merged' : 'imported'} from $filePath',
+              );
             }
           }
         }
@@ -439,19 +469,14 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete Workgroup'),
         content: Text(
-            'Are you sure you want to delete the workgroup "${workgroup.description}"?'
-            '\n\nThis will remove ${workgroup.routers.length} router(s) from the list.'),
+          'Are you sure you want to delete the workgroup "${workgroup.description}"?'
+          '\n\nThis will remove ${workgroup.routers.length} router(s) from the list.',
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -462,7 +487,9 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
       if (mounted) {
         showSnackBarMsg(
-            context, 'Workgroup "${workgroup.description}" deleted');
+          context,
+          'Workgroup "${workgroup.description}" deleted',
+        );
       }
     }
   }
@@ -472,8 +499,9 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     final interfaceResult = await selectNetworkInterface(context);
     if (interfaceResult == null) return;
 
-    List<Map<String, String>> discoveredRouters =
-        await _performRouterDiscovery(interfaceResult);
+    List<Map<String, String>> discoveredRouters = await _performRouterDiscovery(
+      interfaceResult,
+    );
 
     final matchingRouters = discoveredRouters
         .where((router) => router['workgroup'] == workgroup.description)
@@ -482,13 +510,18 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     if (matchingRouters.isEmpty) {
       if (mounted) {
         showSnackBarMsg(
-            context, 'No matching routers found for this workgroup');
+          context,
+          'No matching routers found for this workgroup',
+        );
       }
       return;
     }
 
     _createWorkgroup(
-        workgroup.description, workgroup.networkInterface, matchingRouters);
+      workgroup.description,
+      workgroup.networkInterface,
+      matchingRouters,
+    );
   }
 
   @override

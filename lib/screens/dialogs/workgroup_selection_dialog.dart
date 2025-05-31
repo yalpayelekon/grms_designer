@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 
 class WorkgroupSelectionDialog extends StatefulWidget {
   const WorkgroupSelectionDialog({super.key, required this.workgroups});
@@ -45,19 +46,16 @@ class WorkgroupSelectionDialogState extends State<WorkgroupSelectionDialog> {
               option == addAllOption ? 'Add All' : option,
               style: option == addAllOption
                   ? const TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.blue)
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    )
                   : null,
             ),
           );
         }).toList(),
       ),
       actions: <Widget>[
-        TextButton(
-          child: const Text('Cancel'),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
+        cancelAction(context),
         TextButton(
           child: const Text('OK'),
           onPressed: () {

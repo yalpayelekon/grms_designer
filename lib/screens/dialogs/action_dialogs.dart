@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_group.dart';
@@ -7,7 +8,9 @@ import '../../utils/general_ui.dart';
 import '../actions.dart';
 
 Future<void> showDeviceDirectProportionDialog(
-    BuildContext context, HelvarDevice device) async {
+  BuildContext context,
+  HelvarDevice device,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -34,10 +37,7 @@ Future<void> showDeviceDirectProportionDialog(
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -61,7 +61,9 @@ Future<void> showDeviceDirectProportionDialog(
 }
 
 Future<void> showDeviceRecallSceneDialog(
-    BuildContext context, HelvarDevice device) async {
+  BuildContext context,
+  HelvarDevice device,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -88,10 +90,7 @@ Future<void> showDeviceRecallSceneDialog(
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -106,7 +105,10 @@ Future<void> showDeviceRecallSceneDialog(
 }
 
 Future<void> showRecallSceneDialog(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero); // Allow popup menu to close
@@ -118,11 +120,13 @@ Future<void> showRecallSceneDialog(
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Image.asset('assets/icons/helvar_icon.png',
-              width: 24,
-              height: 24,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.lightbulb)),
+          Image.asset(
+            'assets/icons/helvar_icon.png',
+            width: 24,
+            height: 24,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.lightbulb),
+          ),
           const SizedBox(width: 8),
           const Text('Recall Scene'),
         ],
@@ -131,15 +135,10 @@ Future<void> showRecallSceneDialog(
         controller: controller,
         autofocus: true,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ),
+        decoration: const InputDecoration(border: OutlineInputBorder()),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -154,7 +153,10 @@ Future<void> showRecallSceneDialog(
 }
 
 Future<void> showStoreSceneDialog(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -166,11 +168,13 @@ Future<void> showStoreSceneDialog(
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Image.asset('assets/icons/helvar_icon.png',
-              width: 24,
-              height: 24,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.lightbulb)),
+          Image.asset(
+            'assets/icons/helvar_icon.png',
+            width: 24,
+            height: 24,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.lightbulb),
+          ),
           const SizedBox(width: 8),
           const Text('Store Scene'),
         ],
@@ -179,15 +183,10 @@ Future<void> showStoreSceneDialog(
         controller: controller,
         autofocus: true,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ),
+        decoration: const InputDecoration(border: OutlineInputBorder()),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -202,7 +201,10 @@ Future<void> showStoreSceneDialog(
 }
 
 Future<void> showDirectProportionDialog(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -214,11 +216,13 @@ Future<void> showDirectProportionDialog(
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Image.asset('assets/icons/helvar_icon.png',
-              width: 24,
-              height: 24,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.lightbulb)),
+          Image.asset(
+            'assets/icons/helvar_icon.png',
+            width: 24,
+            height: 24,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.lightbulb),
+          ),
           const SizedBox(width: 8),
           const Text('Direct Proportion'),
         ],
@@ -227,15 +231,10 @@ Future<void> showDirectProportionDialog(
         controller: controller,
         autofocus: true,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ),
+        decoration: const InputDecoration(border: OutlineInputBorder()),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -250,7 +249,10 @@ Future<void> showDirectProportionDialog(
 }
 
 Future<void> showModifyProportionDialog(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -262,11 +264,13 @@ Future<void> showModifyProportionDialog(
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Image.asset('assets/icons/helvar_icon.png',
-              width: 24,
-              height: 24,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.lightbulb)),
+          Image.asset(
+            'assets/icons/helvar_icon.png',
+            width: 24,
+            height: 24,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.lightbulb),
+          ),
           const SizedBox(width: 8),
           const Text('Modify Proportion'),
         ],
@@ -275,15 +279,10 @@ Future<void> showModifyProportionDialog(
         controller: controller,
         autofocus: true,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ),
+        decoration: const InputDecoration(border: OutlineInputBorder()),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -298,7 +297,10 @@ Future<void> showModifyProportionDialog(
 }
 
 Future<void> showDirectLevelDialog(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) async {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -310,11 +312,13 @@ Future<void> showDirectLevelDialog(
     builder: (context) => AlertDialog(
       title: Row(
         children: [
-          Image.asset('assets/icons/helvar_icon.png',
-              width: 24,
-              height: 24,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.lightbulb)),
+          Image.asset(
+            'assets/icons/helvar_icon.png',
+            width: 24,
+            height: 24,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.lightbulb),
+          ),
           const SizedBox(width: 8),
           const Text('Direct Level'),
         ],
@@ -323,15 +327,10 @@ Future<void> showDirectLevelDialog(
         controller: controller,
         autofocus: true,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-        ),
+        decoration: const InputDecoration(border: OutlineInputBorder()),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -346,7 +345,9 @@ Future<void> showDirectLevelDialog(
 }
 
 Future<void> showDeviceDirectLevelDialog(
-    BuildContext context, HelvarDevice device) async {
+  BuildContext context,
+  HelvarDevice device,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -373,10 +374,7 @@ Future<void> showDeviceDirectLevelDialog(
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),
@@ -400,7 +398,9 @@ Future<void> showDeviceDirectLevelDialog(
 }
 
 Future<void> showDeviceModifyProportionDialog(
-    BuildContext context, HelvarDevice device) async {
+  BuildContext context,
+  HelvarDevice device,
+) async {
   final TextEditingController controller = TextEditingController();
 
   await Future.delayed(Duration.zero);
@@ -427,10 +427,7 @@ Future<void> showDeviceModifyProportionDialog(
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () => Navigator.of(context).pop(controller.text),
           child: const Text('OK'),

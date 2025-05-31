@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../../models/helvar_models/emergency_device.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/input_device.dart';
@@ -147,10 +148,7 @@ class AddDeviceDialogState extends State<AddDeviceDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {

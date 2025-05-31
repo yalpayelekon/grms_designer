@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../../models/flowsheet.dart';
 import '../../providers/flowsheet_provider.dart';
 import '../../utils/file_dialog_helper.dart';
@@ -42,8 +43,8 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : flowsheets.isEmpty
-              ? _buildEmptyState()
-              : _buildFlowsheetList(flowsheets),
+          ? _buildEmptyState()
+          : _buildFlowsheetList(flowsheets),
     );
   }
 
@@ -52,16 +53,9 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.description_outlined,
-            size: 64,
-            color: Colors.grey,
-          ),
+          const Icon(Icons.description_outlined, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
-            'No flowsheets found',
-            style: TextStyle(fontSize: 18),
-          ),
+          const Text('No flowsheets found', style: TextStyle(fontSize: 18)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             icon: const Icon(Icons.add),
@@ -97,10 +91,7 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
           ListTile(
             leading: const CircleAvatar(
               backgroundColor: Colors.green,
-              child: Icon(
-                Icons.account_tree,
-                color: Colors.white,
-              ),
+              child: Icon(Icons.account_tree, color: Colors.white),
             ),
             title: Text(
               flowsheet.name,
@@ -147,8 +138,9 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
   }
 
   void _openFlowsheet(Flowsheet flowsheet) {
-    final activeFlowsheetId =
-        ref.read(flowsheetsProvider.notifier).activeFlowsheetId;
+    final activeFlowsheetId = ref
+        .read(flowsheetsProvider.notifier)
+        .activeFlowsheetId;
     if (activeFlowsheetId != null && activeFlowsheetId != flowsheet.id) {
       ref.read(flowsheetsProvider.notifier).saveActiveFlowsheet();
     }
@@ -158,10 +150,8 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => FlowScreen(
-          key: ValueKey(flowsheet.id),
-          flowsheetId: flowsheet.id,
-        ),
+        builder: (context) =>
+            FlowScreen(key: ValueKey(flowsheet.id), flowsheetId: flowsheet.id),
       ),
     );
   }
@@ -182,10 +172,7 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
           autofocus: true,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () async {
               final name = nameController.text.trim();
@@ -231,18 +218,14 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
           autofocus: true,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () {
               final newName = nameController.text.trim();
               if (newName.isNotEmpty) {
-                ref.read(flowsheetsProvider.notifier).renameFlowsheet(
-                      flowsheet.id,
-                      newName,
-                    );
+                ref
+                    .read(flowsheetsProvider.notifier)
+                    .renameFlowsheet(flowsheet.id, newName);
                 Navigator.of(context).pop();
               }
             },
@@ -254,8 +237,9 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
   }
 
   void _duplicateFlowsheet(Flowsheet flowsheet) {
-    final nameController =
-        TextEditingController(text: '${flowsheet.name} (Copy)');
+    final nameController = TextEditingController(
+      text: '${flowsheet.name} (Copy)',
+    );
 
     showDialog(
       context: context,
@@ -270,20 +254,14 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
           autofocus: true,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () async {
               final newName = nameController.text.trim();
               if (newName.isNotEmpty) {
                 final duplicate = await ref
                     .read(flowsheetsProvider.notifier)
-                    .duplicateFlowsheet(
-                      flowsheet.id,
-                      newName,
-                    );
+                    .duplicateFlowsheet(flowsheet.id, newName);
 
                 if (duplicate != null && context.mounted) {
                   Navigator.of(context).pop();
@@ -304,8 +282,9 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
         _isLoading = true;
       });
 
-      final filePath =
-          await FileDialogHelper.pickJsonFileToSave('helvarnet_flowsheet.json');
+      final filePath = await FileDialogHelper.pickJsonFileToSave(
+        'helvarnet_flowsheet.json',
+      );
       if (filePath == null) {
         setState(() {
           _isLoading = false;
@@ -324,10 +303,11 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
           _isLoading = false;
         });
         showSnackBarMsg(
-            context,
-            success
-                ? 'Flowsheet "${flowsheet.name}" exported successfully'
-                : 'Failed to export flowsheet');
+          context,
+          success
+              ? 'Flowsheet "${flowsheet.name}" exported successfully'
+              : 'Failed to export flowsheet',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -366,8 +346,10 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
         });
 
         if (importedFlowsheet != null) {
-          showSnackBarMsg(context,
-              'Flowsheet "${importedFlowsheet.name}" imported successfully');
+          showSnackBarMsg(
+            context,
+            'Flowsheet "${importedFlowsheet.name}" imported successfully',
+          );
         } else {
           showSnackBarMsg(context, 'Failed to import flowsheet');
         }
@@ -389,10 +371,7 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
         title: const Text('Delete Flowsheet'),
         content: Text('Are you sure you want to delete "${flowsheet.name}"?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
@@ -408,8 +387,10 @@ class FlowsheetListScreenState extends ConsumerState<FlowsheetListScreen> {
           .deleteFlowsheet(flowsheet.id);
 
       if (mounted) {
-        showSnackBarMsg(context,
-            success ? 'Flowsheet deleted' : 'Failed to delete flowsheet');
+        showSnackBarMsg(
+          context,
+          success ? 'Flowsheet deleted' : 'Failed to delete flowsheet',
+        );
       }
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/router_connection_provider.dart';
@@ -285,10 +286,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
           'Are you sure you want to delete the group "${group.description.isEmpty ? 'Group ${group.groupId}' : group.description}"?',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -343,10 +341,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
                 'Found ${discoveredGroups.length} groups. Do you want to add them?',
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
+                cancelAction(context),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(true),
                   child: const Text('Add Groups'),

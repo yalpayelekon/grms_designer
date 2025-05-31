@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../models/command_history.dart';
 import '../models/component.dart';
 import '../models/connection.dart';
@@ -184,10 +185,7 @@ class FlowHandlers {
               ),
             ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
+              cancelAction(context),
               TextButton(
                 onPressed: () {
                   String newName = nameController.text.trim();

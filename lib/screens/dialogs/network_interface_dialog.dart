@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 
 class NetworkInterfaceDialog extends StatefulWidget {
   const NetworkInterfaceDialog({super.key, required this.interfaces});
@@ -34,29 +35,21 @@ class NetworkInterfaceDialogState extends State<NetworkInterfaceDialog> {
             });
           }
         },
-        items:
-            widget.interfaces.map<DropdownMenuItem<NetworkInterfaceDetails>>((
-          NetworkInterfaceDetails interface,
-        ) {
-          return DropdownMenuItem<NetworkInterfaceDetails>(
-            value: interface,
-            child: Text('${interface.name} - ${interface.ipv4 ?? "No IP"}'),
-          );
-        }).toList(),
+        items: widget.interfaces.map<DropdownMenuItem<NetworkInterfaceDetails>>(
+          (NetworkInterfaceDetails interface) {
+            return DropdownMenuItem<NetworkInterfaceDetails>(
+              value: interface,
+              child: Text('${interface.name} - ${interface.ipv4 ?? "No IP"}'),
+            );
+          },
+        ).toList(),
       ),
       actions: <Widget>[
-        TextButton(
-          child: const Text('Cancel'),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
+        cancelAction(context),
         TextButton(
           child: const Text('OK'),
           onPressed: () {
-            Navigator.of(
-              context,
-            ).pop(selectedInterface);
+            Navigator.of(context).pop(selectedInterface);
           },
         ),
       ],

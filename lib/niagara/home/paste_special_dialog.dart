@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 
 class PasteSpecialDialog extends StatefulWidget {
   final Function(int, bool, bool) onPasteConfirmed;
 
-  const PasteSpecialDialog({
-    super.key,
-    required this.onPasteConfirmed,
-  });
+  const PasteSpecialDialog({super.key, required this.onPasteConfirmed});
 
   @override
   State<PasteSpecialDialog> createState() => _PasteSpecialDialogState();
@@ -41,12 +39,15 @@ class _PasteSpecialDialogState extends State<PasteSpecialDialog> {
                   textAlign: TextAlign.center,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 0,
+                    ),
                     border: OutlineInputBorder(),
                   ),
-                  controller:
-                      TextEditingController(text: numberOfCopies.toString()),
+                  controller: TextEditingController(
+                    text: numberOfCopies.toString(),
+                  ),
                   onChanged: (value) {
                     int? parsedValue = int.tryParse(value);
                     if (parsedValue != null && parsedValue > 0) {
@@ -76,14 +77,14 @@ class _PasteSpecialDialogState extends State<PasteSpecialDialog> {
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
+        cancelAction(context),
         TextButton(
           onPressed: () {
             widget.onPasteConfirmed(
-                numberOfCopies, keepAllLinks, keepAllRelations);
+              numberOfCopies,
+              keepAllLinks,
+              keepAllRelations,
+            );
             Navigator.of(context).pop();
           },
           child: const Text('OK'),

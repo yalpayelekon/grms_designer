@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 
 import '../../models/helvar_models/helvar_router.dart';
 
 Widget buildRouterSelectionDialog(
-    List<Map<String, dynamic>> routersInfo, Set<int> selectedIndices) {
+  List<Map<String, dynamic>> routersInfo,
+  Set<int> selectedIndices,
+) {
   return StatefulBuilder(
     builder: (context, setState) {
       return AlertDialog(
@@ -23,7 +26,8 @@ Widget buildRouterSelectionDialog(
                     return CheckboxListTile(
                       title: Text(router.description),
                       subtitle: Text(
-                          '${routerInfo['workgroup']} - ${router.ipAddress}'),
+                        '${routerInfo['workgroup']} - ${router.ipAddress}',
+                      ),
                       value: selectedIndices.contains(index),
                       onChanged: (selected) {
                         setState(() {
@@ -49,7 +53,8 @@ Widget buildRouterSelectionDialog(
                         } else {
                           selectedIndices.clear();
                           selectedIndices.addAll(
-                              List.generate(routersInfo.length, (i) => i));
+                            List.generate(routersInfo.length, (i) => i),
+                          );
                         }
                       });
                     },
@@ -65,10 +70,7 @@ Widget buildRouterSelectionDialog(
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () =>
                 Navigator.of(context).pop(selectedIndices.toList()),

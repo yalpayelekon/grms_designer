@@ -7,6 +7,13 @@ TextButton cancelAction(BuildContext context) {
   );
 }
 
+TextButton closeAction(BuildContext context) {
+  return TextButton(
+    onPressed: () => Navigator.of(context).pop(false),
+    child: const Text('Close'),
+  );
+}
+
 TextButton confirmAction(BuildContext context) {
   return TextButton(
     onPressed: () => Navigator.of(context).pop(true),

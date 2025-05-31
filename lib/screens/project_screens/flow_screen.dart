@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../../models/flowsheet.dart';
 import '../../providers/flowsheet_provider.dart';
 import '../../widgets/wiresheet_flow_editor.dart';
@@ -10,10 +11,7 @@ import '../../utils/logger.dart';
 class FlowScreen extends ConsumerWidget {
   final String flowsheetId;
 
-  const FlowScreen({
-    super.key,
-    required this.flowsheetId,
-  });
+  const FlowScreen({super.key, required this.flowsheetId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,7 +48,10 @@ class FlowScreen extends ConsumerWidget {
   }
 
   void _renameFlowsheet(
-      BuildContext context, WidgetRef ref, Flowsheet flowsheet) {
+    BuildContext context,
+    WidgetRef ref,
+    Flowsheet flowsheet,
+  ) {
     final nameController = TextEditingController(text: flowsheet.name);
 
     showDialog(
@@ -66,18 +67,14 @@ class FlowScreen extends ConsumerWidget {
           autofocus: true,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () {
               final newName = nameController.text.trim();
               if (newName.isNotEmpty) {
-                ref.read(flowsheetsProvider.notifier).renameFlowsheet(
-                      flowsheet.id,
-                      newName,
-                    );
+                ref
+                    .read(flowsheetsProvider.notifier)
+                    .renameFlowsheet(flowsheet.id, newName);
                 Navigator.of(context).pop();
               }
             },
@@ -89,9 +86,13 @@ class FlowScreen extends ConsumerWidget {
   }
 
   void _duplicateFlowsheet(
-      BuildContext context, WidgetRef ref, Flowsheet flowsheet) {
-    final nameController =
-        TextEditingController(text: '${flowsheet.name} (Copy)');
+    BuildContext context,
+    WidgetRef ref,
+    Flowsheet flowsheet,
+  ) {
+    final nameController = TextEditingController(
+      text: '${flowsheet.name} (Copy)',
+    );
 
     showDialog(
       context: context,
@@ -106,20 +107,14 @@ class FlowScreen extends ConsumerWidget {
           autofocus: true,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          cancelAction(context),
           TextButton(
             onPressed: () async {
               final newName = nameController.text.trim();
               if (newName.isNotEmpty) {
                 final duplicate = await ref
                     .read(flowsheetsProvider.notifier)
-                    .duplicateFlowsheet(
-                      flowsheet.id,
-                      newName,
-                    );
+                    .duplicateFlowsheet(flowsheet.id, newName);
 
                 if (duplicate != null && context.mounted) {
                   Navigator.of(context).pop();

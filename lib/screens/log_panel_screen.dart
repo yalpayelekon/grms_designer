@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/dialog_utils.dart';
 import '../services/log_service.dart';
 import '../utils/file_dialog_helper.dart';
 import '../utils/general_ui.dart';
@@ -38,10 +39,14 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
 
     if (_searchQuery.isNotEmpty) {
       logs = logs
-          .where((log) =>
-              log.message.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              (log.tag?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
-                  false))
+          .where(
+            (log) =>
+                log.message.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                (log.tag?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+                    false),
+          )
           .toList();
     }
 
@@ -60,9 +65,11 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
             onPressed: _exportLogs,
           ),
           IconButton(
-            icon: Icon(_autoScroll
-                ? Icons.vertical_align_bottom
-                : Icons.vertical_align_center),
+            icon: Icon(
+              _autoScroll
+                  ? Icons.vertical_align_bottom
+                  : Icons.vertical_align_center,
+            ),
             tooltip: _autoScroll ? 'Auto-scroll On' : 'Auto-scroll Off',
             onPressed: () {
               setState(() {
@@ -130,14 +137,13 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
               });
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: null,
-                child: Text('All Levels'),
+              const PopupMenuItem(value: null, child: Text('All Levels')),
+              ...LogLevel.values.map(
+                (level) => PopupMenuItem(
+                  value: level,
+                  child: Text(level.toString().split('.').last.toUpperCase()),
+                ),
               ),
-              ...LogLevel.values.map((level) => PopupMenuItem(
-                    value: level,
-                    child: Text(level.toString().split('.').last.toUpperCase()),
-                  )),
             ],
           ),
         ],
@@ -165,7 +171,8 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
 
       for (final log in logs) {
         buffer.writeln(
-            '${log.formattedTime} [${log.levelName}]${log.tag != null ? ' [${log.tag}]' : ''}: ${log.message}');
+          '${log.formattedTime} [${log.levelName}]${log.tag != null ? ' [${log.tag}]' : ''}: ${log.message}',
+        );
         if (log.stackTrace != null) {
           buffer.writeln(log.stackTrace);
           buffer.writeln();
@@ -200,25 +207,20 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: ListTile(
-            leading: Container(
-              width: 8,
-              height: 24,
-              color: log.levelColor,
-            ),
+            leading: Container(width: 8, height: 24, color: log.levelColor),
             title: Text(
               log.message,
               style: const TextStyle(fontFamily: 'monospace'),
             ),
             subtitle: Row(
               children: [
-                Text(
-                  log.formattedTime,
-                  style: const TextStyle(fontSize: 12),
-                ),
+                Text(log.formattedTime, style: const TextStyle(fontSize: 12)),
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: log.levelColor.withValues(alpha: 0.2 * 255),
                     borderRadius: BorderRadius.circular(4),
@@ -235,8 +237,10 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
                 if (log.tag != null) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.withValues(alpha: 0.2 * 255),
                       borderRadius: BorderRadius.circular(4),
@@ -283,12 +287,7 @@ class LogPanelScreenState extends ConsumerState<LogPanelScreen> {
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+        actions: [closeAction(context)],
       ),
     );
   }
