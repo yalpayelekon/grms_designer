@@ -72,6 +72,7 @@ lib/
 │   └── query_commands.dart
 ├── providers
 │   ├── flowsheet_provider.dart
+│   ├── group_polling_provider.dart
 │   ├── project_settings_provider.dart
 │   ├── router_connection_provider.dart
 │   ├── settings_provider.dart
@@ -119,6 +120,7 @@ lib/
 │   ├── discovery_service.dart
 │   ├── file_storage_service.dart
 │   ├── flowsheet_storage_service.dart
+│   ├── group_polling_service.dart
 │   ├── log_service.dart
 │   ├── router_storage_service.dart
 │   └── scene_query_service.dart
@@ -147,4 +149,4 @@ lib/
     ├── project_treenode.dart
     └── wiresheet_flow_editor.dart
 
-20 directories, 127 files
+21 directories, 129 files
