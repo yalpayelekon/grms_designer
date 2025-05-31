@@ -20,3 +20,10 @@ TextButton confirmAction(BuildContext context) {
     child: const Text('OK'),
   );
 }
+
+TextButton confirmActionWithText(BuildContext context, String text) {
+  return TextButton(
+    onPressed: () => Navigator.of(context).pop(text),
+    child: const Text('OK'),
+  );
+}

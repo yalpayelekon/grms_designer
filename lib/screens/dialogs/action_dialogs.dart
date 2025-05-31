@@ -38,10 +38,7 @@ Future<void> showDeviceDirectProportionDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -91,10 +88,7 @@ Future<void> showDeviceRecallSceneDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -139,10 +133,7 @@ Future<void> showRecallSceneDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -187,10 +178,7 @@ Future<void> showStoreSceneDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -235,10 +223,7 @@ Future<void> showDirectProportionDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -283,10 +268,7 @@ Future<void> showModifyProportionDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -331,10 +313,7 @@ Future<void> showDirectLevelDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -375,10 +354,7 @@ Future<void> showDeviceDirectLevelDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );
@@ -428,10 +404,7 @@ Future<void> showDeviceModifyProportionDialog(
       ),
       actions: [
         cancelAction(context),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const Text('OK'),
-        ),
+        confirmActionWithText(context, controller.text),
       ],
     ),
   );

@@ -81,14 +81,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             content: const Text(
               'No Helvar routers were discovered on the network.',
             ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
+            actions: [confirmAction(context)],
           );
         },
       );
