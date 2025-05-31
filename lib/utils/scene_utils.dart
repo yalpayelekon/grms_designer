@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 
 String getSceneDisplayName(int scene) {
@@ -28,16 +26,16 @@ String getSceneDisplayName(int scene) {
 Color getSceneChipColor(int scene) {
   switch (scene) {
     case 128: // Off
-      return Colors.red.withOpacity(0.1);
+      return Colors.red.withValues(alpha: 0.1 * 255);
     case 129: // Min Level
-      return Colors.orange.withOpacity(0.1);
+      return Colors.orange.withValues(alpha: 0.1 * 255);
     case 130: // Max Level
-      return Colors.green.withOpacity(0.1);
+      return Colors.green.withValues(alpha: 0.1 * 255);
     default:
       if (scene >= 137 && scene <= 237) {
         // Percentage scenes
-        return Colors.purple.withOpacity(0.1);
+        return Colors.purple.withValues(alpha: 0.1 * 255);
       }
-      return Colors.blue.withOpacity(0.1);
+      return Colors.blue.withValues(alpha: 0.1 * 255);
   }
 }

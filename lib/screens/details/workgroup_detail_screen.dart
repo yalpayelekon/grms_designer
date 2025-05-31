@@ -226,9 +226,11 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1 * 255),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  border: Border.all(
+                    color: Colors.green.withValues(alpha: 0.3 * 255),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +282,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.2),
+                              color: Colors.green.withValues(alpha: 0.2 * 255),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -298,9 +300,11 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1 * 255),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  border: Border.all(
+                    color: Colors.grey.withValues(alpha: 0.3 * 255),
+                  ),
                 ),
                 child: Row(
                   children: [
