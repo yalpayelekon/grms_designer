@@ -1,13 +1,13 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
+import 'package:grms_designer/utils/device_utils.dart';
+import 'package:grms_designer/utils/treeview_utils.dart';
 import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/output_device.dart';
-import '../../services/device_query_service.dart';
 
 class OutputPointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -38,8 +38,6 @@ class OutputPointsDetailScreen extends ConsumerStatefulWidget {
 class OutputPointsDetailScreenState
     extends ConsumerState<OutputPointsDetailScreen> {
   final Map<int, bool> _expandedPoints = {};
-  bool _autoRefresh = false;
-  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -53,12 +51,6 @@ class OutputPointsDetailScreenState
   }
 
   @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final outputDevice = widget.device as HelvarDriverOutputDevice;
     final deviceName = widget.device.description.isEmpty
@@ -69,30 +61,6 @@ class OutputPointsDetailScreenState
       appBar: AppBar(
         title: Text('Output Points - $deviceName'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(_autoRefresh ? Icons.pause : Icons.refresh),
-            tooltip: _autoRefresh ? 'Stop Auto Refresh' : 'Start Auto Refresh',
-            onPressed: _toggleAutoRefresh,
-          ),
-          PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'query_all',
-                child: Text('Query All Points'),
-              ),
-              const PopupMenuItem(
-                value: 'export_config',
-                child: Text('Export Point Configuration'),
-              ),
-              const PopupMenuItem(
-                value: 'reset_values',
-                child: Text('Reset All Values'),
-              ),
-            ],
-          ),
-        ],
       ),
       body: outputDevice.outputPoints.isEmpty
           ? const Center(
@@ -136,12 +104,12 @@ class OutputPointsDetailScreenState
         children: [
           ListTile(
             leading: CircleAvatar(
-              backgroundColor: _getPointColor(
+              backgroundColor: getOutputPointColor(
                 point,
               ).withValues(alpha: 0.2 * 255),
               child: Icon(
-                _getPointIcon(point),
-                color: _getPointColor(point),
+                getOutputPointIcon(point),
+                color: getOutputPointColor(point),
                 size: 20,
               ),
             ),
@@ -169,7 +137,7 @@ class OutputPointsDetailScreenState
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        _formatValue(point),
+                        formatOutputPointValue(point),
                         style: TextStyle(
                           color: _getValueColor(point),
                           fontSize: 12,
@@ -221,10 +189,9 @@ class OutputPointsDetailScreenState
                     buildInfoRow('Point ID', point.pointId.toString()),
                     buildInfoRow('Point Type', point.pointType),
                     buildInfoRow(
-                      'Description',
-                      DeviceQueryService.getPointDescription(point.pointId),
+                      'Current Value',
+                      formatOutputPointValue(point),
                     ),
-                    buildInfoRow('Current Value', _formatValue(point)),
                   ],
                 ),
               ),
@@ -233,44 +200,6 @@ class OutputPointsDetailScreenState
         ],
       ),
     );
-  }
-
-  IconData _getPointIcon(OutputPoint point) {
-    switch (point.pointId) {
-      case 1: // Device State
-        return Icons.device_hub;
-      case 2: // Lamp Failure
-        return Icons.lightbulb_outline;
-      case 3: // Missing
-        return Icons.help_outline;
-      case 4: // Faulty
-        return Icons.warning;
-      case 5: // Output Level
-        return Icons.tune;
-      case 6: // Power Consumption
-        return Icons.power;
-      default:
-        return Icons.circle;
-    }
-  }
-
-  Color _getPointColor(OutputPoint point) {
-    switch (point.pointId) {
-      case 1: // Device State
-        return Colors.blue;
-      case 2: // Lamp Failure
-        return Colors.red;
-      case 3: // Missing
-        return Colors.orange;
-      case 4: // Faulty
-        return Colors.red;
-      case 5: // Output Level
-        return Colors.green;
-      case 6: // Power Consumption
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
   }
 
   Color _getValueColor(OutputPoint point) {
@@ -288,55 +217,9 @@ class OutputPointsDetailScreenState
     }
   }
 
-  String _formatValue(OutputPoint point) {
-    if (point.pointType == 'boolean') {
-      final value = point.value as bool? ?? false;
-      return value ? 'TRUE' : 'FALSE';
-    } else {
-      final value = (point.value as num?)?.toDouble() ?? 0.0;
-      if (point.pointId == 5) {
-        // Output Level
-        return '${value.toStringAsFixed(0)}%';
-      } else if (point.pointId == 6) {
-        // Power Consumption
-        return '${value.toStringAsFixed(1)}W';
-      }
-      return value.toStringAsFixed(1);
-    }
-  }
-
   void _togglePointExpansion(int pointId) {
     setState(() {
       _expandedPoints[pointId] = !(_expandedPoints[pointId] ?? false);
     });
-  }
-
-  void _toggleAutoRefresh() {
-    setState(() {
-      _autoRefresh = !_autoRefresh;
-    });
-
-    if (_autoRefresh) {
-      _startAutoRefresh();
-      showSnackBarMsg(context, 'Auto refresh started (30s interval)');
-    } else {
-      _stopAutoRefresh();
-      showSnackBarMsg(context, 'Auto refresh stopped');
-    }
-  }
-
-  void _startAutoRefresh() {}
-
-  void _stopAutoRefresh() {}
-
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'query_all':
-        break;
-      case 'export_config':
-        break;
-      case 'reset_values':
-        break;
-    }
   }
 }
