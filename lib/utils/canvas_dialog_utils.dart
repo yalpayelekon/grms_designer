@@ -5,8 +5,8 @@ import 'package:grms_designer/niagara/models/component.dart';
 import 'package:grms_designer/niagara/models/component_type.dart';
 import 'package:grms_designer/niagara/models/ramp_component.dart';
 import 'package:grms_designer/niagara/models/rectangle.dart';
-import 'package:grms_designer/utils/canvas_utils.dart';
 import 'package:grms_designer/utils/component_ui_utils.dart';
+import 'package:grms_designer/utils/menu_utils.dart';
 import 'package:grms_designer/utils/ui_helpers.dart';
 
 void showAddComponentDialogAtPosition(
@@ -287,7 +287,7 @@ void showCanvasContextMenu(
       Rect.fromPoints(globalPosition, globalPosition),
       Offset.zero & overlay.size,
     ),
-    items: [...canvasMenuOptions(clipboardManager)],
+    items: canvasMenuOptions(clipboardManager),
   ).then((value) {
     if (value == null) return;
 
@@ -328,7 +328,7 @@ void showComponentContextMenu(
       Rect.fromPoints(position, position),
       Offset.zero & overlay.size,
     ),
-    items: showContextMenuOptions(clipboardManager),
+    items: componentContextMenuOptions(clipboardManager),
   ).then((value) {
     if (value == null) return;
 
