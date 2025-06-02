@@ -1,4 +1,4 @@
-import '../../utils/logger.dart';
+import '../../utils/core/logger.dart';
 import 'helvar_device.dart';
 
 class HelvarRouter {
@@ -125,7 +125,8 @@ class HelvarRouter {
       deviceTypeCode: json['deviceTypeCode'] as int?,
       deviceState: json['deviceState'] as String?,
       deviceStateCode: json['deviceStateCode'] as int?,
-      devices: (json['devices'] as List?)
+      devices:
+          (json['devices'] as List?)
               ?.map((deviceJson) => HelvarDevice.fromJson(deviceJson))
               .whereType<HelvarDevice>()
               .toList() ??
@@ -136,8 +137,9 @@ class HelvarRouter {
   Map<String, dynamic> toJson() {
     final subnetsJson = <String, List<Map<String, dynamic>>>{};
     devicesBySubnet.forEach((subnet, subnetDevices) {
-      subnetsJson['subnet$subnet'] =
-          subnetDevices.map((device) => device.toJson()).toList();
+      subnetsJson['subnet$subnet'] = subnetDevices
+          .map((device) => device.toJson())
+          .toList();
     });
 
     return {

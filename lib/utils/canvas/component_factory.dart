@@ -6,11 +6,11 @@ import 'package:grms_designer/niagara/home/manager.dart';
 import 'package:grms_designer/niagara/models/component.dart';
 import 'package:grms_designer/niagara/models/component_type.dart';
 import 'package:grms_designer/niagara/models/port_type.dart';
-import 'package:grms_designer/utils/canvas_utils.dart';
-import 'package:grms_designer/utils/component_ui_utils.dart';
-import 'package:grms_designer/utils/device_utils.dart';
-import 'package:grms_designer/utils/logger.dart';
-import 'package:grms_designer/utils/persistent_helper.dart';
+import 'package:grms_designer/utils/canvas/canvas_utils.dart';
+import 'package:grms_designer/utils/ui/component_ui_utils.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
+import 'package:grms_designer/utils/core/logger.dart';
+import 'package:grms_designer/utils/file/persistent_helper.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:grms_designer/models/helvar_models/input_device.dart';
 

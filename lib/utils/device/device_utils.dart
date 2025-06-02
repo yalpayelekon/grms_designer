@@ -7,8 +7,8 @@ import 'package:grms_designer/niagara/models/helvar_device_component.dart';
 
 import 'package:grms_designer/niagara/models/ramp_component.dart';
 import 'package:grms_designer/niagara/models/rectangle.dart';
-import 'package:grms_designer/utils/logger.dart';
-import '../models/helvar_models/input_device.dart';
+import 'package:grms_designer/utils/core/logger.dart';
+import '../../models/helvar_models/input_device.dart';
 
 List<ButtonPoint> generateStandardButtonPoints(String deviceName) {
   final points = <ButtonPoint>[];

@@ -4,7 +4,7 @@ import '../models/helvar_models/workgroup.dart';
 import '../models/helvar_models/helvar_group.dart';
 import 'router_connection_provider.dart';
 import 'workgroups_provider.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 final groupPollingServiceProvider = Provider<GroupPollingService>((ref) {
   final commandService = ref.watch(routerCommandServiceProvider);

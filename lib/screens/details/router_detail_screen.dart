@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
-import 'package:grms_designer/utils/device_utils.dart';
-import 'package:grms_designer/utils/treeview_utils.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
+import 'package:grms_designer/utils/ui/treeview_utils.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:grms_designer/widgets/common/expandable_list_item.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -12,9 +12,9 @@ import '../../models/helvar_models/output_device.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/router_connection_provider.dart';
 import '../../providers/workgroups_provider.dart';
-import '../../utils/file_dialog_helper.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
-import '../../utils/logger.dart';
+import '../../utils/file/file_dialog_helper.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
+import '../../utils/core/logger.dart';
 import '../dialogs/add_device_dialog.dart';
 
 class RouterDetailScreen extends ConsumerStatefulWidget {

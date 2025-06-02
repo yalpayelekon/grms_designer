@@ -9,7 +9,7 @@ import '../protocol/device_types.dart';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
 import '../comm/router_command_service.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 import '../factories/helvar_device_factory.dart';
 import '../protocol/protocol_parser.dart';
 

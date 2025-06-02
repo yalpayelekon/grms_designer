@@ -6,8 +6,8 @@ import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../widgets/common/expandable_list_item.dart';
-import '../../utils/ui_helpers.dart';
-import '../../utils/scene_utils.dart';
+import '../../utils/ui/ui_helpers.dart';
+import '../../utils/device/scene_utils.dart';
 
 class GroupsListScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;

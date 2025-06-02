@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
-import 'package:grms_designer/utils/device_icons.dart';
+import 'package:grms_designer/utils/device/device_icons.dart';
 
 Widget buildDraggable(
   String label,

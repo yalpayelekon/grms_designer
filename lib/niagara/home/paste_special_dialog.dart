@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 
 class PasteSpecialDialog extends StatefulWidget {
   final Function(int, bool, bool) onPasteConfirmed;

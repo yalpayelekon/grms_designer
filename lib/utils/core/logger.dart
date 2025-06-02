@@ -1,4 +1,4 @@
-import '../services/log_service.dart';
+import '../../services/log_service.dart';
 
 LogService? _logService;
 

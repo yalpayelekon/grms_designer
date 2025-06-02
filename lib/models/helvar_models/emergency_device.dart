@@ -1,4 +1,4 @@
-import '../../utils/logger.dart';
+import '../../utils/core/logger.dart';
 import 'device_action.dart';
 import 'helvar_device.dart';
 

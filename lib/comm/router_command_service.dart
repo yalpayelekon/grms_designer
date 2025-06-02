@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/router_connection_provider.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 import 'command_executor.dart';
 import 'command_queue_controller.dart';
 import 'models/command_models.dart';

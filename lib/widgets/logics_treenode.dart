@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/niagara/models/component_type.dart';
-import 'package:grms_designer/utils/component_ui_utils.dart';
+import 'package:grms_designer/utils/ui/component_ui_utils.dart';
 
 TreeNode buildLogicComponentsNode(BuildContext context) {
   return TreeNode(

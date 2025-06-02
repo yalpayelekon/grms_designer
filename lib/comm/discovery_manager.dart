@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:grms_designer/protocol/query_commands.dart';
-import 'package:grms_designer/utils/logger.dart';
+import 'package:grms_designer/utils/core/logger.dart';
 
 import '../protocol/protocol_constants.dart';
 
@@ -14,7 +14,9 @@ class DiscoveryManager {
   Future<void> start(String interfaceIp) async {
     try {
       _socket = await RawDatagramSocket.bind(
-          InternetAddress(interfaceIp), defaultUdpPort);
+        InternetAddress(interfaceIp),
+        defaultUdpPort,
+      );
       isRunning = true;
 
       _socket!.listen((RawSocketEvent event) {
@@ -36,7 +38,8 @@ class DiscoveryManager {
       });
     } catch (e) {
       logError(
-          'Error starting discovery: $e. Check Anydesk or other programs that might be using the port');
+        'Error starting discovery: $e. Check Anydesk or other programs that might be using the port',
+      );
       rethrow;
     }
   }

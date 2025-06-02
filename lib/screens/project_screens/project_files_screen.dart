@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../services/app_directory_service.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import '../../utils/file_dialog_helper.dart';
-import '../../utils/logger.dart';
+import '../../utils/file/file_dialog_helper.dart';
+import '../../utils/core/logger.dart';
 
 class ProjectFilesScreen extends ConsumerStatefulWidget {
   final String directoryName;

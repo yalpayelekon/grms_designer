@@ -8,7 +8,7 @@ import 'screens/home_screen.dart';
 import 'providers/settings_provider.dart';
 import 'services/app_initialization.dart';
 import 'services/log_service.dart';
-import 'utils/logger.dart';
+import 'utils/core/logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

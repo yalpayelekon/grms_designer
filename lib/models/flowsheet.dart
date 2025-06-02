@@ -9,7 +9,7 @@ import '../niagara/models/point_components.dart';
 import '../niagara/models/port.dart';
 import '../niagara/models/rectangle.dart';
 import '../niagara/models/ramp_component.dart';
-import '../utils/helpers.dart';
+import '../utils/core/helpers.dart';
 
 class Flowsheet {
   String id;
@@ -34,12 +34,12 @@ class Flowsheet {
     Size? canvasSize,
     Offset? canvasOffset,
     List<Connection>? connections,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        modifiedAt = modifiedAt ?? DateTime.now(),
-        components = components ?? [],
-        canvasSize = canvasSize ?? const Size(2000, 2000),
-        connections = connections ?? [],
-        canvasOffset = canvasOffset ?? const Offset(0, 0);
+  }) : createdAt = createdAt ?? DateTime.now(),
+       modifiedAt = modifiedAt ?? DateTime.now(),
+       components = components ?? [],
+       canvasSize = canvasSize ?? const Size(2000, 2000),
+       connections = connections ?? [],
+       canvasOffset = canvasOffset ?? const Offset(0, 0);
 
   void updateComponentPosition(String componentId, Offset position) {
     if (!componentPositions.containsKey(componentId)) {
@@ -60,8 +60,9 @@ class Flowsheet {
   }
 
   void updatePortValue(String componentId, int slotIndex, dynamic value) {
-    final componentIndex =
-        components.indexWhere((comp) => comp.id == componentId);
+    final componentIndex = components.indexWhere(
+      (comp) => comp.id == componentId,
+    );
     if (componentIndex >= 0) {
       final component = components[componentIndex];
 
@@ -107,8 +108,9 @@ class Flowsheet {
     if (json['components'] != null) {
       final componentsList = json['components'] as List;
       for (var componentJson in componentsList) {
-        final component =
-            _componentFromJson(componentJson as Map<String, dynamic>);
+        final component = _componentFromJson(
+          componentJson as Map<String, dynamic>,
+        );
 
         if (componentJson['properties'] != null) {
           component.properties.clear();
@@ -116,13 +118,15 @@ class Flowsheet {
           for (var propJson in componentJson['properties'] as List) {
             final Map<String, dynamic> propMap =
                 propJson as Map<String, dynamic>;
-            component.properties.add(Property(
-              name: propMap['name'] as String,
-              index: propMap['index'] as int,
-              isInput: propMap['isInput'] as bool,
-              type: PortType(propMap['type']['type'] as String),
-              value: propMap['value'],
-            ));
+            component.properties.add(
+              Property(
+                name: propMap['name'] as String,
+                index: propMap['index'] as int,
+                isInput: propMap['isInput'] as bool,
+                type: PortType(propMap['type']['type'] as String),
+                value: propMap['value'],
+              ),
+            );
           }
         }
 
@@ -135,8 +139,9 @@ class Flowsheet {
 
             PortType? parameterType;
             if (actionMap['parameterType'] != null) {
-              parameterType =
-                  PortType(actionMap['parameterType']['type'] as String);
+              parameterType = PortType(
+                actionMap['parameterType']['type'] as String,
+              );
             }
 
             PortType? returnType;
@@ -144,14 +149,16 @@ class Flowsheet {
               returnType = PortType(actionMap['returnType']['type'] as String);
             }
 
-            component.actions.add(ActionSlot(
-              name: actionMap['name'] as String,
-              index: actionMap['index'] as int,
-              parameterType: parameterType,
-              returnType: returnType,
-              parameter: actionMap['parameter'],
-              returnValue: actionMap['returnValue'],
-            ));
+            component.actions.add(
+              ActionSlot(
+                name: actionMap['name'] as String,
+                index: actionMap['index'] as int,
+                parameterType: parameterType,
+                returnType: returnType,
+                parameter: actionMap['parameter'],
+                returnValue: actionMap['returnValue'],
+              ),
+            );
           }
         }
 
@@ -162,11 +169,13 @@ class Flowsheet {
             final Map<String, dynamic> topicMap =
                 topicJson as Map<String, dynamic>;
 
-            component.topics.add(Topic(
-              name: topicMap['name'] as String,
-              index: topicMap['index'] as int,
-              eventType: PortType(topicMap['eventType']['type'] as String),
-            ));
+            component.topics.add(
+              Topic(
+                name: topicMap['name'] as String,
+                index: topicMap['index'] as int,
+                eventType: PortType(topicMap['eventType']['type'] as String),
+              ),
+            );
 
             if (topicMap['lastEvent'] != null) {
               final topic = component.topics.last;
@@ -199,12 +208,14 @@ class Flowsheet {
       for (var connectionJson in connectionsList) {
         final Map<String, dynamic> connMap =
             connectionJson as Map<String, dynamic>;
-        parsedConnections.add(Connection(
-          fromComponentId: connMap['fromComponentId'] as String,
-          fromPortIndex: connMap['fromPortIndex'] as int,
-          toComponentId: connMap['toComponentId'] as String,
-          toPortIndex: connMap['toPortIndex'] as int,
-        ));
+        parsedConnections.add(
+          Connection(
+            fromComponentId: connMap['fromComponentId'] as String,
+            fromPortIndex: connMap['fromPortIndex'] as int,
+            toComponentId: connMap['toComponentId'] as String,
+            toPortIndex: connMap['toPortIndex'] as int,
+          ),
+        );
       }
     }
 
@@ -270,8 +281,9 @@ class Flowsheet {
   }
 
   void updateComponent(String componentId, Component updatedComponent) {
-    final index =
-        components.indexWhere((component) => component.id == componentId);
+    final index = components.indexWhere(
+      (component) => component.id == componentId,
+    );
     if (index >= 0) {
       components[index] = updatedComponent;
       modifiedAt = DateTime.now();
@@ -283,8 +295,12 @@ class Flowsheet {
     modifiedAt = DateTime.now();
   }
 
-  void removeConnection(String fromComponentId, int fromPortIndex,
-      String toComponentId, int toPortIndex) {
+  void removeConnection(
+    String fromComponentId,
+    int fromPortIndex,
+    String toComponentId,
+    int toPortIndex,
+  ) {
     connections.removeWhere(
       (connection) =>
           connection.fromComponentId == fromComponentId &&
@@ -317,10 +333,7 @@ class Flowsheet {
       case ComponentType.IS_GREATER_THAN:
       case ComponentType.IS_LESS_THAN:
       case ComponentType.IS_EQUAL:
-        return LogicComponent(
-          id: id,
-          type: ComponentType(componentType),
-        );
+        return LogicComponent(id: id, type: ComponentType(componentType));
 
       case ComponentType.ADD:
       case ComponentType.SUBTRACT:
@@ -330,10 +343,7 @@ class Flowsheet {
       case ComponentType.MIN:
       case ComponentType.POWER:
       case ComponentType.ABS:
-        return MathComponent(
-          id: id,
-          type: ComponentType(componentType),
-        );
+        return MathComponent(id: id, type: ComponentType(componentType));
 
       case ComponentType.BOOLEAN_WRITABLE:
       case ComponentType.NUMERIC_WRITABLE:
@@ -341,20 +351,13 @@ class Flowsheet {
       case ComponentType.BOOLEAN_POINT:
       case ComponentType.NUMERIC_POINT:
       case ComponentType.STRING_POINT:
-        return PointComponent(
-          id: id,
-          type: ComponentType(componentType),
-        );
+        return PointComponent(id: id, type: ComponentType(componentType));
 
       case RectangleComponent.RECTANGLE:
-        return RectangleComponent(
-          id: id,
-        );
+        return RectangleComponent(id: id);
 
       case RampComponent.RAMP:
-        return RampComponent(
-          id: id,
-        );
+        return RampComponent(id: id);
 
       default:
         return PointComponent(
@@ -367,53 +370,47 @@ class Flowsheet {
   static Map<String, dynamic> _componentToJson(Component component) {
     final Map<String, dynamic> json = {
       'id': component.id,
-      'type': {
-        'type': component.type.type,
-      },
+      'type': {'type': component.type.type},
       'properties': component.properties
-          .map((prop) => {
-                'name': prop.name,
-                'index': prop.index,
-                'isInput': prop.isInput,
-                'type': {
-                  'type': prop.type.type,
-                },
-                'value': prop.value,
-              })
+          .map(
+            (prop) => {
+              'name': prop.name,
+              'index': prop.index,
+              'isInput': prop.isInput,
+              'type': {'type': prop.type.type},
+              'value': prop.value,
+            },
+          )
           .toList(),
       'actions': component.actions
-          .map((action) => {
-                'name': action.name,
-                'index': action.index,
-                'parameterType': action.parameterType != null
-                    ? {
-                        'type': action.parameterType!.type,
-                      }
-                    : null,
-                'returnType': action.returnType != null
-                    ? {
-                        'type': action.returnType!.type,
-                      }
-                    : null,
-              })
+          .map(
+            (action) => {
+              'name': action.name,
+              'index': action.index,
+              'parameterType': action.parameterType != null
+                  ? {'type': action.parameterType!.type}
+                  : null,
+              'returnType': action.returnType != null
+                  ? {'type': action.returnType!.type}
+                  : null,
+            },
+          )
           .toList(),
       'topics': component.topics
-          .map((topic) => {
-                'name': topic.name,
-                'index': topic.index,
-                'eventType': {
-                  'type': topic.eventType.type,
-                },
-              })
+          .map(
+            (topic) => {
+              'name': topic.name,
+              'index': topic.index,
+              'eventType': {'type': topic.eventType.type},
+            },
+          )
           .toList(),
-      'inputConnections':
-          component.inputConnections.map((key, value) => MapEntry(
-                key.toString(),
-                {
-                  'componentId': value.componentId,
-                  'portIndex': value.portIndex,
-                },
-              )),
+      'inputConnections': component.inputConnections.map(
+        (key, value) => MapEntry(key.toString(), {
+          'componentId': value.componentId,
+          'portIndex': value.portIndex,
+        }),
+      ),
     };
 
     return json;
@@ -423,8 +420,10 @@ class Flowsheet {
     final flowsheet = Flowsheet.fromJsonSuper(json);
 
     if (json['componentPositions'] != null) {
-      (json['componentPositions'] as Map<String, dynamic>)
-          .forEach((key, value) {
+      (json['componentPositions'] as Map<String, dynamic>).forEach((
+        key,
+        value,
+      ) {
         flowsheet.componentPositions[key] = Offset(
           (value['dx'] as num).toDouble(),
           (value['dy'] as num).toDouble(),
@@ -462,35 +461,27 @@ class Flowsheet {
       'name': name,
       'createdAt': createdAt.toIso8601String(),
       'modifiedAt': modifiedAt.toIso8601String(),
-      'components':
-          components.map((component) => _componentToJson(component)).toList(),
-      'connections': connections
-          .map((connection) => {
-                'fromComponentId': connection.fromComponentId,
-                'fromPortIndex': connection.fromPortIndex,
-                'toComponentId': connection.toComponentId,
-                'toPortIndex': connection.toPortIndex,
-              })
+      'components': components
+          .map((component) => _componentToJson(component))
           .toList(),
-      'canvasSize': {
-        'width': canvasSize.width,
-        'height': canvasSize.height,
-      },
-      'canvasOffset': {
-        'dx': canvasOffset.dx,
-        'dy': canvasOffset.dy,
-      },
+      'connections': connections
+          .map(
+            (connection) => {
+              'fromComponentId': connection.fromComponentId,
+              'fromPortIndex': connection.fromPortIndex,
+              'toComponentId': connection.toComponentId,
+              'toPortIndex': connection.toPortIndex,
+            },
+          )
+          .toList(),
+      'canvasSize': {'width': canvasSize.width, 'height': canvasSize.height},
+      'canvasOffset': {'dx': canvasOffset.dx, 'dy': canvasOffset.dy},
       'inputConnectionsMap': inputConnectionsMap,
     };
 
-    json['componentPositions'] =
-        componentPositions.map((key, value) => MapEntry(
-              key,
-              {
-                'dx': value.dx,
-                'dy': value.dy,
-              },
-            ));
+    json['componentPositions'] = componentPositions.map(
+      (key, value) => MapEntry(key, {'dx': value.dx, 'dy': value.dy}),
+    );
 
     json['componentWidths'] = componentWidths;
 
@@ -514,12 +505,14 @@ class Flowsheet {
     for (var connection in connections) {
       if (oldToNewIdMap.containsKey(connection.fromComponentId) &&
           oldToNewIdMap.containsKey(connection.toComponentId)) {
-        connectionCopies.add(Connection(
-          fromComponentId: oldToNewIdMap[connection.fromComponentId]!,
-          fromPortIndex: connection.fromPortIndex,
-          toComponentId: oldToNewIdMap[connection.toComponentId]!,
-          toPortIndex: connection.toPortIndex,
-        ));
+        connectionCopies.add(
+          Connection(
+            fromComponentId: oldToNewIdMap[connection.fromComponentId]!,
+            fromPortIndex: connection.fromPortIndex,
+            toComponentId: oldToNewIdMap[connection.toComponentId]!,
+            toPortIndex: connection.toPortIndex,
+          ),
+        );
       }
     }
 

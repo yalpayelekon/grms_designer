@@ -6,7 +6,7 @@ import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/input_device.dart';
-import '../../utils/treeview_utils.dart';
+import '../../utils/ui/treeview_utils.dart';
 
 class PointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;

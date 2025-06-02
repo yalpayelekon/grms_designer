@@ -4,7 +4,7 @@ import '../models/helvar_models/workgroup.dart';
 import '../models/helvar_models/helvar_device.dart';
 import '../services/file_storage_service.dart';
 import '../services/router_storage_service.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 import '../comm/models/command_models.dart';
 import '../comm/router_command_service.dart';
 import '../comm/router_connection.dart';

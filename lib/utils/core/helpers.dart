@@ -1,15 +1,18 @@
-import '../models/helvar_models/helvar_device.dart';
-import '../models/helvar_models/workgroup.dart';
-import '../niagara/models/component.dart';
-import '../niagara/models/component_type.dart';
-import '../niagara/models/logic_components.dart';
-import '../niagara/models/math_components.dart';
-import '../niagara/models/point_components.dart';
-import '../niagara/models/port.dart';
-import '../niagara/models/port_type.dart';
+import '../../models/helvar_models/helvar_device.dart';
+import '../../models/helvar_models/workgroup.dart';
+import '../../niagara/models/component.dart';
+import '../../niagara/models/component_type.dart';
+import '../../niagara/models/logic_components.dart';
+import '../../niagara/models/math_components.dart';
+import '../../niagara/models/point_components.dart';
+import '../../niagara/models/port.dart';
+import '../../niagara/models/port_type.dart';
 
 HelvarDevice? findDevice(
-    int deviceId, List<Workgroup> workgroups, String deviceAddress) {
+  int deviceId,
+  List<Workgroup> workgroups,
+  String deviceAddress,
+) {
   for (final workgroup in workgroups) {
     for (final router in workgroup.routers) {
       for (final device in router.devices) {
@@ -27,25 +30,13 @@ Component deepCopyComponent(Component original, String newId) {
   Component copy;
 
   if (original is PointComponent) {
-    copy = PointComponent(
-      id: newId,
-      type: ComponentType(original.type.type),
-    );
+    copy = PointComponent(id: newId, type: ComponentType(original.type.type));
   } else if (original is LogicComponent) {
-    copy = LogicComponent(
-      id: newId,
-      type: ComponentType(original.type.type),
-    );
+    copy = LogicComponent(id: newId, type: ComponentType(original.type.type));
   } else if (original is MathComponent) {
-    copy = MathComponent(
-      id: newId,
-      type: ComponentType(original.type.type),
-    );
+    copy = MathComponent(id: newId, type: ComponentType(original.type.type));
   } else {
-    copy = PointComponent(
-      id: newId,
-      type: ComponentType(original.type.type),
-    );
+    copy = PointComponent(id: newId, type: ComponentType(original.type.type));
   }
 
   copy.properties.clear();
@@ -70,8 +61,9 @@ Component deepCopyComponent(Component original, String newId) {
       parameterType: action.parameterType != null
           ? PortType(action.parameterType!.type)
           : null,
-      returnType:
-          action.returnType != null ? PortType(action.returnType!.type) : null,
+      returnType: action.returnType != null
+          ? PortType(action.returnType!.type)
+          : null,
       parameter: action.parameter,
       returnValue: action.returnValue,
     );

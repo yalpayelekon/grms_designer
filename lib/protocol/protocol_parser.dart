@@ -1,4 +1,4 @@
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 class ProtocolParser {
   static String? extractResponseValue(String response) {

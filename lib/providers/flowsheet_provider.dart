@@ -5,7 +5,7 @@ import '../niagara/models/component.dart';
 import '../niagara/models/connection.dart';
 import '../models/flowsheet.dart';
 import '../services/flowsheet_storage_service.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   final FlowsheetStorageService _storageService;
@@ -13,8 +13,8 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   bool _initialized = false;
 
   FlowsheetsNotifier({required FlowsheetStorageService storageService})
-      : _storageService = storageService,
-        super([]) {
+    : _storageService = storageService,
+      super([]) {
     _initializeData();
   }
 
@@ -27,8 +27,9 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
       final flowsheets = await _storageService.listFlowsheets();
 
       if (flowsheets.isEmpty) {
-        final defaultFlowsheet =
-            await _storageService.createFlowsheet('Default Flowsheet');
+        final defaultFlowsheet = await _storageService.createFlowsheet(
+          'Default Flowsheet',
+        );
         state = [defaultFlowsheet];
         _activeFlowsheetId = defaultFlowsheet.id;
       } else {
@@ -46,16 +47,17 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
     if (_activeFlowsheetId == null || state.isEmpty) return null;
 
     try {
-      return state.firstWhere(
-        (sheet) => sheet.id == _activeFlowsheetId,
-      );
+      return state.firstWhere((sheet) => sheet.id == _activeFlowsheetId);
     } catch (e) {
       return state.isNotEmpty ? state.first : null;
     }
   }
 
   Future<void> updateComponentPosition(
-      String flowsheetId, String componentId, Offset position) async {
+    String flowsheetId,
+    String componentId,
+    Offset position,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
@@ -67,7 +69,10 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   }
 
   Future<void> updateComponentWidth(
-      String flowsheetId, String componentId, double width) async {
+    String flowsheetId,
+    String componentId,
+    double width,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
@@ -78,8 +83,12 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
     }
   }
 
-  Future<void> updatePortValue(String flowsheetId, String componentId,
-      int slotIndex, dynamic value) async {
+  Future<void> updatePortValue(
+    String flowsheetId,
+    String componentId,
+    int slotIndex,
+    dynamic value,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
@@ -135,8 +144,10 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   }
 
   Future<Flowsheet?> duplicateFlowsheet(String id, String newName) async {
-    final duplicatedFlowsheet =
-        await _storageService.duplicateFlowsheet(id, newName);
+    final duplicatedFlowsheet = await _storageService.duplicateFlowsheet(
+      id,
+      newName,
+    );
 
     if (duplicatedFlowsheet != null) {
       state = [...state, duplicatedFlowsheet];
@@ -148,7 +159,9 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   }
 
   Future<void> addFlowsheetComponent(
-      String flowsheetId, Component component) async {
+    String flowsheetId,
+    Component component,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
@@ -159,8 +172,11 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
     }
   }
 
-  Future<void> updateFlowsheetComponent(String flowsheetId, String componentId,
-      Component updatedComponent) async {
+  Future<void> updateFlowsheetComponent(
+    String flowsheetId,
+    String componentId,
+    Component updatedComponent,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
@@ -172,7 +188,9 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   }
 
   Future<void> removeFlowsheetComponent(
-      String flowsheetId, String componentId) async {
+    String flowsheetId,
+    String componentId,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
@@ -194,14 +212,23 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
     }
   }
 
-  Future<void> removeConnection(String flowsheetId, String fromComponentId,
-      int fromPortIndex, String toComponentId, int toPortIndex) async {
+  Future<void> removeConnection(
+    String flowsheetId,
+    String fromComponentId,
+    int fromPortIndex,
+    String toComponentId,
+    int toPortIndex,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
       final updatedState = List<Flowsheet>.from(state);
       updatedState[index].removeConnection(
-          fromComponentId, fromPortIndex, toComponentId, toPortIndex);
+        fromComponentId,
+        fromPortIndex,
+        toComponentId,
+        toPortIndex,
+      );
       state = updatedState;
       await _storageService.saveFlowsheet(updatedState[index]);
     }
@@ -230,7 +257,9 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   }
 
   Future<void> updateFlowsheet(
-      String flowsheetId, Flowsheet updatedFlowsheet) async {
+    String flowsheetId,
+    Flowsheet updatedFlowsheet,
+  ) async {
     final index = state.indexWhere((sheet) => sheet.id == flowsheetId);
 
     if (index >= 0) {
@@ -259,22 +288,25 @@ class FlowsheetsNotifier extends StateNotifier<List<Flowsheet>> {
   }
 
   static Future<void> saveFlowsheetFromProvider(
-      WidgetRef ref, String flowsheetId) async {
+    WidgetRef ref,
+    String flowsheetId,
+  ) async {
     await ref.read(flowsheetsProvider.notifier).saveFlowsheet(flowsheetId);
   }
 }
 
-final flowsheetStorageServiceProvider =
-    Provider<FlowsheetStorageService>((ref) {
+final flowsheetStorageServiceProvider = Provider<FlowsheetStorageService>((
+  ref,
+) {
   return FlowsheetStorageService();
 });
 
 final flowsheetsProvider =
     StateNotifierProvider<FlowsheetsNotifier, List<Flowsheet>>((ref) {
-  return FlowsheetsNotifier(
-    storageService: ref.watch(flowsheetStorageServiceProvider),
-  );
-});
+      return FlowsheetsNotifier(
+        storageService: ref.watch(flowsheetStorageServiceProvider),
+      );
+    });
 
 final activeFlowsheetProvider = Provider<Flowsheet?>((ref) {
   final notifier = ref.watch(flowsheetsProvider.notifier);

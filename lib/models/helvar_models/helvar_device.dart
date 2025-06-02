@@ -1,6 +1,6 @@
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
-import 'package:grms_designer/utils/logger.dart';
+import 'package:grms_designer/utils/core/logger.dart';
 
 import 'emergency_device.dart';
 import 'device_action.dart';

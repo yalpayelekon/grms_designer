@@ -5,8 +5,8 @@ import 'package:uuid/uuid.dart';
 import '../models/flowsheet.dart';
 import '../niagara/models/component.dart';
 import '../niagara/models/connection.dart';
-import '../utils/helpers.dart';
-import '../utils/logger.dart';
+import '../utils/core/helpers.dart';
+import '../utils/core/logger.dart';
 import 'app_directory_service.dart';
 
 class FlowsheetStorageService {
@@ -69,7 +69,9 @@ class FlowsheetStorageService {
 
       if (await file.exists()) {
         await _directoryService.createBackup(
-            flowsheetsDir, 'flowsheet_$id.json');
+          flowsheetsDir,
+          'flowsheet_$id.json',
+        );
 
         await file.delete();
         logInfo('Flowsheet deleted: $filePath');
@@ -114,10 +116,7 @@ class FlowsheetStorageService {
 
   Future<Flowsheet> createFlowsheet(String name) async {
     final id = const Uuid().v4();
-    final flowsheet = Flowsheet(
-      id: id,
-      name: name,
-    );
+    final flowsheet = Flowsheet(id: id, name: name);
 
     await saveFlowsheet(flowsheet);
     return flowsheet;
@@ -160,8 +159,10 @@ class FlowsheetStorageService {
         final String newComponentId = "${originalComponent.id}_copy";
         oldToNewIdMap[oldId] = newComponentId;
 
-        Component newComponent =
-            deepCopyComponent(originalComponent, newComponentId);
+        Component newComponent = deepCopyComponent(
+          originalComponent,
+          newComponentId,
+        );
         newComponents.add(newComponent);
       }
 
@@ -169,12 +170,15 @@ class FlowsheetStorageService {
       for (var originalConnection in original.connections) {
         if (oldToNewIdMap.containsKey(originalConnection.fromComponentId) &&
             oldToNewIdMap.containsKey(originalConnection.toComponentId)) {
-          newConnections.add(Connection(
-            fromComponentId: oldToNewIdMap[originalConnection.fromComponentId]!,
-            fromPortIndex: originalConnection.fromPortIndex,
-            toComponentId: oldToNewIdMap[originalConnection.toComponentId]!,
-            toPortIndex: originalConnection.toPortIndex,
-          ));
+          newConnections.add(
+            Connection(
+              fromComponentId:
+                  oldToNewIdMap[originalConnection.fromComponentId]!,
+              fromPortIndex: originalConnection.fromPortIndex,
+              toComponentId: oldToNewIdMap[originalConnection.toComponentId]!,
+              toPortIndex: originalConnection.toPortIndex,
+            ),
+          );
         }
       }
 
@@ -227,8 +231,12 @@ class FlowsheetStorageService {
       await file.writeAsString(jsonString);
 
       final fileName = filePath.split(Platform.pathSeparator).last;
-      await file.copy(await _directoryService.getFilePath(
-          AppDirectoryService.exportsDir, fileName));
+      await file.copy(
+        await _directoryService.getFilePath(
+          AppDirectoryService.exportsDir,
+          fileName,
+        ),
+      );
 
       return true;
     } catch (e) {
@@ -269,7 +277,9 @@ class FlowsheetStorageService {
   Future<String?> createFlowsheetBackup(String id) async {
     try {
       return _directoryService.createBackup(
-          flowsheetsDir, 'flowsheet_$id.json');
+        flowsheetsDir,
+        'flowsheet_$id.json',
+      );
     } catch (e) {
       logError('Error creating flowsheet backup: $e');
       return null;

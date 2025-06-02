@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
-import 'package:grms_designer/utils/device_utils.dart';
-import 'package:grms_designer/utils/treeview_utils.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
+import 'package:grms_designer/utils/ui/treeview_utils.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import '../protocol/protocol_constants.dart';
 import '../protocol/query_commands.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 enum SocketStatus { disconnected, connecting, connected, reconnecting, failed }
 

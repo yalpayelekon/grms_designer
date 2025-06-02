@@ -1,4 +1,4 @@
-import 'package:grms_designer/utils/device_utils.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
 
 import '../models/helvar_models/helvar_device.dart';
 import '../models/helvar_models/input_device.dart';

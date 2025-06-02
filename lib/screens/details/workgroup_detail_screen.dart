@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/date_utils.dart';
-import 'package:grms_designer/utils/logger.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/core/date_utils.dart';
+import 'package:grms_designer/utils/core/logger.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../providers/workgroups_provider.dart';

@@ -1,7 +1,7 @@
 import 'package:grms_designer/models/helvar_models/output_point.dart';
-import 'package:grms_designer/utils/device_utils.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
 
-import '../../utils/logger.dart';
+import '../../utils/core/logger.dart';
 import 'device_action.dart';
 import 'helvar_device.dart';
 

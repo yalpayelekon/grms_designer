@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import '../models/helvar_models/helvar_router.dart';
 import '../models/helvar_models/helvar_device.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 class RouterStorageService {
   Future<String> get _localPath async {
@@ -12,13 +12,18 @@ class RouterStorageService {
   }
 
   Future<String> _getRouterFilePath(
-      String workgroupId, String routerAddress) async {
+    String workgroupId,
+    String routerAddress,
+  ) async {
     final path = await _localPath;
     return '$path/workgroup_${workgroupId}_router_$routerAddress.json';
   }
 
-  Future<void> saveRouterDevices(String workgroupId, String routerAddress,
-      List<HelvarDevice> devices) async {
+  Future<void> saveRouterDevices(
+    String workgroupId,
+    String routerAddress,
+    List<HelvarDevice> devices,
+  ) async {
     try {
       final filePath = await _getRouterFilePath(workgroupId, routerAddress);
       final file = File(filePath);
@@ -35,7 +40,9 @@ class RouterStorageService {
   }
 
   Future<List<HelvarDevice>> loadRouterDevices(
-      String workgroupId, String routerAddress) async {
+    String workgroupId,
+    String routerAddress,
+  ) async {
     try {
       final filePath = await _getRouterFilePath(workgroupId, routerAddress);
       final file = File(filePath);
@@ -56,7 +63,9 @@ class RouterStorageService {
   }
 
   Future<void> exportRouterDevices(
-      List<HelvarDevice> devices, String filePath) async {
+    List<HelvarDevice> devices,
+    String filePath,
+  ) async {
     try {
       final file = File(filePath);
 
@@ -90,7 +99,9 @@ class RouterStorageService {
   }
 
   Future<void> updateRouterDevices(
-      String workgroupId, HelvarRouter router) async {
+    String workgroupId,
+    HelvarRouter router,
+  ) async {
     try {
       await saveRouterDevices(workgroupId, router.address, router.devices);
     } catch (e) {

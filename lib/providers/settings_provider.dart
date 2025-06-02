@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/app_directory_service.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 class AppSettings {
   final ThemeMode themeMode;
@@ -70,8 +70,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> _loadSettings() async {
     try {
-      final filePath =
-          await _directoryService.getSettingsFilePath(_settingsFileName);
+      final filePath = await _directoryService.getSettingsFilePath(
+        _settingsFileName,
+      );
       final file = File(filePath);
 
       if (await file.exists()) {
@@ -87,8 +88,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> _saveSettings() async {
     try {
-      final filePath =
-          await _directoryService.getSettingsFilePath(_settingsFileName);
+      final filePath = await _directoryService.getSettingsFilePath(
+        _settingsFileName,
+      );
       final file = File(filePath);
 
       final jsonString = jsonEncode(state.toJson());
@@ -128,7 +130,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<String?> createSettingsBackup() async {
     try {
       return _directoryService.createBackup(
-          AppDirectoryService.settingsDir, _settingsFileName);
+        AppDirectoryService.settingsDir,
+        _settingsFileName,
+      );
     } catch (e) {
       logError('Error creating settings backup: $e');
       return null;
@@ -137,8 +141,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<bool> restoreSettingsFromBackup(String backupFileName) async {
     try {
-      final backupFilePath =
-          await _directoryService.getBackupFilePath(backupFileName);
+      final backupFilePath = await _directoryService.getBackupFilePath(
+        backupFileName,
+      );
       final backupFile = File(backupFilePath);
 
       if (!await backupFile.exists()) {
@@ -159,8 +164,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 }
 
-final settingsProvider =
-    StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
+final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((
+  ref,
+) {
   return SettingsNotifier();
 });
 

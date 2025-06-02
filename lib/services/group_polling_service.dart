@@ -4,7 +4,7 @@ import '../models/helvar_models/helvar_group.dart';
 import '../models/helvar_models/workgroup.dart';
 import '../protocol/query_commands.dart';
 import '../protocol/protocol_parser.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 class GroupPollingService {
   final RouterCommandService _commandService;

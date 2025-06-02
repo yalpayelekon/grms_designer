@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 import '../providers/group_polling_provider.dart';
 import '../providers/workgroups_provider.dart';
 import 'app_directory_service.dart';

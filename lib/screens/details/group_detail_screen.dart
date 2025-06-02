@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
-import '../../utils/ui_helpers.dart';
+import '../../utils/ui/ui_helpers.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
   final HelvarGroup group;

@@ -4,7 +4,7 @@ import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:grms_designer/models/helvar_models/output_device.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
-import 'package:grms_designer/utils/treeview_utils.dart';
+import 'package:grms_designer/utils/ui/treeview_utils.dart';
 import 'package:grms_designer/widgets/draggable_function_node.dart';
 import 'package:grms_designer/widgets/logics_treenode.dart';
 import 'package:grms_designer/widgets/project_treenode.dart';

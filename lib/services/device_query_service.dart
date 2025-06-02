@@ -2,7 +2,7 @@ import '../comm/router_command_service.dart';
 import '../models/helvar_models/output_device.dart';
 import '../protocol/query_commands.dart';
 import '../protocol/protocol_parser.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 class DeviceQueryService {
   final RouterCommandService commandService;

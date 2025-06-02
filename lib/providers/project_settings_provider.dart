@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/project_settings.dart';
 import '../services/app_directory_service.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 
 class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
   final AppDirectoryService _directoryService = AppDirectoryService();
@@ -15,8 +15,9 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
 
   Future<void> _loadSettings() async {
     try {
-      final filePath =
-          await _directoryService.getSettingsFilePath(_settingsFileName);
+      final filePath = await _directoryService.getSettingsFilePath(
+        _settingsFileName,
+      );
       final file = File(filePath);
 
       if (await file.exists()) {
@@ -32,8 +33,9 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
 
   Future<void> _saveSettings() async {
     try {
-      final filePath =
-          await _directoryService.getSettingsFilePath(_settingsFileName);
+      final filePath = await _directoryService.getSettingsFilePath(
+        _settingsFileName,
+      );
       final file = File(filePath);
 
       final jsonString = jsonEncode(state.toJson());
@@ -68,7 +70,9 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
   Future<String?> createSettingsBackup() async {
     try {
       return _directoryService.createBackup(
-          AppDirectoryService.settingsDir, _settingsFileName);
+        AppDirectoryService.settingsDir,
+        _settingsFileName,
+      );
     } catch (e) {
       logError('Error creating project settings backup: $e');
       return null;
@@ -77,8 +81,9 @@ class ProjectSettingsNotifier extends StateNotifier<ProjectSettings> {
 
   Future<bool> restoreSettingsFromBackup(String backupFileName) async {
     try {
-      final backupFilePath =
-          await _directoryService.getBackupFilePath(backupFileName);
+      final backupFilePath = await _directoryService.getBackupFilePath(
+        backupFileName,
+      );
       final backupFile = File(backupFilePath);
 
       if (!await backupFile.exists()) {
@@ -135,8 +140,8 @@ final protocolVersionProvider = Provider<int>((ref) {
 
 final projectSettingsProvider =
     StateNotifierProvider<ProjectSettingsNotifier, ProjectSettings>((ref) {
-  return ProjectSettingsNotifier();
-});
+      return ProjectSettingsNotifier();
+    });
 
 final projectNameProvider = Provider<String>((ref) {
   return ref.watch(projectSettingsProvider).projectName;

@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 
-import '../screens/dialogs/network_interface_dialog.dart';
-import 'logger.dart';
+import '../../screens/dialogs/network_interface_dialog.dart';
+import '../core/logger.dart';
 
 Future<List<NetworkInterfaceDetails>> getNetworkInterfaces() async {
   final result = await Process.run('ipconfig', ['/all']);

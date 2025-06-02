@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../niagara/models/component.dart';
-import '../niagara/models/component_type.dart';
-import '../niagara/models/port_type.dart';
-import '../niagara/models/ramp_component.dart';
-import '../niagara/models/rectangle.dart';
+import '../../niagara/models/component.dart';
+import '../../niagara/models/component_type.dart';
+import '../../niagara/models/port_type.dart';
+import '../../niagara/models/ramp_component.dart';
+import '../../niagara/models/rectangle.dart';
 
 String getComponentSymbol(Component component) {
   if (component.type.type == RectangleComponent.RECTANGLE) {

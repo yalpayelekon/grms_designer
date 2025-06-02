@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/date_utils.dart';
-import 'package:grms_designer/utils/device_utils.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/core/date_utils.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:grms_designer/widgets/common/expandable_list_item.dart';
 import '../../models/helvar_models/helvar_device.dart';
@@ -11,12 +11,12 @@ import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/input_device.dart';
 import '../../models/helvar_models/output_device.dart';
 import '../../models/helvar_models/output_point.dart';
-import '../../utils/treeview_utils.dart';
+import '../../utils/ui/treeview_utils.dart';
 import '../../protocol/query_commands.dart';
 import '../../protocol/protocol_parser.dart';
 import '../../protocol/protocol_constants.dart';
 import '../../providers/router_connection_provider.dart';
-import '../../utils/logger.dart';
+import '../../utils/core/logger.dart';
 
 class DeviceDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -309,7 +309,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
 
     return ExpandableListItem(
       title: 'Points',
-      subtitle: '$pointCount $pointType points',
       leadingIcon: widget.device is HelvarDriverInputDevice
           ? Icons.input
           : Icons.output,

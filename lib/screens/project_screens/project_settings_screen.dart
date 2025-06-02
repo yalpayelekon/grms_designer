@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../providers/project_settings_provider.dart';
 import '../../providers/settings_provider.dart';
 

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/extensions/device_address_extensions.dart';
 import 'package:grms_designer/extensions/group_extensions.dart';
 import 'package:grms_designer/providers/project_settings_provider.dart';
-import 'package:grms_designer/utils/logger.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/core/logger.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 
 import '../comm/models/command_models.dart';
 import '../models/helvar_models/helvar_device.dart';

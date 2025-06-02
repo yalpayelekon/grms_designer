@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/flowsheet.dart';
-import '../niagara/home/manager.dart';
-import '../niagara/models/component.dart';
-import '../niagara/models/connection.dart';
-import '../services/flowsheet_storage_service.dart';
+import '../../models/flowsheet.dart';
+import '../../niagara/home/manager.dart';
+import '../../niagara/models/component.dart';
+import '../../niagara/models/connection.dart';
+import '../../services/flowsheet_storage_service.dart';
 
 class PersistenceHelper {
   final Flowsheet flowsheet;
@@ -34,12 +34,14 @@ class PersistenceHelper {
       final List<Connection> connections = [];
       for (final component in flowManager.components) {
         for (final entry in component.inputConnections.entries) {
-          connections.add(Connection(
-            fromComponentId: entry.value.componentId,
-            fromPortIndex: entry.value.portIndex,
-            toComponentId: component.id,
-            toPortIndex: entry.key,
-          ));
+          connections.add(
+            Connection(
+              fromComponentId: entry.value.componentId,
+              fromPortIndex: entry.value.portIndex,
+              toComponentId: component.id,
+              toPortIndex: entry.key,
+            ),
+          );
         }
       }
       updatedFlowsheet.connections = connections;
@@ -71,7 +73,9 @@ class PersistenceHelper {
   }
 
   Future<void> saveComponentPosition(
-      String componentId, Offset position) async {
+    String componentId,
+    Offset position,
+  ) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
 
@@ -105,7 +109,9 @@ class PersistenceHelper {
   }
 
   Future<void> saveUpdateComponent(
-      String componentId, Component component) async {
+    String componentId,
+    Component component,
+  ) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
 
@@ -135,20 +141,31 @@ class PersistenceHelper {
     });
   }
 
-  Future<void> saveRemoveConnection(String fromComponentId, int fromPortIndex,
-      String toComponentId, int toPortIndex) async {
+  Future<void> saveRemoveConnection(
+    String fromComponentId,
+    int fromPortIndex,
+    String toComponentId,
+    int toPortIndex,
+  ) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
 
       flowsheet.removeConnection(
-          fromComponentId, fromPortIndex, toComponentId, toPortIndex);
+        fromComponentId,
+        fromPortIndex,
+        toComponentId,
+        toPortIndex,
+      );
 
       await storageService.saveFlowsheet(flowsheet);
     });
   }
 
   Future<void> savePortValue(
-      String componentId, int slotIndex, dynamic value) async {
+    String componentId,
+    int slotIndex,
+    dynamic value,
+  ) async {
     await _safeOperation(() async {
       if (!getMountedStatus()) return;
 

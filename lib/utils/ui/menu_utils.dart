@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../niagara/controllers/clipboard_manager.dart';
+import '../../niagara/controllers/clipboard_manager.dart';
 
 List<PopupMenuEntry<String>> canvasMenuOptions(
   ClipboardManager clipboardManager,

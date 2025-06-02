@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../models/flowsheet.dart';
 import '../../providers/flowsheet_provider.dart';
 import '../../widgets/wiresheet_flow_editor.dart';
-import '../../utils/logger.dart';
+import '../../utils/core/logger.dart';
 
 class FlowScreen extends ConsumerWidget {
   final String flowsheetId;

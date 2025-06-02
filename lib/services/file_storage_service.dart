@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import '../models/helvar_models/workgroup.dart';
-import '../utils/logger.dart';
+import '../utils/core/logger.dart';
 import 'app_directory_service.dart';
 
 class FileStorageService {
@@ -9,12 +9,14 @@ class FileStorageService {
   final AppDirectoryService _directoryService = AppDirectoryService();
   Future<void> saveWorkgroups(List<Workgroup> workgroups) async {
     try {
-      final filePath =
-          await _directoryService.getWorkgroupFilePath(_defaultFilename);
+      final filePath = await _directoryService.getWorkgroupFilePath(
+        _defaultFilename,
+      );
       final file = File(filePath);
 
-      final jsonData =
-          workgroups.map((workgroup) => workgroup.toJson()).toList();
+      final jsonData = workgroups
+          .map((workgroup) => workgroup.toJson())
+          .toList();
       final jsonString = jsonEncode(jsonData);
 
       await file.writeAsString(jsonString);
@@ -27,8 +29,9 @@ class FileStorageService {
 
   Future<List<Workgroup>> loadWorkgroups() async {
     try {
-      final filePath =
-          await _directoryService.getWorkgroupFilePath(_defaultFilename);
+      final filePath = await _directoryService.getWorkgroupFilePath(
+        _defaultFilename,
+      );
       final file = File(filePath);
 
       if (!await file.exists()) {
@@ -47,19 +50,25 @@ class FileStorageService {
   }
 
   Future<void> exportWorkgroups(
-      List<Workgroup> workgroups, String filePath) async {
+    List<Workgroup> workgroups,
+    String filePath,
+  ) async {
     try {
       final file = File(filePath);
 
-      final jsonData =
-          workgroups.map((workgroup) => workgroup.toJson()).toList();
+      final jsonData = workgroups
+          .map((workgroup) => workgroup.toJson())
+          .toList();
       final jsonString = jsonEncode(jsonData);
 
       await file.writeAsString(jsonString);
       logInfo('Workgroups exported to: $filePath');
       final fileName = filePath.split(Platform.pathSeparator).last;
       await _directoryService.exportFile(
-          AppDirectoryService.workgroupsDir, _defaultFilename, fileName);
+        AppDirectoryService.workgroupsDir,
+        _defaultFilename,
+        fileName,
+      );
     } catch (e) {
       logError('Error exporting workgroups: $e');
       rethrow;
@@ -77,7 +86,9 @@ class FileStorageService {
       final jsonString = await file.readAsString();
       final List<dynamic> jsonData = jsonDecode(jsonString);
       await _directoryService.createBackup(
-          AppDirectoryService.workgroupsDir, _defaultFilename);
+        AppDirectoryService.workgroupsDir,
+        _defaultFilename,
+      );
 
       return jsonData.map((json) => Workgroup.fromJson(json)).toList();
     } catch (e) {
@@ -88,7 +99,9 @@ class FileStorageService {
 
   Future<String?> createWorkgroupsBackup() async {
     return _directoryService.createBackup(
-        AppDirectoryService.workgroupsDir, _defaultFilename);
+      AppDirectoryService.workgroupsDir,
+      _defaultFilename,
+    );
   }
 
   Future<List<FileSystemEntity>> listWorkgroupBackups() async {
@@ -97,16 +110,18 @@ class FileStorageService {
 
   Future<bool> restoreWorkgroupsFromBackup(String backupFileName) async {
     try {
-      final backupFilePath =
-          await _directoryService.getBackupFilePath(backupFileName);
+      final backupFilePath = await _directoryService.getBackupFilePath(
+        backupFileName,
+      );
       final backupFile = File(backupFilePath);
 
       if (!await backupFile.exists()) {
         return false;
       }
 
-      final targetFilePath =
-          await _directoryService.getWorkgroupFilePath(_defaultFilename);
+      final targetFilePath = await _directoryService.getWorkgroupFilePath(
+        _defaultFilename,
+      );
       await backupFile.copy(targetFilePath);
       return true;
     } catch (e) {

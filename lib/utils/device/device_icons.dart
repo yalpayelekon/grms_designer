@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import '../models/helvar_models/helvar_device.dart';
+import '../../models/helvar_models/helvar_device.dart';
 
 String getDeviceIconAsset(HelvarDevice? device) {
   if (device == null) return 'assets/icons/device.png';
 
-  String hexId =
-      device.hexId.startsWith('0x') ? device.hexId.substring(2) : device.hexId;
+  String hexId = device.hexId.startsWith('0x')
+      ? device.hexId.substring(2)
+      : device.hexId;
 
   hexId = hexId.toLowerCase();
 
@@ -124,15 +125,14 @@ String getDeviceIconAsset(HelvarDevice? device) {
   return 'assets/icons/device.png';
 }
 
-Widget getDeviceIconWidget(HelvarDevice? device,
-    {IconData? iconData, double size = 24.0}) {
+Widget getDeviceIconWidget(
+  HelvarDevice? device, {
+  IconData? iconData,
+  double size = 24.0,
+}) {
   if (iconData != null) {
     return Icon(iconData, size: size);
   }
 
-  return Image.asset(
-    getDeviceIconAsset(device),
-    width: size,
-    height: size,
-  );
+  return Image.asset(getDeviceIconAsset(device), width: size, height: size);
 }

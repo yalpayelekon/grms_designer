@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/utils/ui/ui_helpers.dart';
 
 class WorkgroupSelectionDialog extends StatefulWidget {
   const WorkgroupSelectionDialog({super.key, required this.workgroups});
