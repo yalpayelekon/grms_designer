@@ -128,25 +128,30 @@ lib/
 ├── utils
 │   ├── canvas_dialog_utils.dart
 │   ├── canvas_utils.dart
+│   ├── command_utils.dart
 │   ├── component_factory.dart
+│   ├── component_ui_utils.dart
 │   ├── date_utils.dart
 │   ├── device_icons.dart
 │   ├── device_utils.dart
-│   ├── dialog_utils.dart
 │   ├── file_dialog_helper.dart
-│   ├── general_ui.dart
 │   ├── helpers.dart
 │   ├── logger.dart
+│   ├── menu_utils.dart
 │   ├── network_utils.dart
 │   ├── persistent_helper.dart
 │   ├── scene_utils.dart
-│   └── treeview_utils.dart
+│   ├── treeview_utils.dart
+│   └── ui_helpers.dart
 └── widgets
     ├── app_tree_view.dart
     ├── command_monitor.dart
+    ├── common
+    │   ├── detail_card.dart
+    │   └── expandable_list_item.dart
     ├── draggable_function_node.dart
     ├── logics_treenode.dart
     ├── project_treenode.dart
     └── wiresheet_flow_editor.dart
 
-21 directories, 129 files
+21 directories, 133 files
