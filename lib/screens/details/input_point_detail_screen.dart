@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/widgets/common/detail_card.dart';
+import 'package:grms_designer/widgets/common/expandable_list_item.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/input_device.dart';
+import '../../utils/treeview_utils.dart';
 
 class InputPointDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -33,73 +35,102 @@ class InputPointDetailScreenState
         title: Text('${widget.router.description} - ${widget.point.name}'),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_buildPointInfoCard()],
-        ),
+      body: ExpandableListView(
+        padding: const EdgeInsets.all(8.0),
+        children: [
+          ExpandableListItem(
+            title: widget.point.name,
+            subtitle:
+                'Function: ${widget.point.function} • ID: ${widget.point.buttonId}',
+            leadingIcon: getButtonPointIcon(widget.point),
+            leadingIconColor: _getPointColor(),
+            initiallyExpanded: true,
+            detailRows: [
+              DetailRow(
+                label: 'Point Name',
+                value: widget.point.name,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Function',
+                value: widget.point.function,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Button ID',
+                value: widget.point.buttonId.toString(),
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Point Type',
+                value: _getPointTypeDescription(),
+                showDivider: true,
+              ),
+            ],
+          ),
+
+          ExpandableListItem(
+            title: 'Parent Device',
+            subtitle: widget.device.description.isEmpty
+                ? 'Device ${widget.device.deviceId}'
+                : widget.device.description,
+            leadingIcon: Icons.device_hub,
+            leadingIconColor: Colors.blue,
+            detailRows: [
+              DetailRow(
+                label: 'Device Name',
+                value: widget.device.description.isEmpty
+                    ? 'Device ${widget.device.deviceId}'
+                    : widget.device.description,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Device Address',
+                value: widget.device.address,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Device ID',
+                value: widget.device.deviceId.toString(),
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Device Type',
+                value: widget.device.helvarType,
+                showDivider: true,
+              ),
+            ],
+          ),
+          ExpandableListItem(
+            title: 'Router Information',
+            subtitle: 'Network and connection details',
+            leadingIcon: Icons.router,
+            leadingIconColor: Colors.purple,
+            detailRows: [
+              DetailRow(
+                label: 'Router Description',
+                value: widget.router.description,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Router IP',
+                value: widget.router.ipAddress,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Router Address',
+                value: widget.router.address,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Workgroup',
+                value: widget.workgroup.description,
+              ),
+            ],
+          ),
+        ],
       ),
     );
-  }
-
-  Widget _buildPointInfoCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(_getPointIcon(), size: 32, color: _getPointColor()),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.point.name,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        widget.point.function,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Divider(),
-            buildInfoRow('Point Name', widget.point.name),
-            buildInfoRow('Function', widget.point.function),
-            buildInfoRow('Button ID', widget.point.buttonId.toString()),
-            buildInfoRow(
-              'Parent Device',
-              widget.device.description.isEmpty
-                  ? 'Device ${widget.device.deviceId}'
-                  : widget.device.description,
-            ),
-            buildInfoRow('Device Address', widget.device.address),
-            buildInfoRow('Point Type', _getPointTypeDescription()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getPointIcon() {
-    if (widget.point.function.contains('Status') ||
-        widget.point.name.contains('Missing')) {
-      return Icons.info_outline;
-    } else if (widget.point.function.contains('IR')) {
-      return Icons.settings_remote;
-    } else if (widget.point.function.contains('Button')) {
-      return Icons.touch_app;
-    } else {
-      return Icons.radio_button_unchecked;
-    }
   }
 
   Color _getPointColor() {

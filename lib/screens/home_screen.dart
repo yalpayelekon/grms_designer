@@ -34,7 +34,7 @@ import '../providers/workgroups_provider.dart';
 import 'project_screens/project_settings_screen.dart';
 import 'project_screens/project_files_screen.dart';
 import '../screens/details/subnet_detail_screen.dart';
-import '../screens/details/points_detail_screen.dart';
+import 'details/input_points_detail_screen.dart';
 import 'details/input_point_detail_screen.dart';
 import '../screens/details/output_points_detail_screen.dart';
 import '../models/helvar_models/output_device.dart';
