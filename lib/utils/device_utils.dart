@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:grms_designer/models/helvar_models/helvar_device.dart';
+import 'package:grms_designer/models/helvar_models/output_point.dart';
 import 'package:grms_designer/niagara/models/component.dart';
 import 'package:grms_designer/niagara/models/component_type.dart';
 import 'package:grms_designer/niagara/models/helvar_device_component.dart';
@@ -146,5 +148,24 @@ String getHelvarComponentType(String helvarType) {
       return ComponentType.HELVAR_EMERGENCY;
     default:
       return ComponentType.HELVAR_DEVICE;
+  }
+}
+
+Color getOutputPointColor(OutputPoint point) {
+  switch (point.pointId) {
+    case 1: // Device State
+      return Colors.blue;
+    case 2: // Lamp Failure
+      return Colors.red;
+    case 3: // Missing
+      return Colors.orange;
+    case 4: // Faulty
+      return Colors.red;
+    case 5: // Output Level
+      return Colors.green;
+    case 6: // Power Consumption
+      return Colors.purple;
+    default:
+      return Colors.grey;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/utils/date_utils.dart';
+import 'package:grms_designer/utils/device_utils.dart';
 import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -365,13 +366,13 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
-            backgroundColor: _getOutputPointColor(
+            backgroundColor: getOutputPointColor(
               point,
             ).withValues(alpha: 0.2 * 255),
             radius: 16,
             child: Icon(
               getOutputPointIcon(point),
-              color: _getOutputPointColor(point),
+              color: getOutputPointColor(point),
               size: 16,
             ),
           ),
@@ -456,25 +457,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       return Colors.blue;
     } else {
       return Colors.grey;
-    }
-  }
-
-  Color _getOutputPointColor(OutputPoint point) {
-    switch (point.pointId) {
-      case 1: // Device State
-        return Colors.blue;
-      case 2: // Lamp Failure
-        return Colors.red;
-      case 3: // Missing
-        return Colors.orange;
-      case 4: // Faulty
-        return Colors.red;
-      case 5: // Output Level
-        return Colors.green;
-      case 6: // Power Consumption
-        return Colors.purple;
-      default:
-        return Colors.grey;
     }
   }
 

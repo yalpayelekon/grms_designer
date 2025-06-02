@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/utils/date_utils.dart';
+import 'package:grms_designer/utils/logger.dart';
 import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -185,12 +186,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
           : 'Automatic polling disabled';
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: enabled ? Colors.green : Colors.orange,
-          ),
-        );
+        logInfo(message);
       }
     } catch (e) {
       if (mounted) {
@@ -228,7 +224,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
           : ExpandableListView(
               padding: const EdgeInsets.all(8.0),
               children: [
-                // Basic workgroup information
                 ExpandableListItem(
                   title: 'Workgroup Details',
                   subtitle: 'Basic configuration and settings',
@@ -266,7 +261,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                   ],
                 ),
 
-                // Polling configuration
                 ExpandableListItem(
                   title: 'Power Consumption Polling',
                   subtitle: workgroup.pollEnabled
@@ -280,7 +274,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                       : Colors.orange,
                   initiallyExpanded: true,
                   detailRows: [
-                    // Polling enabled dropdown
                     DetailRow(
                       label: 'Polling Enabled',
                       customValue: DropdownButton<bool>(

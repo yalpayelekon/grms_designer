@@ -202,12 +202,6 @@ TreeNode buildProjectNode(
                               if (widget.selectedWiresheetId == wiresheet.id) {
                                 widget.setActiveNode('wiresheets');
                               }
-
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Flowsheet deleted'),
-                                ),
-                              );
                             }
                           },
                         ),
