@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/widgets/common/detail_card.dart';
+import 'package:grms_designer/widgets/common/expandable_list_item.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/input_device.dart';
+import '../../utils/treeview_utils.dart';
 
 class PointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -32,7 +34,6 @@ class PointsDetailScreen extends ConsumerStatefulWidget {
 }
 
 class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
-  final Map<int, bool> _expandedPoints = {};
   final Map<int, String> _pointStates = {};
 
   @override
@@ -56,176 +57,131 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
         : widget.device.description;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Points - $deviceName'),
-        centerTitle: true,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'refresh_all',
-                child: Text('Refresh All States'),
-              ),
-              const PopupMenuItem(
-                value: 'export_config',
-                child: Text('Export Point Configuration'),
-              ),
-              const PopupMenuItem(
-                value: 'clear_all_history',
-                child: Text('Clear All Event History'),
-              ),
-            ],
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('Points - $deviceName'), centerTitle: true),
       body: inputDevice.buttonPoints.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.radio_button_unchecked,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'No points available for this device',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-            )
-          : _buildPointsList(inputDevice),
-    );
-  }
-
-  Widget _buildPointsList(HelvarDriverInputDevice inputDevice) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: inputDevice.buttonPoints.length,
-      itemBuilder: (context, index) {
-        final point = inputDevice.buttonPoints[index];
-        return _buildPointCard(point, index);
-      },
-    );
-  }
-
-  Widget _buildPointCard(ButtonPoint point, int index) {
-    final isExpanded = _expandedPoints[point.buttonId] ?? false;
-    final currentState = _pointStates[point.buttonId] ?? 'Unknown';
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        children: [
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _getPointColor(
-                point,
-              ).withValues(alpha: 0.2 * 255),
-              child: Icon(
-                _getPointIcon(point),
-                color: _getPointColor(point),
-                size: 20,
-              ),
-            ),
-            title: Text(
-              point.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ? _buildEmptyState()
+          : ExpandableListView(
+              padding: const EdgeInsets.all(8.0),
               children: [
-                Text('Function: ${point.function}'),
-                Text('ID: ${point.buttonId}'),
-                Row(
-                  children: [
-                    const Text('State: '),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStateColor(
-                          currentState,
-                        ).withValues(alpha: 0.2 * 255),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        currentState,
-                        style: TextStyle(
-                          color: _getStateColor(currentState),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                ExpandableListItem(
+                  title: 'Device Information',
+                  subtitle: 'Basic device details and configuration',
+                  leadingIcon: Icons.info_outline,
+                  leadingIconColor: Colors.blue,
+                  initiallyExpanded: true,
+                  detailRows: [
+                    DetailRow(
+                      label: 'Device Name',
+                      value: deviceName,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Device Address',
+                      value: widget.device.address,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Device Type',
+                      value: widget.device.helvarType,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Total Points',
+                      value: '${inputDevice.buttonPoints.length} points',
+                      showDivider: true,
+                    ),
+                    StatusDetailRow(
+                      label: 'Button Device',
+                      statusText: widget.device.isButtonDevice ? 'Yes' : 'No',
+                      statusColor: widget.device.isButtonDevice
+                          ? Colors.green
+                          : Colors.grey,
+                      showDivider: true,
+                    ),
+                    StatusDetailRow(
+                      label: 'Multisensor',
+                      statusText: widget.device.isMultisensor ? 'Yes' : 'No',
+                      statusColor: widget.device.isMultisensor
+                          ? Colors.green
+                          : Colors.grey,
                     ),
                   ],
                 ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                  ),
-                  onPressed: () => _togglePointExpansion(point.buttonId),
+                ExpandableListItem(
+                  title: 'Input Points',
+                  subtitle:
+                      '${inputDevice.buttonPoints.length} configured points',
+                  leadingIcon: Icons.touch_app,
+                  leadingIconColor: Colors.green,
+                  initiallyExpanded: true,
+                  children: inputDevice.buttonPoints
+                      .map((point) => _buildPointItem(point))
+                      .toList(),
                 ),
               ],
             ),
-            isThreeLine: true,
-          ),
-          if (isExpanded) _buildExpandedPointContent(point),
-        ],
-      ),
     );
   }
 
-  Widget _buildExpandedPointContent(ButtonPoint point) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
-      ),
+  Widget _buildEmptyState() {
+    return const Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    buildInfoRow('Point Name', point.name),
-                    buildInfoRow('Function Type', point.function),
-                    buildInfoRow('Button ID', point.buttonId.toString()),
-                    buildInfoRow('Point Type', _getPointTypeDescription(point)),
-                  ],
-                ),
-              ),
-            ],
+          Icon(Icons.radio_button_unchecked, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No points available for this device',
+            style: TextStyle(fontSize: 18),
           ),
         ],
       ),
     );
   }
 
-  IconData _getPointIcon(ButtonPoint point) {
-    if (point.function.contains('Status') || point.name.contains('Missing')) {
-      return Icons.info_outline;
-    } else if (point.function.contains('IR')) {
-      return Icons.settings_remote;
-    } else if (point.function.contains('Button')) {
-      return Icons.touch_app;
-    } else {
-      return Icons.radio_button_unchecked;
-    }
+  Widget _buildPointItem(ButtonPoint point) {
+    final currentState = _pointStates[point.buttonId] ?? 'Unknown';
+    final pointIcon = getButtonPointIcon(point);
+    final pointColor = _getPointColor(point);
+    final displayName = getButtonPointDisplayName(point);
+
+    return ExpandableListItem(
+      title: displayName,
+      subtitle: 'Function: ${point.function} • ID: ${point.buttonId}',
+      leadingIcon: pointIcon,
+      leadingIconColor: pointColor,
+      indentLevel: 1,
+      onTap: () => _navigateToPointDetail(point),
+      detailRows: [
+        DetailRow(label: 'Point Name', value: point.name, showDivider: true),
+        DetailRow(
+          label: 'Function Type',
+          value: point.function,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Button ID',
+          value: point.buttonId.toString(),
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Point Type',
+          value: _getPointTypeDescription(point),
+          showDivider: true,
+        ),
+        StatusDetailRow(
+          label: 'Current State',
+          statusText: currentState,
+          statusColor: _getStateColor(currentState),
+          showDivider: true,
+        ),
+        NavigationDetailRow(
+          label: 'Point Details',
+          value: 'View detailed information',
+          onTap: () => _navigateToPointDetail(point),
+        ),
+      ],
+    );
   }
 
   Color _getPointColor(ButtonPoint point) {
@@ -271,20 +227,15 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
     }
   }
 
-  void _togglePointExpansion(int buttonId) {
-    setState(() {
-      _expandedPoints[buttonId] = !(_expandedPoints[buttonId] ?? false);
-    });
-  }
-
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'refresh_all':
-        break;
-      case 'export_config':
-        break;
-      case 'clear_all_history':
-        break;
+  void _navigateToPointDetail(ButtonPoint point) {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'pointDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: widget.device,
+        point: point,
+      );
     }
   }
 }
