@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/date_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../providers/group_polling_provider.dart';
-import '../lists/groups_list_screen.dart';
-import 'router_detail_screen.dart';
+import '../../widgets/common/detail_card.dart';
+import '../../widgets/common/expandable_list_item.dart';
 
 class WorkgroupDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -27,325 +29,135 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _isLoading = false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final workgroup = currentWorkgroup;
-    final pollingState = ref.watch(pollingStateProvider);
-    final isPollingActive = pollingState[workgroup.id] ?? false;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(workgroup.description),
-        centerTitle: true,
-        actions: const [],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInfoCard(context),
-                  const SizedBox(height: 24),
-                  _buildPollingCard(context),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Groups',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextButton.icon(
-                        icon: const Icon(Icons.navigate_next),
-                        label: const Text('View All Groups'),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  GroupsListScreen(workgroup: workgroup),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Routers',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildRoutersList(context),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildInfoCard(BuildContext context) {
-    final workgroup = currentWorkgroup;
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.group_work, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  'Workgroup Details',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
-            const Divider(),
-            _buildDetailRow('ID', workgroup.id),
-            _buildDetailRow('Description', workgroup.description),
-            _buildDetailRow('Network Interface', workgroup.networkInterface),
-            _buildDetailRow(
-              'Number of Routers',
-              workgroup.routers.length.toString(),
-            ),
-            _buildDetailRow(
-              'Number of Groups',
-              workgroup.groups.length.toString(),
-            ),
-            _buildDetailRow(
-              'Gateway Router IP',
-              workgroup.gatewayRouterIpAddress.isEmpty
-                  ? 'Not set'
-                  : workgroup.gatewayRouterIpAddress,
-            ),
-            _buildDetailRow(
-              'Refresh Props After Action',
-              workgroup.refreshPropsAfterAction.toString(),
-            ),
-          ],
+  Widget _buildRouterItem(HelvarRouter router) {
+    return ExpandableListItem(
+      title: router.description,
+      subtitle:
+          'IP: ${router.ipAddress} • Address: ${router.address} • ${router.devices.length} devices',
+      leadingIcon: Icons.router,
+      leadingIconColor: Colors.purple,
+      indentLevel: 1,
+      detailRows: [
+        DetailRow(
+          label: 'Description',
+          value: router.description,
+          showDivider: true,
         ),
-      ),
-    );
-  }
-
-  Widget _buildPollingCard(BuildContext context) {
-    final workgroup = currentWorkgroup;
-    final pollingState = ref.watch(pollingStateProvider);
-    final isPollingActive = pollingState[workgroup.id] ?? false;
-
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  workgroup.pollEnabled
-                      ? Icons.autorenew
-                      : Icons.pause_circle_outline,
-                  color: workgroup.pollEnabled ? Colors.green : Colors.orange,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Power Consumption Polling',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
-            const Divider(),
-            Row(
-              children: [
-                const SizedBox(
-                  width: 140,
-                  child: Text(
-                    'Polling Enabled:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(
-                  child: DropdownButton<bool>(
-                    value: workgroup.pollEnabled,
-                    isExpanded: true,
-                    onChanged: (bool? newValue) {
-                      if (newValue != null) {
-                        _togglePolling(newValue);
-                      }
-                    },
-                    items: const [
-                      DropdownMenuItem<bool>(
-                        value: false,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.pause_circle_outline,
-                              size: 16,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 8),
-                            Text('Disabled'),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem<bool>(
-                        value: true,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.autorenew,
-                              size: 16,
-                              color: Colors.green,
-                            ),
-                            SizedBox(width: 8),
-                            Text('Enabled'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (workgroup.pollEnabled) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1 * 255),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.green.withValues(alpha: 0.3 * 255),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          isPollingActive ? Icons.check_circle : Icons.pending,
-                          size: 16,
-                          color: isPollingActive ? Colors.green : Colors.orange,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isPollingActive
-                              ? 'Polling Active'
-                              : 'Starting Polling...',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: isPollingActive
-                                ? Colors.green[700]
-                                : Colors.orange[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Groups will be polled automatically based on their individual polling intervals.',
-                      style: TextStyle(fontSize: 12, color: Colors.green[600]),
-                    ),
-                    if (workgroup.groups.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'Active Groups: ${workgroup.groups.length}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.green[700],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: workgroup.groups.map((group) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.2 * 255),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Group ${group.groupId} (${group.powerPollingMinutes}min)',
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.1 * 255),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.grey.withValues(alpha: 0.3 * 255),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Automatic power consumption polling is disabled. Enable to start monitoring group power consumption.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            if (workgroup.lastPollTime != null) ...[
-              const SizedBox(height: 8),
-              _buildDetailRow(
-                'Last Poll Started',
-                _formatDateTime(workgroup.lastPollTime!),
-              ),
-            ],
-          ],
+        DetailRow(
+          label: 'IP Address',
+          value: router.ipAddress,
+          showDivider: true,
         ),
-      ),
+        DetailRow(label: 'Address', value: router.address, showDivider: true),
+        DetailRow(
+          label: 'Device Count',
+          value: '${router.devices.length} devices',
+          showDivider: true,
+        ),
+        if (router.devicesBySubnet.isNotEmpty)
+          DetailRow(
+            label: 'Subnets',
+            value: '${router.devicesBySubnet.length} subnets',
+          ),
+      ],
+      children: [
+        if (router.devicesBySubnet.isNotEmpty)
+          ...router.devicesBySubnet.entries.map(
+            (entry) => _buildSubnetItem(entry.key, entry.value),
+          ),
+      ],
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
+  Widget _buildSubnetItem(int subnetId, List devices) {
+    return ExpandableListItem(
+      title: 'Subnet $subnetId',
+      subtitle: '${devices.length} devices',
+      leadingIcon: Icons.hub,
+      leadingIconColor: Colors.orange,
+      indentLevel: 2,
+      children: devices.map((device) => _buildDeviceItem(device)).toList(),
+    );
+  }
 
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    }
+  Widget _buildDeviceItem(device) {
+    return ExpandableListItem(
+      title: device.description.isEmpty
+          ? 'Device ${device.deviceId}'
+          : device.description,
+      subtitle: 'Address: ${device.address} • Type: ${device.helvarType}',
+      leadingIcon: Icons.device_hub,
+      leadingIconColor: Colors.teal,
+      indentLevel: 3,
+      detailRows: [
+        DetailRow(
+          label: 'Device ID',
+          value: device.deviceId.toString(),
+          showDivider: true,
+        ),
+        DetailRow(label: 'Address', value: device.address, showDivider: true),
+        DetailRow(label: 'Type', value: device.helvarType, showDivider: true),
+        DetailRow(label: 'Props', value: device.props, showDivider: true),
+        if (device.state.isNotEmpty)
+          DetailRow(label: 'State', value: device.state, showDivider: true),
+        StatusDetailRow(
+          label: 'Emergency',
+          statusText: device.emergency ? 'Yes' : 'No',
+          statusColor: device.emergency ? Colors.red : Colors.green,
+          showDivider: true,
+        ),
+        StatusDetailRow(
+          label: 'Button Device',
+          statusText: device.isButtonDevice ? 'Yes' : 'No',
+          statusColor: device.isButtonDevice ? Colors.blue : Colors.grey,
+          showDivider: true,
+        ),
+        StatusDetailRow(
+          label: 'Multisensor',
+          statusText: device.isMultisensor ? 'Yes' : 'No',
+          statusColor: device.isMultisensor ? Colors.green : Colors.grey,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGroupItem(group) {
+    return ExpandableListItem(
+      title: group.description.isEmpty
+          ? "Group ${group.groupId}"
+          : group.description,
+      subtitle:
+          'ID: ${group.groupId} • Power: ${group.powerConsumption.toStringAsFixed(1)}W',
+      leadingIcon: Icons.group,
+      leadingIconColor: Colors.green,
+      indentLevel: 1,
+      detailRows: [
+        DetailRow(label: 'Group ID', value: group.groupId, showDivider: true),
+        DetailRow(label: 'Type', value: group.type, showDivider: true),
+        DetailRow(
+          label: 'Current Power',
+          value: '${group.powerConsumption.toStringAsFixed(2)} W',
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Polling Minutes',
+          value: '${group.powerPollingMinutes} minutes',
+          showDivider: true,
+        ),
+        if (group.sceneTable.isNotEmpty)
+          DetailRow(
+            label: 'Scenes',
+            value:
+                '${group.sceneTable.length} scenes: ${group.sceneTable.join(', ')}',
+            showDivider: true,
+          ),
+        if (group.gatewayRouterIpAddress.isNotEmpty)
+          DetailRow(
+            label: 'Gateway Router',
+            value: group.gatewayRouterIpAddress,
+          ),
+      ],
+    );
   }
 
   void _togglePolling(bool enabled) async {
@@ -358,7 +170,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
           .read(workgroupsProvider.notifier)
           .toggleWorkgroupPolling(widget.workgroup.id, enabled);
 
-      // Update polling state through the provider
       if (enabled) {
         ref
             .read(pollingStateProvider.notifier)
@@ -383,12 +194,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error toggling polling: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showSnackBarMsg(context, 'Error toggling polling: $e');
       }
     } finally {
       if (mounted) {
@@ -399,96 +205,177 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     }
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _isLoading = false;
   }
 
-  Widget _buildRoutersList(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final workgroup = currentWorkgroup;
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: workgroup.routers.length,
-      itemBuilder: (context, index) {
-        final router = workgroup.routers[index];
-        return _buildRouterCard(context, router);
-      },
-    );
-  }
+    final pollingState = ref.watch(pollingStateProvider);
+    final isPollingActive = pollingState[workgroup.id] ?? false;
 
-  Widget _buildRouterCard(BuildContext context, HelvarRouter router) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        children: [
-          ListTile(
-            title: Text(
-              router.description,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('IP Address: ${router.ipAddress}'),
-                Text('Address: ${router.address}'),
-                Text('Description: ${router.description}'),
-                Text('Devices: ${router.devices.length}'),
-              ],
-            ),
-            isThreeLine: true,
-            leading: const CircleAvatar(child: Icon(Icons.router)),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RouterDetailScreen(
-                    workgroup: currentWorkgroup,
-                    router: router,
-                  ),
-                ),
-              );
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0, bottom: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  icon: const Icon(Icons.devices),
-                  label: const Text('Manage Devices'),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RouterDetailScreen(
-                          workgroup: currentWorkgroup,
-                          router: router,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(workgroup.description),
+        centerTitle: true,
+        actions: const [],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ExpandableListView(
+              padding: const EdgeInsets.all(8.0),
+              children: [
+                // Basic workgroup information
+                ExpandableListItem(
+                  title: 'Workgroup Details',
+                  subtitle: 'Basic configuration and settings',
+                  leadingIcon: Icons.info_outline,
+                  leadingIconColor: Colors.blue,
+                  initiallyExpanded: true,
+                  detailRows: [
+                    DetailRow(
+                      label: 'ID',
+                      value: workgroup.id,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Description',
+                      value: workgroup.description,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Network Interface',
+                      value: workgroup.networkInterface,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Gateway Router IP',
+                      value: workgroup.gatewayRouterIpAddress.isEmpty
+                          ? 'Not set'
+                          : workgroup.gatewayRouterIpAddress,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Refresh Props After Action',
+                      value: workgroup.refreshPropsAfterAction.toString(),
+                      showDivider: true,
+                    ),
+                  ],
+                ),
+
+                // Polling configuration
+                ExpandableListItem(
+                  title: 'Power Consumption Polling',
+                  subtitle: workgroup.pollEnabled
+                      ? 'Active - Groups being polled automatically'
+                      : 'Disabled - No automatic polling',
+                  leadingIcon: workgroup.pollEnabled
+                      ? Icons.autorenew
+                      : Icons.pause_circle_outline,
+                  leadingIconColor: workgroup.pollEnabled
+                      ? Colors.green
+                      : Colors.orange,
+                  initiallyExpanded: true,
+                  detailRows: [
+                    // Polling enabled dropdown
+                    DetailRow(
+                      label: 'Polling Enabled',
+                      customValue: DropdownButton<bool>(
+                        value: workgroup.pollEnabled,
+                        isExpanded: true,
+                        onChanged: (bool? newValue) {
+                          if (newValue != null) {
+                            _togglePolling(newValue);
+                          }
+                        },
+                        items: const [
+                          DropdownMenuItem<bool>(
+                            value: false,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.pause_circle_outline,
+                                  size: 16,
+                                  color: Colors.orange,
+                                ),
+                                SizedBox(width: 8),
+                                Text('Disabled'),
+                              ],
+                            ),
+                          ),
+                          DropdownMenuItem<bool>(
+                            value: true,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.autorenew,
+                                  size: 16,
+                                  color: Colors.green,
+                                ),
+                                SizedBox(width: 8),
+                                Text('Enabled'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      showDivider: true,
+                    ),
+
+                    // Polling status
+                    StatusDetailRow(
+                      label: 'Current Status',
+                      statusText: isPollingActive
+                          ? 'Polling Active'
+                          : workgroup.pollEnabled
+                          ? 'Starting Polling...'
+                          : 'Disabled',
+                      statusColor: isPollingActive
+                          ? Colors.green
+                          : workgroup.pollEnabled
+                          ? Colors.orange
+                          : Colors.grey,
+                      showDivider: true,
+                    ),
+
+                    DetailRow(
+                      label: 'Active Groups',
+                      value: '${workgroup.groups.length} groups',
+                      showDivider: true,
+                    ),
+                    if (workgroup.lastPollTime != null)
+                      DetailRow(
+                        label: 'Last Poll Started',
+                        value: formatDateTime(workgroup.lastPollTime!),
+                        showDivider: true,
+                      ),
+                  ],
+                ),
+                if (workgroup.groups.isNotEmpty)
+                  ExpandableListItem(
+                    title: 'Groups',
+                    subtitle: '${workgroup.groups.length} groups configured',
+                    leadingIcon: Icons.layers,
+                    leadingIconColor: Colors.green,
+                    children: workgroup.groups
+                        .map((group) => _buildGroupItem(group))
+                        .toList(),
+                  ),
+                if (workgroup.routers.isNotEmpty)
+                  ExpandableListItem(
+                    title: 'Routers',
+                    subtitle: '${workgroup.routers.length} routers configured',
+                    leadingIcon: Icons.router,
+                    leadingIconColor: Colors.purple,
+                    children: workgroup.routers
+                        .map((router) => _buildRouterItem(router))
+                        .toList(),
+                  ),
+              ],
+            ),
     );
   }
 }

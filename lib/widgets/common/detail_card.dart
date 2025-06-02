@@ -1,43 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// A unified row component for detail screens in Niagara style
-/// Simple label-value pairs with optional editing and navigation
 class DetailRow extends StatelessWidget {
-  /// The label text displayed on the left
   final String label;
-
-  /// The value text (used when not editable)
   final String? value;
-
-  /// Whether this row is editable
   final bool isEditable;
-
-  /// Controller for editable text field
   final TextEditingController? controller;
-
-  /// Called when the value is submitted (for editable rows)
   final ValueChanged<String>? onSubmitted;
-
-  /// Called when the row is tapped (for navigation)
   final VoidCallback? onTap;
-
-  /// Input formatters for editable text field
   final List<TextInputFormatter>? inputFormatters;
-
-  /// Keyboard type for editable text field
   final TextInputType? keyboardType;
-
-  /// Custom widget to display instead of text value
   final Widget? customValue;
-
-  /// Icon to show on the right (typically for navigation)
   final IconData? trailingIcon;
-
-  /// Width of the label column (defaults to 180)
   final double labelWidth;
-
-  /// Whether to show a divider below this row
   final bool showDivider;
 
   const DetailRow({
@@ -67,7 +42,6 @@ class DetailRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Label
           SizedBox(
             width: labelWidth,
             child: Text(
@@ -75,11 +49,7 @@ class DetailRow extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
             ),
           ),
-
-          // Value area
           Expanded(child: _buildValueWidget()),
-
-          // Trailing icon
           if (trailingIcon != null) ...[
             const SizedBox(width: 8),
             Icon(trailingIcon, size: 16, color: Colors.grey[600]),
@@ -87,8 +57,6 @@ class DetailRow extends StatelessWidget {
         ],
       ),
     );
-
-    // Wrap with InkWell if tappable
     if (onTap != null) {
       rowContent = InkWell(onTap: onTap, child: rowContent);
     }
@@ -122,7 +90,6 @@ class DetailRow extends StatelessWidget {
   }
 }
 
-/// A specialized DetailRow for navigation items
 class NavigationDetailRow extends DetailRow {
   const NavigationDetailRow({
     super.key,
@@ -134,7 +101,6 @@ class NavigationDetailRow extends DetailRow {
   }) : super(trailingIcon: Icons.arrow_forward_ios);
 }
 
-/// A specialized DetailRow for editable items
 class EditableDetailRow extends DetailRow {
   const EditableDetailRow({
     super.key,
@@ -148,12 +114,8 @@ class EditableDetailRow extends DetailRow {
   }) : super(isEditable: true);
 }
 
-/// A specialized DetailRow for status display with colored indicators
 class StatusDetailRow extends DetailRow {
-  /// The status color
   final Color? statusColor;
-
-  /// The status text
   final String statusText;
 
   StatusDetailRow({
@@ -185,12 +147,8 @@ class StatusDetailRow extends DetailRow {
        );
 }
 
-/// A widget that contains multiple DetailRows in a simple column layout
 class DetailRowsList extends StatelessWidget {
-  /// List of DetailRow widgets
   final List<Widget> children;
-
-  /// Padding around the entire list
   final EdgeInsetsGeometry? padding;
 
   const DetailRowsList({

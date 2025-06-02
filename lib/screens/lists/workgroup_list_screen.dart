@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:grms_designer/screens/dialogs/network_interface_dialog.dart';
+import 'package:grms_designer/utils/date_utils.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -153,7 +154,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         if (workgroup.lastPollTime != null)
           DetailRow(
             label: 'Last Poll Time',
-            value: _formatDateTime(workgroup.lastPollTime!),
+            value: formatDateTime(workgroup.lastPollTime!),
             showDivider: true,
           ),
       ],
@@ -364,21 +365,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
           ),
       ],
     );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    }
   }
 
   void _handleMenuAction(String action) {
