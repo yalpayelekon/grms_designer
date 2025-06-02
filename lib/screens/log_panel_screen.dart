@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../services/log_service.dart';
 import '../utils/file_dialog_helper.dart';
-import '../utils/general_ui.dart';
 import '../utils/logger.dart';
 
 class LogPanelScreen extends ConsumerStatefulWidget {

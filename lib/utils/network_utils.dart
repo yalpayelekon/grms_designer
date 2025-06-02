@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:grms_designer/utils/general_ui.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 import '../screens/dialogs/network_interface_dialog.dart';
 import 'logger.dart';
@@ -21,7 +21,8 @@ Future<List<NetworkInterfaceDetails>> getNetworkInterfaces() async {
 }
 
 Future<NetworkInterfaceDetails?> selectNetworkInterface(
-    BuildContext context) async {
+  BuildContext context,
+) async {
   try {
     List<NetworkInterfaceDetails> interfaces = await getNetworkInterfaces();
 
@@ -57,8 +58,10 @@ List<NetworkInterfaceDetails> parseIpConfig(String output) {
               currentInterface.subnetMask != null)) {
         interfaces.add(currentInterface);
       }
-      final name =
-          trimmedLine.replaceAll('adapter', '').replaceAll(':', '').trim();
+      final name = trimmedLine
+          .replaceAll('adapter', '')
+          .replaceAll(':', '')
+          .trim();
       currentInterface = NetworkInterfaceDetails(name: name);
     } else if (currentInterface != null) {
       if (trimmedLine.startsWith('IPv4 Address') ||
@@ -66,8 +69,9 @@ List<NetworkInterfaceDetails> parseIpConfig(String output) {
         currentInterface.ipv4 = _cleanValue(_extractAfterColon(trimmedLine));
       } else if (trimmedLine.startsWith('Subnet Mask') ||
           trimmedLine.startsWith('Subnetmasker')) {
-        currentInterface.subnetMask =
-            _cleanValue(_extractAfterColon(trimmedLine));
+        currentInterface.subnetMask = _cleanValue(
+          _extractAfterColon(trimmedLine),
+        );
       } else if (trimmedLine.startsWith('Default Gateway') ||
           trimmedLine.startsWith('Standaardgateway')) {
         currentInterface.gateway = _cleanValue(_extractAfterColon(trimmedLine));

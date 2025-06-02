@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:grms_designer/niagara/controllers/canvas_interaction_controller.dart';
 import 'package:grms_designer/niagara/controllers/clipboard_manager.dart';
 import 'package:grms_designer/niagara/controllers/flow_editor_state.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 Offset getDefaultPosition(
   CanvasInteractionController canvasController,

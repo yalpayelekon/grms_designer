@@ -6,9 +6,8 @@ import 'package:grms_designer/niagara/models/component_type.dart';
 import 'package:grms_designer/niagara/models/ramp_component.dart';
 import 'package:grms_designer/niagara/models/rectangle.dart';
 import 'package:grms_designer/utils/canvas_utils.dart';
-import 'package:grms_designer/utils/device_utils.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
-import 'package:grms_designer/utils/general_ui.dart';
+import 'package:grms_designer/utils/component_ui_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 void showAddComponentDialogAtPosition(
   BuildContext context,

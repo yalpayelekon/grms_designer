@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/extensions/device_address_extensions.dart';
 import 'package:grms_designer/extensions/group_extensions.dart';
 import 'package:grms_designer/providers/project_settings_provider.dart';
-import 'package:grms_designer/utils/general_ui.dart';
 import 'package:grms_designer/utils/logger.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 import '../comm/models/command_models.dart';
 import '../models/helvar_models/helvar_device.dart';
@@ -34,7 +34,10 @@ String getWorkgroupIdForDevice(BuildContext context, HelvarDevice device) {
 }
 
 void performRecallScene(
-    BuildContext context, HelvarGroup group, int sceneNumber) {
+  BuildContext context,
+  HelvarGroup group,
+  int sceneNumber,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -73,24 +76,24 @@ void performRecallScene(
   );
 
   commandService
-      .sendCommand(
-    routerIpAddress,
-    command,
-    priority: CommandPriority.normal,
-  )
+      .sendCommand(routerIpAddress, command, priority: CommandPriority.normal)
       .then((result) {
-    if (result.success) {
-      logInfo('Recalled scene $sceneNumber for group ${group.groupId}');
-    } else {
-      logError('Failed to send command to group: ${result.errorMessage}');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+        if (result.success) {
+          logInfo('Recalled scene $sceneNumber for group ${group.groupId}');
+        } else {
+          logError('Failed to send command to group: ${result.errorMessage}');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performStoreScene(
-    BuildContext context, HelvarGroup group, int sceneNumber) {
+  BuildContext context,
+  HelvarGroup group,
+  int sceneNumber,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -129,18 +132,14 @@ void performStoreScene(
   );
 
   commandService
-      .sendCommand(
-    routerIpAddress,
-    command,
-    priority: CommandPriority.normal,
-  )
+      .sendCommand(routerIpAddress, command, priority: CommandPriority.normal)
       .then((result) {
-    if (result.success) {
-      logInfo('Stored scene $sceneNumber for group ${group.groupId}');
-    } else {
-      logWarning('Failed to send command to group');
-    }
-  });
+        if (result.success) {
+          logInfo('Stored scene $sceneNumber for group ${group.groupId}');
+        } else {
+          logWarning('Failed to send command to group');
+        }
+      });
 }
 
 void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
@@ -180,21 +179,31 @@ void performDirectLevel(BuildContext context, HelvarGroup group, int level) {
     fadeTime: 700, // Default fade time in 0.1 seconds
   );
 
-  commandService.sendCommand(routerIpAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(
-          context, 'Set direct level $level for group ${group.groupId}');
-    } else {
-      showSnackBarMsg(
-          context, 'Command failed: ${result.errorMessage ?? "Unknown"}');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(routerIpAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Set direct level $level for group ${group.groupId}',
+          );
+        } else {
+          showSnackBarMsg(
+            context,
+            'Command failed: ${result.errorMessage ?? "Unknown"}',
+          );
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performDirectProportion(
-    BuildContext context, HelvarGroup group, int proportion) {
+  BuildContext context,
+  HelvarGroup group,
+  int proportion,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -231,20 +240,28 @@ void performDirectProportion(
     fadeTime: 700, // Default fade time
   );
 
-  commandService.sendCommand(routerIpAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(context,
-          'Set direct proportion $proportion for group ${group.groupId}');
-    } else {
-      logWarning('Failed to send command to group');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(routerIpAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Set direct proportion $proportion for group ${group.groupId}',
+          );
+        } else {
+          logWarning('Failed to send command to group');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performModifyProportion(
-    BuildContext context, HelvarGroup group, int proportion) {
+  BuildContext context,
+  HelvarGroup group,
+  int proportion,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -281,20 +298,28 @@ void performModifyProportion(
     fadeTime: 700, // Default fade time
   );
 
-  commandService.sendCommand(routerIpAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(context,
-          'Modified proportion by $proportion for group ${group.groupId}');
-    } else {
-      logWarning('Failed to send command to group');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(routerIpAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Modified proportion by $proportion for group ${group.groupId}',
+          );
+        } else {
+          logWarning('Failed to send command to group');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performEmergencyFunctionTest(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -310,24 +335,30 @@ void performEmergencyFunctionTest(
     return;
   }
 
-  final command = HelvarNetCommands.emergencyFunctionTestGroup(
-    groupId,
-  );
+  final command = HelvarNetCommands.emergencyFunctionTestGroup(groupId);
 
-  commandService.sendCommand(routerIpAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(context,
-          'Started emergency function test for group ${group.groupId}');
-    } else {
-      logWarning('Failed to send command to group');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(routerIpAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Started emergency function test for group ${group.groupId}',
+          );
+        } else {
+          logWarning('Failed to send command to group');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performEmergencyDurationTest(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -343,24 +374,30 @@ void performEmergencyDurationTest(
     return;
   }
 
-  final command = HelvarNetCommands.emergencyDurationTestGroup(
-    groupId,
-  );
+  final command = HelvarNetCommands.emergencyDurationTestGroup(groupId);
 
-  commandService.sendCommand(routerIpAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(context,
-          'Started emergency duration test for group ${group.groupId}');
-    } else {
-      logWarning('Failed to send command to group');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(routerIpAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Started emergency duration test for group ${group.groupId}',
+          );
+        } else {
+          logWarning('Failed to send command to group');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void stopEmergencyTest(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -376,24 +413,30 @@ void stopEmergencyTest(
     return;
   }
 
-  final command = HelvarNetCommands.stopEmergencyTestsGroup(
-    groupId,
-  );
+  final command = HelvarNetCommands.stopEmergencyTestsGroup(groupId);
 
-  commandService.sendCommand(routerIpAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(
-          context, 'Stopped emergency tests for group ${group.groupId}');
-    } else {
-      logWarning('Failed to send command to group');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(routerIpAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Stopped emergency tests for group ${group.groupId}',
+          );
+        } else {
+          logWarning('Failed to send command to group');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void resetEmergencyBatteryTotalLampTime(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -413,20 +456,27 @@ void resetEmergencyBatteryTotalLampTime(
     groupId,
   );
 
-  commandService.sendCommand(routerIpAddress, command).then((result) {
-    if (result.success) {
-      logInfo(
-          'Reset emergency battery and total lamp time for group ${group.groupId}');
-    } else {
-      logWarning('Failed to send command to group');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(routerIpAddress, command)
+      .then((result) {
+        if (result.success) {
+          logInfo(
+            'Reset emergency battery and total lamp time for group ${group.groupId}',
+          );
+        } else {
+          logWarning('Failed to send command to group');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void refreshGroupProperties(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
   final settingsProvider = container.read(projectSettingsProvider);
@@ -437,9 +487,7 @@ void refreshGroupProperties(
     return;
   }
 
-  final descriptionCommand = HelvarNetCommands.queryDescriptionGroup(
-    groupId,
-  );
+  final descriptionCommand = HelvarNetCommands.queryDescriptionGroup(groupId);
 
   final routerIpAddress = group.resolveRouterIp(workgroup);
   if (routerIpAddress.isEmpty) {
@@ -449,42 +497,47 @@ void refreshGroupProperties(
 
   commandService
       .sendCommand(
-    routerIpAddress,
-    descriptionCommand,
-    timeout: Duration(milliseconds: settingsProvider.commandTimeoutMs),
-  )
+        routerIpAddress,
+        descriptionCommand,
+        timeout: Duration(milliseconds: settingsProvider.commandTimeoutMs),
+      )
       .then((result) {
-    if (result.success && result.response != null) {
-      final response = result.response!;
+        if (result.success && result.response != null) {
+          final response = result.response!;
 
-      if (response.contains('=')) {
-        final parts = response.split('=');
-        if (parts.length > 1) {
-          final description = parts[1].replaceAll('#', '');
+          if (response.contains('=')) {
+            final parts = response.split('=');
+            if (parts.length > 1) {
+              final description = parts[1].replaceAll('#', '');
 
-          final updatedGroup = group.copyWith(
-            description: description,
-            lastMessage: 'Group properties refreshed',
-            lastMessageTime: DateTime.now(),
+              final updatedGroup = group.copyWith(
+                description: description,
+                lastMessage: 'Group properties refreshed',
+                lastMessageTime: DateTime.now(),
+              );
+
+              final workgroupsNotifier = container.read(
+                workgroupsProvider.notifier,
+              );
+              workgroupsNotifier.updateGroup(workgroup.id, updatedGroup);
+            }
+          }
+        } else {
+          logWarning(
+            'Failed to refresh group properties: ${result.errorMessage ?? "No response"}',
           );
-
-          final workgroupsNotifier =
-              container.read(workgroupsProvider.notifier);
-          workgroupsNotifier.updateGroup(workgroup.id, updatedGroup);
-          showSnackBarMsg(context, 'Group properties refreshed');
         }
-      }
-    } else {
-      logWarning(
-          'Failed to refresh group properties: ${result.errorMessage ?? "No response"}');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performDeviceDirectLevel(
-    BuildContext context, HelvarDevice device, int level) {
+  BuildContext context,
+  HelvarDevice device,
+  int level,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -516,19 +569,25 @@ void performDeviceDirectLevel(
     fadeTime: 700,
   );
 
-  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-    if (result.success) {
-      logInfo('Set level to $level for device ${device.deviceId}');
-    } else {
-      logWarning('Failed to send command to router');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(helvarRouter.ipAddress, command)
+      .then((result) {
+        if (result.success) {
+          logInfo('Set level to $level for device ${device.deviceId}');
+        } else {
+          logWarning('Failed to send command to router');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performDeviceRecallScene(
-    BuildContext context, HelvarDevice device, int sceneNumber) {
+  BuildContext context,
+  HelvarDevice device,
+  int sceneNumber,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -562,20 +621,28 @@ void performDeviceRecallScene(
     fadeTime: 700, // Default fade time in 0.1 seconds
   );
 
-  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(
-          context, 'Recalled scene $sceneNumber for device ${device.deviceId}');
-    } else {
-      logWarning('Failed to send command to router');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(helvarRouter.ipAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Recalled scene $sceneNumber for device ${device.deviceId}',
+          );
+        } else {
+          logWarning('Failed to send command to router');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performDeviceDirectProportion(
-    BuildContext context, HelvarDevice device, int proportion) {
+  BuildContext context,
+  HelvarDevice device,
+  int proportion,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -608,20 +675,28 @@ void performDeviceDirectProportion(
     fadeTime: 700,
   );
 
-  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(context,
-          'Set proportion to $proportion for device ${device.deviceId}');
-    } else {
-      logError('Failed to send command to router');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(helvarRouter.ipAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Set proportion to $proportion for device ${device.deviceId}',
+          );
+        } else {
+          logError('Failed to send command to router');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void performDeviceModifyProportion(
-    BuildContext context, HelvarDevice device, int proportion) {
+  BuildContext context,
+  HelvarDevice device,
+  int proportion,
+) {
   final container = ProviderScope.containerOf(context);
   final commandService = container.read(routerCommandServiceProvider);
 
@@ -654,20 +729,28 @@ void performDeviceModifyProportion(
     fadeTime: 700,
   );
 
-  commandService.sendCommand(helvarRouter.ipAddress, command).then((result) {
-    if (result.success) {
-      showSnackBarMsg(context,
-          'Modified proportion by $proportion for device ${device.deviceId}');
-    } else {
-      logWarning('Failed to send command to device');
-    }
-  }).catchError((error) {
-    logError('Connection error: $error');
-  });
+  commandService
+      .sendCommand(helvarRouter.ipAddress, command)
+      .then((result) {
+        if (result.success) {
+          showSnackBarMsg(
+            context,
+            'Modified proportion by $proportion for device ${device.deviceId}',
+          );
+        } else {
+          logWarning('Failed to send command to device');
+        }
+      })
+      .catchError((error) {
+        logError('Connection error: $error');
+      });
 }
 
 void showGroupContextMenu(
-    BuildContext context, HelvarGroup group, Workgroup workgroup) {
+  BuildContext context,
+  HelvarGroup group,
+  Workgroup workgroup,
+) {
   final RenderBox button = context.findRenderObject() as RenderBox;
   final RenderBox overlay =
       Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
@@ -679,51 +762,57 @@ void showGroupContextMenu(
 
   final RelativeRect position = RelativeRect.fromRect(
     Rect.fromPoints(
-        buttonBottomCenter, buttonBottomCenter + const Offset(1, 1)),
+      buttonBottomCenter,
+      buttonBottomCenter + const Offset(1, 1),
+    ),
     Offset.zero & overlay.size,
   );
 
-  showMenu(context: context, position: position, items: [
-    PopupMenuItem(
-      child: const Text('Recall Scene'),
-      onTap: () => showRecallSceneDialog(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Store Scene'),
-      onTap: () => showStoreSceneDialog(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Direct Level'),
-      onTap: () => showDirectLevelDialog(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Direct Proportion'),
-      onTap: () => showDirectProportionDialog(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Modify Proportion'),
-      onTap: () => showModifyProportionDialog(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Emergency Function Test'),
-      onTap: () => performEmergencyFunctionTest(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Emergency Duration Test'),
-      onTap: () => performEmergencyDurationTest(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Stop Emergency Test'),
-      onTap: () => stopEmergencyTest(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Reset Emergency Battery Total Lamp Time'),
-      onTap: () =>
-          resetEmergencyBatteryTotalLampTime(context, group, workgroup),
-    ),
-    PopupMenuItem(
-      child: const Text('Refresh Group Properties'),
-      onTap: () => refreshGroupProperties(context, group, workgroup),
-    ),
-  ]);
+  showMenu(
+    context: context,
+    position: position,
+    items: [
+      PopupMenuItem(
+        child: const Text('Recall Scene'),
+        onTap: () => showRecallSceneDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Store Scene'),
+        onTap: () => showStoreSceneDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Direct Level'),
+        onTap: () => showDirectLevelDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Direct Proportion'),
+        onTap: () => showDirectProportionDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Modify Proportion'),
+        onTap: () => showModifyProportionDialog(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Emergency Function Test'),
+        onTap: () => performEmergencyFunctionTest(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Emergency Duration Test'),
+        onTap: () => performEmergencyDurationTest(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Stop Emergency Test'),
+        onTap: () => stopEmergencyTest(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Reset Emergency Battery Total Lamp Time'),
+        onTap: () =>
+            resetEmergencyBatteryTotalLampTime(context, group, workgroup),
+      ),
+      PopupMenuItem(
+        child: const Text('Refresh Group Properties'),
+        onTap: () => refreshGroupProperties(context, group, workgroup),
+      ),
+    ],
+  );
 }

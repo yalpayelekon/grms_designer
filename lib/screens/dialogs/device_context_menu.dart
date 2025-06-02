@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 import '../../models/helvar_models/device_action.dart';
 import '../../models/helvar_models/helvar_device.dart';
-import '../../utils/general_ui.dart';
 import 'action_dialogs.dart';
 
 void showDeviceContextMenu(BuildContext context, HelvarDevice device) {
@@ -17,7 +17,9 @@ void showDeviceContextMenu(BuildContext context, HelvarDevice device) {
 
   final RelativeRect position = RelativeRect.fromRect(
     Rect.fromPoints(
-        buttonBottomCenter, buttonBottomCenter + const Offset(1, 1)),
+      buttonBottomCenter,
+      buttonBottomCenter + const Offset(1, 1),
+    ),
     Offset.zero & overlay.size,
   );
 
@@ -70,8 +72,11 @@ void showDeviceContextMenu(BuildContext context, HelvarDevice device) {
     ]);
   }
 
-  showMenu<DeviceAction>(context: context, position: position, items: menuItems)
-      .then((DeviceAction? value) {
+  showMenu<DeviceAction>(
+    context: context,
+    position: position,
+    items: menuItems,
+  ).then((DeviceAction? value) {
     if (value == null) return;
 
     switch (value) {

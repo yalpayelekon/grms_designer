@@ -3,8 +3,6 @@ import 'package:grms_designer/niagara/models/component.dart';
 import 'package:grms_designer/niagara/models/component_type.dart';
 import 'package:grms_designer/niagara/models/helvar_device_component.dart';
 
-import 'package:flutter/material.dart';
-import 'package:grms_designer/niagara/models/port_type.dart';
 import 'package:grms_designer/niagara/models/ramp_component.dart';
 import 'package:grms_designer/niagara/models/rectangle.dart';
 import 'package:grms_designer/utils/logger.dart';
@@ -49,69 +47,6 @@ String handleRecallScene(String sceneParams, {bool logInfoOutput = false}) {
   } else {
     logWarning("Please pass a valid scene number!");
     return "Please pass a valid scene number!";
-  }
-}
-
-String getNameForComponentType(ComponentType type) {
-  // Custom components
-  if (type.type == RectangleComponent.RECTANGLE) {
-    return 'Rectangle';
-  }
-  if (type.type == RampComponent.RAMP) {
-    return 'Ramp';
-  }
-
-  // Standard components
-  switch (type.type) {
-    case ComponentType.AND_GATE:
-      return 'AND Gate';
-    case ComponentType.OR_GATE:
-      return 'OR Gate';
-    case ComponentType.XOR_GATE:
-      return 'XOR Gate';
-    case ComponentType.NOT_GATE:
-      return 'NOT Gate';
-
-    case ComponentType.ADD:
-      return 'Add';
-    case ComponentType.SUBTRACT:
-      return 'Subtract';
-    case ComponentType.MULTIPLY:
-      return 'Multiply';
-    case ComponentType.DIVIDE:
-      return 'Divide';
-    case ComponentType.MAX:
-      return 'Maximum';
-    case ComponentType.MIN:
-      return 'Minimum';
-    case ComponentType.POWER:
-      return 'Power';
-    case ComponentType.ABS:
-      return 'Absolute Value';
-
-    case ComponentType.IS_GREATER_THAN:
-      return 'Greater Than';
-    case ComponentType.IS_LESS_THAN:
-      return 'Less Than';
-    case ComponentType.IS_EQUAL:
-      return 'Equals';
-
-    case ComponentType.BOOLEAN_WRITABLE:
-      return 'Boolean Writable';
-    case ComponentType.NUMERIC_WRITABLE:
-      return 'Numeric Writable';
-    case ComponentType.STRING_WRITABLE:
-      return 'String Writable';
-
-    case ComponentType.BOOLEAN_POINT:
-      return 'Boolean Point';
-    case ComponentType.NUMERIC_POINT:
-      return 'Numeric Point';
-    case ComponentType.STRING_POINT:
-      return 'String Point';
-
-    default:
-      return 'Unknown Component';
   }
 }
 

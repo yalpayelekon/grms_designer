@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/router_connection_provider.dart';
 import '../../providers/workgroups_provider.dart';
-import '../../utils/general_ui.dart';
 import '../details/group_detail_screen.dart';
 
 class GroupsListScreen extends ConsumerStatefulWidget {

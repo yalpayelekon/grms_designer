@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 class NetworkInterfaceDialog extends StatefulWidget {
   const NetworkInterfaceDialog({super.key, required this.interfaces});

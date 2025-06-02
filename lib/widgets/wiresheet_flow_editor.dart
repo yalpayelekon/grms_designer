@@ -8,6 +8,7 @@ import 'package:grms_designer/utils/logger.dart';
 import 'package:grms_designer/utils/canvas_dialog_utils.dart' as dialog_utils;
 import 'package:grms_designer/utils/component_factory.dart'
     as component_factory;
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../niagara/controllers/flow_editor_state.dart';
 import '../niagara/controllers/clipboard_manager.dart';
 import '../niagara/controllers/drag_operation_manager.dart';
@@ -26,7 +27,6 @@ import '../niagara/models/component.dart';
 import '../niagara/models/component_type.dart';
 import '../niagara/models/connection.dart';
 import '../services/flowsheet_storage_service.dart';
-import '../utils/general_ui.dart';
 import '../utils/persistent_helper.dart';
 
 class WiresheetFlowEditor extends ConsumerStatefulWidget {

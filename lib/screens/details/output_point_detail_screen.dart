@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/general_ui.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';

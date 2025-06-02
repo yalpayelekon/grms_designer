@@ -7,6 +7,7 @@ import 'package:grms_designer/niagara/models/component.dart';
 import 'package:grms_designer/niagara/models/component_type.dart';
 import 'package:grms_designer/niagara/models/port_type.dart';
 import 'package:grms_designer/utils/canvas_utils.dart';
+import 'package:grms_designer/utils/component_ui_utils.dart';
 import 'package:grms_designer/utils/device_utils.dart';
 import 'package:grms_designer/utils/logger.dart';
 import 'package:grms_designer/utils/persistent_helper.dart';

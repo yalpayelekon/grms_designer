@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/output_device.dart';
 import '../../services/device_query_service.dart';
-import '../../utils/general_ui.dart';
 
 class OutputPointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;

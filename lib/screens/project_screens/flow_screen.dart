@@ -1,8 +1,6 @@
-// lib/screens/project_screens/flow_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/flowsheet.dart';
 import '../../providers/flowsheet_provider.dart';
 import '../../widgets/wiresheet_flow_editor.dart';

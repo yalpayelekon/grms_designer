@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/protocol/protocol_parser.dart';
 import 'package:grms_designer/providers/workgroups_provider.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
 import 'package:grms_designer/utils/scene_utils.dart';
 import 'package:intl/intl.dart';
 import '../../models/helvar_models/helvar_group.dart';
@@ -11,7 +10,7 @@ import '../../models/helvar_models/workgroup.dart';
 import '../../providers/router_connection_provider.dart';
 import '../../providers/group_polling_provider.dart';
 import '../../protocol/query_commands.dart';
-import '../../utils/general_ui.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../utils/logger.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {

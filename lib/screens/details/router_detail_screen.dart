@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/input_device.dart';
@@ -10,7 +9,7 @@ import '../../providers/router_connection_provider.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../utils/device_icons.dart';
 import '../../utils/file_dialog_helper.dart';
-import '../../utils/general_ui.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../utils/logger.dart';
 import '../dialogs/add_device_dialog.dart';
 

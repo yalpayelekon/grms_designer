@@ -6,7 +6,9 @@ import 'package:grms_designer/models/helvar_models/output_point.dart';
 import 'package:grms_designer/providers/flowsheet_provider.dart';
 import 'package:grms_designer/screens/details/device_detail_screen.dart';
 import 'package:grms_designer/screens/details/output_point_detail_screen.dart';
+import 'package:grms_designer/utils/command_utils.dart';
 import 'package:grms_designer/utils/date_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 import '../comm/models/command_models.dart';
 import '../comm/router_command_service.dart';
@@ -18,7 +20,6 @@ import '../models/helvar_models/workgroup.dart';
 import '../providers/project_settings_provider.dart';
 import '../providers/router_connection_provider.dart';
 import '../services/app_directory_service.dart';
-import '../utils/general_ui.dart';
 import '../widgets/app_tree_view.dart';
 import 'details/group_detail_screen.dart';
 import 'details/router_detail_screen.dart';

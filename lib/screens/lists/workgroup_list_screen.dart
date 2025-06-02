@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/screens/details/workgroup_detail_screen.dart';
-import 'package:grms_designer/utils/dialog_utils.dart';
 import 'package:grms_designer/utils/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:grms_designer/utils/network_utils.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../comm/discovery_manager.dart';
 import '../../utils/file_dialog_helper.dart';
-import '../../utils/general_ui.dart';
 import '../dialogs/network_interface_dialog.dart';
 import '../dialogs/workgroup_selection_dialog.dart';
 import '../../providers/settings_provider.dart';

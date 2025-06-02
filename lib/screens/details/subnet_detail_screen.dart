@@ -4,17 +4,20 @@ import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../utils/device_icons.dart';
-import '../../utils/general_ui.dart';
+import 'package:grms_designer/utils/ui_helpers.dart';
 
 class SubnetDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
   final HelvarRouter router;
   final int subnetNumber;
   final List<HelvarDevice> devices;
-  final Function(String,
-      {Workgroup? workgroup,
-      HelvarRouter? router,
-      HelvarDevice? device})? onNavigate;
+  final Function(
+    String, {
+    Workgroup? workgroup,
+    HelvarRouter? router,
+    HelvarDevice? device,
+  })?
+  onNavigate;
 
   const SubnetDetailScreen({
     super.key,
@@ -34,8 +37,9 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading:
-            Text('${widget.router.description} Subnet ${widget.subnetNumber}'),
+        leading: Text(
+          '${widget.router.description} Subnet ${widget.subnetNumber}',
+        ),
         centerTitle: true,
         actions: [
           IconButton(
@@ -50,11 +54,7 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.device_unknown,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
+                  Icon(Icons.device_unknown, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
                     'No devices found in this subnet',
