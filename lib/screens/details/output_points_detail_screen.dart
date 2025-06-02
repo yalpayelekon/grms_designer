@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/output_point.dart';
-import 'package:grms_designer/utils/device_utils.dart';
 import 'package:grms_designer/utils/treeview_utils.dart';
-import 'package:grms_designer/utils/ui_helpers.dart';
+import 'package:grms_designer/widgets/common/detail_card.dart';
+import 'package:grms_designer/widgets/common/expandable_list_item.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
@@ -37,8 +37,6 @@ class OutputPointsDetailScreen extends ConsumerStatefulWidget {
 
 class OutputPointsDetailScreenState
     extends ConsumerState<OutputPointsDetailScreen> {
-  final Map<int, bool> _expandedPoints = {};
-
   @override
   void initState() {
     super.initState();
@@ -63,163 +61,130 @@ class OutputPointsDetailScreenState
         centerTitle: true,
       ),
       body: outputDevice.outputPoints.isEmpty
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.radio_button_unchecked,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'No output points available for this device',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ],
-              ),
-            )
-          : _buildPointsList(outputDevice),
+          ? _buildEmptyState()
+          : ExpandableListView(
+              padding: const EdgeInsets.all(8.0),
+              children: [
+                // Device Information
+                ExpandableListItem(
+                  title: 'Device Information',
+                  subtitle: 'Basic device details and configuration',
+                  leadingIcon: Icons.info_outline,
+                  leadingIconColor: Colors.blue,
+                  initiallyExpanded: true,
+                  detailRows: [
+                    DetailRow(
+                      label: 'Device Name',
+                      value: deviceName,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Device Address',
+                      value: widget.device.address,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Device Type',
+                      value: widget.device.helvarType,
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Total Points',
+                      value: '${outputDevice.outputPoints.length} points',
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Current Level',
+                      value: '${outputDevice.level}%',
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Power Consumption',
+                      value:
+                          '${outputDevice.powerConsumption.toStringAsFixed(1)}W',
+                    ),
+                  ],
+                ),
+
+                // Output Points
+                ExpandableListItem(
+                  title: 'Output Points',
+                  subtitle:
+                      '${outputDevice.outputPoints.length} configured points',
+                  leadingIcon: Icons.output,
+                  leadingIconColor: Colors.orange,
+                  initiallyExpanded: true,
+                  children: outputDevice.outputPoints
+                      .map((point) => _buildPointItem(point))
+                      .toList(),
+                ),
+              ],
+            ),
     );
   }
 
-  Widget _buildPointsList(HelvarDriverOutputDevice outputDevice) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: outputDevice.outputPoints.length,
-      itemBuilder: (context, index) {
-        final point = outputDevice.outputPoints[index];
-        return _buildPointCard(point, index);
-      },
-    );
-  }
-
-  Widget _buildPointCard(OutputPoint point, int index) {
-    final isExpanded = _expandedPoints[point.pointId] ?? false;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+  Widget _buildEmptyState() {
+    return const Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: getOutputPointColor(
+          Icon(Icons.radio_button_unchecked, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No output points available for this device',
+            style: TextStyle(fontSize: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPointItem(OutputPoint point) {
+    return ExpandableListItem(
+      title: point.function,
+      subtitle: 'Type: ${point.pointType} • ID: ${point.pointId}',
+      leadingIcon: getOutputPointIcon(point),
+      leadingIconColor: getOutputPointValueColor(point),
+      indentLevel: 1,
+      detailRows: [
+        DetailRow(label: 'Point Name', value: point.name, showDivider: true),
+        DetailRow(label: 'Function', value: point.function, showDivider: true),
+        DetailRow(
+          label: 'Point ID',
+          value: point.pointId.toString(),
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Point Type',
+          value: point.pointType,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Current Value',
+          customValue: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: getOutputPointValueColor(
                 point,
-              ).withValues(alpha: 0.2 * 255),
-              child: Icon(
-                getOutputPointIcon(point),
-                color: getOutputPointColor(point),
-                size: 20,
+              ).withValues(alpha: 0.1 * 255),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: getOutputPointValueColor(
+                  point,
+                ).withValues(alpha: 0.3 * 255),
               ),
             ),
-            title: Text(
-              point.function,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Type: ${point.pointType}'),
-                Text('ID: ${point.pointId}'),
-                Row(
-                  children: [
-                    const Text('Value: '),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getValueColor(
-                          point,
-                        ).withValues(alpha: 0.2 * 255),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        formatOutputPointValue(point),
-                        style: TextStyle(
-                          color: _getValueColor(point),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    isExpanded ? Icons.expand_less : Icons.expand_more,
-                  ),
-                  onPressed: () => _togglePointExpansion(point.pointId),
-                ),
-              ],
-            ),
-            isThreeLine: true,
-          ),
-          if (isExpanded) _buildExpandedPointContent(point),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpandedPointContent(OutputPoint point) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    buildInfoRow('Point Name', point.name),
-                    buildInfoRow('Function', point.function),
-                    buildInfoRow('Point ID', point.pointId.toString()),
-                    buildInfoRow('Point Type', point.pointType),
-                    buildInfoRow(
-                      'Current Value',
-                      formatOutputPointValue(point),
-                    ),
-                  ],
-                ),
+            child: Text(
+              formatOutputPointValue(point),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: getOutputPointValueColor(point),
               ),
-            ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
-  }
-
-  Color _getValueColor(OutputPoint point) {
-    if (point.pointType == 'boolean') {
-      final value = point.value as bool? ?? false;
-      if ([1, 2, 3, 4].contains(point.pointId)) {
-        return value ? Colors.red : Colors.green;
-      }
-      return value ? Colors.green : Colors.grey;
-    } else {
-      final value = (point.value as num?)?.toDouble() ?? 0.0;
-      if (value == 0) return Colors.grey;
-      if (value < 50) return Colors.blue;
-      return Colors.green;
-    }
-  }
-
-  void _togglePointExpansion(int pointId) {
-    setState(() {
-      _expandedPoints[pointId] = !(_expandedPoints[pointId] ?? false);
-    });
   }
 }

@@ -34,21 +34,6 @@ class PointsDetailScreen extends ConsumerStatefulWidget {
 }
 
 class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
-  final Map<int, String> _pointStates = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _initializePointStates();
-  }
-
-  void _initializePointStates() {
-    final inputDevice = widget.device as HelvarDriverInputDevice;
-    for (final point in inputDevice.buttonPoints) {
-      _pointStates[point.buttonId] = 'Unknown';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final inputDevice = widget.device as HelvarDriverInputDevice;
@@ -63,6 +48,7 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
           : ExpandableListView(
               padding: const EdgeInsets.all(8.0),
               children: [
+                // Device Information
                 ExpandableListItem(
                   title: 'Device Information',
                   subtitle: 'Basic device details and configuration',
@@ -107,6 +93,8 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
                     ),
                   ],
                 ),
+
+                // Input Points
                 ExpandableListItem(
                   title: 'Input Points',
                   subtitle:
@@ -140,7 +128,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
   }
 
   Widget _buildPointItem(ButtonPoint point) {
-    final currentState = _pointStates[point.buttonId] ?? 'Unknown';
     final pointIcon = getButtonPointIcon(point);
     final pointColor = _getPointColor(point);
     final displayName = getButtonPointDisplayName(point);
@@ -151,7 +138,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
       leadingIcon: pointIcon,
       leadingIconColor: pointColor,
       indentLevel: 1,
-      onTap: () => _navigateToPointDetail(point),
       detailRows: [
         DetailRow(label: 'Point Name', value: point.name, showDivider: true),
         DetailRow(
@@ -170,15 +156,9 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
           showDivider: true,
         ),
         StatusDetailRow(
-          label: 'Current State',
-          statusText: currentState,
-          statusColor: _getStateColor(currentState),
-          showDivider: true,
-        ),
-        NavigationDetailRow(
-          label: 'Point Details',
-          value: 'View detailed information',
-          onTap: () => _navigateToPointDetail(point),
+          label: 'Status',
+          statusText: _getPointStatus(point),
+          statusColor: _getPointStatusColor(point),
         ),
       ],
     );
@@ -196,25 +176,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
     }
   }
 
-  Color _getStateColor(String state) {
-    switch (state.toLowerCase()) {
-      case 'active':
-      case 'on':
-      case 'pressed':
-        return Colors.green;
-      case 'inactive':
-      case 'off':
-      case 'released':
-        return Colors.grey;
-      case 'fault':
-      case 'error':
-        return Colors.red;
-      case 'unknown':
-      default:
-        return Colors.orange;
-    }
-  }
-
   String _getPointTypeDescription(ButtonPoint point) {
     if (point.function.contains('Status') || point.name.contains('Missing')) {
       return 'Status Point';
@@ -227,15 +188,23 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
     }
   }
 
-  void _navigateToPointDetail(ButtonPoint point) {
-    if (widget.onNavigate != null) {
-      widget.onNavigate!(
-        'pointDetail',
-        workgroup: widget.workgroup,
-        router: widget.router,
-        device: widget.device,
-        point: point,
-      );
+  String _getPointStatus(ButtonPoint point) {
+    if (point.function.contains('Status') || point.name.contains('Missing')) {
+      return 'Monitoring';
+    } else if (point.function.contains('IR')) {
+      return 'Listening';
+    } else {
+      return 'Ready';
+    }
+  }
+
+  Color _getPointStatusColor(ButtonPoint point) {
+    if (point.function.contains('Status') || point.name.contains('Missing')) {
+      return Colors.orange;
+    } else if (point.function.contains('IR')) {
+      return Colors.purple;
+    } else {
+      return Colors.green;
     }
   }
 }

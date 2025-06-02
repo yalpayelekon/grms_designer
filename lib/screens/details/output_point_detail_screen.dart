@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/device_utils.dart';
 import 'package:grms_designer/utils/ui_helpers.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -50,7 +51,11 @@ class OutputPointDetailScreenState
           children: [
             Row(
               children: [
-                Icon(_getPointIcon(), size: 32, color: _getPointColor()),
+                Icon(
+                  _getPointIcon(),
+                  size: 32,
+                  color: getOutputPointColor(widget.point),
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -107,25 +112,6 @@ class OutputPointDetailScreenState
         return Icons.power;
       default:
         return Icons.circle;
-    }
-  }
-
-  Color _getPointColor() {
-    switch (widget.point.pointId) {
-      case 1:
-        return Colors.blue;
-      case 2:
-        return Colors.red;
-      case 3:
-        return Colors.orange;
-      case 4:
-        return Colors.red;
-      case 5:
-        return Colors.green;
-      case 6:
-        return Colors.purple;
-      default:
-        return Colors.grey;
     }
   }
 }

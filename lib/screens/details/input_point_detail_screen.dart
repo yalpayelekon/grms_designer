@@ -43,7 +43,7 @@ class InputPointDetailScreenState
             subtitle:
                 'Function: ${widget.point.function} • ID: ${widget.point.buttonId}',
             leadingIcon: getButtonPointIcon(widget.point),
-            leadingIconColor: _getPointColor(),
+            leadingIconColor: null,
             initiallyExpanded: true,
             detailRows: [
               DetailRow(
@@ -131,19 +131,6 @@ class InputPointDetailScreenState
         ],
       ),
     );
-  }
-
-  Color _getPointColor() {
-    if (widget.point.function.contains('Status') ||
-        widget.point.name.contains('Missing')) {
-      return Colors.orange;
-    } else if (widget.point.function.contains('IR')) {
-      return Colors.purple;
-    } else if (widget.point.function.contains('Button')) {
-      return Colors.blue;
-    } else {
-      return Colors.grey;
-    }
   }
 
   String _getPointTypeDescription() {
