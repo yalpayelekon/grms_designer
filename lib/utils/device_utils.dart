@@ -52,35 +52,6 @@ String handleRecallScene(String sceneParams, {bool logInfoOutput = false}) {
   }
 }
 
-Widget buildTypeIndicator(PortType type) {
-  IconData icon;
-  Color color;
-
-  switch (type.type) {
-    case PortType.BOOLEAN:
-      icon = Icons.toggle_on_outlined;
-      color = Colors.indigo;
-      break;
-    case PortType.NUMERIC:
-      icon = Icons.numbers;
-      color = Colors.green;
-      break;
-    case PortType.STRING:
-      icon = Icons.text_fields;
-      color = Colors.orange;
-      break;
-    case PortType.ANY:
-      icon = Icons.all_inclusive;
-      color = Colors.purple;
-      break;
-    default:
-      icon = Icons.help_outline;
-      color = Colors.grey;
-  }
-
-  return Icon(icon, color: color, size: 12);
-}
-
 String getNameForComponentType(ComponentType type) {
   // Custom components
   if (type.type == RectangleComponent.RECTANGLE) {
