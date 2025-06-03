@@ -121,10 +121,13 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
                 DetailRow(
                   label: 'Polling Enabled',
                   customValue: DropdownButton<bool>(
-                    value: widget.workgroup.pollEnabled,
+                    value:
+                        _isDevicePollingActive(), // Use the active state instead of workgroup setting
                     isExpanded: true,
                     onChanged: (bool? newValue) {
-                      _toggleDevicePolling();
+                      if (newValue != null) {
+                        _toggleDevicePolling();
+                      }
                     },
                     items: const [
                       DropdownMenuItem<bool>(
@@ -161,15 +164,11 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
                 ),
                 StatusDetailRow(
                   label: 'Current Status',
-                  statusText: _devicePollingEnabled
+                  statusText: _isDevicePollingActive()
                       ? 'Polling Active'
-                      : widget.workgroup.pollEnabled
-                      ? 'Starting Polling...'
                       : 'Disabled',
-                  statusColor: _devicePollingEnabled
+                  statusColor: _isDevicePollingActive()
                       ? Colors.green
-                      : widget.workgroup.pollEnabled
-                      ? Colors.orange
                       : Colors.grey,
                   showDivider: true,
                 ),
@@ -181,7 +180,9 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
                 if (widget.workgroup.lastPollTime != null)
                   DetailRow(
                     label: 'Last Poll Started',
-                    value: formatDateTime(widget.workgroup.lastPollTime!),
+                    value: getLastUpdateTime(
+                      dateTime: widget.workgroup.lastPollTime!,
+                    ),
                     showDivider: true,
                   ),
               ],
@@ -202,21 +203,20 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
 
   void _toggleDevicePolling() async {
     final pollingManager = ref.read(pollingManagerProvider.notifier);
+    final isCurrentlyActive = _isDevicePollingActive();
 
-    if (_devicePollingEnabled) {
+    if (isCurrentlyActive) {
       pollingManager.stopDevicePolling(
         widget.router.address,
         widget.device.address,
       );
-      setState(() => _devicePollingEnabled = false);
     } else {
       await pollingManager.startDevicePolling(
         widget.workgroup.id,
         widget.router.address,
         widget.device.address,
-        interval: const Duration(minutes: 2), // Custom interval
+        interval: const Duration(minutes: 2),
       );
-      setState(() => _devicePollingEnabled = true);
     }
   }
 

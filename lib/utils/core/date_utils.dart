@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 String formatDateTime(DateTime dateTime) {
   final now = DateTime.now();
   final difference = now.difference(dateTime);
@@ -13,6 +15,7 @@ String formatDateTime(DateTime dateTime) {
   }
 }
 
-String getLastUpdateTime() {
-  return DateTime.now().toString().substring(11, 19);
+String getLastUpdateTime({DateTime? dateTime}) {
+  final dt = dateTime ?? DateTime.now();
+  return DateFormat('dd/MM/yyyy HH:mm:ss').format(dt);
 }

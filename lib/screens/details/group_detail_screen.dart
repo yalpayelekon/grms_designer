@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:intl/intl.dart';
 import '../../models/helvar_models/helvar_group.dart';
@@ -109,13 +110,11 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           : SingleChildScrollView(
               child: DetailRowsList(
                 children: [
-                  // Basic Information
                   DetailRow(
                     label: 'Group ID',
                     value: group.groupId,
                     showDivider: true,
                   ),
-
                   DetailRow(
                     label: 'Description',
                     value: group.description.isEmpty
@@ -123,35 +122,29 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                         : group.description,
                     showDivider: true,
                   ),
-
                   DetailRow(
                     label: 'Type',
                     value: group.type,
                     showDivider: true,
                   ),
-
                   if (group.lsig != null)
                     DetailRow(
                       label: 'LSIG',
                       value: group.lsig.toString(),
                       showDivider: true,
                     ),
-
                   if (group.lsib1 != null)
                     DetailRow(
                       label: 'LSIB1',
                       value: group.lsib1.toString(),
                       showDivider: true,
                     ),
-
                   if (group.lsib2 != null)
                     DetailRow(
                       label: 'LSIB2',
                       value: group.lsib2.toString(),
                       showDivider: true,
                     ),
-
-                  // Block values
                   ...group.blockValues.asMap().entries.map(
                     (entry) => DetailRow(
                       label: 'Block ${entry.key + 1}',
@@ -159,15 +152,11 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                       showDivider: true,
                     ),
                   ),
-
-                  // Power Consumption
                   DetailRow(
                     label: 'Current Power',
                     value: '${group.powerConsumption.toStringAsFixed(2)} W',
                     showDivider: true,
                   ),
-
-                  // Editable Polling Interval
                   EditableDetailRow(
                     label: 'Polling Minutes',
                     controller: _pollingMinutesController,
@@ -176,15 +165,13 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     onSubmitted: _savePollingInterval,
                     showDivider: true,
                   ),
-
-                  // Last power update time
                   DetailRow(
                     label: 'Last Power Update',
-                    value: _formatLastUpdateTime(group.lastPowerUpdateTime),
+                    value: getLastUpdateTime(
+                      dateTime: group.lastPowerUpdateTime,
+                    ),
                     showDivider: true,
                   ),
-
-                  // Polling status
                   StatusDetailRow(
                     label: 'Polling Status',
                     statusText: widget.workgroup.pollEnabled
@@ -195,8 +182,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                         : Colors.orange,
                     showDivider: true,
                   ),
-
-                  // Gateway Router
                   DetailRow(
                     label: 'Gateway Router',
                     value: group.gatewayRouterIpAddress.isEmpty
@@ -204,44 +189,34 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                         : group.gatewayRouterIpAddress,
                     showDivider: true,
                   ),
-
-                  // Scene Table (editable)
                   EditableDetailRow(
                     label: 'Scene Table',
                     controller: _sceneTableController,
                     onSubmitted: _saveSceneTable,
                     showDivider: true,
                   ),
-
-                  // Scene count
                   DetailRow(
                     label: 'Scene Count',
                     value: '${group.sceneTable.length} scenes',
                     showDivider: true,
                   ),
-
-                  // Settings
                   DetailRow(
                     label: 'Refresh Props After Action',
                     value: group.refreshPropsAfterAction.toString(),
                     showDivider: true,
                   ),
-
-                  // Status information
                   if (group.actionResult.isNotEmpty)
                     DetailRow(
                       label: 'Action Result',
                       value: group.actionResult,
                       showDivider: true,
                     ),
-
                   if (group.lastMessage.isNotEmpty)
                     DetailRow(
                       label: 'Last Message',
                       value: group.lastMessage,
                       showDivider: true,
                     ),
-
                   if (group.lastMessageTime != null)
                     DetailRow(
                       label: 'Message Time',
@@ -250,8 +225,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                       ).format(group.lastMessageTime!),
                       showDivider: true,
                     ),
-
-                  // Workgroup info
                   DetailRow(
                     label: 'Workgroup',
                     value: widget.workgroup.description,
@@ -260,23 +233,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               ),
             ),
     );
-  }
-
-  String _formatLastUpdateTime(DateTime? lastUpdate) {
-    if (lastUpdate == null) return 'Never';
-
-    final now = DateTime.now();
-    final difference = now.difference(lastUpdate);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-    } else {
-      return DateFormat('MMM d, h:mm a').format(lastUpdate);
-    }
   }
 
   void _savePollingInterval(String value) {
