@@ -3,7 +3,6 @@ import 'package:grms_designer/services/polling/polling_task.dart';
 import 'package:grms_designer/utils/core/logger.dart';
 
 import '../../providers/group_polling_provider.dart';
-import '../../providers/centralized_polling_provider.dart';
 import '../../providers/workgroups_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

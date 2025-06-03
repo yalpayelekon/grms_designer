@@ -51,13 +51,8 @@ class PollingDashboard extends ConsumerWidget {
               ],
             ),
             const Divider(),
-
-            // Statistics
             _buildStatisticsSection(context, statistics),
-
             const SizedBox(height: 16),
-
-            // Active tasks
             _buildActiveTasksSection(context, tasks, pollingManager),
           ],
         ),
@@ -113,11 +108,8 @@ class PollingDashboard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color?.withOpacity(0.1) ?? Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color?.withOpacity(0.3) ?? Colors.grey.withOpacity(0.3),
-        ),
+        border: Border.all(color: color ?? Colors.grey),
       ),
       child: Column(
         children: [
