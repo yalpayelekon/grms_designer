@@ -9,6 +9,7 @@ import 'package:grms_designer/screens/details/output_point_detail_screen.dart';
 import 'package:grms_designer/utils/network/command_utils.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
+import 'package:grms_designer/widgets/polling_dashboard.dart';
 
 import '../comm/models/command_models.dart';
 import '../comm/router_command_service.dart';
@@ -202,7 +203,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildMainContent() {
     if (showingProject) {
-      return _buildConnectionMonitor();
+      return _AppMonitor();
     }
     if (openSettings) {
       return const ProjectSettingsScreen();
@@ -307,7 +308,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     return const FlowsheetListScreen();
   }
 
-  Widget _buildConnectionMonitor() {
+  Widget _AppMonitor() {
     final connectionManager = ref.watch(routerConnectionManagerProvider);
     final stats = connectionManager.getConnectionStats();
     final connections = connectionManager.connections;
@@ -373,6 +374,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       },
                     ),
                   ),
+            const PollingDashboard(),
           ],
         ),
       ),

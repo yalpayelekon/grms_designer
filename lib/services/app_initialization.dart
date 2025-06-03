@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/providers/centralized_polling_provider.dart';
+import 'package:grms_designer/providers/migration_helper.dart';
 import '../utils/core/logger.dart';
 import '../providers/group_polling_provider.dart';
 import '../providers/workgroups_provider.dart';
@@ -57,6 +59,17 @@ class AppInitializationService {
     } catch (e) {
       logError('Error initializing polling: $e');
       // Don't rethrow - polling failure shouldn't prevent app startup
+    }
+  }
+
+  static void setupPollingListener(WidgetRef ref) {
+    // Check if migration is needed
+    if (PollingMigrationHelper.needsMigration(ref)) {
+      PollingMigrationHelper.migrateToNewPollingSystem(ref);
+    } else {
+      // Initialize new polling system directly
+      final pollingManager = ref.read(pollingManagerProvider.notifier);
+      // Polling will auto-start based on workgroup settings
     }
   }
 

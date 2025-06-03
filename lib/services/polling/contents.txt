@@ -1,0 +1,613 @@
+import 'dart:async';
+import 'package:grms_designer/utils/core/logger.dart';
+
+import 'polling_task.dart';
+
+class CentralizedPollingService {
+  final Map<String, PollingTaskInfo> _tasks = {};
+  final StreamController<PollingTaskInfo> _taskUpdateController =
+      StreamController<PollingTaskInfo>.broadcast();
+  bool _disposed = false;
+
+  Stream<PollingTaskInfo> get taskUpdates => _taskUpdateController.stream;
+
+  Map<String, PollingTaskInfo> get tasks => Map.unmodifiable(_tasks);
+
+  void registerTask(PollingTask task) {
+    if (_disposed) return;
+
+    if (_tasks.containsKey(task.id)) {
+      logWarning('Task with ID ${task.id} already exists, replacing it');
+      stopTask(task.id);
+    }
+
+    _tasks[task.id] = PollingTaskInfo(task: task, state: PollingTaskState.idle);
+
+    logInfo('Registered polling task: ${task.name} (${task.id})');
+  }
+
+  Future<bool> startTask(String taskId) async {
+    if (_disposed) return false;
+
+    final taskInfo = _tasks[taskId];
+    if (taskInfo == null) {
+      logError('Task not found: $taskId');
+      return false;
+    }
+
+    if (taskInfo.state == PollingTaskState.running) {
+      logWarning('Task $taskId is already running');
+      return true;
+    }
+
+    try {
+      taskInfo.timer?.cancel();
+
+      _updateTaskInfo(
+        taskId,
+        taskInfo.copyWith(state: PollingTaskState.running),
+      );
+
+      taskInfo.task.onStart();
+
+      await _executeTask(taskId);
+
+      final timer = Timer.periodic(taskInfo.task.interval, (_) {
+        if (!_disposed && _tasks[taskId]?.state == PollingTaskState.running) {
+          _executeTask(taskId);
+        }
+      });
+
+      _updateTaskInfo(taskId, _tasks[taskId]!.copyWith(timer: timer));
+
+      logInfo('Started polling task: ${taskInfo.task.name}');
+      return true;
+    } catch (e, stackTrace) {
+      logError('Error starting task $taskId: $e', stackTrace: stackTrace);
+      _updateTaskInfo(taskId, taskInfo.copyWith(state: PollingTaskState.error));
+      return false;
+    }
+  }
+
+  void stopTask(String taskId) {
+    if (_disposed) return;
+
+    final taskInfo = _tasks[taskId];
+    if (taskInfo == null) {
+      logWarning('Task not found: $taskId');
+      return;
+    }
+
+    taskInfo.timer?.cancel();
+    taskInfo.task.onStop();
+
+    _updateTaskInfo(
+      taskId,
+      taskInfo.copyWith(state: PollingTaskState.stopped, timer: null),
+    );
+
+    logInfo('Stopped polling task: ${taskInfo.task.name}');
+  }
+
+  void pauseTask(String taskId) {
+    if (_disposed) return;
+
+    final taskInfo = _tasks[taskId];
+    if (taskInfo == null || taskInfo.state != PollingTaskState.running) {
+      return;
+    }
+
+    taskInfo.timer?.cancel();
+
+    _updateTaskInfo(
+      taskId,
+      taskInfo.copyWith(state: PollingTaskState.paused, timer: null),
+    );
+
+    logInfo('Paused polling task: ${taskInfo.task.name}');
+  }
+
+  Future<bool> resumeTask(String taskId) async {
+    if (_disposed) return false;
+
+    final taskInfo = _tasks[taskId];
+    if (taskInfo?.state != PollingTaskState.paused) {
+      return false;
+    }
+
+    return await startTask(taskId);
+  }
+
+  Future<void> startAllTasks() async {
+    final taskIds = _tasks.keys.toList();
+    for (final taskId in taskIds) {
+      await startTask(taskId);
+    }
+  }
+
+  void stopAllTasks() {
+    final taskIds = _tasks.keys.toList();
+    for (final taskId in taskIds) {
+      stopTask(taskId);
+    }
+  }
+
+  void pauseAllTasks() {
+    final taskIds = _tasks.keys.toList();
+    for (final taskId in taskIds) {
+      pauseTask(taskId);
+    }
+  }
+
+  Future<void> resumeAllTasks() async {
+    final taskIds = _tasks.keys.toList();
+    for (final taskId in taskIds) {
+      final taskInfo = _tasks[taskId];
+      if (taskInfo?.state == PollingTaskState.paused) {
+        await resumeTask(taskId);
+      }
+    }
+  }
+
+  void unregisterTask(String taskId) {
+    stopTask(taskId);
+    _tasks.remove(taskId);
+    logInfo('Unregistered polling task: $taskId');
+  }
+
+  PollingTaskInfo? getTaskInfo(String taskId) {
+    return _tasks[taskId];
+  }
+
+  List<PollingTaskInfo> getTasksByState(PollingTaskState state) {
+    return _tasks.values.where((info) => info.state == state).toList();
+  }
+
+  Future<bool> updateTaskInterval(String taskId, Duration newInterval) async {
+    final taskInfo = _tasks[taskId];
+    if (taskInfo == null) return false;
+
+    final wasRunning = taskInfo.state == PollingTaskState.running;
+
+    if (wasRunning) {
+      stopTask(taskId);
+    }
+
+    final updatedTask = _createTaskWithNewInterval(taskInfo.task, newInterval);
+    if (updatedTask == null) return false;
+
+    _tasks[taskId] = taskInfo.copyWith(task: updatedTask);
+
+    if (wasRunning) {
+      return await startTask(taskId);
+    }
+
+    return true;
+  }
+
+  Future<PollingResult?> executeTaskNow(String taskId) async {
+    if (_disposed) return null;
+
+    final taskInfo = _tasks[taskId];
+    if (taskInfo == null) return null;
+
+    return await _executeTask(taskId);
+  }
+
+  Map<String, dynamic> getStatistics() {
+    final stats = <String, dynamic>{};
+
+    stats['totalTasks'] = _tasks.length;
+    stats['runningTasks'] = getTasksByState(PollingTaskState.running).length;
+    stats['pausedTasks'] = getTasksByState(PollingTaskState.paused).length;
+    stats['errorTasks'] = getTasksByState(PollingTaskState.error).length;
+    stats['idleTasks'] = getTasksByState(PollingTaskState.idle).length;
+
+    final executionCounts = _tasks.values.map((info) => info.executionCount);
+    stats['totalExecutions'] = executionCounts.fold(
+      0,
+      (sum, count) => sum + count,
+    );
+
+    return stats;
+  }
+
+  Future<PollingResult?> _executeTask(String taskId) async {
+    final taskInfo = _tasks[taskId];
+    if (taskInfo == null || _disposed) return null;
+
+    try {
+      logDebug('Executing polling task: ${taskInfo.task.name}');
+
+      final result = await taskInfo.task.execute();
+
+      _updateTaskInfo(
+        taskId,
+        taskInfo.copyWith(
+          lastExecution: DateTime.now(),
+          lastResult: result,
+          executionCount: taskInfo.executionCount + 1,
+        ),
+      );
+
+      if (!result.success) {
+        logWarning('Task ${taskInfo.task.name} failed: ${result.error}');
+        taskInfo.task.onError(Exception(result.error), StackTrace.current);
+      } else {
+        logDebug('Task ${taskInfo.task.name} completed successfully');
+      }
+
+      return result;
+    } catch (e, stackTrace) {
+      logError(
+        'Error executing task ${taskInfo.task.name}: $e',
+        stackTrace: stackTrace,
+      );
+
+      final errorResult = PollingResult.failure(e.toString());
+
+      _updateTaskInfo(
+        taskId,
+        taskInfo.copyWith(
+          state: PollingTaskState.error,
+          lastExecution: DateTime.now(),
+          lastResult: errorResult,
+          executionCount: taskInfo.executionCount + 1,
+        ),
+      );
+
+      taskInfo.task.onError(e, stackTrace);
+      return errorResult;
+    }
+  }
+
+  void _updateTaskInfo(String taskId, PollingTaskInfo newInfo) {
+    _tasks[taskId] = newInfo;
+
+    if (!_taskUpdateController.isClosed) {
+      _taskUpdateController.add(newInfo);
+    }
+  }
+
+  PollingTask? _createTaskWithNewInterval(
+    PollingTask originalTask,
+    Duration newInterval,
+  ) {
+    logWarning(
+      'Task interval update not implemented for ${originalTask.runtimeType}',
+    );
+    return null;
+  }
+
+  void dispose() {
+    if (_disposed) return;
+
+    _disposed = true;
+    stopAllTasks();
+    _taskUpdateController.close();
+    _tasks.clear();
+
+    logInfo('Centralized polling service disposed');
+  }
+}
+import 'package:grms_designer/utils/core/logger.dart';
+
+import '../../comm/router_command_service.dart';
+import '../../models/helvar_models/helvar_device.dart';
+import '../../models/helvar_models/helvar_router.dart';
+import '../../models/helvar_models/output_device.dart';
+import '../../protocol/query_commands.dart';
+import '../../protocol/protocol_parser.dart';
+import 'polling_task.dart';
+
+class DeviceStatusPollingTask extends PollingTask {
+  final RouterCommandService commandService;
+  final HelvarRouter router;
+  final HelvarDevice device;
+  final Function(HelvarDevice updatedDevice)? onDeviceUpdated;
+
+  DeviceStatusPollingTask({
+    required this.commandService,
+    required this.router,
+    required this.device,
+    this.onDeviceUpdated,
+    super.interval = const Duration(minutes: 5),
+  }) : super(
+         id: 'device_status_${router.address}_${device.address}',
+         name: 'Device ${device.address} Status',
+         parameters: {
+           'routerAddress': router.address,
+           'deviceAddress': device.address,
+           'deviceType': device.helvarType,
+         },
+       );
+
+  @override
+  Future<PollingResult> execute() async {
+    try {
+      logDebug('Polling status for device ${device.address}');
+
+      final results = <String, dynamic>{};
+
+      final stateCommand = HelvarNetCommands.queryDeviceState(device.address);
+      final stateResult = await commandService.sendCommand(
+        router.ipAddress,
+        stateCommand,
+      );
+
+      if (stateResult.success && stateResult.response != null) {
+        final stateValue = ProtocolParser.extractResponseValue(
+          stateResult.response!,
+        );
+        if (stateValue != null) {
+          final stateCode = int.tryParse(stateValue) ?? 0;
+          results['deviceStateCode'] = stateCode;
+          results['deviceState'] = _getStateFlagsDescription(stateCode);
+        }
+      }
+
+      if (device is HelvarDriverOutputDevice) {
+        final levelCommand = HelvarNetCommands.queryLoadLevel(device.address);
+        final levelResult = await commandService.sendCommand(
+          router.ipAddress,
+          levelCommand,
+        );
+
+        if (levelResult.success && levelResult.response != null) {
+          final levelValue = ProtocolParser.extractResponseValue(
+            levelResult.response!,
+          );
+          if (levelValue != null) {
+            final level = double.tryParse(levelValue) ?? 0.0;
+            results['outputLevel'] = level;
+          }
+        }
+      }
+
+      if (results.containsKey('deviceStateCode')) {
+        device.deviceStateCode = results['deviceStateCode'];
+      }
+      if (results.containsKey('deviceState')) {
+        device.state = results['deviceState'];
+      }
+      if (device is HelvarDriverOutputDevice &&
+          results.containsKey('outputLevel')) {
+        (device as HelvarDriverOutputDevice).level =
+            (results['outputLevel'] as double).round();
+      }
+
+      onDeviceUpdated?.call(device);
+
+      return PollingResult.success(results);
+    } catch (e) {
+      return PollingResult.failure('Error polling device status: $e');
+    }
+  }
+
+  String _getStateFlagsDescription(int flags) {
+    final descriptions = <String>[];
+
+    if (flags == 0) return 'Normal';
+
+    if ((flags & 0x00000001) != 0) descriptions.add('Disabled');
+    if ((flags & 0x00000002) != 0) descriptions.add('Lamp Failure');
+    if ((flags & 0x00000004) != 0) descriptions.add('Missing');
+    if ((flags & 0x00000008) != 0) descriptions.add('Faulty');
+
+    return descriptions.join(', ');
+  }
+
+  @override
+  void onStart() {
+    logInfo('Started status polling for device ${device.address}');
+  }
+
+  @override
+  void onStop() {
+    logInfo('Stopped status polling for device ${device.address}');
+  }
+
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    logError(
+      'Device status polling error for ${device.address}: $error',
+      stackTrace: stackTrace,
+    );
+  }
+}
+import 'package:grms_designer/utils/core/logger.dart';
+
+import '../../comm/router_command_service.dart';
+import '../../models/helvar_models/helvar_group.dart';
+import '../../models/helvar_models/workgroup.dart';
+import '../../protocol/query_commands.dart';
+import '../../protocol/protocol_parser.dart';
+import 'polling_task.dart';
+
+class GroupPowerPollingTask extends PollingTask {
+  final RouterCommandService commandService;
+  final Workgroup workgroup;
+  final HelvarGroup group;
+  final Function(HelvarGroup updatedGroup)? onPowerUpdated;
+
+  GroupPowerPollingTask({
+    required this.commandService,
+    required this.workgroup,
+    required this.group,
+    this.onPowerUpdated,
+    Duration? customInterval,
+  }) : super(
+         id: 'group_power_${workgroup.id}_${group.id}',
+         name: 'Group ${group.groupId} Power Consumption',
+         interval:
+             customInterval ?? Duration(minutes: group.powerPollingMinutes),
+         parameters: {
+           'workgroupId': workgroup.id,
+           'groupId': group.id,
+           'groupIdInt': int.tryParse(group.groupId),
+         },
+       );
+
+  @override
+  Future<PollingResult> execute() async {
+    try {
+      if (workgroup.routers.isEmpty) {
+        return PollingResult.failure(
+          'No routers available for workgroup ${workgroup.description}',
+        );
+      }
+
+      final router = workgroup.routers.first;
+      final groupIdInt = parameters['groupIdInt'] as int?;
+
+      if (groupIdInt == null) {
+        return PollingResult.failure('Invalid group ID: ${group.groupId}');
+      }
+
+      logDebug('Polling power consumption for group ${group.groupId}');
+
+      final powerCommand = HelvarNetCommands.queryGroupPowerConsumption(
+        groupIdInt,
+      );
+      final powerResult = await commandService.sendCommand(
+        router.ipAddress,
+        powerCommand,
+      );
+
+      if (powerResult.success && powerResult.response != null) {
+        final powerValue = ProtocolParser.extractResponseValue(
+          powerResult.response!,
+        );
+
+        if (powerValue != null) {
+          final powerConsumption = double.tryParse(powerValue) ?? 0.0;
+          final now = DateTime.now();
+
+          final updatedGroup = group.copyWith(
+            powerConsumption: powerConsumption,
+            lastPowerUpdateTime: now,
+          );
+
+          logInfo(
+            'Polled power consumption for group ${group.groupId}: ${powerConsumption}W',
+          );
+
+          // Notify callback if provided
+          onPowerUpdated?.call(updatedGroup);
+
+          return PollingResult.success({
+            'powerConsumption': powerConsumption,
+            'timestamp': now,
+            'updatedGroup': updatedGroup,
+          });
+        } else {
+          return PollingResult.failure(
+            'Empty power consumption value received',
+          );
+        }
+      } else {
+        return PollingResult.failure(
+          'Failed to query power consumption: ${powerResult.response}',
+        );
+      }
+    } catch (e) {
+      return PollingResult.failure('Error polling power consumption: $e');
+    }
+  }
+
+  @override
+  void onStart() {
+    logInfo('Started power consumption polling for group ${group.groupId}');
+  }
+
+  @override
+  void onStop() {
+    logInfo('Stopped power consumption polling for group ${group.groupId}');
+  }
+
+  @override
+  void onError(Object error, StackTrace stackTrace) {
+    logError(
+      'Power consumption polling error for group ${group.groupId}: $error',
+      stackTrace: stackTrace,
+    );
+  }
+}
+import 'dart:async';
+
+abstract class PollingTask {
+  final String id;
+  final String name;
+  final Duration interval;
+  final Map<String, dynamic> parameters;
+
+  PollingTask({
+    required this.id,
+    required this.name,
+    required this.interval,
+    this.parameters = const {},
+  });
+
+  Future<PollingResult> execute();
+
+  void onStart() {}
+
+  void onStop() {}
+
+  void onError(Object error, StackTrace stackTrace) {}
+}
+
+class PollingResult {
+  final bool success;
+  final dynamic data;
+  final String? error;
+  final DateTime timestamp;
+
+  PollingResult.success(this.data)
+    : success = true,
+      error = null,
+      timestamp = DateTime.now();
+
+  PollingResult.failure(this.error)
+    : success = false,
+      data = null,
+      timestamp = DateTime.now();
+}
+
+enum PollingTaskState { idle, running, paused, stopped, error }
+
+class PollingTaskInfo {
+  final PollingTask task;
+  final PollingTaskState state;
+  final Timer? timer;
+  final DateTime? lastExecution;
+  final PollingResult? lastResult;
+  final int executionCount;
+
+  PollingTaskInfo({
+    required this.task,
+    required this.state,
+    this.timer,
+    this.lastExecution,
+    this.lastResult,
+    this.executionCount = 0,
+  });
+
+  PollingTaskInfo copyWith({
+    PollingTask? task,
+    PollingTaskState? state,
+    Timer? timer,
+    DateTime? lastExecution,
+    PollingResult? lastResult,
+    int? executionCount,
+  }) {
+    return PollingTaskInfo(
+      task: task ?? this.task,
+      state: state ?? this.state,
+      timer: timer ?? this.timer,
+      lastExecution: lastExecution ?? this.lastExecution,
+      lastResult: lastResult ?? this.lastResult,
+      executionCount: executionCount ?? this.executionCount,
+    );
+  }
+}

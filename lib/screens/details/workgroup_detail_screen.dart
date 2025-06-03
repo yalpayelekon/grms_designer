@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/providers/centralized_polling_provider.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
-import 'package:grms_designer/utils/core/logger.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -162,31 +162,26 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   }
 
   void _togglePolling(bool enabled) async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       await ref
           .read(workgroupsProvider.notifier)
           .toggleWorkgroupPolling(widget.workgroup.id, enabled);
 
+      final pollingManager = ref.read(pollingManagerProvider.notifier);
       if (enabled) {
-        ref
-            .read(pollingStateProvider.notifier)
-            .startPolling(widget.workgroup.id);
+        await pollingManager.startWorkgroupPolling(widget.workgroup.id);
       } else {
-        ref
-            .read(pollingStateProvider.notifier)
-            .stopPolling(widget.workgroup.id);
+        pollingManager.stopWorkgroupPolling(widget.workgroup.id);
       }
 
       final message = enabled
-          ? 'Automatic polling enabled for all groups in this workgroup'
-          : 'Automatic polling disabled';
+          ? 'Centralized polling enabled for all groups'
+          : 'Centralized polling disabled';
 
       if (mounted) {
-        logInfo(message);
+        showSnackBarMsg(context, message);
       }
     } catch (e) {
       if (mounted) {
@@ -194,9 +189,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -317,8 +310,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                       ),
                       showDivider: true,
                     ),
-
-                    // Polling status
                     StatusDetailRow(
                       label: 'Current Status',
                       statusText: isPollingActive
@@ -333,7 +324,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                           : Colors.grey,
                       showDivider: true,
                     ),
-
                     DetailRow(
                       label: 'Active Groups',
                       value: '${workgroup.groups.length} groups',

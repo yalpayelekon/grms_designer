@@ -39,8 +39,6 @@ class PollingStateNotifier extends StateNotifier<Map<String, bool>> {
     List<Workgroup> previous,
     List<Workgroup> current,
   ) {
-    final pollingService = _ref.read(groupPollingServiceProvider);
-
     for (final workgroup in current) {
       final previousWorkgroup = previous.firstWhere(
         (wg) => wg.id == workgroup.id,
