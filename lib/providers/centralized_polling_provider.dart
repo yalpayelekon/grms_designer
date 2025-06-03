@@ -3,9 +3,11 @@ import 'package:grms_designer/comm/router_command_service.dart';
 import 'package:grms_designer/utils/core/logger.dart';
 import '../services/polling/centralized_polling_service.dart';
 import '../services/polling/polling_task.dart';
-import '../services/polling/group_power_polling_task.dart';
-import '../services/polling/device_status_polling_task.dart';
+import '../services/polling/device_point_polling_task.dart';
 import '../models/helvar_models/workgroup.dart';
+import '../models/helvar_models/helvar_device.dart';
+import '../models/helvar_models/output_device.dart';
+import '../models/helvar_models/input_device.dart';
 import 'router_connection_provider.dart';
 import 'workgroups_provider.dart';
 
@@ -79,8 +81,13 @@ class PollingManager extends StateNotifier<Map<String, bool>> {
         }
       }
 
+      // Update device point polling tasks if workgroup polling is enabled
       if (workgroup.pollEnabled) {
-        _ensureGroupPollingTasks(workgroup, commandService, pollingService);
+        _ensureDevicePointPollingTasks(
+          workgroup,
+          commandService,
+          pollingService,
+        );
       }
     }
 
@@ -91,6 +98,53 @@ class PollingManager extends StateNotifier<Map<String, bool>> {
     for (final removedId in removedIds) {
       _stopWorkgroupPollingById(removedId, pollingService);
     }
+  }
+
+  void _ensureDevicePointPollingTasks(
+    Workgroup workgroup,
+    RouterCommandService commandService,
+    CentralizedPollingService pollingService,
+  ) {
+    for (final router in workgroup.routers) {
+      for (final device in router.devices) {
+        if (_hasPollingPoints(device)) {
+          final taskId = 'device_points_${workgroup.id}_${device.address}';
+
+          if (pollingService.getTaskInfo(taskId) != null) {
+            continue;
+          }
+
+          final task = DevicePointPollingTask(
+            commandService: commandService,
+            workgroup: workgroup,
+            router: router,
+            device: device,
+            onPointsUpdated: (updatedDevice) {
+              _ref
+                  .read(workgroupsProvider.notifier)
+                  .updateDeviceInRouter(
+                    workgroup.id,
+                    router.address,
+                    device,
+                    updatedDevice,
+                  );
+            },
+          );
+
+          pollingService.registerTask(task);
+        }
+      }
+    }
+  }
+
+  // Helper method to check if device has polling points
+  bool _hasPollingPoints(HelvarDevice device) {
+    if (device is HelvarDriverOutputDevice) {
+      return device.outputPoints.isNotEmpty;
+    } else if (device is HelvarDriverInputDevice) {
+      return device.buttonPoints.isNotEmpty;
+    }
+    return false;
   }
 
   void _stopWorkgroupPolling(Workgroup workgroup) {
@@ -104,7 +158,7 @@ class PollingManager extends StateNotifier<Map<String, bool>> {
     String workgroupId,
     CentralizedPollingService pollingService,
   ) {
-    logInfo('Stopping centralized polling for workgroup: $workgroupId');
+    logInfo('Stopping device point polling for workgroup: $workgroupId');
 
     final tasksToRemove = <String>[];
     for (final taskInfo in pollingService.tasks.values) {
@@ -120,33 +174,6 @@ class PollingManager extends StateNotifier<Map<String, bool>> {
     final newState = Map<String, bool>.from(state);
     newState[workgroupId] = false;
     state = newState;
-  }
-
-  void _ensureGroupPollingTasks(
-    Workgroup workgroup,
-    RouterCommandService commandService,
-    CentralizedPollingService pollingService,
-  ) {
-    for (final group in workgroup.groups) {
-      final taskId = 'group_power_${workgroup.id}_${group.id}';
-
-      if (pollingService.getTaskInfo(taskId) != null) {
-        continue;
-      }
-
-      final task = GroupPowerPollingTask(
-        commandService: commandService,
-        workgroup: workgroup,
-        group: group,
-        onPowerUpdated: (updatedGroup) {
-          _ref
-              .read(workgroupsProvider.notifier)
-              .updateGroupFromPolling(updatedGroup);
-        },
-      );
-
-      pollingService.registerTask(task);
-    }
   }
 
   Future<void> startWorkgroupPolling(String workgroupId) async {
@@ -173,78 +200,28 @@ class PollingManager extends StateNotifier<Map<String, bool>> {
     );
   }
 
-  Future<void> startDevicePolling(
-    String workgroupId,
-    String routerAddress,
-    String deviceAddress, {
-    Duration interval = const Duration(minutes: 5),
-  }) async {
-    final workgroups = _ref.read(workgroupsProvider);
-    final workgroup = workgroups.firstWhere((wg) => wg.id == workgroupId);
-    final router = workgroup.routers.firstWhere(
-      (r) => r.address == routerAddress,
-    );
-    final device = router.devices.firstWhere((d) => d.address == deviceAddress);
-
-    final pollingService = _ref.read(centralizedPollingServiceProvider);
-    final commandService = _ref.read(routerCommandServiceProvider);
-
-    final task = DeviceStatusPollingTask(
-      commandService: commandService,
-      router: router,
-      device: device,
-      interval: interval,
-      onDeviceUpdated: (updatedDevice) {
-        logInfo('Device ${updatedDevice.address} status updated');
-      },
-    );
-
-    pollingService.registerTask(task);
-    await pollingService.startTask(task.id);
-
-    logInfo('Started device polling for ${device.address}');
-  }
-
   void _startWorkgroupPolling(Workgroup workgroup) {
     final pollingService = _ref.read(centralizedPollingServiceProvider);
     final commandService = _ref.read(routerCommandServiceProvider);
 
     logInfo(
-      'Starting centralized polling for workgroup: ${workgroup.description}',
+      'Starting device point polling for workgroup: ${workgroup.description}',
     );
 
-    _ensureGroupPollingTasks(workgroup, commandService, pollingService);
+    _ensureDevicePointPollingTasks(workgroup, commandService, pollingService);
 
-    for (final group in workgroup.groups) {
-      final taskId = 'group_power_${workgroup.id}_${group.id}';
-      pollingService.startTask(taskId);
+    for (final router in workgroup.routers) {
+      for (final device in router.devices) {
+        if (_hasPollingPoints(device)) {
+          final taskId = 'device_points_${workgroup.id}_${device.address}';
+          pollingService.startTask(taskId);
+        }
+      }
     }
 
     final newState = Map<String, bool>.from(state);
     newState[workgroup.id] = true;
     state = newState;
-  }
-
-  void stopDevicePolling(String routerAddress, String deviceAddress) {
-    final pollingService = _ref.read(centralizedPollingServiceProvider);
-    final taskId = 'device_status_${routerAddress}_$deviceAddress';
-
-    pollingService.unregisterTask(taskId);
-    logInfo('Stopped device polling for $deviceAddress');
-  }
-
-  Future<void> updateGroupPollingInterval(
-    String workgroupId,
-    String groupId,
-    Duration newInterval,
-  ) async {
-    final pollingService = _ref.read(centralizedPollingServiceProvider);
-    final taskId = 'group_power_${workgroupId}_$groupId';
-
-    await pollingService.updateTaskInterval(taskId, newInterval);
-    logInfo(
-      'Updated polling interval for group $groupId to ${newInterval.inMinutes} minutes',
-    );
   }
 
   Future<PollingResult?> executeTaskNow(String taskId) async {

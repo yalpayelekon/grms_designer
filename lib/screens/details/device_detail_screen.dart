@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/providers/centralized_polling_provider.dart';
-import 'package:grms_designer/services/polling/polling_task.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/utils/device/device_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
@@ -48,7 +46,6 @@ class DeviceDetailScreen extends ConsumerStatefulWidget {
 class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   late TextEditingController _deviceIdController;
   late TextEditingController _addressController;
-  final bool _devicePollingEnabled = false;
 
   @override
   void initState() {
@@ -89,14 +86,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             icon: const Icon(Icons.refresh, size: 16),
             label: const Text('Query Live Status'),
           ),
-          const SizedBox(width: 16),
-          IconButton(
-            icon: Icon(_devicePollingEnabled ? Icons.pause : Icons.play_arrow),
-            tooltip: _devicePollingEnabled
-                ? 'Stop Device Polling'
-                : 'Start Device Polling',
-            onPressed: _toggleDevicePolling,
-          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -120,105 +109,16 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
               initiallyExpanded: true,
               detailRows: [
                 DetailRow(
-                  label: 'Polling Enabled',
-                  customValue: DropdownButton<bool>(
-                    value:
-                        _isDevicePollingActive(), // Use the active state instead of workgroup setting
-                    isExpanded: true,
-                    onChanged: (bool? newValue) {
-                      if (newValue != null) {
-                        _toggleDevicePolling();
-                      }
-                    },
-                    items: const [
-                      DropdownMenuItem<bool>(
-                        value: false,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.pause_circle_outline,
-                              size: 16,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 8),
-                            Text('Disabled'),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem<bool>(
-                        value: true,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.autorenew,
-                              size: 16,
-                              color: Colors.green,
-                            ),
-                            SizedBox(width: 8),
-                            Text('Enabled'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  showDivider: true,
-                ),
-                StatusDetailRow(
-                  label: 'Current Status',
-                  statusText: _isDevicePollingActive()
-                      ? 'Polling Active'
-                      : 'Disabled',
-                  statusColor: _isDevicePollingActive()
-                      ? Colors.green
-                      : Colors.grey,
-                  showDivider: true,
-                ),
-                DetailRow(
                   label: 'Active Groups',
                   value: '${widget.workgroup.groups.length} groups',
                   showDivider: true,
                 ),
-                if (widget.workgroup.lastPollTime != null)
-                  DetailRow(
-                    label: 'Last Poll Started',
-                    value: getLastUpdateTime(
-                      dateTime: widget.workgroup.lastPollTime!,
-                    ),
-                    showDivider: true,
-                  ),
               ],
             ),
           ],
         ),
       ),
     );
-  }
-
-  bool _isDevicePollingActive() {
-    final pollingTasks = ref.watch(pollingTasksProvider);
-    final deviceTaskId =
-        'device_status_${widget.router.address}_${widget.device.address}';
-    final taskInfo = pollingTasks[deviceTaskId];
-    return taskInfo?.state == PollingTaskState.running;
-  }
-
-  void _toggleDevicePolling() async {
-    final pollingManager = ref.read(pollingManagerProvider.notifier);
-    final isCurrentlyActive = _isDevicePollingActive();
-
-    if (isCurrentlyActive) {
-      pollingManager.stopDevicePolling(
-        widget.router.address,
-        widget.device.address,
-      );
-    } else {
-      await pollingManager.startDevicePolling(
-        widget.workgroup.id,
-        widget.router.address,
-        widget.device.address,
-        interval: const Duration(minutes: 2),
-      );
-    }
   }
 
   List<Widget> _buildBasicDeviceRows() {
