@@ -18,6 +18,7 @@ class DevicePointPollingTask extends PollingTask {
   final HelvarRouter router;
   final HelvarDevice device;
   final Function(HelvarDevice updatedDevice)? onPointsUpdated;
+  final Map<int, DateTime> _lastPolledTimes = {};
 
   DevicePointPollingTask({
     required this.commandService,
@@ -28,8 +29,7 @@ class DevicePointPollingTask extends PollingTask {
   }) : super(
          id: 'device_points_${workgroup.id}_${device.address}',
          name: 'Device Points ${device.address}',
-         interval:
-             PollingPresets.normal, // Default interval, will be configurable
+         interval: PollingPresets.fast,
          parameters: {
            'workgroupId': workgroup.id,
            'routerAddress': router.address,
@@ -61,19 +61,36 @@ class DevicePointPollingTask extends PollingTask {
     final outputDevice = device as HelvarDriverOutputDevice;
     final results = <String, dynamic>{};
     bool hasUpdates = false;
+    final now = DateTime.now();
 
-    // Ensure output points exist
     if (outputDevice.outputPoints.isEmpty) {
       outputDevice.generateOutputPoints();
     }
 
-    // Poll each output point based on its configured polling rate
     for (final point in outputDevice.outputPoints) {
+      final pointRate = workgroup.getOutputPointRate(point.pointId);
+
+      if (pointRate == PointPollingRate.disabled) {
+        continue;
+      }
+
+      final lastPolled = _lastPolledTimes[point.pointId];
+      if (lastPolled != null) {
+        final timeSinceLastPoll = now.difference(lastPolled);
+        if (timeSinceLastPoll < pointRate.duration) {
+          continue;
+        }
+      }
+
       try {
         final success = await _queryOutputPoint(outputDevice, point.pointId);
         if (success) {
+          _lastPolledTimes[point.pointId] = now;
           results['point_${point.pointId}'] = point.value;
           hasUpdates = true;
+          logDebug(
+            'Polled point ${point.pointId} (${point.function}) at rate ${pointRate.displayName}',
+          );
         }
       } catch (e) {
         logWarning('Error polling output point ${point.pointId}: $e');
@@ -90,10 +107,22 @@ class DevicePointPollingTask extends PollingTask {
   Future<PollingResult> _pollInputDevicePoints() async {
     final inputDevice = device as HelvarDriverInputDevice;
     final results = <String, dynamic>{};
+    final now = DateTime.now();
+    final inputRate = workgroup.inputPointRate;
 
-    // For input devices, we mainly poll device state and button status
+    if (inputRate == PointPollingRate.disabled) {
+      return PollingResult.success({'skipped': 'input_polling_disabled'});
+    }
+
+    final lastPolled = _lastPolledTimes[0];
+    if (lastPolled != null) {
+      final timeSinceLastPoll = now.difference(lastPolled);
+      if (timeSinceLastPoll < inputRate.duration) {
+        return PollingResult.success({'skipped': 'not_time_yet'});
+      }
+    }
+
     try {
-      // Query device state
       final stateCommand = HelvarNetCommands.queryDeviceState(device.address);
       final stateResult = await commandService.sendCommand(
         router.ipAddress,
@@ -109,6 +138,7 @@ class DevicePointPollingTask extends PollingTask {
           device.deviceStateCode = stateCode;
           device.state = getStateFlagsDescription(stateCode);
           results['deviceState'] = device.state;
+          _lastPolledTimes[0] = now;
         }
       }
 
