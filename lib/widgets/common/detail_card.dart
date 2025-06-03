@@ -38,7 +38,7 @@ class DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget rowContent = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -46,13 +46,13 @@ class DetailRow extends StatelessWidget {
             width: labelWidth,
             child: Text(
               '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
             ),
           ),
           Expanded(child: _buildValueWidget()),
           if (trailingIcon != null) ...[
             const SizedBox(width: 8),
-            Icon(trailingIcon, size: 16, color: Colors.grey[600]),
+            Icon(trailingIcon, size: 13, color: Colors.grey[600]),
           ],
         ],
       ),
@@ -73,7 +73,7 @@ class DetailRow extends StatelessWidget {
         onFieldSubmitted: onSubmitted,
         inputFormatters: inputFormatters,
         keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 14),
+        style: const TextStyle(fontSize: 12),
         decoration: const InputDecoration(
           isDense: true,
           border: OutlineInputBorder(),
@@ -86,7 +86,7 @@ class DetailRow extends StatelessWidget {
       return customValue!;
     }
 
-    return Text(value ?? '', style: const TextStyle(fontSize: 14));
+    return Text(value ?? '', style: const TextStyle(fontSize: 12));
   }
 }
 

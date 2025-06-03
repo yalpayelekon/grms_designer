@@ -92,10 +92,10 @@ class ExpandableListItemState extends State<ExpandableListItem>
           onTap: hasExpandableContent ? _toggleExpanded : widget.onTap,
           child: Padding(
             padding: EdgeInsets.only(
-              left: leftPadding + 16.0,
-              right: 8.0,
-              top: 12.0,
-              bottom: 12.0,
+              left: leftPadding + 9.0,
+              right: 4.0,
+              top: 6.0,
+              bottom: 6.0,
             ),
             child: Row(
               children: [
@@ -123,7 +123,7 @@ class ExpandableListItemState extends State<ExpandableListItem>
                         widget.title,
                         style: const TextStyle(
                           fontWeight: FontWeight.w500,
-                          fontSize: 14,
+                          fontSize: 11,
                         ),
                       ),
                       if (widget.subtitle != null) ...[
@@ -131,7 +131,7 @@ class ExpandableListItemState extends State<ExpandableListItem>
                         Text(
                           widget.subtitle!,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 10,
                             color: Colors.grey[600],
                           ),
                         ),
@@ -143,26 +143,26 @@ class ExpandableListItemState extends State<ExpandableListItem>
                   ...widget.customTrailingActions!,
                 if (widget.showAdd) ...[
                   IconButton(
-                    icon: const Icon(Icons.add, size: 18),
+                    icon: const Icon(Icons.add, size: 15),
                     onPressed: widget.onAdd,
                     tooltip: 'Add',
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(2),
                     constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+                      minWidth: 25,
+                      minHeight: 25,
                     ),
                   ),
                   const SizedBox(width: 4),
                 ],
                 if (widget.showDelete) ...[
                   IconButton(
-                    icon: const Icon(Icons.delete, size: 18),
+                    icon: const Icon(Icons.delete, size: 15),
                     onPressed: widget.onDelete,
                     tooltip: 'Delete',
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(2),
                     constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+                      minWidth: 25,
+                      minHeight: 25,
                     ),
                     color: Colors.red[600],
                   ),
@@ -176,13 +176,13 @@ class ExpandableListItemState extends State<ExpandableListItem>
             sizeFactor: _animation,
             child: Container(
               width: double.infinity,
-              padding: EdgeInsets.only(left: leftPadding + 16.0),
+              padding: EdgeInsets.only(left: leftPadding + 11.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.detailRows.isNotEmpty) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
                       child: Column(children: widget.detailRows),
                     ),
                   ],
@@ -223,7 +223,7 @@ class SimpleExpandableItem extends ExpandableListItem {
                  label: item.label,
                  value: item.value,
                  customValue: item.valueWidget,
-                 labelWidth: 120,
+                 labelWidth: 160,
                  showDivider: true,
                ),
              )
@@ -276,7 +276,7 @@ class ExpandableListView extends StatelessWidget {
     for (int i = 0; i < children.length; i++) {
       result.add(children[i]);
       if (i < children.length - 1) {
-        result.add(const Divider(height: 8));
+        result.add(const Divider(height: 6));
       }
     }
     return result;

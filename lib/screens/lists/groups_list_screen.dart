@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/providers/router_connection_provider.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:intl/intl.dart';
 import '../../models/helvar_models/helvar_group.dart';
@@ -88,7 +89,6 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       onDelete: () => _confirmDeleteGroup(context, group),
       detailRows: [
         DetailRow(label: 'Group ID', value: group.groupId, showDivider: true),
-
         DetailRow(
           label: 'Description',
           value: group.description.isEmpty
@@ -96,31 +96,25 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
               : group.description,
           showDivider: true,
         ),
-
         DetailRow(label: 'Type', value: group.type, showDivider: true),
-
         if (group.lsig != null)
           DetailRow(
             label: 'LSIG',
             value: group.lsig.toString(),
             showDivider: true,
           ),
-
         if (group.lsib1 != null)
           DetailRow(
             label: 'LSIB1',
             value: group.lsib1.toString(),
             showDivider: true,
           ),
-
         if (group.lsib2 != null)
           DetailRow(
             label: 'LSIB2',
             value: group.lsib2.toString(),
             showDivider: true,
           ),
-
-        // Block values
         ...group.blockValues.asMap().entries.map(
           (entry) => DetailRow(
             label: 'Block ${entry.key + 1}',
@@ -128,34 +122,27 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
             showDivider: true,
           ),
         ),
-
-        // Power Consumption
         DetailRow(
           label: 'Current Power',
           value: '${group.powerConsumption.toStringAsFixed(2)} W',
           showDivider: true,
         ),
-
         DetailRow(
           label: 'Polling Minutes',
           value: '${group.powerPollingMinutes} minutes',
           showDivider: true,
         ),
-
         DetailRow(
           label: 'Last Power Update',
           value: _formatLastUpdateTime(group.lastPowerUpdateTime),
           showDivider: true,
         ),
-
         StatusDetailRow(
           label: 'Polling Status',
           statusText: workgroup.pollEnabled ? 'Active' : 'Disabled',
           statusColor: workgroup.pollEnabled ? Colors.green : Colors.orange,
           showDivider: true,
         ),
-
-        // Gateway Router
         DetailRow(
           label: 'Gateway Router',
           value: group.gatewayRouterIpAddress.isEmpty
@@ -163,36 +150,28 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
               : group.gatewayRouterIpAddress,
           showDivider: true,
         ),
-
-        // Scene information
         DetailRow(
           label: 'Scene Count',
           value: '${group.sceneTable.length} scenes',
           showDivider: true,
         ),
-
-        // Settings
         DetailRow(
           label: 'Refresh Props After Action',
           value: group.refreshPropsAfterAction.toString(),
           showDivider: true,
         ),
-
-        // Status information
         if (group.actionResult.isNotEmpty)
           DetailRow(
             label: 'Action Result',
             value: group.actionResult,
             showDivider: true,
           ),
-
         if (group.lastMessage.isNotEmpty)
           DetailRow(
             label: 'Last Message',
             value: group.lastMessage,
             showDivider: true,
           ),
-
         if (group.lastMessageTime != null)
           DetailRow(
             label: 'Message Time',
@@ -203,7 +182,6 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
           ),
       ],
       children: [
-        // Scene Table as nested expandable item
         if (group.sceneTable.isNotEmpty)
           ExpandableListItem(
             title: 'Scenes',
@@ -212,14 +190,12 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
             leadingIconColor: Colors.blue,
             indentLevel: 1,
             detailRows: [
-              // Scene table as text
               DetailRow(
                 label: 'Scene Numbers',
                 value: group.sceneTable.join(', '),
                 showDivider: true,
               ),
 
-              // Individual scenes with display names
               ...group.sceneTable.map(
                 (scene) => DetailRow(
                   label: 'Scene $scene',
@@ -319,12 +295,63 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     });
 
     try {
-      // Simulate discovery
-      await Future.delayed(const Duration(seconds: 2));
+      final router = widget.workgroup.routers.first;
+      final discoveryService = ref.watch(discoveryServiceProvider);
+      final discoveredGroups = await discoveryService.discoverGroups(
+        router.ipAddress,
+      );
+
+      if (discoveredGroups.isEmpty) {
+        if (!mounted) return;
+        showSnackBarMsg(context, 'No groups discovered');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
 
       if (!mounted) return;
-      showSnackBarMsg(context, 'Group discovery completed');
+      final shouldAdd =
+          await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Groups Discovered'),
+              content: Text(
+                'Found ${discoveredGroups.length} groups. Do you want to add them?',
+              ),
+              actions: [
+                cancelAction(context),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Add Groups'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
 
+      if (!shouldAdd || !mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final existingGroupIds = widget.workgroup.groups
+          .map((g) => g.groupId)
+          .toSet();
+      final newGroups = discoveredGroups
+          .where((g) => !existingGroupIds.contains(g.groupId))
+          .toList();
+
+      for (final group in newGroups) {
+        await ref
+            .read(workgroupsProvider.notifier)
+            .addGroupToWorkgroup(widget.workgroup.id, group);
+      }
+
+      if (!mounted) return;
+      showSnackBarMsg(context, 'Added ${newGroups.length} groups');
       setState(() {
         _isLoading = false;
       });
