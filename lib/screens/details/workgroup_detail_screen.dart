@@ -6,7 +6,6 @@ import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../providers/workgroups_provider.dart';
-import '../../providers/group_polling_provider.dart';
 import '../../widgets/common/detail_card.dart';
 import '../../widgets/common/expandable_list_item.dart';
 
@@ -203,8 +202,8 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final workgroup = currentWorkgroup;
-    final pollingState = ref.watch(pollingStateProvider);
-    final isPollingActive = pollingState[workgroup.id] ?? false;
+    final pollingManagerState = ref.watch(pollingManagerProvider);
+    final isPollingActive = pollingManagerState[workgroup.id] ?? false;
 
     return Scaffold(
       appBar: AppBar(

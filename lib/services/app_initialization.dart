@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-//import 'package:grms_designer/providers/centralized_polling_provider.dart';
-import 'package:grms_designer/providers/migration_helper.dart';
+import 'package:grms_designer/providers/centralized_polling_provider.dart';
 import '../utils/core/logger.dart';
-import '../providers/group_polling_provider.dart';
 import '../providers/workgroups_provider.dart';
 import 'app_directory_service.dart';
 
@@ -25,7 +23,7 @@ class AppInitializationService {
 
   static Future<void> initializePolling(WidgetRef ref) async {
     try {
-      logInfo('Initializing automatic power consumption polling...');
+      logInfo('Initializing centralized power consumption polling...');
 
       final workgroups = ref.read(workgroupsProvider);
 
@@ -34,8 +32,7 @@ class AppInitializationService {
         return;
       }
 
-      final pollingNotifier = ref.read(pollingStateProvider.notifier);
-      pollingNotifier.initializePolling();
+      final pollingManager = ref.read(pollingManagerProvider.notifier);
 
       final enabledWorkgroups = workgroups
           .where((wg) => wg.pollEnabled)
@@ -43,13 +40,22 @@ class AppInitializationService {
 
       if (enabledWorkgroups.isNotEmpty) {
         logInfo(
-          'Started automatic polling for ${enabledWorkgroups.length} workgroups:',
+          'Starting centralized polling for ${enabledWorkgroups.length} workgroups:',
         );
+
         for (final wg in enabledWorkgroups) {
-          logInfo('  - ${wg.description} (${wg.groups.length} groups)');
-          for (final group in wg.groups) {
-            logDebug(
-              '    * Group ${group.groupId}: ${group.powerPollingMinutes} min interval',
+          try {
+            await pollingManager.startWorkgroupPolling(wg.id);
+            logInfo('  - ${wg.description} (${wg.groups.length} groups)');
+
+            for (final group in wg.groups) {
+              logDebug(
+                '    * Group ${group.groupId}: ${group.powerPollingMinutes} min interval',
+              );
+            }
+          } catch (e) {
+            logError(
+              'Failed to start polling for workgroup ${wg.description}: $e',
             );
           }
         }
@@ -57,15 +63,40 @@ class AppInitializationService {
         logInfo('No workgroups have polling enabled');
       }
     } catch (e) {
-      logError('Error initializing polling: $e');
+      logError('Error initializing centralized polling: $e');
     }
   }
 
   static void setupPollingListener(WidgetRef ref) {
-    if (PollingMigrationHelper.needsMigration(ref)) {
-      PollingMigrationHelper.migrateToNewPollingSystem(ref);
-    } else {
-      // final pollingManager = ref.read(pollingManagerProvider.notifier); // Uncomment when using centralized polling
+    try {
+      logInfo('Initializing centralized polling system');
+      final pollingManager = ref.read(pollingManagerProvider.notifier);
+      _initializeCentralizedPolling(ref, pollingManager);
+    } catch (e, stackTrace) {
+      logError(
+        'Error in centralized polling setup: $e',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  static void _initializeCentralizedPolling(
+    WidgetRef ref,
+    PollingManager pollingManager,
+  ) {
+    final workgroups = ref.read(workgroupsProvider);
+
+    for (final workgroup in workgroups) {
+      if (workgroup.pollEnabled) {
+        try {
+          pollingManager.startWorkgroupPolling(workgroup.id);
+          logInfo(
+            'Started centralized polling for workgroup: ${workgroup.description}',
+          );
+        } catch (e) {
+          logError('Failed to start polling for workgroup ${workgroup.id}: $e');
+        }
+      }
     }
   }
 

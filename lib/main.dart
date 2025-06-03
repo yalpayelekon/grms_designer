@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/workgroup.dart';
-import 'package:grms_designer/providers/group_polling_provider.dart';
+import 'package:grms_designer/providers/centralized_polling_provider.dart';
 import 'package:grms_designer/providers/workgroups_provider.dart';
 import 'screens/home_screen.dart';
 
@@ -61,7 +61,12 @@ class HelvarNetAppState extends ConsumerState<HelvarNetApp> {
       ref.listen<List<Workgroup>>(workgroupsProvider, (previous, next) {
         if ((previous == null || previous.isEmpty) && next.isNotEmpty) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            ref.read(pollingStateProvider.notifier).initializePolling();
+            final pollingManager = ref.read(pollingManagerProvider.notifier);
+            for (final workgroup in next) {
+              if (workgroup.pollEnabled) {
+                pollingManager.startWorkgroupPolling(workgroup.id);
+              }
+            }
           });
         }
       });
