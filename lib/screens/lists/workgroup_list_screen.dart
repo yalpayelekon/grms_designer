@@ -100,7 +100,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     return ExpandableListItem(
       title: workgroup.description,
       subtitle:
-          'Network: ${workgroup.networkInterface} • ${workgroup.routers.length} routers • ${workgroup.groups.length} groups',
+          '${workgroup.routers.length} routers • ${workgroup.groups.length} groups',
       leadingIcon: Icons.lan,
       leadingIconColor: Colors.blue,
       showDelete: true,
@@ -115,21 +115,12 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         ),
       ],
       detailRows: [
-        // Basic workgroup information
         DetailRow(label: 'ID', value: workgroup.id, showDivider: true),
-
         DetailRow(
           label: 'Description',
           value: workgroup.description,
           showDivider: true,
         ),
-
-        DetailRow(
-          label: 'Network Interface',
-          value: workgroup.networkInterface,
-          showDivider: true,
-        ),
-
         DetailRow(
           label: 'Gateway Router IP',
           value: workgroup.gatewayRouterIpAddress.isEmpty
@@ -137,20 +128,17 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
               : workgroup.gatewayRouterIpAddress,
           showDivider: true,
         ),
-
         StatusDetailRow(
           label: 'Polling Enabled',
           statusText: workgroup.pollEnabled ? 'Yes' : 'No',
           statusColor: workgroup.pollEnabled ? Colors.green : Colors.orange,
           showDivider: true,
         ),
-
         DetailRow(
           label: 'Refresh Props After Action',
           value: workgroup.refreshPropsAfterAction.toString(),
           showDivider: true,
         ),
-
         if (workgroup.lastPollTime != null)
           DetailRow(
             label: 'Last Poll Time',
@@ -159,7 +147,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
           ),
       ],
       children: [
-        // Groups section
         if (workgroup.groups.isNotEmpty)
           ExpandableListItem(
             title: 'Groups',
@@ -171,8 +158,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                 .map((group) => _buildGroupItem(group, workgroup))
                 .toList(),
           ),
-
-        // Routers section
         if (workgroup.routers.isNotEmpty)
           ExpandableListItem(
             title: 'Routers',
@@ -200,21 +185,17 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
       indentLevel: 2,
       detailRows: [
         DetailRow(label: 'Group ID', value: group.groupId, showDivider: true),
-
         DetailRow(label: 'Type', value: group.type, showDivider: true),
-
         DetailRow(
           label: 'Current Power',
           value: '${group.powerConsumption.toStringAsFixed(2)} W',
           showDivider: true,
         ),
-
         DetailRow(
           label: 'Polling Minutes',
           value: '${group.powerPollingMinutes} minutes',
           showDivider: true,
         ),
-
         if (group.sceneTable.isNotEmpty)
           DetailRow(
             label: 'Scenes',
@@ -222,7 +203,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                 '${group.sceneTable.length} scenes: ${group.sceneTable.join(', ')}',
             showDivider: true,
           ),
-
         if (group.gatewayRouterIpAddress.isNotEmpty)
           DetailRow(
             label: 'Gateway Router',
@@ -247,29 +227,23 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
           value: router.description,
           showDivider: true,
         ),
-
         DetailRow(
           label: 'IP Address',
           value: router.ipAddress,
           showDivider: true,
         ),
-
         DetailRow(label: 'Address', value: router.address, showDivider: true),
-
         DetailRow(
           label: 'Device Count',
           value: '${router.devices.length} devices',
           showDivider: true,
         ),
-
-        // Device count by subnet
         if (router.devicesBySubnet.isNotEmpty) ...[
           DetailRow(
             label: 'Subnets',
             value: '${router.devicesBySubnet.length} subnets',
             showDivider: true,
           ),
-
           ...router.devicesBySubnet.entries.map(
             (entry) => DetailRow(
               label: 'Subnet ${entry.key}',
@@ -280,7 +254,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         ],
       ],
       children: [
-        // Show subnets and devices if any
         if (router.devicesBySubnet.isNotEmpty)
           ...router.devicesBySubnet.entries.map(
             (entry) => ExpandableListItem(
@@ -306,32 +279,27 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                           value: device.deviceId.toString(),
                           showDivider: true,
                         ),
-
                         DetailRow(
                           label: 'Address',
                           value: device.address,
                           showDivider: true,
                         ),
-
                         DetailRow(
                           label: 'Type',
                           value: device.helvarType,
                           showDivider: true,
                         ),
-
                         DetailRow(
                           label: 'Props',
                           value: device.props,
                           showDivider: true,
                         ),
-
                         if (device.state.isNotEmpty)
                           DetailRow(
                             label: 'State',
                             value: device.state,
                             showDivider: true,
                           ),
-
                         StatusDetailRow(
                           label: 'Emergency',
                           statusText: device.emergency ? 'Yes' : 'No',
@@ -340,7 +308,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                               : Colors.green,
                           showDivider: true,
                         ),
-
                         StatusDetailRow(
                           label: 'Button Device',
                           statusText: device.isButtonDevice ? 'Yes' : 'No',
@@ -349,7 +316,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
                               : Colors.grey,
                           showDivider: true,
                         ),
-
                         StatusDetailRow(
                           label: 'Multisensor',
                           statusText: device.isMultisensor ? 'Yes' : 'No',
@@ -413,24 +379,10 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
       if (selectedResult == '__ADD_ALL__') {
         for (String workgroupName in workgroupNames) {
-          _createWorkgroup(
-            workgroupName,
-            interfaceResult.name,
-            discoveredRouters,
-          );
-        }
-        if (mounted) {
-          showSnackBarMsg(
-            context,
-            'Added all ${workgroupNames.length} workgroups',
-          );
+          _createWorkgroup(workgroupName, discoveredRouters);
         }
       } else {
-        _createWorkgroup(
-          selectedResult,
-          interfaceResult.name,
-          discoveredRouters,
-        );
+        _createWorkgroup(selectedResult, discoveredRouters);
       }
     } catch (e) {
       if (mounted) {
@@ -476,7 +428,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
   void _createWorkgroup(
     String workgroupName,
-    String networkInterfaceName,
     List<Map<String, String>> discoveredRouters,
   ) {
     final existingWorkgroups = ref.read(workgroupsProvider);
@@ -507,7 +458,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     );
 
     if (newRouters.isNotEmpty) {
-      _createNewWorkgroup(workgroupName, networkInterfaceName, newRouters);
+      _createNewWorkgroup(workgroupName, newRouters);
     }
   }
 
@@ -565,7 +516,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     final updated = Workgroup(
       id: _generateUniqueWorkgroupId(ref.read(workgroupsProvider)),
       description: existing.description,
-      networkInterface: existing.networkInterface,
       routers: [...existing.routers, ...newRouters],
     );
 
@@ -579,15 +529,10 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     }
   }
 
-  void _createNewWorkgroup(
-    String workgroupName,
-    String networkInterfaceName,
-    List<HelvarRouter> routers,
-  ) {
+  void _createNewWorkgroup(String workgroupName, List<HelvarRouter> routers) {
     final workgroup = Workgroup(
       id: _generateUniqueWorkgroupId(ref.read(workgroupsProvider)),
       description: workgroupName,
-      networkInterface: networkInterfaceName,
       routers: routers,
     );
 
@@ -718,11 +663,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
         return;
       }
 
-      _createWorkgroup(
-        workgroup.description,
-        workgroup.networkInterface,
-        matchingRouters,
-      );
+      _createWorkgroup(workgroup.description, matchingRouters);
     } finally {
       setState(() {
         _isLoading = false;

@@ -235,11 +235,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                       showDivider: true,
                     ),
                     DetailRow(
-                      label: 'Network Interface',
-                      value: workgroup.networkInterface,
-                      showDivider: true,
-                    ),
-                    DetailRow(
                       label: 'Gateway Router IP',
                       value: workgroup.gatewayRouterIpAddress.isEmpty
                           ? 'Not set'

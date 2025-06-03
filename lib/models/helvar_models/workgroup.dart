@@ -6,7 +6,6 @@ import 'helvar_group.dart';
 class Workgroup extends TreeNode {
   final String id;
   final String description;
-  final String networkInterface;
   final String gatewayRouterIpAddress;
   final bool refreshPropsAfterAction;
   final bool pollEnabled;
@@ -17,7 +16,6 @@ class Workgroup extends TreeNode {
   Workgroup({
     required this.id,
     this.description = '',
-    required this.networkInterface,
     this.gatewayRouterIpAddress = '',
     this.refreshPropsAfterAction = false,
     this.pollEnabled = false,
@@ -58,7 +56,6 @@ class Workgroup extends TreeNode {
     return Workgroup(
       id: id ?? this.id,
       description: description ?? this.description,
-      networkInterface: networkInterface ?? this.networkInterface,
       gatewayRouterIpAddress:
           gatewayRouterIpAddress ?? this.gatewayRouterIpAddress,
       refreshPropsAfterAction:
@@ -74,7 +71,6 @@ class Workgroup extends TreeNode {
     return Workgroup(
       id: json['id'] as String,
       description: json['description'] as String? ?? '',
-      networkInterface: json['networkInterface'] as String,
       gatewayRouterIpAddress: json['gatewayRouterIpAddress'] as String? ?? '',
       refreshPropsAfterAction:
           json['refreshPropsAfterAction'] as bool? ?? false,
@@ -97,7 +93,6 @@ class Workgroup extends TreeNode {
     return {
       'id': id,
       'description': description,
-      'networkInterface': networkInterface,
       'gatewayRouterIpAddress': gatewayRouterIpAddress,
       'refreshPropsAfterAction': refreshPropsAfterAction,
       'pollEnabled': pollEnabled,

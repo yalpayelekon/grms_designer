@@ -48,7 +48,8 @@ class DeviceDetailScreen extends ConsumerStatefulWidget {
 class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   late TextEditingController _deviceIdController;
   late TextEditingController _addressController;
-  bool _devicePollingEnabled = false;
+  final bool _devicePollingEnabled = false;
+
   @override
   void initState() {
     super.initState();
