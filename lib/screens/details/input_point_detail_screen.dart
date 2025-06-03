@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:grms_designer/widgets/common/expandable_list_item.dart';
 import '../../models/helvar_models/helvar_device.dart';
@@ -63,7 +64,7 @@ class InputPointDetailScreenState
               ),
               DetailRow(
                 label: 'Point Type',
-                value: _getPointTypeDescription(),
+                value: getPointTypeDescription(widget.point),
                 showDivider: true,
               ),
             ],
@@ -131,18 +132,5 @@ class InputPointDetailScreenState
         ],
       ),
     );
-  }
-
-  String _getPointTypeDescription() {
-    if (widget.point.function.contains('Status') ||
-        widget.point.name.contains('Missing')) {
-      return 'Status Point';
-    } else if (widget.point.function.contains('IR')) {
-      return 'IR Receiver Point';
-    } else if (widget.point.function.contains('Button')) {
-      return 'Button Input Point';
-    } else {
-      return 'Generic Point';
-    }
   }
 }

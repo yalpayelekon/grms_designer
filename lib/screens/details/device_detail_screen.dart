@@ -459,10 +459,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
           value: point.buttonId.toString(),
           showDivider: true,
         ),
-        DetailRow(
-          label: 'Point Type',
-          value: getInputPointTypeDescription(point),
-        ),
+        DetailRow(label: 'Point Type', value: getPointTypeDescription(point)),
       ],
     );
   }
@@ -518,18 +515,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       return Colors.blue;
     } else {
       return Colors.grey;
-    }
-  }
-
-  String getInputPointTypeDescription(ButtonPoint point) {
-    if (point.function.contains('Status') || point.name.contains('Missing')) {
-      return 'Status Point';
-    } else if (point.function.contains('IR')) {
-      return 'IR Receiver';
-    } else if (point.function.contains('Button')) {
-      return 'Button Input';
-    } else {
-      return 'Generic Point';
     }
   }
 

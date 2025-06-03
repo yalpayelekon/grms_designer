@@ -53,7 +53,6 @@ String handleRecallScene(String sceneParams, {bool logInfoOutput = false}) {
 }
 
 List<ComponentType> getCompatibleTypes(ComponentType currentType) {
-  // Custom types
   if (currentType.type == RectangleComponent.RECTANGLE) {
     return [const ComponentType(RectangleComponent.RECTANGLE)];
   }
@@ -61,7 +60,6 @@ List<ComponentType> getCompatibleTypes(ComponentType currentType) {
     return [const ComponentType(RampComponent.RAMP)];
   }
 
-  // Standard types
   List<String> compatibleTypeStrings = [];
 
   if (currentType.type == ComponentType.AND_GATE ||
@@ -167,5 +165,17 @@ Color getOutputPointColor(OutputPoint point) {
       return Colors.purple;
     default:
       return Colors.grey;
+  }
+}
+
+String getPointTypeDescription(ButtonPoint point) {
+  if (point.function.contains('Status') || point.name.contains('Missing')) {
+    return 'Status Point';
+  } else if (point.function.contains('IR')) {
+    return 'IR Receiver';
+  } else if (point.function.contains('Button')) {
+    return 'Button Input';
+  } else {
+    return 'Generic Point';
   }
 }

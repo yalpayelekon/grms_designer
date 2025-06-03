@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/utils/device/device_utils.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:grms_designer/widgets/common/expandable_list_item.dart';
 import '../../models/helvar_models/helvar_device.dart';
@@ -152,7 +153,7 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
         ),
         DetailRow(
           label: 'Point Type',
-          value: _getPointTypeDescription(point),
+          value: getPointTypeDescription(point),
           showDivider: true,
         ),
         StatusDetailRow(
@@ -173,18 +174,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
       return Colors.blue;
     } else {
       return Colors.grey;
-    }
-  }
-
-  String _getPointTypeDescription(ButtonPoint point) {
-    if (point.function.contains('Status') || point.name.contains('Missing')) {
-      return 'Status Point';
-    } else if (point.function.contains('IR')) {
-      return 'IR Receiver';
-    } else if (point.function.contains('Button')) {
-      return 'Button Input';
-    } else {
-      return 'Generic Point';
     }
   }
 
