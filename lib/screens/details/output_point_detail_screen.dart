@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/utils/device/device_utils.dart';
+import 'package:grms_designer/utils/ui/treeview_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -52,7 +53,7 @@ class OutputPointDetailScreenState
             Row(
               children: [
                 Icon(
-                  _getPointIcon(),
+                  getOutputPointIcon(widget.point),
                   size: 32,
                   color: getOutputPointColor(widget.point),
                 ),
@@ -94,24 +95,5 @@ class OutputPointDetailScreenState
         ),
       ),
     );
-  }
-
-  IconData _getPointIcon() {
-    switch (widget.point.pointId) {
-      case 1:
-        return Icons.device_hub;
-      case 2:
-        return Icons.lightbulb_outline;
-      case 3:
-        return Icons.help_outline;
-      case 4:
-        return Icons.warning;
-      case 5:
-        return Icons.tune;
-      case 6:
-        return Icons.power;
-      default:
-        return Icons.circle;
-    }
   }
 }

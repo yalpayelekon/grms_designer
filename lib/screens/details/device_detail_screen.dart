@@ -461,7 +461,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         ),
         DetailRow(
           label: 'Point Type',
-          value: _getInputPointTypeDescription(point),
+          value: getInputPointTypeDescription(point),
         ),
       ],
     );
@@ -521,7 +521,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     }
   }
 
-  String _getInputPointTypeDescription(ButtonPoint point) {
+  String getInputPointTypeDescription(ButtonPoint point) {
     if (point.function.contains('Status') || point.name.contains('Missing')) {
       return 'Status Point';
     } else if (point.function.contains('IR')) {
