@@ -11,7 +11,7 @@ class OutputPointPollingTask extends PollingTask {
   final RouterCommandService commandService;
   final HelvarRouter router;
   final HelvarDriverOutputDevice device;
-  final List<int> pointIds; // Which points to poll
+  final List<int> pointIds;
   final Function(
     HelvarDriverOutputDevice device,
     List<OutputPoint> updatedPoints,
@@ -24,11 +24,10 @@ class OutputPointPollingTask extends PollingTask {
     required this.device,
     required this.pointIds,
     this.onPointsUpdated,
-    Duration interval = const Duration(seconds: 30),
+    super.interval = const Duration(seconds: 30),
   }) : super(
          id: 'output_points_${router.address}_${device.address}_${pointIds.join('_')}',
          name: 'Output Points ${device.address}',
-         interval: interval,
          parameters: {
            'routerAddress': router.address,
            'deviceAddress': device.address,
@@ -65,7 +64,6 @@ class OutputPointPollingTask extends PollingTask {
         }
       }
 
-      // Notify callback if any points were updated
       if (updatedPoints.isNotEmpty) {
         onPointsUpdated?.call(device, updatedPoints);
       }

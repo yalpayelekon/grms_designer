@@ -75,7 +75,6 @@ class GroupPowerPollingTask extends PollingTask {
             'Polled power consumption for group ${group.groupId}: ${powerConsumption}W',
           );
 
-          // Notify callback if provided
           onPowerUpdated?.call(updatedGroup);
 
           return PollingResult.success({

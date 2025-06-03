@@ -26,7 +26,6 @@ class SystemHealthPollingTask extends PollingTask {
         healthData['memoryUsageMB'] = 'Available on Windows';
       }
 
-      // Network connectivity check
       try {
         final result = await InternetAddress.lookup('google.com');
         healthData['internetConnected'] = result.isNotEmpty;
@@ -34,13 +33,11 @@ class SystemHealthPollingTask extends PollingTask {
         healthData['internetConnected'] = false;
       }
 
-      // App-specific metrics
       healthData['timestamp'] = DateTime.now().toIso8601String();
       healthData['uptime'] = DateTime.now()
           .difference(DateTime.now())
           .inMinutes; // This would be actual app start time
 
-      // Notify callback
       onHealthUpdated?.call(healthData);
 
       return PollingResult.success(healthData);

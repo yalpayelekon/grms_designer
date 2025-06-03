@@ -171,7 +171,7 @@ class GroupPollingService {
 
     for (final entry in _groupTimers.entries) {
       if (entry.key.startsWith('${workgroupId}_')) {
-        final groupId = entry.key.split('_').last;
+        // final groupId = entry.key.split('_').last;
         // This would need the actual group object to get the interval
         // For now, we'll return empty map - could be enhanced
       }

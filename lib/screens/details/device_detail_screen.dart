@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/providers/centralized_polling_provider.dart';
+import 'package:grms_designer/services/polling/polling_task.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/utils/device/device_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
@@ -189,6 +190,14 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         ),
       ),
     );
+  }
+
+  bool _isDevicePollingActive() {
+    final pollingTasks = ref.watch(pollingTasksProvider);
+    final deviceTaskId =
+        'device_status_${widget.router.address}_${widget.device.address}';
+    final taskInfo = pollingTasks[deviceTaskId];
+    return taskInfo?.state == PollingTaskState.running;
   }
 
   void _toggleDevicePolling() async {

@@ -203,7 +203,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildMainContent() {
     if (showingProject) {
-      return _AppMonitor();
+      return _appMonitor();
     }
     if (openSettings) {
       return const ProjectSettingsScreen();
@@ -308,7 +308,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     return const FlowsheetListScreen();
   }
 
-  Widget _AppMonitor() {
+  Widget _appMonitor() {
     final connectionManager = ref.watch(routerConnectionManagerProvider);
     final stats = connectionManager.getConnectionStats();
     final connections = connectionManager.connections;

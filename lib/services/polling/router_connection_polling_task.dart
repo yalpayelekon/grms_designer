@@ -30,7 +30,6 @@ class RouterConnectionPollingTask extends PollingTask {
         return PollingResult.failure('Router has no IP address');
       }
 
-      // Check connection status
       final connection = connectionManager.connections[router.ipAddress];
       final isConnected = connection?.isConnected ?? false;
 
@@ -38,7 +37,6 @@ class RouterConnectionPollingTask extends PollingTask {
       router.isNormal = isConnected;
       router.isMissing = !isConnected;
 
-      // Notify if connection state changed
       if (previousState != isConnected) {
         onConnectionChanged?.call(router, isConnected);
         logInfo(
