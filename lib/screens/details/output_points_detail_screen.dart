@@ -150,11 +150,6 @@ class OutputPointsDetailScreenState
         DetailRow(label: 'Point Name', value: point.name, showDivider: true),
         DetailRow(label: 'Function', value: point.function, showDivider: true),
         DetailRow(
-          label: 'Point ID',
-          value: point.pointId.toString(),
-          showDivider: true,
-        ),
-        DetailRow(
           label: 'Point Type',
           value: point.pointType,
           showDivider: true,

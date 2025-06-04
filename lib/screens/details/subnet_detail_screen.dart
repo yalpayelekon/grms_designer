@@ -334,11 +334,6 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
           showDivider: true,
         ),
         DetailRow(
-          label: 'Point ID',
-          value: outputPoint.pointId.toString(),
-          showDivider: true,
-        ),
-        DetailRow(
           label: 'Point Type',
           value: outputPoint.pointType,
           showDivider: true,

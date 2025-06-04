@@ -95,26 +95,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
             ..._buildBasicDeviceRows(),
             ..._buildDeviceStatusRows(),
             if (_hasPoints()) _buildPointsSection(),
-            ExpandableListItem(
-              title: 'Device Status Polling',
-              subtitle: widget.workgroup.pollEnabled
-                  ? 'Active - Groups being polled automatically'
-                  : 'Disabled - No automatic polling',
-              leadingIcon: widget.workgroup.pollEnabled
-                  ? Icons.autorenew
-                  : Icons.pause_circle_outline,
-              leadingIconColor: widget.workgroup.pollEnabled
-                  ? Colors.green
-                  : Colors.orange,
-              initiallyExpanded: true,
-              detailRows: [
-                DetailRow(
-                  label: 'Active Groups',
-                  value: '${widget.workgroup.groups.length} groups',
-                  showDivider: true,
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -375,11 +355,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       detailRows: [
         DetailRow(label: 'Point Name', value: point.name, showDivider: true),
         DetailRow(label: 'Function', value: point.function, showDivider: true),
-        DetailRow(
-          label: 'Point ID',
-          value: point.pointId.toString(),
-          showDivider: true,
-        ),
         DetailRow(
           label: 'Point Type',
           value: point.pointType,

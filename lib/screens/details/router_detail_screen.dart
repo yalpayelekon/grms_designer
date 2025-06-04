@@ -464,11 +464,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       indentLevel: 4,
       detailRows: [
         DetailRow(
-          label: 'Point ID',
-          value: outputPoint.pointId.toString(),
-          showDivider: true,
-        ),
-        DetailRow(
           label: 'Point Type',
           value: outputPoint.pointType,
           showDivider: true,
