@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/models/helvar_models/helvar_device.dart';
 import 'package:grms_designer/models/helvar_models/helvar_group.dart';
-import 'package:grms_designer/models/helvar_models/input_device.dart';
 import 'package:grms_designer/providers/centralized_polling_provider.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
@@ -11,11 +9,17 @@ import '../../models/helvar_models/helvar_router.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../widgets/common/detail_card.dart';
 import '../../widgets/common/expandable_list_item.dart';
+import 'router_detail_screen.dart';
 
 class WorkgroupDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
+  final bool asWidget;
 
-  const WorkgroupDetailScreen({super.key, required this.workgroup});
+  const WorkgroupDetailScreen({
+    super.key,
+    required this.workgroup,
+    this.asWidget = false,
+  });
 
   @override
   WorkgroupDetailScreenState createState() => WorkgroupDetailScreenState();
@@ -131,6 +135,71 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     );
   }
 
+  Widget _buildWorkgroupInfo() {
+    final workgroup = currentWorkgroup;
+
+    return ExpandableListItem(
+      title: 'Workgroup Details',
+      subtitle: 'Basic configuration and settings',
+      leadingIcon: Icons.info_outline,
+      leadingIconColor: Colors.blue,
+      initiallyExpanded: true,
+      detailRows: [
+        DetailRow(label: 'ID', value: workgroup.id, showDivider: true),
+        DetailRow(
+          label: 'Description',
+          value: workgroup.description,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Refresh Props After Action',
+          value: workgroup.refreshPropsAfterAction.toString(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPollingConfigSection() {
+    final workgroup = currentWorkgroup;
+
+    return ExpandableListItem(
+      title: 'Polling Configuration',
+      initiallyExpanded: true,
+      detailRows: [
+        DetailRow(
+          label: 'Polling',
+          customValue: DropdownButton<bool>(
+            value: workgroup.pollEnabled,
+            isExpanded: true,
+            onChanged: (bool? newValue) {
+              if (newValue != null) {
+                _togglePolling(newValue);
+              }
+            },
+            items: const [
+              DropdownMenuItem<bool>(
+                value: false,
+                child: Row(children: [SizedBox(width: 8), Text('Disabled')]),
+              ),
+              DropdownMenuItem<bool>(
+                value: true,
+                child: Row(children: [SizedBox(width: 8), Text('Enabled')]),
+              ),
+            ],
+          ),
+          showDivider: true,
+        ),
+        if (workgroup.lastPollTime != null)
+          DetailRow(
+            label: 'Last Poll Started',
+            value: formatDateTime(workgroup.lastPollTime!),
+            showDivider: true,
+          ),
+      ],
+      children: [_buildPollingDurationSection()],
+    );
+  }
+
   Widget _buildPollingDurationSection() {
     return ExpandableListItem(
       title: 'Polling Rate Durations',
@@ -228,6 +297,131 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     );
   }
 
+  Widget _buildGroupsSection() {
+    final workgroup = currentWorkgroup;
+
+    if (workgroup.groups.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return ExpandableListItem(
+      title: 'Groups',
+      subtitle: '${workgroup.groups.length} groups configured',
+      leadingIcon: Icons.layers,
+      leadingIconColor: Colors.green,
+      children: workgroup.groups
+          .map((group) => _buildGroupItem(group))
+          .toList(),
+    );
+  }
+
+  Widget _buildGroupItem(HelvarGroup group) {
+    return ExpandableListItem(
+      title: group.description.isEmpty
+          ? "Group ${group.groupId}"
+          : group.description,
+      subtitle:
+          'ID: ${group.groupId} • Power: ${group.powerConsumption.toStringAsFixed(1)}W',
+      leadingIcon: Icons.group,
+      leadingIconColor: Colors.green,
+      indentLevel: 1,
+      detailRows: [
+        DetailRow(label: 'Group ID', value: group.groupId, showDivider: true),
+        DetailRow(label: 'Type', value: group.type, showDivider: true),
+        DetailRow(
+          label: 'Current Power',
+          value: '${group.powerConsumption.toStringAsFixed(2)} W',
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Polling Minutes',
+          value: '${group.powerPollingMinutes} minutes',
+          showDivider: true,
+        ),
+        if (group.sceneTable.isNotEmpty)
+          DetailRow(
+            label: 'Scenes',
+            value:
+                '${group.sceneTable.length} scenes: ${group.sceneTable.join(', ')}',
+            showDivider: true,
+          ),
+        if (group.gatewayRouterIpAddress.isNotEmpty)
+          DetailRow(
+            label: 'Gateway Router',
+            value: group.gatewayRouterIpAddress,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRoutersSection() {
+    final workgroup = currentWorkgroup;
+
+    if (workgroup.routers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return ExpandableListItem(
+      title: 'Routers and Devices',
+      leadingIcon: Icons.router,
+      leadingIconColor: Colors.purple,
+      children: workgroup.routers
+          .map((router) => _buildRouterItem(router))
+          .toList(),
+    );
+  }
+
+  Widget _buildRouterItem(HelvarRouter router) {
+    return ExpandableListItem(
+      title: router.description,
+      subtitle:
+          'IP: ${router.ipAddress} • Address: ${router.address} • ${router.devices.length} devices',
+      leadingIcon: Icons.router,
+      leadingIconColor: Colors.purple,
+      indentLevel: 1,
+      children: [
+        RouterDetailScreen(
+          workgroup: currentWorkgroup,
+          router: router,
+          asWidget: true,
+        ),
+      ],
+    );
+  }
+
+  void _togglePolling(bool enabled) async {
+    setState(() => _isLoading = true);
+
+    try {
+      await ref
+          .read(workgroupsProvider.notifier)
+          .toggleWorkgroupPolling(widget.workgroup.id, enabled);
+
+      final pollingManager = ref.read(pollingManagerProvider.notifier);
+      if (enabled) {
+        await pollingManager.startWorkgroupPolling(widget.workgroup.id);
+      } else {
+        pollingManager.stopWorkgroupPolling(widget.workgroup.id);
+      }
+
+      final message = enabled
+          ? 'Device point polling enabled'
+          : 'Device point polling disabled';
+
+      if (mounted) {
+        showSnackBarMsg(context, message);
+      }
+    } catch (e) {
+      if (mounted) {
+        showSnackBarMsg(context, 'Error toggling polling: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _saveChanges() async {
     if (!_hasChanges) return;
 
@@ -300,190 +494,28 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     });
   }
 
-  Widget _buildRouterItem(HelvarRouter router) {
-    return ExpandableListItem(
-      title: router.description,
-      subtitle:
-          'IP: ${router.ipAddress} • Address: ${router.address} • ${router.devices.length} devices',
-      leadingIcon: Icons.router,
-      leadingIconColor: Colors.purple,
-      indentLevel: 1,
-      detailRows: [
-        DetailRow(
-          label: 'Description',
-          value: router.description,
-          showDivider: true,
-        ),
-        DetailRow(
-          label: 'IP Address',
-          value: router.ipAddress,
-          showDivider: true,
-        ),
-        DetailRow(label: 'Address', value: router.address, showDivider: true),
-        DetailRow(
-          label: 'Device Count',
-          value: '${router.devices.length} devices',
-          showDivider: true,
-        ),
-        if (router.devicesBySubnet.isNotEmpty)
-          DetailRow(
-            label: 'Subnets',
-            value: '${router.devicesBySubnet.length} subnets',
-          ),
-      ],
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return ExpandableListView(
+      padding: const EdgeInsets.all(8.0),
       children: [
-        if (router.devicesBySubnet.isNotEmpty)
-          ...router.devicesBySubnet.entries.map(
-            (entry) => _buildSubnetItem(entry.key, entry.value),
-          ),
+        if (!widget.asWidget) _buildWorkgroupInfo(),
+        if (!widget.asWidget) _buildPollingConfigSection(),
+        _buildGroupsSection(),
+        _buildRoutersSection(),
       ],
     );
-  }
-
-  Widget _buildSubnetItem(int subnetId, List devices) {
-    final outputDevices = devices.where((d) => d.helvarType == 'output').length;
-    final inputDevices = devices.where((d) => d.helvarType == 'input').length;
-
-    return ExpandableListItem(
-      title: 'Subnet $subnetId',
-      subtitle:
-          '${devices.length} devices • $outputDevices output • $inputDevices input',
-      leadingIcon: Icons.hub,
-      leadingIconColor: Colors.orange,
-      indentLevel: 2,
-      children: devices.map((device) => _buildDeviceItem(device)).toList(),
-    );
-  }
-
-  Widget _buildDeviceItem(HelvarDevice device) {
-    int pointCount = 0;
-    if (device.helvarType == 'output') {
-      pointCount = 6;
-    } else if (device.helvarType == 'input' && device.isButtonDevice) {
-      if (device is HelvarDriverInputDevice) {
-        pointCount = device.buttonPoints.length;
-      }
-    }
-
-    return ExpandableListItem(
-      title: device.description.isEmpty
-          ? 'Device ${device.deviceId}'
-          : device.description,
-      subtitle:
-          'Address: ${device.address} • Type: ${device.helvarType} • $pointCount points',
-      leadingIcon: Icons.device_hub,
-      leadingIconColor: Colors.teal,
-      indentLevel: 3,
-      detailRows: [
-        DetailRow(
-          label: 'Device ID',
-          value: device.deviceId.toString(),
-          showDivider: true,
-        ),
-        DetailRow(label: 'Address', value: device.address, showDivider: true),
-        DetailRow(label: 'Type', value: device.helvarType, showDivider: true),
-        DetailRow(
-          label: 'Points',
-          value: '$pointCount polling points',
-          showDivider: true,
-        ),
-        if (device.state.isNotEmpty)
-          DetailRow(label: 'State', value: device.state, showDivider: true),
-        StatusDetailRow(
-          label: 'Emergency',
-          statusText: device.emergency ? 'Yes' : 'No',
-          statusColor: device.emergency ? Colors.red : Colors.green,
-          showDivider: true,
-        ),
-        StatusDetailRow(
-          label: 'Button Device',
-          statusText: device.isButtonDevice ? 'Yes' : 'No',
-          statusColor: device.isButtonDevice ? Colors.blue : Colors.grey,
-          showDivider: true,
-        ),
-        StatusDetailRow(
-          label: 'Multisensor',
-          statusText: device.isMultisensor ? 'Yes' : 'No',
-          statusColor: device.isMultisensor ? Colors.green : Colors.grey,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGroupItem(HelvarGroup group) {
-    return ExpandableListItem(
-      title: group.description.isEmpty
-          ? "Group ${group.groupId}"
-          : group.description,
-      subtitle:
-          'ID: ${group.groupId} • Power: ${group.powerConsumption.toStringAsFixed(1)}W',
-      leadingIcon: Icons.group,
-      leadingIconColor: Colors.green,
-      indentLevel: 1,
-      detailRows: [
-        DetailRow(label: 'Group ID', value: group.groupId, showDivider: true),
-        DetailRow(label: 'Type', value: group.type, showDivider: true),
-        DetailRow(
-          label: 'Current Power',
-          value: '${group.powerConsumption.toStringAsFixed(2)} W',
-          showDivider: true,
-        ),
-        DetailRow(
-          label: 'Polling Minutes',
-          value: '${group.powerPollingMinutes} minutes',
-          showDivider: true,
-        ),
-        if (group.sceneTable.isNotEmpty)
-          DetailRow(
-            label: 'Scenes',
-            value:
-                '${group.sceneTable.length} scenes: ${group.sceneTable.join(', ')}',
-            showDivider: true,
-          ),
-        if (group.gatewayRouterIpAddress.isNotEmpty)
-          DetailRow(
-            label: 'Gateway Router',
-            value: group.gatewayRouterIpAddress,
-          ),
-      ],
-    );
-  }
-
-  void _togglePolling(bool enabled) async {
-    setState(() => _isLoading = true);
-
-    try {
-      await ref
-          .read(workgroupsProvider.notifier)
-          .toggleWorkgroupPolling(widget.workgroup.id, enabled);
-
-      final pollingManager = ref.read(pollingManagerProvider.notifier);
-      if (enabled) {
-        await pollingManager.startWorkgroupPolling(widget.workgroup.id);
-      } else {
-        pollingManager.stopWorkgroupPolling(widget.workgroup.id);
-      }
-
-      final message = enabled
-          ? 'Device point polling enabled'
-          : 'Device point polling disabled';
-
-      if (mounted) {
-        showSnackBarMsg(context, message);
-      }
-    } catch (e) {
-      if (mounted) {
-        showSnackBarMsg(context, 'Error toggling polling: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.asWidget) {
+      return _buildContent();
+    }
+
     final workgroup = currentWorkgroup;
 
     return Scaffold(
@@ -505,95 +537,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
               ]
             : null,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ExpandableListView(
-              padding: const EdgeInsets.all(8.0),
-              children: [
-                ExpandableListItem(
-                  title: 'Workgroup Details',
-                  subtitle: 'Basic configuration and settings',
-                  leadingIcon: Icons.info_outline,
-                  leadingIconColor: Colors.blue,
-                  initiallyExpanded: true,
-                  detailRows: [
-                    DetailRow(
-                      label: 'ID',
-                      value: workgroup.id,
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Description',
-                      value: workgroup.description,
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Refresh Props After Action',
-                      value: workgroup.refreshPropsAfterAction.toString(),
-                    ),
-                  ],
-                ),
-                ExpandableListItem(
-                  title: 'Polling Configuration',
-                  initiallyExpanded: true,
-                  detailRows: [
-                    DetailRow(
-                      label: 'Polling',
-                      customValue: DropdownButton<bool>(
-                        value: workgroup.pollEnabled,
-                        isExpanded: true,
-                        onChanged: (bool? newValue) {
-                          if (newValue != null) {
-                            _togglePolling(newValue);
-                          }
-                        },
-                        items: const [
-                          DropdownMenuItem<bool>(
-                            value: false,
-                            child: Row(
-                              children: [SizedBox(width: 8), Text('Disabled')],
-                            ),
-                          ),
-                          DropdownMenuItem<bool>(
-                            value: true,
-                            child: Row(
-                              children: [SizedBox(width: 8), Text('Enabled')],
-                            ),
-                          ),
-                        ],
-                      ),
-                      showDivider: true,
-                    ),
-                    if (workgroup.lastPollTime != null)
-                      DetailRow(
-                        label: 'Last Poll Started',
-                        value: formatDateTime(workgroup.lastPollTime!),
-                        showDivider: true,
-                      ),
-                  ],
-                  children: [_buildPollingDurationSection()],
-                ),
-                if (workgroup.groups.isNotEmpty)
-                  ExpandableListItem(
-                    title: 'Groups',
-                    subtitle: '${workgroup.groups.length} groups configured',
-                    leadingIcon: Icons.layers,
-                    leadingIconColor: Colors.green,
-                    children: workgroup.groups
-                        .map((group) => _buildGroupItem(group))
-                        .toList(),
-                  ),
-                if (workgroup.routers.isNotEmpty)
-                  ExpandableListItem(
-                    title: 'Routers and Devices',
-                    leadingIcon: Icons.router,
-                    leadingIconColor: Colors.purple,
-                    children: workgroup.routers
-                        .map((router) => _buildRouterItem(router))
-                        .toList(),
-                  ),
-              ],
-            ),
+      body: _buildContent(),
     );
   }
 }

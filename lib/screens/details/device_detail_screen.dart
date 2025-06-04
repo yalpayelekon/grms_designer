@@ -298,20 +298,25 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   }
 
   Widget _buildContent() {
+    if (widget.asWidget) {
+      if (_hasPoints()) {
+        return _buildPointsSection();
+      }
+      return const SizedBox.shrink();
+    }
+
     List<Widget> sections = [];
 
-    if (!widget.asWidget) {
-      sections.add(
-        ExpandableListItem(
-          title: 'Device Information',
-          subtitle: 'Basic device details and configuration',
-          leadingIcon: Icons.info_outline,
-          leadingIconColor: Colors.blue,
-          initiallyExpanded: true,
-          detailRows: [..._buildBasicDeviceRows(), ..._buildDeviceStatusRows()],
-        ),
-      );
-    }
+    sections.add(
+      ExpandableListItem(
+        title: 'Device Information',
+        subtitle: 'Basic device details and configuration',
+        leadingIcon: Icons.info_outline,
+        leadingIconColor: Colors.blue,
+        initiallyExpanded: true,
+        detailRows: [..._buildBasicDeviceRows(), ..._buildDeviceStatusRows()],
+      ),
+    );
 
     // Add points section if device has points
     if (_hasPoints()) {
