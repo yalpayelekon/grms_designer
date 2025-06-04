@@ -258,7 +258,7 @@ class WorkgroupsNotifier extends StateNotifier<List<Workgroup>> {
     _saveToStorage();
   }
 
-  void updateWorkgroup(Workgroup updatedWorkgroup) {
+  Future<void> updateWorkgroup(Workgroup updatedWorkgroup) async {
     state = state
         .map((wg) => wg.id == updatedWorkgroup.id ? updatedWorkgroup : wg)
         .toList();

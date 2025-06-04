@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/models/helvar_models/helvar_device.dart';
+import 'package:grms_designer/models/helvar_models/helvar_group.dart';
+import 'package:grms_designer/models/helvar_models/input_device.dart';
 import 'package:grms_designer/providers/centralized_polling_provider.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
+import 'package:grms_designer/widgets/point_polling_config_widget.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../providers/workgroups_provider.dart';
@@ -70,9 +74,13 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   }
 
   Widget _buildSubnetItem(int subnetId, List devices) {
+    final outputDevices = devices.where((d) => d.helvarType == 'output').length;
+    final inputDevices = devices.where((d) => d.helvarType == 'input').length;
+
     return ExpandableListItem(
       title: 'Subnet $subnetId',
-      subtitle: '${devices.length} devices',
+      subtitle:
+          '${devices.length} devices • $outputDevices output • $inputDevices input',
       leadingIcon: Icons.hub,
       leadingIconColor: Colors.orange,
       indentLevel: 2,
@@ -80,12 +88,22 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     );
   }
 
-  Widget _buildDeviceItem(device) {
+  Widget _buildDeviceItem(HelvarDevice device) {
+    int pointCount = 0;
+    if (device.helvarType == 'output') {
+      pointCount = 6;
+    } else if (device.helvarType == 'input' && device.isButtonDevice) {
+      if (device is HelvarDriverInputDevice) {
+        pointCount = device.buttonPoints.length;
+      }
+    }
+
     return ExpandableListItem(
       title: device.description.isEmpty
           ? 'Device ${device.deviceId}'
           : device.description,
-      subtitle: 'Address: ${device.address} • Type: ${device.helvarType}',
+      subtitle:
+          'Address: ${device.address} • Type: ${device.helvarType} • $pointCount points',
       leadingIcon: Icons.device_hub,
       leadingIconColor: Colors.teal,
       indentLevel: 3,
@@ -97,7 +115,11 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
         ),
         DetailRow(label: 'Address', value: device.address, showDivider: true),
         DetailRow(label: 'Type', value: device.helvarType, showDivider: true),
-        DetailRow(label: 'Props', value: device.props, showDivider: true),
+        DetailRow(
+          label: 'Points',
+          value: '$pointCount polling points',
+          showDivider: true,
+        ),
         if (device.state.isNotEmpty)
           DetailRow(label: 'State', value: device.state, showDivider: true),
         StatusDetailRow(
@@ -121,7 +143,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     );
   }
 
-  Widget _buildGroupItem(group) {
+  Widget _buildGroupItem(HelvarGroup group) {
     return ExpandableListItem(
       title: group.description.isEmpty
           ? "Group ${group.groupId}"
@@ -176,8 +198,8 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       }
 
       final message = enabled
-          ? 'Centralized polling enabled for all groups'
-          : 'Centralized polling disabled';
+          ? 'Device point polling enabled'
+          : 'Device point polling disabled';
 
       if (mounted) {
         showSnackBarMsg(context, message);
@@ -205,12 +227,24 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     final pollingManagerState = ref.watch(pollingManagerProvider);
     final isPollingActive = pollingManagerState[workgroup.id] ?? false;
 
+    int totalDevicesWithPoints = 0;
+    int totalPoints = 0;
+    for (final router in workgroup.routers) {
+      for (final device in router.devices) {
+        if (device.helvarType == 'output') {
+          totalDevicesWithPoints++;
+          totalPoints += 6;
+        } else if (device.helvarType == 'input' && device.isButtonDevice) {
+          totalDevicesWithPoints++;
+          if (device is HelvarDriverInputDevice) {
+            totalPoints += device.buttonPoints.length;
+          }
+        }
+      }
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(workgroup.description),
-        centerTitle: true,
-        actions: const [],
-      ),
+      appBar: AppBar(title: Text(workgroup.description), centerTitle: true),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ExpandableListView(
@@ -243,16 +277,16 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                     DetailRow(
                       label: 'Refresh Props After Action',
                       value: workgroup.refreshPropsAfterAction.toString(),
-                      showDivider: true,
                     ),
                   ],
                 ),
 
+                // Device Point Polling Configuration
                 ExpandableListItem(
-                  title: 'Power Consumption Polling',
+                  title: 'Device Point Polling',
                   subtitle: workgroup.pollEnabled
-                      ? 'Active - Groups being polled automatically'
-                      : 'Disabled - No automatic polling',
+                      ? 'Active - $totalDevicesWithPoints devices, $totalPoints points'
+                      : 'Disabled - No automatic point polling',
                   leadingIcon: workgroup.pollEnabled
                       ? Icons.autorenew
                       : Icons.pause_circle_outline,
@@ -262,7 +296,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                   initiallyExpanded: true,
                   detailRows: [
                     DetailRow(
-                      label: 'Polling Enabled',
+                      label: 'Point Polling Enabled',
                       customValue: DropdownButton<bool>(
                         value: workgroup.pollEnabled,
                         isExpanded: true,
@@ -319,18 +353,28 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                       showDivider: true,
                     ),
                     DetailRow(
-                      label: 'Active Groups',
-                      value: '${workgroup.groups.length} groups',
+                      label: 'Devices with Points',
+                      value: '$totalDevicesWithPoints devices',
+                      showDivider: true,
+                    ),
+                    DetailRow(
+                      label: 'Total Points',
+                      value: '$totalPoints points',
                       showDivider: true,
                     ),
                     if (workgroup.lastPollTime != null)
                       DetailRow(
                         label: 'Last Poll Started',
                         value: formatDateTime(workgroup.lastPollTime!),
-                        showDivider: true,
                       ),
                   ],
+                  children: [
+                    // Point Polling Configuration Widget
+                    PointPollingConfigWidget(workgroup: workgroup),
+                  ],
                 ),
+
+                // Groups Section
                 if (workgroup.groups.isNotEmpty)
                   ExpandableListItem(
                     title: 'Groups',
@@ -341,10 +385,13 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                         .map((group) => _buildGroupItem(group))
                         .toList(),
                   ),
+
+                // Routers Section
                 if (workgroup.routers.isNotEmpty)
                   ExpandableListItem(
-                    title: 'Routers',
-                    subtitle: '${workgroup.routers.length} routers configured',
+                    title: 'Routers and Devices',
+                    subtitle:
+                        '${workgroup.routers.length} routers, $totalDevicesWithPoints devices with points',
                     leadingIcon: Icons.router,
                     leadingIconColor: Colors.purple,
                     children: workgroup.routers

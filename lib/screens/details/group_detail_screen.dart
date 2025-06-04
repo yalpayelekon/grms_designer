@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grms_designer/providers/centralized_polling_provider.dart';
+import 'package:grms_designer/services/polling/group_power_polling_task.dart';
+import 'package:grms_designer/services/polling/polling_task.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:intl/intl.dart';
 import '../../models/helvar_models/helvar_group.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/workgroups_provider.dart';
+import '../../providers/router_connection_provider.dart';
 import '../../utils/ui/ui_helpers.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
@@ -27,6 +31,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   late TextEditingController _pollingMinutesController;
   late TextEditingController _sceneTableController;
   bool _isLoading = false;
+  bool _groupPollingEnabled = false;
 
   HelvarGroup get currentGroup {
     final workgroups = ref.watch(workgroupsProvider);
@@ -48,6 +53,15 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     _sceneTableController = TextEditingController(
       text: widget.group.sceneTable.join(', '),
     );
+
+    _checkGroupPollingStatus();
+  }
+
+  void _checkGroupPollingStatus() {
+    final pollingService = ref.read(centralizedPollingServiceProvider);
+    final taskId = 'group_power_${widget.workgroup.id}_${widget.group.id}';
+    final taskInfo = pollingService.getTaskInfo(taskId);
+    _groupPollingEnabled = taskInfo?.state == PollingTaskState.running;
   }
 
   @override
@@ -61,7 +75,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   Widget build(BuildContext context) {
     final group = currentGroup;
 
-    // Update controllers when group data changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_pollingMinutesController.text !=
           group.powerPollingMinutes.toString()) {
@@ -153,8 +166,45 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     ),
                   ),
                   DetailRow(
-                    label: 'Current Power',
+                    label: 'Power Consumption',
                     value: '${group.powerConsumption.toStringAsFixed(2)} W',
+                    showDivider: true,
+                  ),
+                  DetailRow(
+                    label: 'Group Power Polling',
+                    customValue: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Switch(
+                              value: _groupPollingEnabled,
+                              onChanged: _toggleGroupPolling,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _groupPollingEnabled ? 'Enabled' : 'Disabled',
+                              style: TextStyle(
+                                color: _groupPollingEnabled
+                                    ? Colors.green
+                                    : Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_groupPollingEnabled) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Polling every ${group.powerPollingMinutes} minutes',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                     showDivider: true,
                   ),
                   EditableDetailRow(
@@ -174,10 +224,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ),
                   StatusDetailRow(
                     label: 'Polling Status',
-                    statusText: widget.workgroup.pollEnabled
-                        ? 'Active'
-                        : 'Disabled',
-                    statusColor: widget.workgroup.pollEnabled
+                    statusText: _groupPollingEnabled ? 'Active' : 'Disabled',
+                    statusColor: _groupPollingEnabled
                         ? Colors.green
                         : Colors.orange,
                     showDivider: true,
@@ -195,11 +243,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     onSubmitted: _saveSceneTable,
                     showDivider: true,
                   ),
-                  DetailRow(
-                    label: 'Scene Count',
-                    value: '${group.sceneTable.length} scenes',
-                    showDivider: true,
-                  ),
+
                   DetailRow(
                     label: 'Refresh Props After Action',
                     value: group.refreshPropsAfterAction.toString(),
@@ -235,6 +279,54 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     );
   }
 
+  void _toggleGroupPolling(bool enabled) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final pollingService = ref.read(centralizedPollingServiceProvider);
+      final commandService = ref.read(routerCommandServiceProvider);
+      final taskId = 'group_power_${widget.workgroup.id}_${widget.group.id}';
+
+      if (enabled) {
+        final task = GroupPowerPollingTask(
+          commandService: commandService,
+          workgroup: widget.workgroup,
+          group: currentGroup,
+          onPowerUpdated: (updatedGroup) {
+            ref
+                .read(workgroupsProvider.notifier)
+                .updateGroupFromPolling(updatedGroup);
+          },
+        );
+
+        pollingService.registerTask(task);
+        await pollingService.startTask(taskId);
+
+        if (mounted) {
+          showSnackBarMsg(context, 'Group power polling enabled');
+        }
+      } else {
+        pollingService.unregisterTask(taskId);
+
+        if (mounted) {
+          showSnackBarMsg(context, 'Group power polling disabled');
+        }
+      }
+
+      setState(() {
+        _groupPollingEnabled = enabled;
+      });
+    } catch (e) {
+      if (mounted) {
+        showSnackBarMsg(context, 'Error toggling group polling: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   void _savePollingInterval(String value) {
     final minutes = int.tryParse(value);
     if (minutes == null || minutes < 1 || minutes > 1440) {
@@ -251,6 +343,12 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     ref
         .read(workgroupsProvider.notifier)
         .updateGroup(widget.workgroup.id, updatedGroup);
+
+    if (_groupPollingEnabled) {
+      final pollingService = ref.read(centralizedPollingServiceProvider);
+      final taskId = 'group_power_${widget.workgroup.id}_${widget.group.id}';
+      pollingService.updateTaskInterval(taskId, Duration(minutes: minutes));
+    }
 
     showSnackBarMsg(context, 'Polling interval updated to $minutes minutes');
   }
@@ -299,7 +397,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       _isLoading = true;
     });
 
-    // Simulate refresh operation
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() {
