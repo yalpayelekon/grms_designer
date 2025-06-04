@@ -29,7 +29,7 @@ class DevicePointPollingTask extends PollingTask {
   }) : super(
          id: 'device_points_${workgroup.id}_${device.address}',
          name: 'Device Points ${device.address}',
-         interval: PollingPresets.fast,
+         interval: PollingPresets.slow,
          parameters: {
            'workgroupId': workgroup.id,
            'routerAddress': router.address,
@@ -68,7 +68,7 @@ class DevicePointPollingTask extends PollingTask {
     }
 
     for (final point in outputDevice.outputPoints) {
-      final pointRate = workgroup.getOutputPointRate(point.pointId);
+      final pointRate = workgroup.pollingRate;
 
       if (pointRate == PointPollingRate.disabled) {
         continue;
@@ -110,7 +110,7 @@ class DevicePointPollingTask extends PollingTask {
     final inputDevice = device as HelvarDriverInputDevice;
     final results = <String, dynamic>{};
     final now = DateTime.now();
-    final inputRate = workgroup.inputPointRate;
+    final inputRate = workgroup.pollingRate;
 
     if (inputRate == PointPollingRate.disabled) {
       return PollingResult.success({'skipped': 'input_polling_disabled'});

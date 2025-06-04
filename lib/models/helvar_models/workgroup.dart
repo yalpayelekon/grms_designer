@@ -44,73 +44,6 @@ enum PointPollingRate {
   }
 }
 
-class DevicePointPollingConfig {
-  final Map<int, PointPollingRate> outputPointRates; // pointId -> rate
-  final PointPollingRate inputPointRate; // For input device points
-
-  DevicePointPollingConfig({
-    Map<int, PointPollingRate>? outputPointRates,
-    this.inputPointRate = PointPollingRate.normal,
-  }) : outputPointRates = outputPointRates ?? _getDefaultOutputPointRates();
-
-  static Map<int, PointPollingRate> _getDefaultOutputPointRates() {
-    return {
-      1: PointPollingRate.normal, // Device State
-      2: PointPollingRate.normal, // Lamp Failure
-      3: PointPollingRate.normal, // Missing
-      4: PointPollingRate.normal, // Faulty
-      5: PointPollingRate.fast, // Output Level (more frequent)
-      6: PointPollingRate.slow, // Power Consumption (less frequent)
-    };
-  }
-
-  DevicePointPollingConfig copyWith({
-    Map<int, PointPollingRate>? outputPointRates,
-    PointPollingRate? inputPointRate,
-  }) {
-    return DevicePointPollingConfig(
-      outputPointRates: outputPointRates ?? this.outputPointRates,
-      inputPointRate: inputPointRate ?? this.inputPointRate,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'outputPointRates': outputPointRates.map(
-        (key, value) => MapEntry(key.toString(), value.name),
-      ),
-      'inputPointRate': inputPointRate.name,
-    };
-  }
-
-  factory DevicePointPollingConfig.fromJson(Map<String, dynamic> json) {
-    final outputRatesJson =
-        json['outputPointRates'] as Map<String, dynamic>? ?? {};
-    final outputPointRates = <int, PointPollingRate>{};
-
-    outputRatesJson.forEach((key, value) {
-      final pointId = int.tryParse(key);
-      if (pointId != null) {
-        outputPointRates[pointId] = PointPollingRate.fromString(
-          value as String,
-        );
-      }
-    });
-
-    final defaultRates = _getDefaultOutputPointRates();
-    defaultRates.forEach((pointId, defaultRate) {
-      outputPointRates.putIfAbsent(pointId, () => defaultRate);
-    });
-
-    return DevicePointPollingConfig(
-      outputPointRates: outputPointRates,
-      inputPointRate: PointPollingRate.fromString(
-        json['inputPointRate'] as String? ?? 'normal',
-      ),
-    );
-  }
-}
-
 class Workgroup extends TreeNode {
   final String id;
   final String description;
@@ -118,7 +51,7 @@ class Workgroup extends TreeNode {
   final bool refreshPropsAfterAction;
   final bool pollEnabled;
   final DateTime? lastPollTime;
-  final DevicePointPollingConfig pointPollingConfig;
+  final PointPollingRate pollingRate;
   List<HelvarRouter> routers;
   List<HelvarGroup> groups;
 
@@ -129,11 +62,10 @@ class Workgroup extends TreeNode {
     this.refreshPropsAfterAction = false,
     this.pollEnabled = false,
     this.lastPollTime,
-    DevicePointPollingConfig? pointPollingConfig,
+    this.pollingRate = PointPollingRate.normal,
     List<HelvarRouter>? routers,
     List<HelvarGroup>? groups,
-  }) : pointPollingConfig = pointPollingConfig ?? DevicePointPollingConfig(),
-       routers = routers ?? [],
+  }) : routers = routers ?? [],
        groups = groups ?? [];
 
   void addRouter(HelvarRouter router) {
@@ -161,7 +93,7 @@ class Workgroup extends TreeNode {
     bool? refreshPropsAfterAction,
     bool? pollEnabled,
     DateTime? lastPollTime,
-    DevicePointPollingConfig? pointPollingConfig,
+    PointPollingRate? pollingRate,
     List<HelvarRouter>? routers,
     List<HelvarGroup>? groups,
   }) {
@@ -174,7 +106,7 @@ class Workgroup extends TreeNode {
           refreshPropsAfterAction ?? this.refreshPropsAfterAction,
       pollEnabled: pollEnabled ?? this.pollEnabled,
       lastPollTime: lastPollTime ?? this.lastPollTime,
-      pointPollingConfig: pointPollingConfig ?? this.pointPollingConfig,
+      pollingRate: pollingRate ?? this.pollingRate,
       routers: routers ?? this.routers,
       groups: groups ?? this.groups,
     );
@@ -191,9 +123,9 @@ class Workgroup extends TreeNode {
       lastPollTime: json['lastPollTime'] != null
           ? DateTime.parse(json['lastPollTime'] as String)
           : null,
-      pointPollingConfig: json['pointPollingConfig'] != null
-          ? DevicePointPollingConfig.fromJson(json['pointPollingConfig'])
-          : DevicePointPollingConfig(),
+      pollingRate: json['pollingRate'] != null
+          ? PointPollingRate.fromString(json['pollingRate'] as String)
+          : PointPollingRate.normal,
       routers: (json['routers'] as List?)
           ?.map((routerJson) => HelvarRouter.fromJson(routerJson))
           .toList(),
@@ -213,23 +145,9 @@ class Workgroup extends TreeNode {
       'refreshPropsAfterAction': refreshPropsAfterAction,
       'pollEnabled': pollEnabled,
       'lastPollTime': lastPollTime?.toIso8601String(),
-      'pointPollingConfig': pointPollingConfig.toJson(),
+      'pollingRate': pollingRate,
       'routers': routers.map((router) => router.toJson()).toList(),
       'groups': groups.map((group) => group.toJson()).toList(),
     };
-  }
-
-  PointPollingRate getOutputPointRate(int pointId) {
-    return pointPollingConfig.outputPointRates[pointId] ??
-        PointPollingRate.normal;
-  }
-
-  PointPollingRate get inputPointRate => pointPollingConfig.inputPointRate;
-
-  void updateOutputPointRate(int pointId, PointPollingRate rate) {
-    final newRates = Map<int, PointPollingRate>.from(
-      pointPollingConfig.outputPointRates,
-    );
-    newRates[pointId] = rate;
   }
 }

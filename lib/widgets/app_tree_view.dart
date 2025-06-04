@@ -458,7 +458,6 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                   router: router,
                   device: device,
                 );
-                print('Output points tapped for ${device.address}');
               },
               child: Row(
                 children: [
@@ -592,12 +591,14 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green,
+                  color: outputPoint.pointType == 'numeric'
+                      ? Colors.purple
+                      : Colors.green,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  "B",
-                  style: TextStyle(
+                child: Text(
+                  outputPoint.pointType == 'numeric' ? 'N' : 'B',
+                  style: const TextStyle(
                     fontSize: 10,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

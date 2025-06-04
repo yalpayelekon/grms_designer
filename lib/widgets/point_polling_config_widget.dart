@@ -18,23 +18,13 @@ class PointPollingConfigWidget extends ConsumerStatefulWidget {
 
 class PointPollingConfigWidgetState
     extends ConsumerState<PointPollingConfigWidget> {
-  late DevicePointPollingConfig _config;
+  late PointPollingRate _config;
   bool _hasChanges = false;
-
-  // Output point descriptions
-  static const Map<int, String> _outputPointDescriptions = {
-    1: 'Device State',
-    2: 'Lamp Failure',
-    3: 'Missing Status',
-    4: 'Faulty Status',
-    5: 'Output Level',
-    6: 'Power Consumption',
-  };
 
   @override
   void initState() {
     super.initState();
-    _config = widget.workgroup.pointPollingConfig;
+    _config = widget.workgroup.pollingRate;
   }
 
   @override
@@ -42,9 +32,7 @@ class PointPollingConfigWidgetState
     return Column(
       children: [
         ExpandableListItem(
-          title: 'Device Point Polling Configuration',
-          leadingIcon: Icons.settings,
-          leadingIconColor: Colors.blue,
+          title: 'Polling Configuration',
           initiallyExpanded: true,
           customTrailingActions: _hasChanges
               ? [
@@ -63,101 +51,14 @@ class PointPollingConfigWidgetState
                 ]
               : null,
           children: [
-            ExpandableListItem(
-              title: 'Output Device Points',
-              leadingIcon: Icons.output,
-              leadingIconColor: Colors.orange,
-              indentLevel: 1,
-              initiallyExpanded: true,
-              children: _outputPointDescriptions.entries
-                  .map(
-                    (entry) => _buildOutputPointConfig(entry.key, entry.value),
-                  )
-                  .toList(),
-            ),
-            ExpandableListItem(
-              title: 'Input Device Points',
-              leadingIcon: Icons.input,
-              leadingIconColor: Colors.green,
-              indentLevel: 1,
-              detailRows: [
-                DetailRow(
-                  label: 'Input Point Rate',
-                  customValue: _buildPollingRateDropdown(
-                    _config.inputPointRate,
-                    (rate) => _updateInputPointRate(rate),
-                  ),
-                ),
-              ],
-            ),
-
-            // Configuration Summary
-            if (widget.workgroup.pollEnabled)
-              ExpandableListItem(
-                title: 'Polling Summary',
-                subtitle: 'Current polling configuration overview',
-                leadingIcon: Icons.info_outline,
-                leadingIconColor: Colors.blue,
-                indentLevel: 1,
-                detailRows: [
-                  DetailRow(
-                    label: 'Fast Points',
-                    value: _getPointCountByRate(
-                      PointPollingRate.fast,
-                    ).toString(),
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Normal Points',
-                    value: _getPointCountByRate(
-                      PointPollingRate.normal,
-                    ).toString(),
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Slow Points',
-                    value: _getPointCountByRate(
-                      PointPollingRate.slow,
-                    ).toString(),
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Disabled Points',
-                    value: _getPointCountByRate(
-                      PointPollingRate.disabled,
-                    ).toString(),
-                    showDivider: true,
-                  ),
-                  StatusDetailRow(
-                    label: 'Input Points',
-                    statusText: _config.inputPointRate.displayName,
-                    statusColor: _getRateColor(_config.inputPointRate),
-                  ),
-                ],
+            DetailRow(
+              label: 'Input Point Rate',
+              customValue: _buildPollingRateDropdown(
+                _config,
+                (rate) => _updatePollingRate(rate),
               ),
+            ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOutputPointConfig(int pointId, String description) {
-    final currentRate =
-        _config.outputPointRates[pointId] ?? PointPollingRate.normal;
-
-    return ExpandableListItem(
-      title: description,
-      subtitle: 'Point ID: $pointId • Rate: ${currentRate.displayName}',
-      leadingIcon: _getPointIcon(pointId),
-      leadingIconColor: _getRateColor(currentRate),
-      indentLevel: 2,
-      detailRows: [
-        DetailRow(
-          label: 'Polling Rate',
-          customValue: _buildPollingRateDropdown(
-            currentRate,
-            (rate) => _updateOutputPointRate(pointId, rate),
-          ),
         ),
       ],
     );
@@ -174,14 +75,7 @@ class PointPollingConfigWidgetState
         return DropdownMenuItem<PointPollingRate>(
           value: rate,
           child: Row(
-            children: [
-              Icon(_getRateIcon(rate), size: 16, color: _getRateColor(rate)),
-              const SizedBox(width: 8),
-              Text(
-                rate.displayName,
-                style: TextStyle(fontSize: 12, color: _getRateColor(rate)),
-              ),
-            ],
+            children: [const SizedBox(width: 8), Text(rate.displayName)],
           ),
         );
       }).toList(),
@@ -193,29 +87,16 @@ class PointPollingConfigWidgetState
     );
   }
 
-  void _updateOutputPointRate(int pointId, PointPollingRate rate) {
+  void _updatePollingRate(PointPollingRate rate) {
     setState(() {
-      final newRates = Map<int, PointPollingRate>.from(
-        _config.outputPointRates,
-      );
-      newRates[pointId] = rate;
-      _config = _config.copyWith(outputPointRates: newRates);
-      _hasChanges = true;
-    });
-  }
-
-  void _updateInputPointRate(PointPollingRate rate) {
-    setState(() {
-      _config = _config.copyWith(inputPointRate: rate);
+      _config = rate;
       _hasChanges = true;
     });
   }
 
   void _saveConfiguration() async {
     try {
-      final updatedWorkgroup = widget.workgroup.copyWith(
-        pointPollingConfig: _config,
-      );
+      final updatedWorkgroup = widget.workgroup.copyWith(pollingRate: _config);
 
       await ref
           .read(workgroupsProvider.notifier)
@@ -237,61 +118,8 @@ class PointPollingConfigWidgetState
 
   void _resetConfiguration() {
     setState(() {
-      _config = widget.workgroup.pointPollingConfig;
+      _config = widget.workgroup.pollingRate;
       _hasChanges = false;
     });
-  }
-
-  int _getPointCountByRate(PointPollingRate rate) {
-    int count = _config.outputPointRates.values.where((r) => r == rate).length;
-    if (_config.inputPointRate == rate) {
-      count++; // Add input points
-    }
-    return count;
-  }
-
-  IconData _getPointIcon(int pointId) {
-    switch (pointId) {
-      case 1:
-        return Icons.device_hub;
-      case 2:
-        return Icons.lightbulb_outline;
-      case 3:
-        return Icons.help_outline;
-      case 4:
-        return Icons.warning;
-      case 5:
-        return Icons.tune;
-      case 6:
-        return Icons.power;
-      default:
-        return Icons.circle;
-    }
-  }
-
-  IconData _getRateIcon(PointPollingRate rate) {
-    switch (rate) {
-      case PointPollingRate.disabled:
-        return Icons.pause_circle_outline;
-      case PointPollingRate.fast:
-        return Icons.flash_on;
-      case PointPollingRate.normal:
-        return Icons.play_circle_outline;
-      case PointPollingRate.slow:
-        return Icons.schedule;
-    }
-  }
-
-  Color _getRateColor(PointPollingRate rate) {
-    switch (rate) {
-      case PointPollingRate.disabled:
-        return Colors.grey;
-      case PointPollingRate.fast:
-        return Colors.red;
-      case PointPollingRate.normal:
-        return Colors.green;
-      case PointPollingRate.slow:
-        return Colors.blue;
-    }
   }
 }
