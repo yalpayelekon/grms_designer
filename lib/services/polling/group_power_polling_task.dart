@@ -52,47 +52,58 @@ class GroupPowerPollingTask extends PollingTask {
       final powerCommand = HelvarNetCommands.queryGroupPowerConsumption(
         groupIdInt,
       );
-      final powerResult = await commandService.sendCommand(
-        router.ipAddress,
-        powerCommand,
-      );
 
-      if (powerResult.success && powerResult.response != null) {
-        final powerValue = ProtocolParser.extractResponseValue(
-          powerResult.response!,
+      try {
+        final powerResult = await commandService.sendCommand(
+          router.ipAddress,
+          powerCommand,
         );
 
-        if (powerValue != null) {
-          final powerConsumption = double.tryParse(powerValue) ?? 0.0;
-          final now = DateTime.now();
-
-          final updatedGroup = group.copyWith(
-            powerConsumption: powerConsumption,
-            lastPowerUpdateTime: now,
+        if (powerResult.success && powerResult.response != null) {
+          final powerValue = ProtocolParser.extractResponseValue(
+            powerResult.response!,
           );
 
-          logInfo(
-            'Polled power consumption for group ${group.groupId}: ${powerConsumption}W',
-          );
+          if (powerValue != null) {
+            final powerConsumption = double.tryParse(powerValue) ?? 0.0;
+            final now = DateTime.now();
 
-          onPowerUpdated?.call(updatedGroup);
+            final updatedGroup = group.copyWith(
+              powerConsumption: powerConsumption,
+              lastPowerUpdateTime: now,
+            );
 
-          return PollingResult.success({
-            'powerConsumption': powerConsumption,
-            'timestamp': now,
-            'updatedGroup': updatedGroup,
-          });
+            logInfo(
+              'Polled power consumption for group ${group.groupId}: ${powerConsumption}W',
+            );
+
+            onPowerUpdated?.call(updatedGroup);
+
+            return PollingResult.success({
+              'powerConsumption': powerConsumption,
+              'timestamp': now,
+              'updatedGroup': updatedGroup,
+            });
+          } else {
+            return PollingResult.failure(
+              'Empty power consumption value received',
+            );
+          }
         } else {
           return PollingResult.failure(
-            'Empty power consumption value received',
+            'Failed to query power consumption: ${powerResult.response}',
           );
         }
-      } else {
-        return PollingResult.failure(
-          'Failed to query power consumption: ${powerResult.response}',
+      } catch (networkError) {
+        logWarning(
+          'Network error polling power consumption for group ${group.groupId}: $networkError',
         );
+        return PollingResult.failure('Network error: $networkError');
       }
     } catch (e) {
+      logError(
+        'Unexpected error polling power consumption for group ${group.groupId}: $e',
+      );
       return PollingResult.failure('Error polling power consumption: $e');
     }
   }

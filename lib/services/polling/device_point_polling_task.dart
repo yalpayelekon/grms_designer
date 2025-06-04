@@ -93,7 +93,9 @@ class DevicePointPollingTask extends PollingTask {
           );
         }
       } catch (e) {
-        logWarning('Error polling output point ${point.pointId}: $e');
+        logWarning(
+          'Network error polling output point ${point.pointId} for ${device.address}: $e',
+        );
       }
     }
 
@@ -145,7 +147,10 @@ class DevicePointPollingTask extends PollingTask {
       onPointsUpdated?.call(inputDevice);
       return PollingResult.success(results);
     } catch (e) {
-      return PollingResult.failure('Error polling input device points: $e');
+      logWarning('Network error polling input device ${device.address}: $e');
+      return PollingResult.failure(
+        'Network error polling input device points: $e',
+      );
     }
   }
 
@@ -178,103 +183,171 @@ class DevicePointPollingTask extends PollingTask {
   }
 
   Future<bool> _queryDeviceState(HelvarDriverOutputDevice device) async {
-    final command = HelvarNetCommands.queryDeviceState(device.address);
-    final result = await commandService.sendCommand(router.ipAddress, command);
+    try {
+      final command = HelvarNetCommands.queryDeviceState(device.address);
+      final result = await commandService.sendCommand(
+        router.ipAddress,
+        command,
+      );
 
-    if (result.success && result.response != null) {
-      final stateValue = ProtocolParser.extractResponseValue(result.response!);
-      if (stateValue != null) {
-        final stateCode = int.tryParse(stateValue) ?? 0;
-        final isNormal = stateCode == 0;
-        await device.updatePointValue(1, isNormal);
-        return true;
+      if (result.success && result.response != null) {
+        final stateValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
+        if (stateValue != null) {
+          final stateCode = int.tryParse(stateValue) ?? 0;
+          final isNormal = stateCode == 0;
+          await device.updatePointValue(1, isNormal);
+          return true;
+        }
       }
+      return false;
+    } catch (e) {
+      logWarning(
+        'Network error querying device state for ${device.address}: $e',
+      );
+      return false;
     }
-    return false;
   }
 
   Future<bool> _queryLampFailure(HelvarDriverOutputDevice device) async {
-    final command = HelvarNetCommands.queryLampFailure(device.address);
-    final result = await commandService.sendCommand(router.ipAddress, command);
-
-    if (result.success && result.response != null) {
-      final failureValue = ProtocolParser.extractResponseValue(
-        result.response!,
+    try {
+      final command = HelvarNetCommands.queryLampFailure(device.address);
+      final result = await commandService.sendCommand(
+        router.ipAddress,
+        command,
       );
-      if (failureValue != null) {
-        final hasFailure =
-            failureValue == '1' || failureValue.toLowerCase() == 'true';
-        await device.updatePointValue(2, hasFailure);
-        return true;
+
+      if (result.success && result.response != null) {
+        final failureValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
+        if (failureValue != null) {
+          final hasFailure =
+              failureValue == '1' || failureValue.toLowerCase() == 'true';
+          await device.updatePointValue(2, hasFailure);
+          return true;
+        }
       }
+      return false;
+    } catch (e) {
+      logWarning(
+        'Network error querying lamp failure for ${device.address}: $e',
+      );
+      return false;
     }
-    return false;
   }
 
   Future<bool> _queryMissingStatus(HelvarDriverOutputDevice device) async {
-    final command = HelvarNetCommands.queryDeviceIsMissing(device.address);
-    final result = await commandService.sendCommand(router.ipAddress, command);
-
-    if (result.success && result.response != null) {
-      final missingValue = ProtocolParser.extractResponseValue(
-        result.response!,
+    try {
+      final command = HelvarNetCommands.queryDeviceIsMissing(device.address);
+      final result = await commandService.sendCommand(
+        router.ipAddress,
+        command,
       );
-      if (missingValue != null) {
-        final isMissing =
-            missingValue == '1' || missingValue.toLowerCase() == 'true';
-        await device.updatePointValue(3, isMissing);
-        return true;
+
+      if (result.success && result.response != null) {
+        final missingValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
+        if (missingValue != null) {
+          final isMissing =
+              missingValue == '1' || missingValue.toLowerCase() == 'true';
+          await device.updatePointValue(3, isMissing);
+          return true;
+        }
       }
+      return false;
+    } catch (e) {
+      logWarning(
+        'Network error querying missing status for ${device.address}: $e',
+      );
+      return false;
     }
-    return false;
   }
 
   Future<bool> _queryFaultyStatus(HelvarDriverOutputDevice device) async {
-    final command = HelvarNetCommands.queryDeviceIsFaulty(device.address);
-    final result = await commandService.sendCommand(router.ipAddress, command);
+    try {
+      final command = HelvarNetCommands.queryDeviceIsFaulty(device.address);
+      final result = await commandService.sendCommand(
+        router.ipAddress,
+        command,
+      );
 
-    if (result.success && result.response != null) {
-      final faultyValue = ProtocolParser.extractResponseValue(result.response!);
-      if (faultyValue != null) {
-        final isFaulty =
-            faultyValue == '1' || faultyValue.toLowerCase() == 'true';
-        await device.updatePointValue(4, isFaulty);
-        return true;
+      if (result.success && result.response != null) {
+        final faultyValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
+        if (faultyValue != null) {
+          final isFaulty =
+              faultyValue == '1' || faultyValue.toLowerCase() == 'true';
+          await device.updatePointValue(4, isFaulty);
+          return true;
+        }
       }
+      return false;
+    } catch (e) {
+      logWarning(
+        'Network error querying faulty status for ${device.address}: $e',
+      );
+      return false;
     }
-    return false;
   }
 
   Future<bool> _queryOutputLevel(HelvarDriverOutputDevice device) async {
-    final command = HelvarNetCommands.queryLoadLevel(device.address);
-    final result = await commandService.sendCommand(router.ipAddress, command);
+    try {
+      final command = HelvarNetCommands.queryLoadLevel(device.address);
+      final result = await commandService.sendCommand(
+        router.ipAddress,
+        command,
+      );
 
-    if (result.success && result.response != null) {
-      final levelValue = ProtocolParser.extractResponseValue(result.response!);
-      if (levelValue != null) {
-        final level = double.tryParse(levelValue) ?? 0.0;
-        await device.updatePointValue(5, level);
-        device.level = level.round();
-        return true;
+      if (result.success && result.response != null) {
+        final levelValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
+        if (levelValue != null) {
+          final level = double.tryParse(levelValue) ?? 0.0;
+          await device.updatePointValue(5, level);
+          device.level = level.round();
+          return true;
+        }
       }
+      return false;
+    } catch (e) {
+      logWarning(
+        'Network error querying output level for ${device.address}: $e',
+      );
+      return false;
     }
-    return false;
   }
 
   Future<bool> _queryPowerConsumption(HelvarDriverOutputDevice device) async {
-    final command = HelvarNetCommands.queryPowerConsumption(device.address);
-    final result = await commandService.sendCommand(router.ipAddress, command);
+    try {
+      final command = HelvarNetCommands.queryPowerConsumption(device.address);
+      final result = await commandService.sendCommand(
+        router.ipAddress,
+        command,
+      );
 
-    if (result.success && result.response != null) {
-      final powerValue = ProtocolParser.extractResponseValue(result.response!);
-      if (powerValue != null) {
-        final power = double.tryParse(powerValue) ?? 0.0;
-        await device.updatePointValue(6, power);
-        device.powerConsumption = power;
-        return true;
+      if (result.success && result.response != null) {
+        final powerValue = ProtocolParser.extractResponseValue(
+          result.response!,
+        );
+        if (powerValue != null) {
+          final power = double.tryParse(powerValue) ?? 0.0;
+          await device.updatePointValue(6, power);
+          device.powerConsumption = power;
+          return true;
+        }
       }
+      return false;
+    } catch (e) {
+      logWarning(
+        'Network error querying power consumption for ${device.address}: $e',
+      );
+      return false;
     }
-    return false;
   }
 
   @override

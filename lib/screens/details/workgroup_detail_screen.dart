@@ -280,23 +280,12 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                     ),
                   ],
                 ),
-
-                // Device Point Polling Configuration
                 ExpandableListItem(
-                  title: 'Device Point Polling',
-                  subtitle: workgroup.pollEnabled
-                      ? 'Active - $totalDevicesWithPoints devices, $totalPoints points'
-                      : 'Disabled - No automatic point polling',
-                  leadingIcon: workgroup.pollEnabled
-                      ? Icons.autorenew
-                      : Icons.pause_circle_outline,
-                  leadingIconColor: workgroup.pollEnabled
-                      ? Colors.green
-                      : Colors.orange,
+                  title: 'Polling',
                   initiallyExpanded: true,
                   detailRows: [
                     DetailRow(
-                      label: 'Point Polling Enabled',
+                      label: 'Polling',
                       customValue: DropdownButton<bool>(
                         value: workgroup.pollEnabled,
                         isExpanded: true,
@@ -338,20 +327,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                       ),
                       showDivider: true,
                     ),
-                    StatusDetailRow(
-                      label: 'Current Status',
-                      statusText: isPollingActive
-                          ? 'Polling Active'
-                          : workgroup.pollEnabled
-                          ? 'Starting Polling...'
-                          : 'Disabled',
-                      statusColor: isPollingActive
-                          ? Colors.green
-                          : workgroup.pollEnabled
-                          ? Colors.orange
-                          : Colors.grey,
-                      showDivider: true,
-                    ),
+
                     DetailRow(
                       label: 'Devices with Points',
                       value: '$totalDevicesWithPoints devices',
@@ -368,13 +344,8 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                         value: formatDateTime(workgroup.lastPollTime!),
                       ),
                   ],
-                  children: [
-                    // Point Polling Configuration Widget
-                    PointPollingConfigWidget(workgroup: workgroup),
-                  ],
+                  children: [PointPollingConfigWidget(workgroup: workgroup)],
                 ),
-
-                // Groups Section
                 if (workgroup.groups.isNotEmpty)
                   ExpandableListItem(
                     title: 'Groups',
@@ -385,8 +356,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                         .map((group) => _buildGroupItem(group))
                         .toList(),
                   ),
-
-                // Routers Section
                 if (workgroup.routers.isNotEmpty)
                   ExpandableListItem(
                     title: 'Routers and Devices',

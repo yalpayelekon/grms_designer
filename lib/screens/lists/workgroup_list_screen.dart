@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:grms_designer/screens/dialogs/network_interface_dialog.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
+import 'package:grms_designer/utils/core/logger.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -537,12 +538,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     );
 
     ref.read(workgroupsProvider.notifier).addWorkgroup(workgroup);
-    if (mounted) {
-      showSnackBarMsg(
-        context,
-        'Added workgroup: $workgroupName with ${routers.length} routers',
-      );
-    }
+    logInfo('Added workgroup: $workgroupName with ${routers.length} routers');
   }
 
   Future<void> _exportWorkgroups() async {
