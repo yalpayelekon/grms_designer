@@ -44,76 +44,57 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Points - $deviceName'), centerTitle: true),
-      body: inputDevice.buttonPoints.isEmpty
-          ? _buildEmptyState()
-          : ExpandableListView(
-              padding: const EdgeInsets.all(8.0),
-              children: [
-                ExpandableListItem(
-                  title: 'Device Information',
-                  subtitle: 'Basic device details and configuration',
-                  leadingIcon: Icons.info_outline,
-                  leadingIconColor: Colors.blue,
-                  initiallyExpanded: true,
-                  detailRows: [
-                    DetailRow(
-                      label: 'Device Name',
-                      value: deviceName,
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Device Address',
-                      value: widget.device.address,
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Device Type',
-                      value: widget.device.helvarType,
-                      showDivider: true,
-                    ),
-                    StatusDetailRow(
-                      label: 'Button Device',
-                      statusText: widget.device.isButtonDevice ? 'Yes' : 'No',
-                      statusColor: widget.device.isButtonDevice
-                          ? Colors.green
-                          : Colors.grey,
-                      showDivider: true,
-                    ),
-                    StatusDetailRow(
-                      label: 'Multisensor',
-                      statusText: widget.device.isMultisensor ? 'Yes' : 'No',
-                      statusColor: widget.device.isMultisensor
-                          ? Colors.green
-                          : Colors.grey,
-                    ),
-                  ],
-                ),
-                ExpandableListItem(
-                  title: 'Input Points',
-                  subtitle:
-                      '${inputDevice.buttonPoints.length} configured points',
-                  leadingIcon: Icons.touch_app,
-                  leadingIconColor: Colors.green,
-                  initiallyExpanded: true,
-                  children: inputDevice.buttonPoints
-                      .map((point) => _buildPointItem(point))
-                      .toList(),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      body: ExpandableListView(
+        padding: const EdgeInsets.all(8.0),
         children: [
-          Icon(Icons.radio_button_unchecked, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'No points available for this device',
-            style: TextStyle(fontSize: 18),
+          ExpandableListItem(
+            title: 'Device Information',
+            subtitle: 'Basic device details and configuration',
+            leadingIcon: Icons.info_outline,
+            leadingIconColor: Colors.blue,
+            initiallyExpanded: true,
+            detailRows: [
+              DetailRow(
+                label: 'Device Name',
+                value: deviceName,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Device Address',
+                value: widget.device.address,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Device Type',
+                value: widget.device.helvarType,
+                showDivider: true,
+              ),
+              StatusDetailRow(
+                label: 'Button Device',
+                statusText: widget.device.isButtonDevice ? 'Yes' : 'No',
+                statusColor: widget.device.isButtonDevice
+                    ? Colors.green
+                    : Colors.grey,
+                showDivider: true,
+              ),
+              StatusDetailRow(
+                label: 'Multisensor',
+                statusText: widget.device.isMultisensor ? 'Yes' : 'No',
+                statusColor: widget.device.isMultisensor
+                    ? Colors.green
+                    : Colors.grey,
+              ),
+            ],
+          ),
+          ExpandableListItem(
+            title: 'Input Points',
+            subtitle: '${inputDevice.buttonPoints.length} configured points',
+            leadingIcon: Icons.touch_app,
+            leadingIconColor: Colors.green,
+            initiallyExpanded: true,
+            children: inputDevice.buttonPoints
+                .map((point) => _buildPointItem(point))
+                .toList(),
           ),
         ],
       ),
@@ -122,13 +103,12 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
 
   Widget _buildPointItem(ButtonPoint point) {
     final pointIcon = getButtonPointIcon(point);
-    final pointColor = _getPointColor(point);
     final displayName = getButtonPointDisplayName(point);
 
     return ExpandableListItem(
       title: displayName,
       leadingIcon: pointIcon,
-      leadingIconColor: pointColor,
+      leadingIconColor: null,
       indentLevel: 1,
       detailRows: [
         DetailRow(label: 'Point Name', value: point.name, showDivider: true),
@@ -150,22 +130,10 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
         StatusDetailRow(
           label: 'Status',
           statusText: _getPointStatus(point),
-          statusColor: _getPointStatusColor(point),
+          statusColor: null,
         ),
       ],
     );
-  }
-
-  Color _getPointColor(ButtonPoint point) {
-    if (point.function.contains('Status') || point.name.contains('Missing')) {
-      return Colors.orange;
-    } else if (point.function.contains('IR')) {
-      return Colors.purple;
-    } else if (point.function.contains('Button')) {
-      return Colors.blue;
-    } else {
-      return Colors.grey;
-    }
   }
 
   String _getPointStatus(ButtonPoint point) {
@@ -175,16 +143,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
       return 'Listening';
     } else {
       return 'Ready';
-    }
-  }
-
-  Color _getPointStatusColor(ButtonPoint point) {
-    if (point.function.contains('Status') || point.name.contains('Missing')) {
-      return Colors.orange;
-    } else if (point.function.contains('IR')) {
-      return Colors.purple;
-    } else {
-      return Colors.green;
     }
   }
 }

@@ -12,7 +12,6 @@ import '../../models/helvar_models/output_device.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../providers/router_connection_provider.dart';
 import '../../providers/workgroups_provider.dart';
-import '../../utils/file/file_dialog_helper.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import '../../utils/core/logger.dart';
 import '../dialogs/add_device_dialog.dart';
@@ -282,9 +281,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
     }
 
     List<Widget> deviceChildren = [];
-    if (device.helvarType == 'input' || device.emergency) {
-      deviceChildren.add(_buildAlarmSourceInfo(device));
-    }
 
     if (device is HelvarDriverInputDevice && device.buttonPoints.isNotEmpty) {
       deviceChildren.add(_buildButtonPointsSection(device));
@@ -361,28 +357,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         ),
       ],
       children: deviceChildren,
-    );
-  }
-
-  Widget _buildAlarmSourceInfo(HelvarDevice device) {
-    return ExpandableListItem(
-      title: 'Alarm Source Info',
-      subtitle: 'Device state and alarm information',
-      leadingIcon: Icons.warning_amber,
-      leadingIconColor: Colors.orange,
-      indentLevel: 3,
-      detailRows: [
-        DetailRow(
-          label: 'State',
-          value: device.state.isEmpty ? 'Unknown' : device.state,
-          showDivider: true,
-        ),
-        if (device.deviceStateCode != null)
-          DetailRow(
-            label: 'State Code',
-            value: '0x${device.deviceStateCode!.toRadixString(16)}',
-          ),
-      ],
     );
   }
 
@@ -480,12 +454,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       case 'discover':
         await _discoverDevices();
         break;
-      case 'import':
-        await _importDevices();
-        break;
-      case 'export':
-        await _exportDevices();
-        break;
       case 'add_output':
         _addOutputDevice();
         break;
@@ -498,129 +466,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       case 'delete_all':
         _deleteAllDevices();
         break;
-    }
-  }
-
-  Future<void> _importDevices() async {
-    try {
-      final filePath = await FileDialogHelper.pickJsonFileToOpen();
-      if (filePath == null) return;
-
-      setState(() {
-        _isLoading = true;
-      });
-
-      final routerStorageService = ref.read(routerStorageServiceProvider);
-      final devices = await routerStorageService.importRouterDevices(filePath);
-      if (!mounted) return;
-      final merge = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Import Devices'),
-          content: Text(
-            'Found ${devices.length} devices. Do you want to merge with existing devices or replace them?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Replace'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Merge'),
-            ),
-          ],
-        ),
-      );
-
-      if (merge == null) {
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-      if (merge) {
-        final existingAddresses = widget.router.devices
-            .map((d) => d.address)
-            .toSet();
-        final newDevices = devices
-            .where((d) => !existingAddresses.contains(d.address))
-            .toList();
-
-        for (final device in newDevices) {
-          await ref
-              .read(workgroupsProvider.notifier)
-              .addDeviceToRouter(
-                widget.workgroup.id,
-                widget.router.address,
-                device,
-              );
-        }
-        showSnackBarMsg(context, 'Added ${newDevices.length} new devices');
-      } else {
-        widget.router.devices.clear();
-
-        for (final device in devices) {
-          await ref
-              .read(workgroupsProvider.notifier)
-              .addDeviceToRouter(
-                widget.workgroup.id,
-                widget.router.address,
-                device,
-              );
-        }
-        showSnackBarMsg(
-          context,
-          'Replaced with ${devices.length} imported devices',
-        );
-      }
-      setState(() {
-        _devices = widget.router.devices;
-        _organizeDevicesBySubnet();
-        _isLoading = false;
-      });
-    } catch (e) {
-      showSnackBarMsg(context, 'Error importing devices: $e');
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _exportDevices() async {
-    try {
-      if (_devices.isEmpty) {
-        showSnackBarMsg(context, 'No devices to export');
-        return;
-      }
-
-      final filePath = await FileDialogHelper.pickJsonFileToSave(
-        "helvarnet_devices.json",
-      );
-      if (filePath == null) return;
-
-      setState(() {
-        _isLoading = true;
-      });
-
-      final routerStorageService = ref.read(routerStorageServiceProvider);
-      await routerStorageService.exportRouterDevices(_devices, filePath);
-
-      if (!mounted) return;
-      showSnackBarMsg(
-        context,
-        'Exported ${_devices.length} devices to $filePath',
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      showSnackBarMsg(context, 'Error exporting devices: $e');
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 

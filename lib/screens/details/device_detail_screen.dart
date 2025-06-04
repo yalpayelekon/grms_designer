@@ -325,7 +325,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     return ExpandableListItem(
       title: getButtonPointDisplayName(point),
       leadingIcon: getButtonPointIcon(point),
-      leadingIconColor: _getInputPointColor(point),
+      leadingIconColor: null,
       indentLevel: 1,
       detailRows: [
         DetailRow(label: 'Point Name', value: point.name, showDivider: true),
@@ -378,18 +378,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         ),
       ],
     );
-  }
-
-  Color _getInputPointColor(ButtonPoint point) {
-    if (point.function.contains('Status') || point.name.contains('Missing')) {
-      return Colors.orange;
-    } else if (point.function.contains('IR')) {
-      return Colors.purple;
-    } else if (point.function.contains('Button')) {
-      return Colors.blue;
-    } else {
-      return Colors.grey;
-    }
   }
 
   void _updateDeviceId(String val) {

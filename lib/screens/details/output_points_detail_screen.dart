@@ -60,72 +60,51 @@ class OutputPointsDetailScreenState
         title: Text('Output Points - $deviceName'),
         centerTitle: true,
       ),
-      body: outputDevice.outputPoints.isEmpty
-          ? _buildEmptyState()
-          : ExpandableListView(
-              padding: const EdgeInsets.all(8.0),
-              children: [
-                // Device Information
-                ExpandableListItem(
-                  title: 'Device Information',
-                  subtitle: 'Basic device details and configuration',
-                  leadingIcon: Icons.info_outline,
-                  leadingIconColor: Colors.blue,
-                  initiallyExpanded: true,
-                  detailRows: [
-                    DetailRow(
-                      label: 'Device Name',
-                      value: deviceName,
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Device Address',
-                      value: widget.device.address,
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Device Type',
-                      value: widget.device.helvarType,
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Current Level',
-                      value: '${outputDevice.level}%',
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Power Consumption',
-                      value:
-                          '${outputDevice.powerConsumption.toStringAsFixed(1)}W',
-                    ),
-                  ],
-                ),
-                ExpandableListItem(
-                  title: 'Output Points',
-                  subtitle:
-                      '${outputDevice.outputPoints.length} configured points',
-                  leadingIcon: Icons.output,
-                  leadingIconColor: Colors.orange,
-                  initiallyExpanded: true,
-                  children: outputDevice.outputPoints
-                      .map((point) => _buildPointItem(point))
-                      .toList(),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      body: ExpandableListView(
+        padding: const EdgeInsets.all(8.0),
         children: [
-          Icon(Icons.radio_button_unchecked, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'No output points available for this device',
-            style: TextStyle(fontSize: 18),
+          ExpandableListItem(
+            title: 'Device Information',
+            subtitle: 'Basic device details and configuration',
+            leadingIcon: Icons.info_outline,
+            leadingIconColor: Colors.blue,
+            initiallyExpanded: true,
+            detailRows: [
+              DetailRow(
+                label: 'Device Name',
+                value: deviceName,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Device Address',
+                value: widget.device.address,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Device Type',
+                value: widget.device.helvarType,
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Current Level',
+                value: '${outputDevice.level}%',
+                showDivider: true,
+              ),
+              DetailRow(
+                label: 'Power Consumption',
+                value: '${outputDevice.powerConsumption.toStringAsFixed(1)}W',
+              ),
+            ],
+          ),
+          ExpandableListItem(
+            title: 'Output Points',
+            subtitle: '${outputDevice.outputPoints.length} configured points',
+            leadingIcon: Icons.output,
+            leadingIconColor: Colors.orange,
+            initiallyExpanded: true,
+            children: outputDevice.outputPoints
+                .map((point) => _buildPointItem(point))
+                .toList(),
           ),
         ],
       ),

@@ -62,7 +62,6 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
           : ExpandableListView(
               padding: const EdgeInsets.all(8.0),
               children: [
-                // Subnet Information
                 ExpandableListItem(
                   title: 'Subnet Information',
                   subtitle:

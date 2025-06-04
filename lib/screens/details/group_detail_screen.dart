@@ -243,7 +243,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     onSubmitted: _saveSceneTable,
                     showDivider: true,
                   ),
-
                   DetailRow(
                     label: 'Refresh Props After Action',
                     value: group.refreshPropsAfterAction.toString(),
