@@ -5,15 +5,12 @@ import 'helvar_router.dart';
 import 'helvar_group.dart';
 
 enum PointPollingRate {
-  disabled,
   fast,
   normal,
   slow;
 
   String get displayName {
     switch (this) {
-      case PointPollingRate.disabled:
-        return 'Disabled';
       case PointPollingRate.fast:
         return 'Fast (10s)';
       case PointPollingRate.normal:
@@ -25,8 +22,6 @@ enum PointPollingRate {
 
   Duration get duration {
     switch (this) {
-      case PointPollingRate.disabled:
-        return Duration.zero;
       case PointPollingRate.fast:
         return PollingPresets.fast;
       case PointPollingRate.normal:
@@ -145,7 +140,7 @@ class Workgroup extends TreeNode {
       'refreshPropsAfterAction': refreshPropsAfterAction,
       'pollEnabled': pollEnabled,
       'lastPollTime': lastPollTime?.toIso8601String(),
-      'pollingRate': pollingRate,
+      'pollingRate': pollingRate.toString(),
       'routers': routers.map((router) => router.toJson()).toList(),
       'groups': groups.map((group) => group.toJson()).toList(),
     };

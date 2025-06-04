@@ -6,7 +6,6 @@ import 'package:grms_designer/models/helvar_models/input_device.dart';
 import 'package:grms_designer/providers/centralized_polling_provider.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
-import 'package:grms_designer/widgets/point_polling_config_widget.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../providers/workgroups_provider.dart';
@@ -24,12 +23,105 @@ class WorkgroupDetailScreen extends ConsumerStatefulWidget {
 
 class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   bool _isLoading = false;
+  bool _hasChanges = false;
+  late PointPollingRate _pollingRate;
+
+  @override
+  void initState() {
+    super.initState();
+    _pollingRate = widget.workgroup.pollingRate;
+  }
 
   Workgroup get currentWorkgroup {
     final workgroups = ref.watch(workgroupsProvider);
     return workgroups.firstWhere(
       (wg) => wg.id == widget.workgroup.id,
       orElse: () => widget.workgroup,
+    );
+  }
+
+  void _updatePollingRate(PointPollingRate rate) {
+    setState(() {
+      _pollingRate = rate;
+      _hasChanges = _pollingRate != currentWorkgroup.pollingRate;
+    });
+  }
+
+  Future<void> _saveChanges() async {
+    if (!_hasChanges) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final updatedWorkgroup = currentWorkgroup.copyWith(
+        pollingRate: _pollingRate,
+      );
+      await ref
+          .read(workgroupsProvider.notifier)
+          .updateWorkgroup(updatedWorkgroup);
+
+      setState(() {
+        _hasChanges = false;
+      });
+
+      if (mounted) {
+        showSnackBarMsg(context, 'Workgroup configuration saved');
+      }
+    } catch (e) {
+      if (mounted) {
+        showSnackBarMsg(context, 'Error saving configuration: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _resetChanges() {
+    setState(() {
+      _pollingRate = currentWorkgroup.pollingRate;
+      _hasChanges = false;
+    });
+  }
+
+  Widget _buildPollingRateRow() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 180,
+            child: Text(
+              'Polling Rate:',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
+            ),
+          ),
+          Expanded(
+            child: DropdownButton<PointPollingRate>(
+              value: _pollingRate,
+              isExpanded: true,
+              items: PointPollingRate.values.map((rate) {
+                return DropdownMenuItem<PointPollingRate>(
+                  value: rate,
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 8),
+                      Text(rate.displayName),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (PointPollingRate? newRate) {
+                if (newRate != null) {
+                  _updatePollingRate(newRate);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -216,17 +308,28 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _isLoading = false;
-  }
-
-  @override
   Widget build(BuildContext context) {
     final workgroup = currentWorkgroup;
 
     return Scaffold(
-      appBar: AppBar(title: Text(workgroup.description), centerTitle: true),
+      appBar: AppBar(
+        title: Text(workgroup.description),
+        centerTitle: true,
+        actions: _hasChanges
+            ? [
+                IconButton(
+                  onPressed: _resetChanges,
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Reset Changes',
+                ),
+                IconButton(
+                  onPressed: _saveChanges,
+                  icon: const Icon(Icons.save),
+                  tooltip: 'Save Changes',
+                ),
+              ]
+            : null,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ExpandableListView(
@@ -256,7 +359,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                   ],
                 ),
                 ExpandableListItem(
-                  title: 'Polling',
+                  title: 'Polling Configuration',
                   initiallyExpanded: true,
                   detailRows: [
                     DetailRow(
@@ -273,29 +376,13 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                           DropdownMenuItem<bool>(
                             value: false,
                             child: Row(
-                              children: [
-                                Icon(
-                                  Icons.pause_circle_outline,
-                                  size: 16,
-                                  color: Colors.orange,
-                                ),
-                                SizedBox(width: 8),
-                                Text('Disabled'),
-                              ],
+                              children: [SizedBox(width: 8), Text('Disabled')],
                             ),
                           ),
                           DropdownMenuItem<bool>(
                             value: true,
                             child: Row(
-                              children: [
-                                Icon(
-                                  Icons.autorenew,
-                                  size: 16,
-                                  color: Colors.green,
-                                ),
-                                SizedBox(width: 8),
-                                Text('Enabled'),
-                              ],
+                              children: [SizedBox(width: 8), Text('Enabled')],
                             ),
                           ),
                         ],
@@ -306,9 +393,15 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                       DetailRow(
                         label: 'Last Poll Started',
                         value: formatDateTime(workgroup.lastPollTime!),
+                        showDivider: true,
                       ),
                   ],
-                  children: [PointPollingConfigWidget(workgroup: workgroup)],
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(children: [_buildPollingRateRow()]),
+                    ),
+                  ],
                 ),
                 if (workgroup.groups.isNotEmpty)
                   ExpandableListItem(

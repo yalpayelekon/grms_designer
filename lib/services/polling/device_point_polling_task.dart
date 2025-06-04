@@ -70,10 +70,6 @@ class DevicePointPollingTask extends PollingTask {
     for (final point in outputDevice.outputPoints) {
       final pointRate = workgroup.pollingRate;
 
-      if (pointRate == PointPollingRate.disabled) {
-        continue;
-      }
-
       final lastPolled = _lastPolledTimes[point.pointId];
       if (lastPolled != null) {
         final timeSinceLastPoll = now.difference(lastPolled);
@@ -111,10 +107,6 @@ class DevicePointPollingTask extends PollingTask {
     final results = <String, dynamic>{};
     final now = DateTime.now();
     final inputRate = workgroup.pollingRate;
-
-    if (inputRate == PointPollingRate.disabled) {
-      return PollingResult.success({'skipped': 'input_polling_disabled'});
-    }
 
     final lastPolled = _lastPolledTimes[0];
     if (lastPolled != null) {
