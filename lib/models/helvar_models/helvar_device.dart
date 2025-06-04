@@ -15,6 +15,7 @@ abstract class HelvarDevice extends TreeNode {
   int deviceId;
   String address;
   String state;
+  String name;
   String description;
   String props;
   String iconPath;
@@ -45,6 +46,7 @@ abstract class HelvarDevice extends TreeNode {
     this.address = "@",
     this.state = "",
     this.description = "",
+    this.name = "",
     this.props = "",
     this.iconPath = "",
     this.hexId = "",
@@ -95,6 +97,7 @@ abstract class HelvarDevice extends TreeNode {
         address: json['address'] as String? ?? '@',
         state: json['state'] as String? ?? '',
         description: json['description'] as String? ?? '',
+        name: json['name'] as String? ?? '',
         props: json['props'] as String? ?? '',
         iconPath: json['iconPath'] as String? ?? '',
         hexId: json['hexId'] as String? ?? '',
@@ -126,6 +129,7 @@ abstract class HelvarDevice extends TreeNode {
         address: json['address'] as String? ?? '@',
         state: json['state'] as String? ?? '',
         description: json['description'] as String? ?? '',
+        name: json['name'] as String? ?? '',
         props: json['props'] as String? ?? '',
         iconPath: json['iconPath'] as String? ?? '',
         hexId: json['hexId'] as String? ?? '',
@@ -153,6 +157,7 @@ abstract class HelvarDevice extends TreeNode {
         address: json['address'] as String? ?? '@',
         state: json['state'] as String? ?? '',
         description: json['description'] as String? ?? '',
+        name: json['name'] as String? ?? '',
         props: json['props'] as String? ?? '',
         iconPath: json['iconPath'] as String? ?? '',
         hexId: json['hexId'] as String? ?? '',
@@ -189,6 +194,7 @@ abstract class HelvarDevice extends TreeNode {
       'address': address,
       'state': state,
       'description': description,
+      'name': name,
       'props': props,
       'iconPath': iconPath,
       'hexId': hexId,

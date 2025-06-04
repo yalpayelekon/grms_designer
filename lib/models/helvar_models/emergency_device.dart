@@ -12,6 +12,7 @@ class HelvarDriverEmergencyDevice extends HelvarDevice {
     super.state,
     super.description,
     super.props,
+    super.name,
     super.iconPath,
     super.hexId,
     super.addressingScheme,

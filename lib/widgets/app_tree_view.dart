@@ -383,9 +383,9 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     Workgroup workgroup,
     HelvarRouter router,
   ) {
-    final deviceName = device.description.isEmpty
+    final deviceName = device.name.isEmpty
         ? "Device_${device.deviceId}"
-        : device.description;
+        : device.name;
 
     final bool isSelectedDevice =
         widget.selectedWorkgroup == workgroup &&
@@ -417,12 +417,6 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
             },
             child: Row(
               children: [
-                Icon(
-                  Icons.add_circle_outline,
-                  size: 18,
-                  color: isPointsSelected ? Colors.blue : null,
-                ),
-                const SizedBox(width: 4),
                 Text(
                   "Points",
                   style: TextStyle(
@@ -468,12 +462,6 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
               },
               child: Row(
                 children: [
-                  Icon(
-                    Icons.add_circle_outline,
-                    size: 18,
-                    color: isOutputPointsSelected ? Colors.blue : Colors.orange,
-                  ),
-                  const SizedBox(width: 4),
                   Text(
                     "Points",
                     style: TextStyle(

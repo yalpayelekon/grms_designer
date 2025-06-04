@@ -191,6 +191,7 @@ class DiscoveryService {
     final deviceAddressTypes = ProtocolParser.parseDeviceAddressesAndTypes(
       devicesValue,
     );
+    final Map<String, int> descriptionCounts = {};
     final subnetDevices = <HelvarDevice>[];
 
     for (final entry in deviceAddressTypes.entries) {
@@ -210,6 +211,17 @@ class DiscoveryService {
       );
 
       if (device != null) {
+        String baseName = device.description;
+        String uniqueName = baseName;
+
+        if (descriptionCounts.containsKey(baseName)) {
+          descriptionCounts[baseName] = descriptionCounts[baseName]! + 1;
+          uniqueName = '${baseName}_${descriptionCounts[baseName]}';
+        } else {
+          descriptionCounts[baseName] = 0;
+        }
+
+        device.name = uniqueName;
         subnetDevices.add(device);
       }
     }

@@ -12,6 +12,7 @@ class HelvarDriverInputDevice extends HelvarDevice {
     super.address,
     super.state,
     super.description,
+    super.name,
     super.props,
     super.iconPath,
     super.hexId,
