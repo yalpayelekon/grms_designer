@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collection/collection.dart';
 import 'package:grms_designer/screens/dialogs/network_interface_dialog.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
-import 'package:grms_designer/utils/core/logger.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -624,12 +623,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
 
     if (result == true) {
       ref.read(workgroupsProvider.notifier).removeWorkgroup(workgroup.id);
-      if (mounted) {
-        showSnackBarMsg(
-          context,
-          'Workgroup "${workgroup.description}" deleted',
-        );
-      }
     }
   }
 

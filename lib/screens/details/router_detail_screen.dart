@@ -382,10 +382,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         _devicesBySubnet.clear();
         _isLoading = false;
       });
-
-      logInfo(
-        'Deleted all ${devicesToDelete.length} devices from router ${widget.router.address}',
-      );
     } catch (e) {
       logError('Error deleting all devices: $e');
 

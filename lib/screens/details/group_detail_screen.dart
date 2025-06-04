@@ -16,11 +16,13 @@ import '../../utils/ui/ui_helpers.dart';
 class GroupDetailScreen extends ConsumerStatefulWidget {
   final HelvarGroup group;
   final Workgroup workgroup;
+  final bool asWidget;
 
   const GroupDetailScreen({
     super.key,
     required this.group,
     required this.workgroup,
+    this.asWidget = false,
   });
 
   @override
@@ -71,8 +73,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildContent() {
     final group = currentGroup;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -84,6 +85,153 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         _sceneTableController.text = group.sceneTable.join(', ');
       }
     });
+
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return DetailRowsList(
+      children: [
+        DetailRow(label: 'Group ID', value: group.groupId, showDivider: true),
+        DetailRow(
+          label: 'Description',
+          value: group.description.isEmpty
+              ? 'No description'
+              : group.description,
+          showDivider: true,
+        ),
+        DetailRow(label: 'Type', value: group.type, showDivider: true),
+        if (group.lsig != null)
+          DetailRow(
+            label: 'LSIG',
+            value: group.lsig.toString(),
+            showDivider: true,
+          ),
+        if (group.lsib1 != null)
+          DetailRow(
+            label: 'LSIB1',
+            value: group.lsib1.toString(),
+            showDivider: true,
+          ),
+        if (group.lsib2 != null)
+          DetailRow(
+            label: 'LSIB2',
+            value: group.lsib2.toString(),
+            showDivider: true,
+          ),
+        ...group.blockValues.asMap().entries.map(
+          (entry) => DetailRow(
+            label: 'Block ${entry.key + 1}',
+            value: entry.value.toString(),
+            showDivider: true,
+          ),
+        ),
+        DetailRow(
+          label: 'Power Consumption',
+          value: '${group.powerConsumption.toStringAsFixed(2)} W',
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Group Power Polling',
+          customValue: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Switch(
+                    value: _groupPollingEnabled,
+                    onChanged: _toggleGroupPolling,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _groupPollingEnabled ? 'Enabled' : 'Disabled',
+                    style: TextStyle(
+                      color: _groupPollingEnabled ? Colors.green : Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              if (_groupPollingEnabled) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Polling every ${group.powerPollingMinutes} minutes',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ],
+          ),
+          showDivider: true,
+        ),
+        EditableDetailRow(
+          label: 'Polling Minutes',
+          controller: _pollingMinutesController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onSubmitted: _savePollingInterval,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Last Power Update',
+          value: getLastUpdateTime(dateTime: group.lastPowerUpdateTime),
+          showDivider: true,
+        ),
+        StatusDetailRow(
+          label: 'Polling Status',
+          statusText: _groupPollingEnabled ? 'Active' : 'Disabled',
+          statusColor: _groupPollingEnabled ? Colors.green : Colors.orange,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Gateway Router',
+          value: group.gatewayRouterIpAddress.isEmpty
+              ? 'Not set'
+              : group.gatewayRouterIpAddress,
+          showDivider: true,
+        ),
+        EditableDetailRow(
+          label: 'Scene Table',
+          controller: _sceneTableController,
+          onSubmitted: _saveSceneTable,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Refresh Props After Action',
+          value: group.refreshPropsAfterAction.toString(),
+          showDivider: true,
+        ),
+        if (group.actionResult.isNotEmpty)
+          DetailRow(
+            label: 'Action Result',
+            value: group.actionResult,
+            showDivider: true,
+          ),
+        if (group.lastMessage.isNotEmpty)
+          DetailRow(
+            label: 'Last Message',
+            value: group.lastMessage,
+            showDivider: true,
+          ),
+        if (group.lastMessageTime != null)
+          DetailRow(
+            label: 'Message Time',
+            value: DateFormat(
+              'MMM d, yyyy h:mm:ss a',
+            ).format(group.lastMessageTime!),
+            showDivider: true,
+          ),
+        DetailRow(label: 'Workgroup', value: widget.workgroup.description),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.asWidget) {
+      return _buildContent();
+    }
+
+    final group = currentGroup;
 
     return Scaffold(
       appBar: AppBar(
@@ -99,182 +247,9 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             tooltip: 'Update Data',
             onPressed: _isLoading ? null : _refreshData,
           ),
-          PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'query_scenes',
-                child: Text('Query Scenes'),
-              ),
-              const PopupMenuItem(
-                value: 'recall_scene',
-                child: Text('Recall Scene'),
-              ),
-              const PopupMenuItem(
-                value: 'store_scene',
-                child: Text('Store Scene'),
-              ),
-            ],
-          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: DetailRowsList(
-                children: [
-                  DetailRow(
-                    label: 'Group ID',
-                    value: group.groupId,
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Description',
-                    value: group.description.isEmpty
-                        ? 'No description'
-                        : group.description,
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Type',
-                    value: group.type,
-                    showDivider: true,
-                  ),
-                  if (group.lsig != null)
-                    DetailRow(
-                      label: 'LSIG',
-                      value: group.lsig.toString(),
-                      showDivider: true,
-                    ),
-                  if (group.lsib1 != null)
-                    DetailRow(
-                      label: 'LSIB1',
-                      value: group.lsib1.toString(),
-                      showDivider: true,
-                    ),
-                  if (group.lsib2 != null)
-                    DetailRow(
-                      label: 'LSIB2',
-                      value: group.lsib2.toString(),
-                      showDivider: true,
-                    ),
-                  ...group.blockValues.asMap().entries.map(
-                    (entry) => DetailRow(
-                      label: 'Block ${entry.key + 1}',
-                      value: entry.value.toString(),
-                      showDivider: true,
-                    ),
-                  ),
-                  DetailRow(
-                    label: 'Power Consumption',
-                    value: '${group.powerConsumption.toStringAsFixed(2)} W',
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Group Power Polling',
-                    customValue: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Switch(
-                              value: _groupPollingEnabled,
-                              onChanged: _toggleGroupPolling,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _groupPollingEnabled ? 'Enabled' : 'Disabled',
-                              style: TextStyle(
-                                color: _groupPollingEnabled
-                                    ? Colors.green
-                                    : Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_groupPollingEnabled) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Polling every ${group.powerPollingMinutes} minutes',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    showDivider: true,
-                  ),
-                  EditableDetailRow(
-                    label: 'Polling Minutes',
-                    controller: _pollingMinutesController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onSubmitted: _savePollingInterval,
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Last Power Update',
-                    value: getLastUpdateTime(
-                      dateTime: group.lastPowerUpdateTime,
-                    ),
-                    showDivider: true,
-                  ),
-                  StatusDetailRow(
-                    label: 'Polling Status',
-                    statusText: _groupPollingEnabled ? 'Active' : 'Disabled',
-                    statusColor: _groupPollingEnabled
-                        ? Colors.green
-                        : Colors.orange,
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Gateway Router',
-                    value: group.gatewayRouterIpAddress.isEmpty
-                        ? 'Not set'
-                        : group.gatewayRouterIpAddress,
-                    showDivider: true,
-                  ),
-                  EditableDetailRow(
-                    label: 'Scene Table',
-                    controller: _sceneTableController,
-                    onSubmitted: _saveSceneTable,
-                    showDivider: true,
-                  ),
-                  DetailRow(
-                    label: 'Refresh Props After Action',
-                    value: group.refreshPropsAfterAction.toString(),
-                    showDivider: true,
-                  ),
-                  if (group.actionResult.isNotEmpty)
-                    DetailRow(
-                      label: 'Action Result',
-                      value: group.actionResult,
-                      showDivider: true,
-                    ),
-                  if (group.lastMessage.isNotEmpty)
-                    DetailRow(
-                      label: 'Last Message',
-                      value: group.lastMessage,
-                      showDivider: true,
-                    ),
-                  if (group.lastMessageTime != null)
-                    DetailRow(
-                      label: 'Message Time',
-                      value: DateFormat(
-                        'MMM d, yyyy h:mm:ss a',
-                      ).format(group.lastMessageTime!),
-                      showDivider: true,
-                    ),
-                  DetailRow(
-                    label: 'Workgroup',
-                    value: widget.workgroup.description,
-                  ),
-                ],
-              ),
-            ),
+      body: SingleChildScrollView(child: _buildContent()),
     );
   }
 
@@ -300,16 +275,8 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
         pollingService.registerTask(task);
         await pollingService.startTask(taskId);
-
-        if (mounted) {
-          showSnackBarMsg(context, 'Group power polling enabled');
-        }
       } else {
         pollingService.unregisterTask(taskId);
-
-        if (mounted) {
-          showSnackBarMsg(context, 'Group power polling disabled');
-        }
       }
 
       setState(() {
@@ -401,22 +368,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         setState(() {
           _isLoading = false;
         });
-        showSnackBarMsg(context, 'Data refreshed');
       }
     });
-  }
-
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'query_scenes':
-        showSnackBarMsg(context, 'Query scenes action');
-        break;
-      case 'recall_scene':
-        showSnackBarMsg(context, 'Recall scene action');
-        break;
-      case 'store_scene':
-        showSnackBarMsg(context, 'Store scene action');
-        break;
-    }
   }
 }

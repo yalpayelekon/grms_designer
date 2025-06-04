@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grms_designer/models/helvar_models/helvar_group.dart';
 import 'package:grms_designer/providers/centralized_polling_provider.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
@@ -9,6 +8,7 @@ import '../../models/helvar_models/helvar_router.dart';
 import '../../providers/workgroups_provider.dart';
 import '../../widgets/common/detail_card.dart';
 import '../../widgets/common/expandable_list_item.dart';
+import '../lists/groups_list_screen.dart';
 import 'router_detail_screen.dart';
 
 class WorkgroupDetailScreen extends ConsumerStatefulWidget {
@@ -309,48 +309,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       subtitle: '${workgroup.groups.length} groups configured',
       leadingIcon: Icons.layers,
       leadingIconColor: Colors.green,
-      children: workgroup.groups
-          .map((group) => _buildGroupItem(group))
-          .toList(),
-    );
-  }
-
-  Widget _buildGroupItem(HelvarGroup group) {
-    return ExpandableListItem(
-      title: group.description.isEmpty
-          ? "Group ${group.groupId}"
-          : group.description,
-      subtitle:
-          'ID: ${group.groupId} • Power: ${group.powerConsumption.toStringAsFixed(1)}W',
-      leadingIcon: Icons.group,
-      leadingIconColor: Colors.green,
-      indentLevel: 1,
-      detailRows: [
-        DetailRow(label: 'Group ID', value: group.groupId, showDivider: true),
-        DetailRow(label: 'Type', value: group.type, showDivider: true),
-        DetailRow(
-          label: 'Current Power',
-          value: '${group.powerConsumption.toStringAsFixed(2)} W',
-          showDivider: true,
-        ),
-        DetailRow(
-          label: 'Polling Minutes',
-          value: '${group.powerPollingMinutes} minutes',
-          showDivider: true,
-        ),
-        if (group.sceneTable.isNotEmpty)
-          DetailRow(
-            label: 'Scenes',
-            value:
-                '${group.sceneTable.length} scenes: ${group.sceneTable.join(', ')}',
-            showDivider: true,
-          ),
-        if (group.gatewayRouterIpAddress.isNotEmpty)
-          DetailRow(
-            label: 'Gateway Router',
-            value: group.gatewayRouterIpAddress,
-          ),
-      ],
+      children: [GroupsListScreen(workgroup: workgroup, asWidget: true)],
     );
   }
 
