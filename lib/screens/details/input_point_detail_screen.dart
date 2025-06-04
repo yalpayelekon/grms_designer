@@ -62,11 +62,6 @@ class InputPointDetailScreenState
                 value: widget.point.buttonId.toString(),
                 showDivider: true,
               ),
-              DetailRow(
-                label: 'Point Type',
-                value: getPointTypeDescription(widget.point),
-                showDivider: true,
-              ),
             ],
           ),
 

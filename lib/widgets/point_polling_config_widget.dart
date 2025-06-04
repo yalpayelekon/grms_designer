@@ -43,7 +43,6 @@ class PointPollingConfigWidgetState
       children: [
         ExpandableListItem(
           title: 'Device Point Polling Configuration',
-          subtitle: 'Configure polling rates for device points',
           leadingIcon: Icons.settings,
           leadingIconColor: Colors.blue,
           initiallyExpanded: true,
@@ -64,10 +63,8 @@ class PointPollingConfigWidgetState
                 ]
               : null,
           children: [
-            // Output Point Configuration
             ExpandableListItem(
               title: 'Output Device Points',
-              subtitle: 'Configure polling for output device points',
               leadingIcon: Icons.output,
               leadingIconColor: Colors.orange,
               indentLevel: 1,
@@ -78,11 +75,8 @@ class PointPollingConfigWidgetState
                   )
                   .toList(),
             ),
-
-            // Input Point Configuration
             ExpandableListItem(
               title: 'Input Device Points',
-              subtitle: 'Configure polling for input device points',
               leadingIcon: Icons.input,
               leadingIconColor: Colors.green,
               indentLevel: 1,
@@ -158,16 +152,6 @@ class PointPollingConfigWidgetState
       leadingIconColor: _getRateColor(currentRate),
       indentLevel: 2,
       detailRows: [
-        DetailRow(
-          label: 'Point ID',
-          value: pointId.toString(),
-          showDivider: true,
-        ),
-        DetailRow(
-          label: 'Description',
-          value: _getPointDescription(pointId),
-          showDivider: true,
-        ),
         DetailRow(
           label: 'Polling Rate',
           customValue: _buildPollingRateDropdown(
@@ -308,25 +292,6 @@ class PointPollingConfigWidgetState
         return Colors.green;
       case PointPollingRate.slow:
         return Colors.blue;
-    }
-  }
-
-  String _getPointDescription(int pointId) {
-    switch (pointId) {
-      case 1:
-        return 'Indicates if device has any state issues';
-      case 2:
-        return 'Indicates if the lamp has failed';
-      case 3:
-        return 'Indicates if the device is missing/not responding';
-      case 4:
-        return 'Indicates if the device is in a faulty state';
-      case 5:
-        return 'Current output level percentage (0-100%)';
-      case 6:
-        return 'Current power consumption in Watts';
-      default:
-        return 'Unknown point';
     }
   }
 }

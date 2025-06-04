@@ -7,7 +7,6 @@ import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/output_point.dart';
-import '../../services/device_query_service.dart';
 
 class OutputPointDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
@@ -77,9 +76,6 @@ class OutputPointDetailScreenState
             ),
             const Divider(),
             buildInfoRow('Point Name', widget.point.name),
-            buildInfoRow('Function', widget.point.function),
-            buildInfoRow('Point ID', widget.point.pointId.toString()),
-            buildInfoRow('Point Type', widget.point.pointType),
             buildInfoRow(
               'Parent Device',
               widget.device.description.isEmpty
@@ -87,10 +83,6 @@ class OutputPointDetailScreenState
                   : widget.device.description,
             ),
             buildInfoRow('Device Address', widget.device.address),
-            buildInfoRow(
-              'Description',
-              DeviceQueryService.getPointDescription(widget.point.pointId),
-            ),
           ],
         ),
       ),

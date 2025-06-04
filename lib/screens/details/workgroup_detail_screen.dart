@@ -268,13 +268,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                       showDivider: true,
                     ),
                     DetailRow(
-                      label: 'Gateway Router IP',
-                      value: workgroup.gatewayRouterIpAddress.isEmpty
-                          ? 'Not set'
-                          : workgroup.gatewayRouterIpAddress,
-                      showDivider: true,
-                    ),
-                    DetailRow(
                       label: 'Refresh Props After Action',
                       value: workgroup.refreshPropsAfterAction.toString(),
                     ),
@@ -325,17 +318,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                           ),
                         ],
                       ),
-                      showDivider: true,
-                    ),
-
-                    DetailRow(
-                      label: 'Devices with Points',
-                      value: '$totalDevicesWithPoints devices',
-                      showDivider: true,
-                    ),
-                    DetailRow(
-                      label: 'Total Points',
-                      value: '$totalPoints points',
                       showDivider: true,
                     ),
                     if (workgroup.lastPollTime != null)

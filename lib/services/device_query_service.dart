@@ -223,23 +223,4 @@ class DeviceQueryService {
       return false;
     }
   }
-
-  static String getPointDescription(int pointId) {
-    switch (pointId) {
-      case 1:
-        return 'Device State - Indicates if device has any state issues';
-      case 2:
-        return 'Lamp Failure - Indicates if the lamp has failed';
-      case 3:
-        return 'Missing - Indicates if the device is missing/not responding';
-      case 4:
-        return 'Faulty - Indicates if the device is in a faulty state';
-      case 5:
-        return 'Output Level - Current output level percentage (0-100%)';
-      case 6:
-        return 'Power Consumption - Current power consumption in Watts';
-      default:
-        return 'Unknown point';
-    }
-  }
 }
