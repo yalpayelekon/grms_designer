@@ -175,15 +175,6 @@ class InputPointDetailScreenState
                 value: widget.point.buttonId.toString(),
                 showDivider: true,
               ),
-            ],
-          ),
-          ExpandableListItem(
-            title: 'Polling Configuration',
-            subtitle: 'Configure how often this point is polled',
-            leadingIcon: Icons.schedule,
-            leadingIconColor: Colors.blue,
-            initiallyExpanded: true,
-            detailRows: [
               DetailRow(
                 label: 'Polling Rate',
                 customValue: DropdownButton<PointPollingRate>(
@@ -209,69 +200,6 @@ class InputPointDetailScreenState
                   }).toList(),
                 ),
                 showDivider: true,
-              ),
-              DetailRow(
-                label: 'Current Duration',
-                value: _getDurationDisplay(_selectedPollingRate),
-              ),
-            ],
-          ),
-          ExpandableListItem(
-            title: 'Parent Device',
-            subtitle: widget.device.description.isEmpty
-                ? 'Device ${widget.device.deviceId}'
-                : widget.device.description,
-            leadingIcon: Icons.device_hub,
-            leadingIconColor: Colors.blue,
-            detailRows: [
-              DetailRow(
-                label: 'Device Name',
-                value: widget.device.description.isEmpty
-                    ? 'Device ${widget.device.deviceId}'
-                    : widget.device.description,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Device Address',
-                value: widget.device.address,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Device ID',
-                value: widget.device.deviceId.toString(),
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Device Type',
-                value: widget.device.helvarType,
-                showDivider: true,
-              ),
-            ],
-          ),
-          ExpandableListItem(
-            title: 'Router Information',
-            subtitle: 'Network and connection details',
-            leadingIcon: Icons.router,
-            leadingIconColor: Colors.purple,
-            detailRows: [
-              DetailRow(
-                label: 'Router Description',
-                value: widget.router.description,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Router IP',
-                value: widget.router.ipAddress,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Router Address',
-                value: widget.router.address,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Workgroup',
-                value: widget.workgroup.description,
               ),
             ],
           ),

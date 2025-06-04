@@ -81,7 +81,6 @@ class PollingManager extends StateNotifier<Map<String, bool>> {
         }
       }
 
-      // Update device point polling tasks if workgroup polling is enabled
       if (workgroup.pollEnabled) {
         _ensureDevicePointPollingTasks(
           workgroup,

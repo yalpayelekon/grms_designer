@@ -142,7 +142,7 @@ class OutputPointDetailScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.router.description} - ${widget.point.function}'),
+        title: Text('${widget.device.name} - ${widget.point.function}'),
         centerTitle: true,
         actions: _hasChanges
             ? [

@@ -37,12 +37,11 @@ class DevicePointPollingTask extends PollingTask {
          },
        );
 
-  // Calculate the task interval based on the fastest polling rate among all points
   static Duration _calculateTaskInterval(
     Workgroup workgroup,
     HelvarDevice device,
   ) {
-    Duration fastestInterval = const Duration(minutes: 5); // Default fallback
+    Duration fastestInterval = const Duration(minutes: 5);
 
     if (device is HelvarDriverOutputDevice) {
       for (final point in device.outputPoints) {
@@ -66,8 +65,6 @@ class DevicePointPollingTask extends PollingTask {
   @override
   Future<PollingResult> execute() async {
     try {
-      logDebug('Polling points for device ${device.address}');
-
       if (device is HelvarDriverOutputDevice) {
         return await _pollOutputDevicePoints();
       } else if (device is HelvarDriverInputDevice) {
@@ -93,7 +90,6 @@ class DevicePointPollingTask extends PollingTask {
     }
 
     for (final point in outputDevice.outputPoints) {
-      // Use individual point's polling rate instead of workgroup rate
       final pointDuration = workgroup.getDurationForRate(point.pollingRate);
       final pointKey = 'output_${point.pointId}';
 
@@ -101,7 +97,7 @@ class DevicePointPollingTask extends PollingTask {
       if (lastPolled != null) {
         final timeSinceLastPoll = now.difference(lastPolled);
         if (timeSinceLastPoll < pointDuration) {
-          continue; // Skip this point, not time to poll yet
+          continue;
         }
       }
 
