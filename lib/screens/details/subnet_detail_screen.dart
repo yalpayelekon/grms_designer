@@ -276,7 +276,6 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
   Widget _buildButtonPointItem(ButtonPoint point) {
     return ExpandableListItem(
       title: point.name.split('_').last,
-      subtitle: 'Function: ${point.function} • ID: ${point.buttonId}',
       leadingIcon:
           point.function.contains('Status') || point.name.contains('Missing')
           ? Icons.info_outline

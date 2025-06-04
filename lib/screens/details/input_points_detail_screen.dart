@@ -135,7 +135,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
 
     return ExpandableListItem(
       title: displayName,
-      subtitle: 'Function: ${point.function} • ID: ${point.buttonId}',
       leadingIcon: pointIcon,
       leadingIconColor: pointColor,
       indentLevel: 1,

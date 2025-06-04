@@ -324,7 +324,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   Widget _buildInputPointItem(ButtonPoint point) {
     return ExpandableListItem(
       title: getButtonPointDisplayName(point),
-      subtitle: 'Function: ${point.function} • ID: ${point.buttonId}',
       leadingIcon: getButtonPointIcon(point),
       leadingIconColor: _getInputPointColor(point),
       indentLevel: 1,
@@ -348,7 +347,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   Widget _buildOutputPointItem(OutputPoint point) {
     return ExpandableListItem(
       title: point.function,
-      subtitle: 'Type: ${point.pointType} • ID: ${point.pointId}',
       leadingIcon: getOutputPointIcon(point),
       leadingIconColor: getOutputPointColor(point),
       indentLevel: 1,

@@ -40,8 +40,6 @@ class InputPointDetailScreenState
         children: [
           ExpandableListItem(
             title: widget.point.name,
-            subtitle:
-                'Function: ${widget.point.function} • ID: ${widget.point.buttonId}',
             leadingIcon: getButtonPointIcon(widget.point),
             leadingIconColor: null,
             initiallyExpanded: true,

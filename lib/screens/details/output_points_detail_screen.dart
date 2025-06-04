@@ -142,7 +142,6 @@ class OutputPointsDetailScreenState
   Widget _buildPointItem(OutputPoint point) {
     return ExpandableListItem(
       title: point.function,
-      subtitle: 'Type: ${point.pointType} • ID: ${point.pointId}',
       leadingIcon: getOutputPointIcon(point),
       leadingIconColor: getOutputPointValueColor(point),
       indentLevel: 1,
