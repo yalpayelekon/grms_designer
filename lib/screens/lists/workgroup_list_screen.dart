@@ -538,7 +538,6 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
     );
 
     ref.read(workgroupsProvider.notifier).addWorkgroup(workgroup);
-    logInfo('Added workgroup: $workgroupName with ${routers.length} routers');
   }
 
   Future<void> _exportWorkgroups() async {

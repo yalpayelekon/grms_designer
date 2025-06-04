@@ -190,10 +190,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
         _devices = widget.router.devices;
         _organizeDevicesBySubnet();
       });
-
-      if (mounted) {
-        showSnackBarMsg(context, 'Device added successfully');
-      }
     }
   }
 
@@ -303,7 +299,6 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       }
 
       if (!mounted) return;
-      showSnackBarMsg(context, 'Added ${newDevices.length} devices');
       setState(() {
         _devices = widget.router.devices;
         _organizeDevicesBySubnet();

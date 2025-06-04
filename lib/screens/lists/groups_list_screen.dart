@@ -351,7 +351,6 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       }
 
       if (!mounted) return;
-      showSnackBarMsg(context, 'Added ${newGroups.length} groups');
       setState(() {
         _isLoading = false;
       });
