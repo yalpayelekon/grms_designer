@@ -178,6 +178,7 @@ class OutputPointDetailScreenState
               return DropdownMenuItem<PointPollingRate>(
                 value: rate,
                 child: Text(
+                  style: const TextStyle(fontSize: 11),
                   '${rate.displayName} (${_getDurationDisplay(rate)})',
                 ),
               );

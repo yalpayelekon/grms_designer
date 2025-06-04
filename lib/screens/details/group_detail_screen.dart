@@ -32,7 +32,6 @@ class GroupDetailScreen extends ConsumerStatefulWidget {
 class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   late TextEditingController _pollingMinutesController;
   late TextEditingController _sceneTableController;
-  bool _isLoading = false;
   bool _groupPollingEnabled = false;
 
   HelvarGroup get currentGroup {
@@ -63,7 +62,11 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     final pollingService = ref.read(centralizedPollingServiceProvider);
     final taskId = 'group_power_${widget.workgroup.id}_${widget.group.id}';
     final taskInfo = pollingService.getTaskInfo(taskId);
-    _groupPollingEnabled = taskInfo?.state == PollingTaskState.running;
+    if (taskInfo == null) {
+      _groupPollingEnabled = false;
+      return;
+    }
+    _groupPollingEnabled = taskInfo.state == PollingTaskState.running;
   }
 
   @override
@@ -85,10 +88,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         _sceneTableController.text = group.sceneTable.join(', ');
       }
     });
-
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
     return DetailRowsList(
       children: [
@@ -152,13 +151,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   ),
                 ],
               ),
-              if (_groupPollingEnabled) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Polling every ${group.powerPollingMinutes} minutes',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
             ],
           ),
           showDivider: true,
@@ -176,12 +168,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           value: getLastUpdateTime(dateTime: group.lastPowerUpdateTime),
           showDivider: true,
         ),
-        StatusDetailRow(
-          label: 'Polling Status',
-          statusText: _groupPollingEnabled ? 'Active' : 'Disabled',
-          statusColor: _groupPollingEnabled ? Colors.green : Colors.orange,
-          showDivider: true,
-        ),
+
         DetailRow(
           label: 'Gateway Router',
           value: group.gatewayRouterIpAddress.isEmpty
@@ -241,21 +228,12 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               : group.description,
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Update Data',
-            onPressed: _isLoading ? null : _refreshData,
-          ),
-        ],
       ),
       body: SingleChildScrollView(child: _buildContent()),
     );
   }
 
-  void _toggleGroupPolling(bool enabled) async {
-    setState(() => _isLoading = true);
-
+  void _toggleGroupPolling(bool enabled) {
     try {
       final pollingService = ref.read(centralizedPollingServiceProvider);
       final commandService = ref.read(routerCommandServiceProvider);
@@ -274,7 +252,7 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         );
 
         pollingService.registerTask(task);
-        await pollingService.startTask(taskId);
+        pollingService.startTask(taskId);
       } else {
         pollingService.unregisterTask(taskId);
       }
@@ -285,10 +263,6 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     } catch (e) {
       if (mounted) {
         showSnackBarMsg(context, 'Error toggling group polling: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
       }
     }
   }
@@ -356,19 +330,5 @@ class GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       showSnackBarMsg(context, 'Error saving scene table: $e');
       _sceneTableController.text = currentGroup.sceneTable.join(', ');
     }
-  }
-
-  void _refreshData() {
-    setState(() {
-      _isLoading = true;
-    });
-
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
   }
 }

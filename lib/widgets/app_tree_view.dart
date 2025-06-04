@@ -125,7 +125,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
               buildProjectNode(widget, context, ref),
               TreeNode(
                 content: GestureDetector(
-                  onDoubleTap: () {
+                  onTap: () {
                     widget.setActiveNode('workgroups');
                   },
                   child: Row(
@@ -150,7 +150,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                     .map(
                       (workgroup) => TreeNode(
                         content: GestureDetector(
-                          onDoubleTap: () {
+                          onTap: () {
                             widget.setActiveNode(
                               'workgroupDetail',
                               workgroup: workgroup,
@@ -183,7 +183,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                         children: [
                           TreeNode(
                             content: GestureDetector(
-                              onDoubleTap: () {
+                              onTap: () {
                                 widget.setActiveNode(
                                   'groups',
                                   workgroup: workgroup,
@@ -222,7 +222,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                 .map(
                                   (group) => TreeNode(
                                     content: GestureDetector(
-                                      onDoubleTap: () {
+                                      onTap: () {
                                         widget.setActiveNode(
                                           'groupDetail',
                                           workgroup: workgroup,
@@ -269,7 +269,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                           ...workgroup.routers.map(
                             (router) => TreeNode(
                               content: GestureDetector(
-                                onDoubleTap: () {
+                                onTap: () {
                                   widget.setActiveNode(
                                     'router',
                                     workgroup: workgroup,
@@ -315,7 +315,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                       widget.showingSubnetDetail;
                                   return TreeNode(
                                     content: GestureDetector(
-                                      onDoubleTap: () {
+                                      onTap: () {
                                         widget.setActiveNode(
                                           'subnetDetail',
                                           workgroup: workgroup,
@@ -407,7 +407,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
       deviceChildren.add(
         TreeNode(
           content: GestureDetector(
-            onDoubleTap: () {
+            onTap: () {
               widget.setActiveNode(
                 'pointsDetail',
                 workgroup: workgroup,
@@ -451,7 +451,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         deviceChildren.add(
           TreeNode(
             content: GestureDetector(
-              onDoubleTap: () {
+              onTap: () {
                 widget.setActiveNode(
                   'outputPointsDetail',
                   workgroup: workgroup,
@@ -514,7 +514,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
 
     return TreeNode(
       content: GestureDetector(
-        onDoubleTap: () {
+        onTap: () {
           widget.setActiveNode(
             'deviceDetail',
             workgroup: workgroup,
@@ -551,7 +551,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
 
     return TreeNode(
       content: GestureDetector(
-        onDoubleTap: () {
+        onTap: () {
           Workgroup? workgroup;
           HelvarRouter? router;
 
@@ -635,7 +635,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
 
     return TreeNode(
       content: GestureDetector(
-        onDoubleTap: () {
+        onTap: () {
           Workgroup? workgroup;
           HelvarRouter? router;
 

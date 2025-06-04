@@ -165,8 +165,10 @@ class InputPointDetailScreenState
                 value: rate,
                 child: Row(
                   children: [
-                    const SizedBox(width: 8),
-                    Text('${rate.displayName} (${_getDurationDisplay(rate)})'),
+                    Text(
+                      style: const TextStyle(fontSize: 11),
+                      '${rate.displayName} (${_getDurationDisplay(rate)})',
+                    ),
                   ],
                 ),
               );
