@@ -77,7 +77,7 @@ class LogService extends StateNotifier<List<LogEntry>> {
           );
       }
     }
-
+    state = [entry, ...state];
     if (state.length > _maxLogEntries) {
       state = state.sublist(0, _maxLogEntries);
     }
