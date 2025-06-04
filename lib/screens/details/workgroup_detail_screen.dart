@@ -224,24 +224,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final workgroup = currentWorkgroup;
-    final pollingManagerState = ref.watch(pollingManagerProvider);
-    final isPollingActive = pollingManagerState[workgroup.id] ?? false;
-
-    int totalDevicesWithPoints = 0;
-    int totalPoints = 0;
-    for (final router in workgroup.routers) {
-      for (final device in router.devices) {
-        if (device.helvarType == 'output') {
-          totalDevicesWithPoints++;
-          totalPoints += 6;
-        } else if (device.helvarType == 'input' && device.isButtonDevice) {
-          totalDevicesWithPoints++;
-          if (device is HelvarDriverInputDevice) {
-            totalPoints += device.buttonPoints.length;
-          }
-        }
-      }
-    }
 
     return Scaffold(
       appBar: AppBar(title: Text(workgroup.description), centerTitle: true),
@@ -341,8 +323,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                 if (workgroup.routers.isNotEmpty)
                   ExpandableListItem(
                     title: 'Routers and Devices',
-                    subtitle:
-                        '${workgroup.routers.length} routers, $totalDevicesWithPoints devices with points',
                     leadingIcon: Icons.router,
                     leadingIconColor: Colors.purple,
                     children: workgroup.routers

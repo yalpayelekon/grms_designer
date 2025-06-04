@@ -555,7 +555,6 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
     OutputPoint outputPoint,
     HelvarDevice parentDevice,
   ) {
-    // Check if this output point is currently selected
     final bool isOutputPointSelected =
         widget.selectedWorkgroup != null &&
         widget.selectedRouter != null &&
@@ -602,12 +601,22 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
           ),
           child: Row(
             children: [
-              Icon(
-                getOutputPointIcon(outputPoint),
-                size: 16,
-                color: isOutputPointSelected ? Colors.blue : Colors.orange,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  "B",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 8),
               Text(
                 outputPoint.function,
                 style: TextStyle(
@@ -615,22 +624,6 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                   fontWeight: isOutputPointSelected
                       ? FontWeight.bold
                       : FontWeight.normal,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: getOutputPointValueColor(outputPoint),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  formatOutputPointValue(outputPoint),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
               ),
             ],
@@ -728,12 +721,6 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
             ),
             childWhenDragging: Row(
               children: [
-                Icon(
-                  getButtonPointIcon(buttonPoint),
-                  size: 16,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(width: 4),
                 Text(
                   getButtonPointDisplayName(buttonPoint),
                   style: TextStyle(color: Colors.grey[600]),
@@ -742,12 +729,25 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
             ),
             child: Row(
               children: [
-                Icon(
-                  getButtonPointIcon(buttonPoint),
-                  size: 16,
-                  color: isPointSelected ? Colors.blue : Colors.green,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    "B",
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
                 Text(
                   getButtonPointDisplayName(buttonPoint),
                   style: TextStyle(
