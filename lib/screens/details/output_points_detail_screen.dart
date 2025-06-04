@@ -89,11 +89,6 @@ class OutputPointsDetailScreenState
                       showDivider: true,
                     ),
                     DetailRow(
-                      label: 'Total Points',
-                      value: '${outputDevice.outputPoints.length} points',
-                      showDivider: true,
-                    ),
-                    DetailRow(
                       label: 'Current Level',
                       value: '${outputDevice.level}%',
                       showDivider: true,
@@ -105,8 +100,6 @@ class OutputPointsDetailScreenState
                     ),
                   ],
                 ),
-
-                // Output Points
                 ExpandableListItem(
                   title: 'Output Points',
                   subtitle:

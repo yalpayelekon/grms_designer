@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/models/helvar_models/output_device.dart';
 import 'package:grms_designer/providers/workgroups_provider.dart';
-import 'package:grms_designer/utils/device/device_utils.dart';
 import 'package:grms_designer/utils/ui/treeview_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
+import 'package:grms_designer/widgets/common/detail_card.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
@@ -104,10 +104,6 @@ class OutputPointDetailScreenState
         setState(() {
           _hasChanges = false;
         });
-
-        if (mounted) {
-          showSnackBarMsg(context, 'Polling rate updated successfully');
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -146,121 +142,64 @@ class OutputPointDetailScreenState
         centerTitle: true,
         actions: _hasChanges
             ? [
-                IconButton(
+                TextButton(
                   onPressed: _resetChanges,
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'Reset Changes',
+                  child: const Text('Reset'),
                 ),
-                IconButton(
-                  onPressed: _saveChanges,
-                  icon: const Icon(Icons.save),
-                  tooltip: 'Save Changes',
-                ),
+                TextButton(onPressed: _saveChanges, child: const Text('Save')),
               ]
             : null,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(8.0),
+        child: DetailRowsList(
           children: [
-            _buildPointInfoCard(),
-            const SizedBox(height: 16),
-            _buildPollingConfigCard(),
-          ],
-        ),
-      ),
-    );
-  }
+            DetailRow(
+              label: 'Point Name',
+              value: widget.point.name,
+              showDivider: true,
+            ),
+            DetailRow(
+              label: 'Function',
+              value: widget.point.function,
+              showDivider: true,
+            ),
 
-  Widget _buildPointInfoCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  getOutputPointIcon(widget.point),
-                  size: 32,
-                  color: getOutputPointColor(widget.point),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.point.function,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        widget.point.name,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            DetailRow(
+              label: 'Current Value',
+              value: formatOutputPointValue(widget.point),
+              showDivider: true,
             ),
-            const Divider(),
-            buildInfoRow('Point Name', widget.point.name),
-            buildInfoRow(
-              'Parent Device',
-              widget.device.description.isEmpty
-                  ? 'Device ${widget.device.deviceId}'
-                  : widget.device.description,
-            ),
-            buildInfoRow('Device Address', widget.device.address),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildPollingConfigCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Polling Configuration',
-              style: Theme.of(context).textTheme.titleMedium,
+            DetailRow(
+              label: 'Device Address',
+              value: widget.device.address,
+              showDivider: true,
             ),
-            const SizedBox(height: 16),
-            buildInfoRow('Current Rate', _selectedPollingRate.displayName),
-            buildInfoRow('Duration', _getDurationDisplay(_selectedPollingRate)),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Text(
-                  'Polling Rate:',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButton<PointPollingRate>(
-                    value: _selectedPollingRate,
-                    isExpanded: true,
-                    onChanged: (PointPollingRate? newRate) {
-                      if (newRate != null) {
-                        _updatePollingRate(newRate);
-                      }
-                    },
-                    items: PointPollingRate.values.map((rate) {
-                      return DropdownMenuItem<PointPollingRate>(
-                        value: rate,
-                        child: Text(
-                          '${rate.displayName} (${_getDurationDisplay(rate)})',
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
+            DetailRow(
+              label: 'Current Polling Rate',
+              value: _getDurationDisplay(_selectedPollingRate),
+              showDivider: true,
+            ),
+            DetailRow(
+              label: 'Polling Frequency',
+              customValue: DropdownButton<PointPollingRate>(
+                value: _selectedPollingRate,
+                isExpanded: true,
+                onChanged: (PointPollingRate? newRate) {
+                  if (newRate != null) {
+                    _updatePollingRate(newRate);
+                  }
+                },
+                items: PointPollingRate.values.map((rate) {
+                  return DropdownMenuItem<PointPollingRate>(
+                    value: rate,
+                    child: Text(
+                      '${rate.displayName} (${_getDurationDisplay(rate)})',
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ],
         ),

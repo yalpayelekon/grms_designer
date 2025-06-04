@@ -49,7 +49,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
           : ExpandableListView(
               padding: const EdgeInsets.all(8.0),
               children: [
-                // Device Information
                 ExpandableListItem(
                   title: 'Device Information',
                   subtitle: 'Basic device details and configuration',
@@ -72,11 +71,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
                       value: widget.device.helvarType,
                       showDivider: true,
                     ),
-                    DetailRow(
-                      label: 'Total Points',
-                      value: '${inputDevice.buttonPoints.length} points',
-                      showDivider: true,
-                    ),
                     StatusDetailRow(
                       label: 'Button Device',
                       statusText: widget.device.isButtonDevice ? 'Yes' : 'No',
@@ -94,8 +88,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
                     ),
                   ],
                 ),
-
-                // Input Points
                 ExpandableListItem(
                   title: 'Input Points',
                   subtitle:
