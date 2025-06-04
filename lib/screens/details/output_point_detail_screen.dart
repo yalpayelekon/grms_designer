@@ -15,6 +15,7 @@ class OutputPointDetailScreen extends ConsumerStatefulWidget {
   final HelvarRouter router;
   final HelvarDevice device;
   final OutputPoint point;
+  final bool asWidget;
 
   const OutputPointDetailScreen({
     super.key,
@@ -22,6 +23,7 @@ class OutputPointDetailScreen extends ConsumerStatefulWidget {
     required this.router,
     required this.device,
     required this.point,
+    this.asWidget = false,
   });
 
   @override
@@ -134,8 +136,64 @@ class OutputPointDetailScreenState
     }
   }
 
+  Widget _buildContent() {
+    return DetailRowsList(
+      children: [
+        DetailRow(
+          label: 'Point Name',
+          value: widget.point.name,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Function',
+          value: widget.point.function,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Current Value',
+          value: formatOutputPointValue(widget.point),
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Device Address',
+          value: widget.device.address,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Current Polling Rate',
+          value: _getDurationDisplay(_selectedPollingRate),
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Polling Frequency',
+          customValue: DropdownButton<PointPollingRate>(
+            value: _selectedPollingRate,
+            isExpanded: true,
+            onChanged: (PointPollingRate? newRate) {
+              if (newRate != null) {
+                _updatePollingRate(newRate);
+              }
+            },
+            items: PointPollingRate.values.map((rate) {
+              return DropdownMenuItem<PointPollingRate>(
+                value: rate,
+                child: Text(
+                  '${rate.displayName} (${_getDurationDisplay(rate)})',
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.asWidget) {
+      return _buildContent();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.device.name} - ${widget.point.function}'),
@@ -152,57 +210,7 @@ class OutputPointDetailScreenState
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(8.0),
-        child: DetailRowsList(
-          children: [
-            DetailRow(
-              label: 'Point Name',
-              value: widget.point.name,
-              showDivider: true,
-            ),
-            DetailRow(
-              label: 'Function',
-              value: widget.point.function,
-              showDivider: true,
-            ),
-
-            DetailRow(
-              label: 'Current Value',
-              value: formatOutputPointValue(widget.point),
-              showDivider: true,
-            ),
-
-            DetailRow(
-              label: 'Device Address',
-              value: widget.device.address,
-              showDivider: true,
-            ),
-            DetailRow(
-              label: 'Current Polling Rate',
-              value: _getDurationDisplay(_selectedPollingRate),
-              showDivider: true,
-            ),
-            DetailRow(
-              label: 'Polling Frequency',
-              customValue: DropdownButton<PointPollingRate>(
-                value: _selectedPollingRate,
-                isExpanded: true,
-                onChanged: (PointPollingRate? newRate) {
-                  if (newRate != null) {
-                    _updatePollingRate(newRate);
-                  }
-                },
-                items: PointPollingRate.values.map((rate) {
-                  return DropdownMenuItem<PointPollingRate>(
-                    value: rate,
-                    child: Text(
-                      '${rate.displayName} (${_getDurationDisplay(rate)})',
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
+        child: _buildContent(),
       ),
     );
   }

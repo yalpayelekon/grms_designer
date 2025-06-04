@@ -8,11 +8,13 @@ import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/output_device.dart';
+import 'output_point_detail_screen.dart';
 
 class OutputPointsDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
   final HelvarRouter router;
   final HelvarDevice device;
+  final bool asWidget;
   final Function(
     String, {
     Workgroup? workgroup,
@@ -27,6 +29,7 @@ class OutputPointsDetailScreen extends ConsumerStatefulWidget {
     required this.workgroup,
     required this.router,
     required this.device,
+    this.asWidget = false,
     this.onNavigate,
   });
 
@@ -48,66 +51,55 @@ class OutputPointsDetailScreenState
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildDeviceInfo() {
     final outputDevice = widget.device as HelvarDriverOutputDevice;
     final deviceName = widget.device.description.isEmpty
         ? 'Device ${widget.device.deviceId}'
         : widget.device.description;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Output Points - $deviceName'),
-        centerTitle: true,
-      ),
-      body: ExpandableListView(
-        padding: const EdgeInsets.all(8.0),
-        children: [
-          ExpandableListItem(
-            title: 'Device Information',
-            subtitle: 'Basic device details and configuration',
-            leadingIcon: Icons.info_outline,
-            leadingIconColor: Colors.blue,
-            initiallyExpanded: true,
-            detailRows: [
-              DetailRow(
-                label: 'Device Name',
-                value: deviceName,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Device Address',
-                value: widget.device.address,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Device Type',
-                value: widget.device.helvarType,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Current Level',
-                value: '${outputDevice.level}%',
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Power Consumption',
-                value: '${outputDevice.powerConsumption.toStringAsFixed(1)}W',
-              ),
-            ],
-          ),
-          ExpandableListItem(
-            title: 'Output Points',
-            subtitle: '${outputDevice.outputPoints.length} configured points',
-            leadingIcon: Icons.output,
-            leadingIconColor: Colors.orange,
-            initiallyExpanded: true,
-            children: outputDevice.outputPoints
-                .map((point) => _buildPointItem(point))
-                .toList(),
-          ),
-        ],
-      ),
+    return ExpandableListItem(
+      title: 'Device Information',
+      subtitle: 'Basic device details and configuration',
+      leadingIcon: Icons.info_outline,
+      leadingIconColor: Colors.blue,
+      initiallyExpanded: true,
+      detailRows: [
+        DetailRow(label: 'Device Name', value: deviceName, showDivider: true),
+        DetailRow(
+          label: 'Device Address',
+          value: widget.device.address,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Device Type',
+          value: widget.device.helvarType,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Current Level',
+          value: '${outputDevice.level}%',
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Power Consumption',
+          value: '${outputDevice.powerConsumption.toStringAsFixed(1)}W',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOutputPointsSection() {
+    final outputDevice = widget.device as HelvarDriverOutputDevice;
+
+    return ExpandableListItem(
+      title: 'Output Points',
+      subtitle: '${outputDevice.outputPoints.length} configured points',
+      leadingIcon: Icons.output,
+      leadingIconColor: Colors.orange,
+      initiallyExpanded: true,
+      children: outputDevice.outputPoints
+          .map((point) => _buildPointItem(point))
+          .toList(),
     );
   }
 
@@ -117,40 +109,51 @@ class OutputPointsDetailScreenState
       leadingIcon: getOutputPointIcon(point),
       leadingIconColor: getOutputPointValueColor(point),
       indentLevel: 1,
-      detailRows: [
-        DetailRow(label: 'Point Name', value: point.name, showDivider: true),
-        DetailRow(label: 'Function', value: point.function, showDivider: true),
-        DetailRow(
-          label: 'Point Type',
-          value: point.pointType,
-          showDivider: true,
-        ),
-        DetailRow(
-          label: 'Current Value',
-          customValue: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: getOutputPointValueColor(
-                point,
-              ).withValues(alpha: 0.1 * 255),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: getOutputPointValueColor(
-                  point,
-                ).withValues(alpha: 0.3 * 255),
-              ),
-            ),
-            child: Text(
-              formatOutputPointValue(point),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: getOutputPointValueColor(point),
-              ),
-            ),
-          ),
+      children: [
+        OutputPointDetailScreen(
+          workgroup: widget.workgroup,
+          router: widget.router,
+          device: widget.device,
+          point: point,
+          asWidget: true,
         ),
       ],
+    );
+  }
+
+  Widget _buildContent() {
+    if (widget.asWidget) {
+      // When used as widget, return just the points items without ExpandableListView
+      final outputDevice = widget.device as HelvarDriverOutputDevice;
+      return Column(
+        children: outputDevice.outputPoints
+            .map((point) => _buildPointItem(point))
+            .toList(),
+      );
+    }
+
+    return ExpandableListView(
+      padding: const EdgeInsets.all(8.0),
+      children: [_buildDeviceInfo(), _buildOutputPointsSection()],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.asWidget) {
+      return _buildContent();
+    }
+
+    final deviceName = widget.device.description.isEmpty
+        ? 'Device ${widget.device.deviceId}'
+        : widget.device.description;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Output Points - $deviceName'),
+        centerTitle: true,
+      ),
+      body: _buildContent(),
     );
   }
 }

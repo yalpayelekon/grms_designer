@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grms_designer/utils/core/date_utils.dart';
-import 'package:grms_designer/utils/device/device_utils.dart';
 import 'package:grms_designer/utils/ui/ui_helpers.dart';
 import 'package:grms_designer/widgets/common/detail_card.dart';
 import 'package:grms_designer/widgets/common/expandable_list_item.dart';
@@ -10,18 +9,19 @@ import '../../models/helvar_models/helvar_router.dart';
 import '../../models/helvar_models/workgroup.dart';
 import '../../models/helvar_models/input_device.dart';
 import '../../models/helvar_models/output_device.dart';
-import '../../models/helvar_models/output_point.dart';
-import '../../utils/ui/treeview_utils.dart';
 import '../../protocol/query_commands.dart';
 import '../../protocol/protocol_parser.dart';
 import '../../protocol/protocol_constants.dart';
 import '../../providers/router_connection_provider.dart';
 import '../../utils/core/logger.dart';
+import 'output_points_detail_screen.dart';
+import 'input_points_detail_screen.dart';
 
 class DeviceDetailScreen extends ConsumerStatefulWidget {
   final Workgroup workgroup;
   final HelvarRouter router;
   final HelvarDevice device;
+  final bool asWidget;
   final Function(
     String, {
     Workgroup? workgroup,
@@ -36,6 +36,7 @@ class DeviceDetailScreen extends ConsumerStatefulWidget {
     required this.workgroup,
     required this.router,
     required this.device,
+    this.asWidget = false,
     this.onNavigate,
   });
 
@@ -68,37 +69,6 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
     _deviceIdController.dispose();
     _addressController.dispose();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final deviceName = widget.device.description.isEmpty
-        ? 'Device ${widget.device.deviceId}'
-        : widget.device.description;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.device.address} - $deviceName'),
-        centerTitle: true,
-        actions: [
-          ElevatedButton.icon(
-            onPressed: () => _queryRealTimeStatus(),
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Query Live Status'),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(8.0),
-        child: DetailRowsList(
-          children: [
-            ..._buildBasicDeviceRows(),
-            ..._buildDeviceStatusRows(),
-            if (_hasPoints()) _buildPointsSection(),
-          ],
-        ),
-      ),
-    );
   }
 
   List<Widget> _buildBasicDeviceRows() {
@@ -274,7 +244,7 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
       DetailRow(
         label: 'Last Updated',
         value: getLastUpdateTime(),
-        showDivider: _hasPoints(),
+        showDivider: false,
       ),
     );
 
@@ -293,90 +263,64 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
   }
 
   Widget _buildPointsSection() {
-    return ExpandableListItem(
-      title: 'Points',
-      leadingIcon: widget.device is HelvarDriverInputDevice
-          ? Icons.input
-          : Icons.output,
-      leadingIconColor: widget.device is HelvarDriverInputDevice
-          ? Colors.green
-          : Colors.orange,
-      children: widget.device is HelvarDriverInputDevice
-          ? _buildInputPointsList()
-          : _buildOutputPointsList(),
-    );
-  }
-
-  List<Widget> _buildInputPointsList() {
-    final inputDevice = widget.device as HelvarDriverInputDevice;
-    return inputDevice.buttonPoints
-        .map((point) => _buildInputPointItem(point))
-        .toList();
-  }
-
-  List<Widget> _buildOutputPointsList() {
-    final outputDevice = widget.device as HelvarDriverOutputDevice;
-    return outputDevice.outputPoints
-        .map((point) => _buildOutputPointItem(point))
-        .toList();
-  }
-
-  Widget _buildInputPointItem(ButtonPoint point) {
-    return ExpandableListItem(
-      title: getButtonPointDisplayName(point),
-      leadingIcon: getButtonPointIcon(point),
-      leadingIconColor: null,
-      indentLevel: 1,
-      detailRows: [
-        DetailRow(label: 'Point Name', value: point.name, showDivider: true),
-        DetailRow(
-          label: 'Function Type',
-          value: point.function,
-          showDivider: true,
-        ),
-        DetailRow(
-          label: 'Button ID',
-          value: point.buttonId.toString(),
-          showDivider: true,
-        ),
-        DetailRow(label: 'Point Type', value: getPointTypeDescription(point)),
-      ],
-    );
-  }
-
-  Widget _buildOutputPointItem(OutputPoint point) {
-    return ExpandableListItem(
-      title: point.function,
-      leadingIcon: getOutputPointIcon(point),
-      leadingIconColor: getOutputPointColor(point),
-      indentLevel: 1,
-      detailRows: [
-        DetailRow(label: 'Point Name', value: point.name, showDivider: true),
-        DetailRow(label: 'Function', value: point.function, showDivider: true),
-        DetailRow(
-          label: 'Point Type',
-          value: point.pointType,
-          showDivider: true,
-        ),
-        DetailRow(
-          label: 'Current Value',
-          customValue: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: getOutputPointValueColor(point),
-              borderRadius: BorderRadius.circular(10),
+    if (widget.device is HelvarDriverInputDevice) {
+      final inputDevice = widget.device as HelvarDriverInputDevice;
+      if (inputDevice.buttonPoints.isNotEmpty) {
+        return ExpandableListItem(
+          title: 'Points',
+          children: [
+            PointsDetailScreen(
+              workgroup: widget.workgroup,
+              router: widget.router,
+              device: widget.device,
+              asWidget: true,
             ),
-            child: Text(
-              formatOutputPointValue(point),
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+          ],
+        );
+      }
+    } else if (widget.device is HelvarDriverOutputDevice) {
+      final outputDevice = widget.device as HelvarDriverOutputDevice;
+      if (outputDevice.outputPoints.isNotEmpty) {
+        return ExpandableListItem(
+          title: 'Points',
+          children: [
+            OutputPointsDetailScreen(
+              workgroup: widget.workgroup,
+              router: widget.router,
+              device: widget.device,
+              asWidget: true,
             ),
-          ),
+          ],
+        );
+      }
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildContent() {
+    List<Widget> sections = [];
+
+    if (!widget.asWidget) {
+      sections.add(
+        ExpandableListItem(
+          title: 'Device Information',
+          subtitle: 'Basic device details and configuration',
+          leadingIcon: Icons.info_outline,
+          leadingIconColor: Colors.blue,
+          initiallyExpanded: true,
+          detailRows: [..._buildBasicDeviceRows(), ..._buildDeviceStatusRows()],
         ),
-      ],
+      );
+    }
+
+    // Add points section if device has points
+    if (_hasPoints()) {
+      sections.add(_buildPointsSection());
+    }
+
+    return ExpandableListView(
+      padding: const EdgeInsets.all(8.0),
+      children: sections,
     );
   }
 
@@ -501,5 +445,31 @@ class DeviceDetailScreenState extends ConsumerState<DeviceDetailScreen> {
         }
       }
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.asWidget) {
+      return _buildContent();
+    }
+
+    final deviceName = widget.device.description.isEmpty
+        ? 'Device ${widget.device.deviceId}'
+        : widget.device.description;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.device.address} - $deviceName'),
+        centerTitle: true,
+        actions: [
+          ElevatedButton.icon(
+            onPressed: () => _queryRealTimeStatus(),
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Query Live Status'),
+          ),
+        ],
+      ),
+      body: _buildContent(),
+    );
   }
 }

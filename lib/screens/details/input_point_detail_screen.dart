@@ -15,6 +15,7 @@ class InputPointDetailScreen extends ConsumerStatefulWidget {
   final HelvarRouter router;
   final HelvarDevice device;
   final ButtonPoint point;
+  final bool asWidget;
 
   const InputPointDetailScreen({
     super.key,
@@ -22,6 +23,7 @@ class InputPointDetailScreen extends ConsumerStatefulWidget {
     required this.router,
     required this.device,
     required this.point,
+    this.asWidget = false,
   });
 
   @override
@@ -130,8 +132,58 @@ class InputPointDetailScreenState
     }
   }
 
+  Widget _buildContent() {
+    return DetailRowsList(
+      children: [
+        DetailRow(
+          label: 'Point Name',
+          value: widget.point.name,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Function',
+          value: widget.point.function,
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Button ID',
+          value: widget.point.buttonId.toString(),
+          showDivider: true,
+        ),
+        DetailRow(
+          label: 'Polling Rate',
+          customValue: DropdownButton<PointPollingRate>(
+            value: _selectedPollingRate,
+            isExpanded: true,
+            onChanged: (PointPollingRate? newRate) {
+              if (newRate != null) {
+                _updatePollingRate(newRate);
+              }
+            },
+            items: PointPollingRate.values.map((rate) {
+              return DropdownMenuItem<PointPollingRate>(
+                value: rate,
+                child: Row(
+                  children: [
+                    const SizedBox(width: 8),
+                    Text('${rate.displayName} (${_getDurationDisplay(rate)})'),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          showDivider: true,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.asWidget) {
+      return _buildContent();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.device.name} - ${widget.point.name}'),
@@ -159,49 +211,7 @@ class InputPointDetailScreenState
             leadingIcon: getButtonPointIcon(widget.point),
             leadingIconColor: null,
             initiallyExpanded: true,
-            detailRows: [
-              DetailRow(
-                label: 'Point Name',
-                value: widget.point.name,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Function',
-                value: widget.point.function,
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Button ID',
-                value: widget.point.buttonId.toString(),
-                showDivider: true,
-              ),
-              DetailRow(
-                label: 'Polling Rate',
-                customValue: DropdownButton<PointPollingRate>(
-                  value: _selectedPollingRate,
-                  isExpanded: true,
-                  onChanged: (PointPollingRate? newRate) {
-                    if (newRate != null) {
-                      _updatePollingRate(newRate);
-                    }
-                  },
-                  items: PointPollingRate.values.map((rate) {
-                    return DropdownMenuItem<PointPollingRate>(
-                      value: rate,
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 8),
-                          Text(
-                            '${rate.displayName} (${_getDurationDisplay(rate)})',
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-                showDivider: true,
-              ),
-            ],
+            children: [_buildContent()],
           ),
         ],
       ),
