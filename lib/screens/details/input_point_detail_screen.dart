@@ -134,7 +134,7 @@ class InputPointDetailScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.router.description} - ${widget.point.name}'),
+        title: Text('${widget.device.name} - ${widget.point.name}'),
         centerTitle: true,
         actions: _hasChanges
             ? [
