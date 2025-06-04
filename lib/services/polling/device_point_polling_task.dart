@@ -1,6 +1,4 @@
 import 'package:grms_designer/utils/core/logger.dart';
-import 'package:grms_designer/services/polling/polling_presets.dart';
-
 import '../../comm/router_command_service.dart';
 import '../../models/helvar_models/helvar_device.dart';
 import '../../models/helvar_models/helvar_router.dart';
@@ -18,7 +16,8 @@ class DevicePointPollingTask extends PollingTask {
   final HelvarRouter router;
   final HelvarDevice device;
   final Function(HelvarDevice updatedDevice)? onPointsUpdated;
-  final Map<int, DateTime> _lastPolledTimes = {};
+
+  final Map<String, DateTime> _lastPolledTimes = {};
 
   DevicePointPollingTask({
     required this.commandService,
@@ -29,7 +28,7 @@ class DevicePointPollingTask extends PollingTask {
   }) : super(
          id: 'device_points_${workgroup.id}_${device.address}',
          name: 'Device Points ${device.address}',
-         interval: PollingPresets.slow,
+         interval: _calculateTaskInterval(workgroup, device),
          parameters: {
            'workgroupId': workgroup.id,
            'routerAddress': router.address,
@@ -37,6 +36,32 @@ class DevicePointPollingTask extends PollingTask {
            'deviceType': device.helvarType,
          },
        );
+
+  // Calculate the task interval based on the fastest polling rate among all points
+  static Duration _calculateTaskInterval(
+    Workgroup workgroup,
+    HelvarDevice device,
+  ) {
+    Duration fastestInterval = const Duration(minutes: 5); // Default fallback
+
+    if (device is HelvarDriverOutputDevice) {
+      for (final point in device.outputPoints) {
+        final pointDuration = workgroup.getDurationForRate(point.pollingRate);
+        if (pointDuration < fastestInterval) {
+          fastestInterval = pointDuration;
+        }
+      }
+    } else if (device is HelvarDriverInputDevice) {
+      for (final point in device.buttonPoints) {
+        final pointDuration = workgroup.getDurationForRate(point.pollingRate);
+        if (pointDuration < fastestInterval) {
+          fastestInterval = pointDuration;
+        }
+      }
+    }
+
+    return fastestInterval;
+  }
 
   @override
   Future<PollingResult> execute() async {
@@ -68,24 +93,26 @@ class DevicePointPollingTask extends PollingTask {
     }
 
     for (final point in outputDevice.outputPoints) {
-      final pointRate = workgroup.pollingRate;
+      // Use individual point's polling rate instead of workgroup rate
+      final pointDuration = workgroup.getDurationForRate(point.pollingRate);
+      final pointKey = 'output_${point.pointId}';
 
-      final lastPolled = _lastPolledTimes[point.pointId];
+      final lastPolled = _lastPolledTimes[pointKey];
       if (lastPolled != null) {
         final timeSinceLastPoll = now.difference(lastPolled);
-        if (timeSinceLastPoll < pointRate.duration) {
-          continue;
+        if (timeSinceLastPoll < pointDuration) {
+          continue; // Skip this point, not time to poll yet
         }
       }
 
       try {
         final success = await _queryOutputPoint(outputDevice, point.pointId);
         if (success) {
-          _lastPolledTimes[point.pointId] = now;
+          _lastPolledTimes[pointKey] = now;
           results['point_${point.pointId}'] = point.value;
           hasUpdates = true;
           logDebug(
-            'Polled point ${point.pointId} (${point.function}) at rate ${pointRate.displayName}',
+            'Polled point ${point.pointId} (${point.function}) at rate ${point.pollingRate.displayName} (${_formatDuration(pointDuration)})',
           );
         }
       } catch (e) {
@@ -106,12 +133,23 @@ class DevicePointPollingTask extends PollingTask {
     final inputDevice = device as HelvarDriverInputDevice;
     final results = <String, dynamic>{};
     final now = DateTime.now();
-    final inputRate = workgroup.pollingRate;
 
-    final lastPolled = _lastPolledTimes[0];
+    // For input devices, we poll the device state based on the fastest button point rate
+    Duration fastestRate = const Duration(minutes: 5);
+    if (inputDevice.buttonPoints.isNotEmpty) {
+      for (final point in inputDevice.buttonPoints) {
+        final pointDuration = workgroup.getDurationForRate(point.pollingRate);
+        if (pointDuration < fastestRate) {
+          fastestRate = pointDuration;
+        }
+      }
+    }
+
+    const String deviceStateKey = 'input_device_state';
+    final lastPolled = _lastPolledTimes[deviceStateKey];
     if (lastPolled != null) {
       final timeSinceLastPoll = now.difference(lastPolled);
-      if (timeSinceLastPoll < inputRate.duration) {
+      if (timeSinceLastPoll < fastestRate) {
         return PollingResult.success({'skipped': 'not_time_yet'});
       }
     }
@@ -132,7 +170,11 @@ class DevicePointPollingTask extends PollingTask {
           device.deviceStateCode = stateCode;
           device.state = getStateFlagsDescription(stateCode);
           results['deviceState'] = device.state;
-          _lastPolledTimes[0] = now;
+          _lastPolledTimes[deviceStateKey] = now;
+
+          logDebug(
+            'Polled input device ${device.address} state at fastest button rate: ${_formatDuration(fastestRate)}',
+          );
         }
       }
 
@@ -143,6 +185,20 @@ class DevicePointPollingTask extends PollingTask {
       return PollingResult.failure(
         'Network error polling input device points: $e',
       );
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    final seconds = duration.inSeconds % 60;
+
+    if (hours > 0) {
+      return '${hours}h ${minutes}m ${seconds}s';
+    } else if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    } else {
+      return '${seconds}s';
     }
   }
 

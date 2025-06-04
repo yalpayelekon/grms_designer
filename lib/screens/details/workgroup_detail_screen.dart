@@ -24,12 +24,103 @@ class WorkgroupDetailScreen extends ConsumerStatefulWidget {
 class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   bool _isLoading = false;
   bool _hasChanges = false;
-  late PointPollingRate _pollingRate;
+  late TextEditingController _fastHoursController;
+  late TextEditingController _fastMinutesController;
+  late TextEditingController _fastSecondsController;
+  late TextEditingController _normalHoursController;
+  late TextEditingController _normalMinutesController;
+  late TextEditingController _normalSecondsController;
+  late TextEditingController _slowHoursController;
+  late TextEditingController _slowMinutesController;
+  late TextEditingController _slowSecondsController;
 
   @override
   void initState() {
     super.initState();
-    _pollingRate = widget.workgroup.pollingRate;
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
+    final workgroup = widget.workgroup;
+
+    _fastHoursController = TextEditingController(
+      text: workgroup.fastRate.hours.toString(),
+    );
+    _fastMinutesController = TextEditingController(
+      text: workgroup.fastRate.minutes.toString(),
+    );
+    _fastSecondsController = TextEditingController(
+      text: workgroup.fastRate.seconds.toString(),
+    );
+
+    _normalHoursController = TextEditingController(
+      text: workgroup.normalRate.hours.toString(),
+    );
+    _normalMinutesController = TextEditingController(
+      text: workgroup.normalRate.minutes.toString(),
+    );
+    _normalSecondsController = TextEditingController(
+      text: workgroup.normalRate.seconds.toString(),
+    );
+
+    _slowHoursController = TextEditingController(
+      text: workgroup.slowRate.hours.toString(),
+    );
+    _slowMinutesController = TextEditingController(
+      text: workgroup.slowRate.minutes.toString(),
+    );
+    _slowSecondsController = TextEditingController(
+      text: workgroup.slowRate.seconds.toString(),
+    );
+
+    _addChangeListeners();
+  }
+
+  void _addChangeListeners() {
+    _fastHoursController.addListener(_onDurationChanged);
+    _fastMinutesController.addListener(_onDurationChanged);
+    _fastSecondsController.addListener(_onDurationChanged);
+    _normalHoursController.addListener(_onDurationChanged);
+    _normalMinutesController.addListener(_onDurationChanged);
+    _normalSecondsController.addListener(_onDurationChanged);
+    _slowHoursController.addListener(_onDurationChanged);
+    _slowMinutesController.addListener(_onDurationChanged);
+    _slowSecondsController.addListener(_onDurationChanged);
+  }
+
+  void _onDurationChanged() {
+    setState(() {
+      _hasChanges = _checkForChanges();
+    });
+  }
+
+  bool _checkForChanges() {
+    final workgroup = currentWorkgroup;
+    return _fastHoursController.text != workgroup.fastRate.hours.toString() ||
+        _fastMinutesController.text != workgroup.fastRate.minutes.toString() ||
+        _fastSecondsController.text != workgroup.fastRate.seconds.toString() ||
+        _normalHoursController.text != workgroup.normalRate.hours.toString() ||
+        _normalMinutesController.text !=
+            workgroup.normalRate.minutes.toString() ||
+        _normalSecondsController.text !=
+            workgroup.normalRate.seconds.toString() ||
+        _slowHoursController.text != workgroup.slowRate.hours.toString() ||
+        _slowMinutesController.text != workgroup.slowRate.minutes.toString() ||
+        _slowSecondsController.text != workgroup.slowRate.seconds.toString();
+  }
+
+  @override
+  void dispose() {
+    _fastHoursController.dispose();
+    _fastMinutesController.dispose();
+    _fastSecondsController.dispose();
+    _normalHoursController.dispose();
+    _normalMinutesController.dispose();
+    _normalSecondsController.dispose();
+    _slowHoursController.dispose();
+    _slowMinutesController.dispose();
+    _slowSecondsController.dispose();
+    super.dispose();
   }
 
   Workgroup get currentWorkgroup {
@@ -40,11 +131,101 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     );
   }
 
-  void _updatePollingRate(PointPollingRate rate) {
-    setState(() {
-      _pollingRate = rate;
-      _hasChanges = _pollingRate != currentWorkgroup.pollingRate;
-    });
+  Widget _buildPollingDurationSection() {
+    return ExpandableListItem(
+      title: 'Polling Rate Durations',
+      subtitle: 'Configure duration values for each polling rate',
+      leadingIcon: Icons.schedule,
+      leadingIconColor: Colors.blue,
+      initiallyExpanded: true,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _buildDurationRow(
+                'Fast Rate',
+                _fastHoursController,
+                _fastMinutesController,
+                _fastSecondsController,
+              ),
+              const SizedBox(height: 12),
+              _buildDurationRow(
+                'Normal Rate',
+                _normalHoursController,
+                _normalMinutesController,
+                _normalSecondsController,
+              ),
+              const SizedBox(height: 12),
+              _buildDurationRow(
+                'Slow Rate',
+                _slowHoursController,
+                _slowMinutesController,
+                _slowSecondsController,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDurationRow(
+    String label,
+    TextEditingController hoursController,
+    TextEditingController minutesController,
+    TextEditingController secondsController,
+  ) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(
+            '$label:',
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _buildTimeField(hoursController, 'h', 23),
+        const Text(' : '),
+        _buildTimeField(minutesController, 'm', 59),
+        const Text(' : '),
+        _buildTimeField(secondsController, 's', 59),
+      ],
+    );
+  }
+
+  Widget _buildTimeField(
+    TextEditingController controller,
+    String suffix,
+    int maxValue,
+  ) {
+    return SizedBox(
+      width: 50,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 8,
+          ),
+          border: const OutlineInputBorder(),
+          suffixText: suffix,
+        ),
+        onChanged: (value) {
+          final intValue = int.tryParse(value);
+          if (intValue != null && (intValue < 0 || intValue > maxValue)) {
+            controller.text = intValue.clamp(0, maxValue).toString();
+            controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: controller.text.length),
+            );
+          }
+        },
+      ),
+    );
   }
 
   Future<void> _saveChanges() async {
@@ -53,9 +234,30 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final updatedWorkgroup = currentWorkgroup.copyWith(
-        pollingRate: _pollingRate,
+      final fastRate = PollingRateDuration(
+        hours: int.tryParse(_fastHoursController.text) ?? 0,
+        minutes: int.tryParse(_fastMinutesController.text) ?? 0,
+        seconds: int.tryParse(_fastSecondsController.text) ?? 10,
       );
+
+      final normalRate = PollingRateDuration(
+        hours: int.tryParse(_normalHoursController.text) ?? 0,
+        minutes: int.tryParse(_normalMinutesController.text) ?? 1,
+        seconds: int.tryParse(_normalSecondsController.text) ?? 0,
+      );
+
+      final slowRate = PollingRateDuration(
+        hours: int.tryParse(_slowHoursController.text) ?? 0,
+        minutes: int.tryParse(_slowMinutesController.text) ?? 5,
+        seconds: int.tryParse(_slowSecondsController.text) ?? 0,
+      );
+
+      final updatedWorkgroup = currentWorkgroup.copyWith(
+        fastRate: fastRate,
+        normalRate: normalRate,
+        slowRate: slowRate,
+      );
+
       await ref
           .read(workgroupsProvider.notifier)
           .updateWorkgroup(updatedWorkgroup);
@@ -65,7 +267,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       });
 
       if (mounted) {
-        showSnackBarMsg(context, 'Workgroup configuration saved');
+        showSnackBarMsg(context, 'Polling duration configuration saved');
       }
     } catch (e) {
       if (mounted) {
@@ -79,50 +281,23 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
   }
 
   void _resetChanges() {
+    final workgroup = currentWorkgroup;
+
+    _fastHoursController.text = workgroup.fastRate.hours.toString();
+    _fastMinutesController.text = workgroup.fastRate.minutes.toString();
+    _fastSecondsController.text = workgroup.fastRate.seconds.toString();
+
+    _normalHoursController.text = workgroup.normalRate.hours.toString();
+    _normalMinutesController.text = workgroup.normalRate.minutes.toString();
+    _normalSecondsController.text = workgroup.normalRate.seconds.toString();
+
+    _slowHoursController.text = workgroup.slowRate.hours.toString();
+    _slowMinutesController.text = workgroup.slowRate.minutes.toString();
+    _slowSecondsController.text = workgroup.slowRate.seconds.toString();
+
     setState(() {
-      _pollingRate = currentWorkgroup.pollingRate;
       _hasChanges = false;
     });
-  }
-
-  Widget _buildPollingRateRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 180,
-            child: Text(
-              'Polling Rate:',
-              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
-            ),
-          ),
-          Expanded(
-            child: DropdownButton<PointPollingRate>(
-              value: _pollingRate,
-              isExpanded: true,
-              items: PointPollingRate.values.map((rate) {
-                return DropdownMenuItem<PointPollingRate>(
-                  value: rate,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 8),
-                      Text(rate.displayName),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (PointPollingRate? newRate) {
-                if (newRate != null) {
-                  _updatePollingRate(newRate);
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildRouterItem(HelvarRouter router) {
@@ -396,12 +571,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
                         showDivider: true,
                       ),
                   ],
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(children: [_buildPollingRateRow()]),
-                    ),
-                  ],
+                  children: [_buildPollingDurationSection()],
                 ),
                 if (workgroup.groups.isNotEmpty)
                   ExpandableListItem(

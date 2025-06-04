@@ -1,3 +1,4 @@
+import 'package:grms_designer/models/helvar_models/workgroup.dart';
 import 'package:grms_designer/utils/device/device_utils.dart';
 
 import '../../utils/core/logger.dart';
@@ -96,15 +97,22 @@ class ButtonPoint {
   final String name;
   final String function;
   final int buttonId;
+  final PointPollingRate pollingRate; // Add this field
 
   ButtonPoint({
     required this.name,
     required this.function,
     required this.buttonId,
+    this.pollingRate = PointPollingRate.normal, // Default to normal
   });
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'function': function, 'buttonId': buttonId};
+    return {
+      'name': name,
+      'function': function,
+      'buttonId': buttonId,
+      'pollingRate': pollingRate.name, // Add this
+    };
   }
 
   factory ButtonPoint.fromJson(Map<String, dynamic> json) {
@@ -112,6 +120,23 @@ class ButtonPoint {
       name: json['name'] as String,
       function: json['function'] as String,
       buttonId: json['buttonId'] as int,
+      pollingRate: json['pollingRate'] != null
+          ? PointPollingRate.fromString(json['pollingRate'] as String)
+          : PointPollingRate.normal,
+    );
+  }
+
+  ButtonPoint copyWith({
+    String? name,
+    String? function,
+    int? buttonId,
+    PointPollingRate? pollingRate,
+  }) {
+    return ButtonPoint(
+      name: name ?? this.name,
+      function: function ?? this.function,
+      buttonId: buttonId ?? this.buttonId,
+      pollingRate: pollingRate ?? this.pollingRate,
     );
   }
 }

@@ -1,6 +1,4 @@
 import 'package:flutter_simple_treeview/flutter_simple_treeview.dart';
-import 'package:grms_designer/services/polling/polling_presets.dart';
-
 import 'helvar_router.dart';
 import 'helvar_group.dart';
 
@@ -12,22 +10,11 @@ enum PointPollingRate {
   String get displayName {
     switch (this) {
       case PointPollingRate.fast:
-        return 'Fast (10s)';
+        return 'Fast';
       case PointPollingRate.normal:
-        return 'Normal (1m)';
+        return 'Normal';
       case PointPollingRate.slow:
-        return 'Slow (5m)';
-    }
-  }
-
-  Duration get duration {
-    switch (this) {
-      case PointPollingRate.fast:
-        return PollingPresets.fast;
-      case PointPollingRate.normal:
-        return PollingPresets.normal;
-      case PointPollingRate.slow:
-        return PollingPresets.slow;
+        return 'Slow';
     }
   }
 
@@ -39,6 +26,44 @@ enum PointPollingRate {
   }
 }
 
+class PollingRateDuration {
+  final int hours;
+  final int minutes;
+  final int seconds;
+
+  PollingRateDuration({
+    required this.hours,
+    required this.minutes,
+    required this.seconds,
+  });
+
+  Duration get duration =>
+      Duration(hours: hours, minutes: minutes, seconds: seconds);
+
+  String get displayName =>
+      '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+
+  Map<String, dynamic> toJson() {
+    return {'hours': hours, 'minutes': minutes, 'seconds': seconds};
+  }
+
+  factory PollingRateDuration.fromJson(Map<String, dynamic> json) {
+    return PollingRateDuration(
+      hours: json['hours'] as int? ?? 0,
+      minutes: json['minutes'] as int? ?? 0,
+      seconds: json['seconds'] as int? ?? 0,
+    );
+  }
+
+  PollingRateDuration copyWith({int? hours, int? minutes, int? seconds}) {
+    return PollingRateDuration(
+      hours: hours ?? this.hours,
+      minutes: minutes ?? this.minutes,
+      seconds: seconds ?? this.seconds,
+    );
+  }
+}
+
 class Workgroup extends TreeNode {
   final String id;
   final String description;
@@ -46,7 +71,11 @@ class Workgroup extends TreeNode {
   final bool refreshPropsAfterAction;
   final bool pollEnabled;
   final DateTime? lastPollTime;
-  final PointPollingRate pollingRate;
+
+  final PollingRateDuration fastRate;
+  final PollingRateDuration normalRate;
+  final PollingRateDuration slowRate;
+
   List<HelvarRouter> routers;
   List<HelvarGroup> groups;
 
@@ -57,10 +86,18 @@ class Workgroup extends TreeNode {
     this.refreshPropsAfterAction = false,
     this.pollEnabled = false,
     this.lastPollTime,
-    this.pollingRate = PointPollingRate.normal,
+    PollingRateDuration? fastRate,
+    PollingRateDuration? normalRate,
+    PollingRateDuration? slowRate,
     List<HelvarRouter>? routers,
     List<HelvarGroup>? groups,
-  }) : routers = routers ?? [],
+  }) : fastRate =
+           fastRate ?? PollingRateDuration(hours: 0, minutes: 0, seconds: 10),
+       normalRate =
+           normalRate ?? PollingRateDuration(hours: 0, minutes: 1, seconds: 0),
+       slowRate =
+           slowRate ?? PollingRateDuration(hours: 0, minutes: 5, seconds: 0),
+       routers = routers ?? [],
        groups = groups ?? [];
 
   void addRouter(HelvarRouter router) {
@@ -79,6 +116,17 @@ class Workgroup extends TreeNode {
     groups.remove(group);
   }
 
+  Duration getDurationForRate(PointPollingRate rate) {
+    switch (rate) {
+      case PointPollingRate.fast:
+        return fastRate.duration;
+      case PointPollingRate.normal:
+        return normalRate.duration;
+      case PointPollingRate.slow:
+        return slowRate.duration;
+    }
+  }
+
   Workgroup copyWith({
     String? id,
     String? description,
@@ -88,7 +136,9 @@ class Workgroup extends TreeNode {
     bool? refreshPropsAfterAction,
     bool? pollEnabled,
     DateTime? lastPollTime,
-    PointPollingRate? pollingRate,
+    PollingRateDuration? fastRate,
+    PollingRateDuration? normalRate,
+    PollingRateDuration? slowRate,
     List<HelvarRouter>? routers,
     List<HelvarGroup>? groups,
   }) {
@@ -101,7 +151,9 @@ class Workgroup extends TreeNode {
           refreshPropsAfterAction ?? this.refreshPropsAfterAction,
       pollEnabled: pollEnabled ?? this.pollEnabled,
       lastPollTime: lastPollTime ?? this.lastPollTime,
-      pollingRate: pollingRate ?? this.pollingRate,
+      fastRate: fastRate ?? this.fastRate,
+      normalRate: normalRate ?? this.normalRate,
+      slowRate: slowRate ?? this.slowRate,
       routers: routers ?? this.routers,
       groups: groups ?? this.groups,
     );
@@ -118,9 +170,15 @@ class Workgroup extends TreeNode {
       lastPollTime: json['lastPollTime'] != null
           ? DateTime.parse(json['lastPollTime'] as String)
           : null,
-      pollingRate: json['pollingRate'] != null
-          ? PointPollingRate.fromString(json['pollingRate'] as String)
-          : PointPollingRate.normal,
+      fastRate: json['fastRate'] != null
+          ? PollingRateDuration.fromJson(json['fastRate'])
+          : null,
+      normalRate: json['normalRate'] != null
+          ? PollingRateDuration.fromJson(json['normalRate'])
+          : null,
+      slowRate: json['slowRate'] != null
+          ? PollingRateDuration.fromJson(json['slowRate'])
+          : null,
       routers: (json['routers'] as List?)
           ?.map((routerJson) => HelvarRouter.fromJson(routerJson))
           .toList(),
@@ -140,7 +198,9 @@ class Workgroup extends TreeNode {
       'refreshPropsAfterAction': refreshPropsAfterAction,
       'pollEnabled': pollEnabled,
       'lastPollTime': lastPollTime?.toIso8601String(),
-      'pollingRate': pollingRate.toString(),
+      'fastRate': fastRate.toJson(),
+      'normalRate': normalRate.toJson(),
+      'slowRate': slowRate.toJson(),
       'routers': routers.map((router) => router.toJson()).toList(),
       'groups': groups.map((group) => group.toJson()).toList(),
     };
