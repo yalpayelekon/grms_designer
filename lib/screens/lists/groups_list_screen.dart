@@ -35,7 +35,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       leadingIconColor: Colors.green,
       showDelete: true,
       onDelete: () => _confirmDeleteGroup(context, group),
-      children: [
+      lazyChildren: () => [
         GroupDetailScreen(group: group, workgroup: workgroup, asWidget: true),
       ],
     );
@@ -79,6 +79,7 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     }
 
     if (widget.asWidget) {
+      // When used as widget, return just the group items without ExpandableListView wrapper
       return Column(
         children: currentWorkgroup.groups
             .map((group) => _buildGroupItem(group, currentWorkgroup))
@@ -147,6 +148,9 @@ class GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       await ref
           .read(workgroupsProvider.notifier)
           .removeGroupFromWorkgroup(widget.workgroup.id, group);
+
+      if (!mounted) return;
+      showSnackBarMsg(context, 'Group deleted');
     }
   }
 

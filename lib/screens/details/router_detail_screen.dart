@@ -94,7 +94,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       title: 'Subnets and Devices',
       leadingIcon: Icons.hub,
       leadingIconColor: Colors.indigo,
-      children: _devicesBySubnet.entries
+      lazyChildren: () => _devicesBySubnet.entries
           .map((entry) => _buildSubnetItem(entry.key, entry.value))
           .toList(),
     );
@@ -115,7 +115,7 @@ class RouterDetailScreenState extends ConsumerState<RouterDetailScreen> {
       leadingIcon: Icons.hub,
       leadingIconColor: Colors.orange,
       indentLevel: 1,
-      children: [
+      lazyChildren: () => [
         SubnetDetailScreen(
           workgroup: widget.workgroup,
           router: widget.router,

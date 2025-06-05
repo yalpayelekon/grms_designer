@@ -146,7 +146,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             showDivider: true,
           ),
       ],
-      children: [
+      lazyChildren: () => [
         if (workgroup.groups.isNotEmpty)
           ExpandableListItem(
             title: 'Groups',
@@ -154,7 +154,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             leadingIcon: Icons.layers,
             leadingIconColor: Colors.green,
             indentLevel: 1,
-            children: workgroup.groups
+            lazyChildren: () => workgroup.groups
                 .map((group) => _buildGroupItem(group, workgroup))
                 .toList(),
           ),
@@ -165,7 +165,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
             leadingIcon: Icons.router,
             leadingIconColor: Colors.purple,
             indentLevel: 1,
-            children: workgroup.routers
+            lazyChildren: () => workgroup.routers
                 .map((router) => _buildRouterItem(router, workgroup))
                 .toList(),
           ),
@@ -253,7 +253,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
           ),
         ],
       ],
-      children: [
+      lazyChildren: () => [
         if (router.devicesBySubnet.isNotEmpty)
           ...router.devicesBySubnet.entries.map(
             (entry) => ExpandableListItem(
@@ -262,7 +262,7 @@ class WorkgroupListScreenState extends ConsumerState<WorkgroupListScreen> {
               leadingIcon: Icons.hub,
               leadingIconColor: Colors.orange,
               indentLevel: 3,
-              children: entry.value
+              lazyChildren: () => entry.value
                   .map(
                     (device) => ExpandableListItem(
                       title: device.description.isEmpty

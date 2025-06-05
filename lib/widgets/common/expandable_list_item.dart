@@ -8,6 +8,7 @@ class ExpandableListItem extends StatefulWidget {
   final Color? leadingIconColor;
   final List<Widget> detailRows;
   final List<Widget> children;
+  final List<Widget> Function()? lazyChildren; // New lazy loading parameter
   final bool initiallyExpanded;
   final bool showDelete;
   final bool showAdd;
@@ -17,7 +18,7 @@ class ExpandableListItem extends StatefulWidget {
   final List<Widget>? customTrailingActions;
   final int indentLevel;
 
-  const ExpandableListItem({
+  ExpandableListItem({
     super.key,
     required this.title,
     this.subtitle,
@@ -25,6 +26,7 @@ class ExpandableListItem extends StatefulWidget {
     this.leadingIconColor,
     this.detailRows = const [],
     this.children = const [],
+    this.lazyChildren, // New parameter
     this.initiallyExpanded = false,
     this.showDelete = false,
     this.showAdd = false,
@@ -33,7 +35,10 @@ class ExpandableListItem extends StatefulWidget {
     this.onTap,
     this.customTrailingActions,
     this.indentLevel = 0,
-  });
+  }) : assert(
+         children.isEmpty || lazyChildren == null,
+         'Cannot specify both children and lazyChildren. Use one or the other.',
+       );
 
   @override
   ExpandableListItemState createState() => ExpandableListItemState();
@@ -44,6 +49,7 @@ class ExpandableListItemState extends State<ExpandableListItem>
   late bool _isExpanded;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  List<Widget>? _cachedLazyChildren; // Cache for lazy-loaded content
 
   @override
   void initState() {
@@ -60,6 +66,10 @@ class ExpandableListItemState extends State<ExpandableListItem>
 
     if (_isExpanded) {
       _animationController.value = 1.0;
+      // If initially expanded and using lazy children, load them immediately
+      if (widget.lazyChildren != null) {
+        _loadLazyChildren();
+      }
     }
   }
 
@@ -69,10 +79,20 @@ class ExpandableListItemState extends State<ExpandableListItem>
     super.dispose();
   }
 
+  void _loadLazyChildren() {
+    if (_cachedLazyChildren == null && widget.lazyChildren != null) {
+      _cachedLazyChildren = widget.lazyChildren!();
+    }
+  }
+
   void _toggleExpanded() {
     setState(() {
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
+        // Load lazy children when expanding for the first time
+        if (widget.lazyChildren != null) {
+          _loadLazyChildren();
+        }
         _animationController.forward();
       } else {
         _animationController.reverse();
@@ -80,10 +100,19 @@ class ExpandableListItemState extends State<ExpandableListItem>
     });
   }
 
+  List<Widget> _getChildrenToRender() {
+    if (widget.lazyChildren != null) {
+      return _cachedLazyChildren ?? [];
+    }
+    return widget.children;
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasExpandableContent =
-        widget.detailRows.isNotEmpty || widget.children.isNotEmpty;
+        widget.detailRows.isNotEmpty ||
+        widget.children.isNotEmpty ||
+        widget.lazyChildren != null;
     final leftPadding = widget.indentLevel * 20.0;
 
     return Column(
@@ -186,9 +215,9 @@ class ExpandableListItemState extends State<ExpandableListItem>
                       child: Column(children: widget.detailRows),
                     ),
                   ],
-                  if (widget.children.isNotEmpty) ...[
+                  if (_getChildrenToRender().isNotEmpty) ...[
                     if (widget.detailRows.isNotEmpty) const SizedBox(height: 8),
-                    ...widget.children,
+                    ..._getChildrenToRender(),
                   ],
                 ],
               ),
@@ -209,6 +238,7 @@ class SimpleExpandableItem extends ExpandableListItem {
     super.leadingIconColor,
     required List<InfoItem> infoItems,
     super.children,
+    super.lazyChildren, // Support lazy loading in SimpleExpandableItem too
     super.initiallyExpanded,
     super.showDelete,
     super.showAdd,

@@ -196,7 +196,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
             showDivider: true,
           ),
       ],
-      children: [_buildPollingDurationSection()],
+      lazyChildren: () => [_buildPollingDurationSection()],
     );
   }
 
@@ -207,7 +207,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       leadingIcon: Icons.schedule,
       leadingIconColor: Colors.blue,
       initiallyExpanded: true,
-      children: [
+      lazyChildren: () => [
         Container(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -309,7 +309,9 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       subtitle: '${workgroup.groups.length} groups configured',
       leadingIcon: Icons.layers,
       leadingIconColor: Colors.green,
-      children: [GroupsListScreen(workgroup: workgroup, asWidget: true)],
+      lazyChildren: () => [
+        GroupsListScreen(workgroup: workgroup, asWidget: true),
+      ],
     );
   }
 
@@ -324,9 +326,8 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       title: 'Routers and Devices',
       leadingIcon: Icons.router,
       leadingIconColor: Colors.purple,
-      children: workgroup.routers
-          .map((router) => _buildRouterItem(router))
-          .toList(),
+      lazyChildren: () =>
+          workgroup.routers.map((router) => _buildRouterItem(router)).toList(),
     );
   }
 
@@ -338,7 +339,7 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       leadingIcon: Icons.router,
       leadingIconColor: Colors.purple,
       indentLevel: 1,
-      children: [
+      lazyChildren: () => [
         RouterDetailScreen(
           workgroup: currentWorkgroup,
           router: router,

@@ -118,7 +118,7 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
           subtitle: '${outputDevices.length} lighting and control devices',
           leadingIcon: Icons.lightbulb_outline,
           leadingIconColor: Colors.orange,
-          children: outputDevices
+          lazyChildren: () => outputDevices
               .map((device) => _buildDeviceItem(device, 'output'))
               .toList(),
         ),
@@ -132,7 +132,7 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
           subtitle: '${inputDevices.length} sensors and controls',
           leadingIcon: Icons.sensors,
           leadingIconColor: Colors.green,
-          children: inputDevices
+          lazyChildren: () => inputDevices
               .map((device) => _buildDeviceItem(device, 'input'))
               .toList(),
         ),
@@ -146,7 +146,7 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
           subtitle: '${emergencyDevices.length} emergency lighting devices',
           leadingIcon: Icons.warning,
           leadingIconColor: Colors.red,
-          children: emergencyDevices
+          lazyChildren: () => emergencyDevices
               .map((device) => _buildDeviceItem(device, 'emergency'))
               .toList(),
         ),
@@ -192,7 +192,7 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
       leadingIcon: deviceIcon,
       leadingIconColor: deviceColor,
       indentLevel: 1,
-      children: [
+      lazyChildren: () => [
         DeviceDetailScreen(
           workgroup: widget.workgroup,
           router: widget.router,
@@ -225,7 +225,6 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
     }
 
     if (widget.asWidget) {
-      // When used as widget, return just the devices sections without ExpandableListView
       return _buildDevicesSection();
     }
 
