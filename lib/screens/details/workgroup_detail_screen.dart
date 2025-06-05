@@ -363,14 +363,6 @@ class WorkgroupDetailScreenState extends ConsumerState<WorkgroupDetailScreen> {
       } else {
         pollingManager.stopWorkgroupPolling(widget.workgroup.id);
       }
-
-      final message = enabled
-          ? 'Device point polling enabled'
-          : 'Device point polling disabled';
-
-      if (mounted) {
-        showSnackBarMsg(context, message);
-      }
     } catch (e) {
       if (mounted) {
         showSnackBarMsg(context, 'Error toggling polling: $e');
