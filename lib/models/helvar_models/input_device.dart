@@ -91,6 +91,55 @@ class HelvarDriverInputDevice extends HelvarDevice {
     json['buttonPoints'] = buttonPoints.map((point) => point.toJson()).toList();
     return json;
   }
+
+  HelvarDriverInputDevice copyWith({
+    int? deviceId,
+    String? address,
+    String? state,
+    String? description,
+    String? name,
+    String? props,
+    String? iconPath,
+    String? hexId,
+    String? addressingScheme,
+    bool? emergency,
+    String? blockId,
+    String? sceneId,
+    String? out,
+    String? helvarType,
+    int? deviceTypeCode,
+    int? deviceStateCode,
+    bool? isButtonDevice,
+    bool? isMultisensor,
+    Map<String, dynamic>? sensorInfo,
+    Map<String, dynamic>? additionalInfo,
+    List<ButtonPoint>? buttonPoints,
+  }) {
+    return HelvarDriverInputDevice(
+      deviceId: deviceId ?? this.deviceId,
+      address: address ?? this.address,
+      state: state ?? this.state,
+      description: description ?? this.description,
+      name: name ?? this.name,
+      props: props ?? this.props,
+      iconPath: iconPath ?? this.iconPath,
+      hexId: hexId ?? this.hexId,
+      addressingScheme: addressingScheme ?? this.addressingScheme,
+      emergency: emergency ?? this.emergency,
+      blockId: blockId ?? this.blockId,
+      sceneId: sceneId ?? this.sceneId,
+      out: out ?? this.out,
+      helvarType: helvarType ?? this.helvarType,
+      deviceTypeCode: deviceTypeCode ?? this.deviceTypeCode,
+      deviceStateCode: deviceStateCode ?? this.deviceStateCode,
+      isButtonDevice: isButtonDevice ?? this.isButtonDevice,
+      isMultisensor: isMultisensor ?? this.isMultisensor,
+      sensorInfo: sensorInfo ?? Map<String, dynamic>.from(this.sensorInfo),
+      additionalInfo:
+          additionalInfo ?? Map<String, dynamic>.from(this.additionalInfo),
+      buttonPoints: buttonPoints ?? List<ButtonPoint>.from(this.buttonPoints),
+    );
+  }
 }
 
 class ButtonPoint {

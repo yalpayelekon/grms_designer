@@ -66,30 +66,7 @@ class InputPointDetailScreenState
         final updatedPoints = List<ButtonPoint>.from(inputDevice.buttonPoints);
         updatedPoints[pointIndex] = updatedPoint;
 
-        final updatedDevice = HelvarDriverInputDevice(
-          deviceId: inputDevice.deviceId,
-          address: inputDevice.address,
-          state: inputDevice.state,
-          description: inputDevice.description,
-          name: inputDevice.name,
-          props: inputDevice.props,
-          iconPath: inputDevice.iconPath,
-          hexId: inputDevice.hexId,
-          addressingScheme: inputDevice.addressingScheme,
-          emergency: inputDevice.emergency,
-          blockId: inputDevice.blockId,
-          sceneId: inputDevice.sceneId,
-          out: inputDevice.out,
-          helvarType: inputDevice.helvarType,
-          deviceTypeCode: inputDevice.deviceTypeCode,
-          deviceStateCode: inputDevice.deviceStateCode,
-          isButtonDevice: inputDevice.isButtonDevice,
-          isMultisensor: inputDevice.isMultisensor,
-          sensorInfo: inputDevice.sensorInfo,
-          additionalInfo: inputDevice.additionalInfo,
-          buttonPoints: updatedPoints,
-        );
-
+        final updatedDevice = inputDevice.copyWith(buttonPoints: updatedPoints);
         await ref
             .read(workgroupsProvider.notifier)
             .updateDeviceInRouter(

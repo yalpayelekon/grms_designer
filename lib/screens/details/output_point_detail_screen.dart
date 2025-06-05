@@ -65,32 +65,7 @@ class OutputPointDetailScreenState
         final updatedPoints = List<OutputPoint>.from(outputDevice.outputPoints);
         updatedPoints[pointIndex] = updatedPoint;
 
-        final updatedDevice = HelvarDriverOutputDevice(
-          deviceId: outputDevice.deviceId,
-          address: outputDevice.address,
-          state: outputDevice.state,
-          description: outputDevice.description,
-          name: outputDevice.name,
-          props: outputDevice.props,
-          iconPath: outputDevice.iconPath,
-          hexId: outputDevice.hexId,
-          addressingScheme: outputDevice.addressingScheme,
-          emergency: outputDevice.emergency,
-          blockId: outputDevice.blockId,
-          sceneId: outputDevice.sceneId,
-          out: outputDevice.out,
-          helvarType: outputDevice.helvarType,
-          deviceTypeCode: outputDevice.deviceTypeCode,
-          deviceStateCode: outputDevice.deviceStateCode,
-          isButtonDevice: outputDevice.isButtonDevice,
-          isMultisensor: outputDevice.isMultisensor,
-          sensorInfo: outputDevice.sensorInfo,
-          additionalInfo: outputDevice.additionalInfo,
-          missing: outputDevice.missing,
-          faulty: outputDevice.faulty,
-          level: outputDevice.level,
-          proportion: outputDevice.proportion,
-          powerConsumption: outputDevice.powerConsumption,
+        final updatedDevice = outputDevice.copyWith(
           outputPoints: updatedPoints,
         );
 

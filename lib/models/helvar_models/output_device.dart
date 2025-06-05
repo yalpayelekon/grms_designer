@@ -42,6 +42,65 @@ class HelvarDriverOutputDevice extends HelvarDevice {
     List<OutputPoint>? outputPoints,
   }) : outputPoints = outputPoints ?? [];
 
+  HelvarDriverOutputDevice copyWith({
+    int? deviceId,
+    String? address,
+    String? state,
+    String? description,
+    String? name,
+    String? props,
+    String? iconPath,
+    String? hexId,
+    String? addressingScheme,
+    bool? emergency,
+    String? blockId,
+    String? sceneId,
+    String? out,
+    String? helvarType,
+    int? deviceTypeCode,
+    int? deviceStateCode,
+    bool? isButtonDevice,
+    bool? isMultisensor,
+    Map<String, dynamic>? sensorInfo,
+    Map<String, dynamic>? additionalInfo,
+    String? missing,
+    String? faulty,
+    int? level,
+    int? proportion,
+    double? powerConsumption,
+    List<OutputPoint>? outputPoints,
+  }) {
+    return HelvarDriverOutputDevice(
+      deviceId: deviceId ?? this.deviceId,
+      address: address ?? this.address,
+      state: state ?? this.state,
+      description: description ?? this.description,
+      name: name ?? this.name,
+      props: props ?? this.props,
+      iconPath: iconPath ?? this.iconPath,
+      hexId: hexId ?? this.hexId,
+      addressingScheme: addressingScheme ?? this.addressingScheme,
+      emergency: emergency ?? this.emergency,
+      blockId: blockId ?? this.blockId,
+      sceneId: sceneId ?? this.sceneId,
+      out: out ?? this.out,
+      helvarType: helvarType ?? this.helvarType,
+      deviceTypeCode: deviceTypeCode ?? this.deviceTypeCode,
+      deviceStateCode: deviceStateCode ?? this.deviceStateCode,
+      isButtonDevice: isButtonDevice ?? this.isButtonDevice,
+      isMultisensor: isMultisensor ?? this.isMultisensor,
+      sensorInfo: sensorInfo ?? Map<String, dynamic>.from(this.sensorInfo),
+      additionalInfo:
+          additionalInfo ?? Map<String, dynamic>.from(this.additionalInfo),
+      missing: missing ?? this.missing,
+      faulty: faulty ?? this.faulty,
+      level: level ?? this.level,
+      proportion: proportion ?? this.proportion,
+      powerConsumption: powerConsumption ?? this.powerConsumption,
+      outputPoints: outputPoints ?? List<OutputPoint>.from(this.outputPoints),
+    );
+  }
+
   @override
   void recallScene(String sceneParams) {
     out = handleRecallScene(sceneParams, logInfoOutput: true);
