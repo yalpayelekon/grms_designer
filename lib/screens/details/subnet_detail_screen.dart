@@ -200,7 +200,19 @@ class SubnetDetailScreenState extends ConsumerState<SubnetDetailScreen> {
           asWidget: true,
         ),
       ],
+      onSecondaryTap: () => _navigateToDeviceDetail(device),
     );
+  }
+
+  void _navigateToDeviceDetail(HelvarDevice device) {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'deviceDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: device,
+      );
+    }
   }
 
   Widget _buildEmptyState() {

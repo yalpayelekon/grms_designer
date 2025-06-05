@@ -8,13 +8,14 @@ class ExpandableListItem extends StatefulWidget {
   final Color? leadingIconColor;
   final List<Widget> detailRows;
   final List<Widget> children;
-  final List<Widget> Function()? lazyChildren; // New lazy loading parameter
+  final List<Widget> Function()? lazyChildren;
   final bool initiallyExpanded;
   final bool showDelete;
   final bool showAdd;
   final VoidCallback? onDelete;
   final VoidCallback? onAdd;
   final VoidCallback? onTap;
+  final VoidCallback? onSecondaryTap;
   final List<Widget>? customTrailingActions;
   final int indentLevel;
 
@@ -26,13 +27,14 @@ class ExpandableListItem extends StatefulWidget {
     this.leadingIconColor,
     this.detailRows = const [],
     this.children = const [],
-    this.lazyChildren, // New parameter
+    this.lazyChildren,
     this.initiallyExpanded = false,
     this.showDelete = false,
     this.showAdd = false,
     this.onDelete,
     this.onAdd,
     this.onTap,
+    this.onSecondaryTap,
     this.customTrailingActions,
     this.indentLevel = 0,
   }) : assert(
@@ -66,7 +68,6 @@ class ExpandableListItemState extends State<ExpandableListItem>
 
     if (_isExpanded) {
       _animationController.value = 1.0;
-      // If initially expanded and using lazy children, load them immediately
       if (widget.lazyChildren != null) {
         _loadLazyChildren();
       }
@@ -89,7 +90,6 @@ class ExpandableListItemState extends State<ExpandableListItem>
     setState(() {
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
-        // Load lazy children when expanding for the first time
         if (widget.lazyChildren != null) {
           _loadLazyChildren();
         }
@@ -118,6 +118,7 @@ class ExpandableListItemState extends State<ExpandableListItem>
     return Column(
       children: [
         InkWell(
+          onSecondaryTap: widget.onSecondaryTap,
           onTap: hasExpandableContent ? _toggleExpanded : widget.onTap,
           child: Padding(
             padding: EdgeInsets.only(
@@ -238,13 +239,14 @@ class SimpleExpandableItem extends ExpandableListItem {
     super.leadingIconColor,
     required List<InfoItem> infoItems,
     super.children,
-    super.lazyChildren, // Support lazy loading in SimpleExpandableItem too
+    super.lazyChildren,
     super.initiallyExpanded,
     super.showDelete,
     super.showAdd,
     super.onDelete,
     super.onAdd,
     super.onTap,
+    super.onSecondaryTap,
     super.indentLevel,
   }) : super(
          detailRows: infoItems
