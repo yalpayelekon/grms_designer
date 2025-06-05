@@ -92,6 +92,18 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
     );
   }
 
+  void _navigateToInputPointDetail(ButtonPoint point) {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'inputPointDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: widget.device,
+        point: point,
+      );
+    }
+  }
+
   Widget _buildPointItem(ButtonPoint point) {
     final displayName = getButtonPointDisplayName(point);
 
@@ -100,6 +112,9 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
       leadingIcon: getButtonPointIcon(point),
       leadingIconColor: null,
       indentLevel: 1,
+      onSecondaryTap: widget.onNavigate != null
+          ? () => _navigateToInputPointDetail(point)
+          : null,
       children: [
         InputPointDetailScreen(
           workgroup: widget.workgroup,
@@ -114,7 +129,6 @@ class PointsDetailScreenState extends ConsumerState<PointsDetailScreen> {
 
   Widget _buildContent() {
     if (widget.asWidget) {
-      // When used as widget, return just the points items without ExpandableListView
       final inputDevice = widget.device as HelvarDriverInputDevice;
       return Column(
         children: inputDevice.buttonPoints

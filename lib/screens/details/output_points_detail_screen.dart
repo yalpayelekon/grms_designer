@@ -103,12 +103,27 @@ class OutputPointsDetailScreenState
     );
   }
 
+  void _navigateToOutputPointDetail(OutputPoint point) {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(
+        'outputPointDetail',
+        workgroup: widget.workgroup,
+        router: widget.router,
+        device: widget.device,
+        outputPoint: point,
+      );
+    }
+  }
+
   Widget _buildPointItem(OutputPoint point) {
     return ExpandableListItem(
       title: point.function,
       leadingIcon: getOutputPointIcon(point),
       leadingIconColor: getOutputPointValueColor(point),
       indentLevel: 1,
+      onSecondaryTap: widget.onNavigate != null
+          ? () => _navigateToOutputPointDetail(point)
+          : null,
       children: [
         OutputPointDetailScreen(
           workgroup: widget.workgroup,
@@ -123,7 +138,6 @@ class OutputPointsDetailScreenState
 
   Widget _buildContent() {
     if (widget.asWidget) {
-      // When used as widget, return just the points items without ExpandableListView
       final outputDevice = widget.device as HelvarDriverOutputDevice;
       return Column(
         children: outputDevice.outputPoints
