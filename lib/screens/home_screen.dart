@@ -64,12 +64,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
   bool showingSubnetDetail = false;
   int? selectedSubnetNumber;
   bool showingDeviceDetail = false;
+  bool showingRouterDetail = false;
   HelvarDevice? selectedDevice;
   bool showingOutputPointsDetail = false;
   OutputPoint? selectedOutputPoint;
   List<HelvarDevice>? selectedSubnetDevices;
-  bool showingPointsDetail = false;
-  bool showingPointDetail = false;
+  bool showingInputPointsDetail = false;
+  bool showingInputPointDetail = false;
   bool showingOutputPointDetail = false;
   ButtonPoint? selectedPoint;
   double _leftPanelWidth = 500;
@@ -146,7 +147,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 showingSubnetDetail: showingSubnetDetail,
                 showingOutputPointsDetail: showingOutputPointsDetail,
                 showingDeviceDetail: showingDeviceDetail,
-                showingPointsDetail: showingPointsDetail,
+                showingRouterDetail: showingRouterDetail,
+                showingInputPointsDetail: showingInputPointsDetail,
                 selectedOutputPoint: selectedOutputPoint,
                 showingOutputPointDetail: showingOutputPointDetail,
                 selectedDevice: selectedDevice,
@@ -156,7 +158,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 openSettings: openSettings,
                 selectedPoint: selectedPoint,
                 openWorkGroups: openWorkGroups,
-                showingPointDetail: showingPointDetail,
+                showingInputPointDetail: showingInputPointDetail,
                 showingWorkgroup: showingWorkgroup,
                 openWiresheet: openWiresheet,
                 showingImages: showingImages,
@@ -235,7 +237,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           device: selectedDevice!,
         );
       }
-      if (showingPointDetail &&
+      if (showingInputPointDetail &&
           selectedRouter != null &&
           selectedDevice != null &&
           selectedPoint != null) {
@@ -257,7 +259,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           point: selectedOutputPoint!,
         );
       }
-      if (showingPointsDetail &&
+      if (showingInputPointsDetail &&
           selectedRouter != null &&
           selectedDevice != null) {
         return PointsDetailScreen(
@@ -296,7 +298,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           workgroup: selectedWorkgroup!,
         );
       }
-      if (selectedRouter != null) {
+      if (showingRouterDetail && selectedRouter != null) {
         return RouterDetailScreen(
           workgroup: selectedWorkgroup!,
           router: selectedRouter!,
@@ -560,8 +562,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
     OutputPoint? outputPoint,
   }) {
     setState(() {
-      showingPointsDetail = false;
-      showingPointDetail = false;
+      showingInputPointsDetail = false;
+      showingInputPointDetail = false;
       showingOutputPointsDetail = false;
       showingOutputPointDetail = false;
       selectedPoint = null;
@@ -575,6 +577,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
       showingProjectSettings = false;
       showingSubnetDetail = false;
       showingDeviceDetail = false;
+      showingRouterDetail = false;
       selectedRouter = null;
       selectedGroup = null;
       selectedWiresheetId = null;
@@ -625,6 +628,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
         case 'router':
           selectedWorkgroup = workgroup;
           selectedRouter = router;
+          showingRouterDetail = true;
           break;
         case 'subnetDetail':
           showingSubnetDetail = true;
@@ -639,14 +643,14 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           selectedRouter = router;
           selectedDevice = device;
           break;
-        case 'pointsDetail':
-          showingPointsDetail = true;
+        case 'inputPointsDetail':
+          showingInputPointsDetail = true;
           selectedWorkgroup = workgroup;
           selectedRouter = router;
           selectedDevice = device;
           break;
-        case 'pointDetail':
-          showingPointDetail = true;
+        case 'inputPointDetail':
+          showingInputPointDetail = true;
           selectedWorkgroup = workgroup;
           selectedRouter = router;
           selectedDevice = device;

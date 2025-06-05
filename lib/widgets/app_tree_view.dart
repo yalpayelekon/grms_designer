@@ -36,9 +36,10 @@ class AppTreeView extends ConsumerStatefulWidget {
   final int? selectedSubnetNumber;
   final bool showingSubnetDetail;
   final bool showingDeviceDetail;
-  final bool showingPointsDetail;
+  final bool showingRouterDetail;
+  final bool showingInputPointsDetail;
   final bool showingOutputPointsDetail;
-  final bool showingPointDetail;
+  final bool showingInputPointDetail;
   final bool showingOutputPointDetail;
   final ButtonPoint? selectedPoint;
   final OutputPoint? selectedOutputPoint;
@@ -58,26 +59,27 @@ class AppTreeView extends ConsumerStatefulWidget {
 
   const AppTreeView({
     super.key,
-    this.selectedSubnetNumber,
     required this.showingSubnetDetail,
     required this.showingOutputPointsDetail,
     required this.showingOutputPointDetail,
     required this.showingDeviceDetail,
-    required this.showingPointsDetail,
-    required this.showingPointDetail,
-    required this.selectedDevice,
-    required this.selectedPoint,
-    required this.selectedOutputPoint,
+    required this.showingRouterDetail,
+    required this.showingInputPointsDetail,
+    required this.showingInputPointDetail,
+    required this.showingImages,
+    required this.showingGroups,
+    required this.showingProject,
+    required this.openWiresheet,
     required this.wiresheets,
     required this.workgroups,
-    required this.showingProject,
     required this.openSettings,
     required this.openWorkGroups,
     required this.showingWorkgroup,
-    required this.openWiresheet,
-    required this.showingImages,
-    required this.showingGroups,
-    this.selectedRouter,
+    required this.selectedSubnetNumber,
+    required this.selectedDevice,
+    required this.selectedPoint,
+    required this.selectedOutputPoint,
+    required this.selectedRouter,
     required this.currentFileDirectory,
     required this.selectedWiresheetId,
     required this.selectedWorkgroup,
@@ -291,11 +293,10 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
                                       child: Text(
                                         router.description,
                                         style: TextStyle(
-                                          fontWeight:
-                                              widget.selectedRouter == router
+                                          fontWeight: widget.showingRouterDetail
                                               ? FontWeight.bold
                                               : FontWeight.normal,
-                                          color: widget.selectedRouter == router
+                                          color: widget.showingRouterDetail
                                               ? Colors.blue
                                               : null,
                                         ),
@@ -402,14 +403,14 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
           widget.selectedWorkgroup == workgroup &&
           widget.selectedRouter == router &&
           widget.selectedDevice == device &&
-          widget.showingPointsDetail;
+          widget.showingInputPointsDetail;
 
       deviceChildren.add(
         TreeNode(
           content: GestureDetector(
             onTap: () {
               widget.setActiveNode(
-                'pointsDetail',
+                'inputPointsDetail',
                 workgroup: workgroup,
                 router: router,
                 device: device,
@@ -631,7 +632,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
         widget.selectedRouter != null &&
         widget.selectedDevice == parentDevice &&
         widget.selectedPoint == buttonPoint &&
-        widget.showingPointDetail;
+        widget.showingInputPointDetail;
 
     return TreeNode(
       content: GestureDetector(
@@ -652,7 +653,7 @@ class AppTreeViewState extends ConsumerState<AppTreeView> {
 
           if (workgroup != null && router != null) {
             widget.setActiveNode(
-              'pointDetail',
+              'inputPointDetail',
               workgroup: workgroup,
               router: router,
               device: parentDevice,
